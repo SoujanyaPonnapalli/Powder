@@ -1,4 +1,4 @@
-## GrayBFT: Fading Into Larger Quorums with the Aging Cluster for BFT Protocols
+## GrayBFT: Fading Into Larger Quorums with the Aging Cluster for BFT
 
 This project aims to dyanmically determine two constants in a heteorogenous cloud cluster: 
   - Total number of servers in this cluster (n), and 
