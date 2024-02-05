@@ -12,7 +12,8 @@ Overall, it aims to provide a sustainable solution that extends the lifecycle
   of a server in agreement protocols while dynamically moderating the number of
   nodes required to tolerate failures.
 
-### Main contributions:
+### Main contributions
+
 - Analyzing the degradation (or aging) of servers in the cloud
 - Tieing a server's age to its probability of byzantine behavior
 - Formalizing the notion of majority quorum within a heterogenous cluster
