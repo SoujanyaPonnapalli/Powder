@@ -6,6 +6,8 @@ A list of most relevant papers that this project builds on!
 
 SSDs:
 - [HeART: Improving storage efficiency by exploiting disk-reliability heterogeneity | FAST'19](https://www.usenix.org/system/files/fast19-kadekodi.pdf)
+- [Estimating Drive Reliability in Desktop Computers and Consumer Electronics Systems | TechPaper](http://kc.ors-pc.com/bbs/img/8.pdf)
+- [Hard disk drive reliability and MTBF / AFR | BlogPost](https://www.seagate.com/support/kb/hard-disk-drive-reliability-and-mtbf-afr-174791en/)
 
 Memory, CPU, and Networks:
 
