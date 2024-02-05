@@ -2,13 +2,13 @@
 
 A list of most relevant papers that this project builds on!
 
-#### Increasing Hardware Failures with Age
+#### Increasing Hardware Failures with Age:
 
 SSDs:
 - [Geriatrix: Aging what you see and what you don’t see | ATC'18](https://saurabhkadekodi.github.io/geriatrix.pdf)
 
 Memory, CPU, and Networks:
-- 
+
 
 #### Byzantine Fault Tolerance
 
