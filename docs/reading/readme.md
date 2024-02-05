@@ -5,7 +5,7 @@ A list of most relevant papers that this project builds on!
 #### Increasing Hardware Failures with Age:
 
 SSDs:
-- [Geriatrix: Aging what you see and what you don’t see | ATC'18](https://saurabhkadekodi.github.io/geriatrix.pdf)
+- [HeART: Improving storage efficiency by exploiting disk-reliability heterogeneity | FAST'19](https://www.usenix.org/system/files/fast19-kadekodi.pdf)
 
 Memory, CPU, and Networks:
 
