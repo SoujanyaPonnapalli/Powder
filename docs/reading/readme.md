@@ -17,3 +17,4 @@ Memory, CPU, and Networks:
 - [Upright Cluster Services | SOSP'2009](https://dl.acm.org/doi/pdf/10.1145/1629575.1629602)
 - [PPCoin: Peer-to-Peer Crypto-Currency with Proof-of-Stake | WhitePaper](https://decred.org/research/king2012.pdf)
 - [Rabia: Simplifying State-Machine Replication Through Randomization](https://dl.acm.org/doi/pdf/10.1145/3477132.3483582)
+- [Ben-Or Randomized Consensus](https://dl.acm.org/doi/10.1145/800221.806707) [Analysis](https://allquantor.at/blockchainbib/pdf/aguilera2012correctness.pdf)
