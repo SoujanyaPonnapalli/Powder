@@ -18,3 +18,5 @@ Memory, CPU, and Networks:
 - [PPCoin: Peer-to-Peer Crypto-Currency with Proof-of-Stake | WhitePaper](https://decred.org/research/king2012.pdf)
 - [Rabia: Simplifying State-Machine Replication Through Randomization](https://dl.acm.org/doi/pdf/10.1145/3477132.3483582)
 - [Ben-Or Randomized Consensus](https://dl.acm.org/doi/10.1145/800221.806707) [Analysis](https://allquantor.at/blockchainbib/pdf/aguilera2012correctness.pdf)
+- [Analyzing the Real-World Security of the Algorand Blockchain | CCS'23](https://dl.acm.org/doi/pdf/10.1145/3576915.3623167)
+- [PBFT Proof of Correctness](https://pmg.csail.mit.edu/~castro/tm590.pdf)
