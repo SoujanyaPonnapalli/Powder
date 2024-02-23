@@ -20,4 +20,5 @@ Memory, CPU, and Networks:
 - [Ben-Or Randomized Consensus](https://dl.acm.org/doi/10.1145/800221.806707) [Analysis](https://allquantor.at/blockchainbib/pdf/aguilera2012correctness.pdf)
 - [Analyzing the Real-World Security of the Algorand Blockchain | CCS'23](https://dl.acm.org/doi/pdf/10.1145/3576915.3623167)
 - [PBFT Proof of Correctness](https://pmg.csail.mit.edu/~castro/tm590.pdf)
-- [Stellar](https://stellar.org/learn/stellar-consensus-protocol)
+- [Stellar](https://stellar.org/learn/stellar-consensus-protocol) [Kinda Quorum Systems-ey]
+- Avalanche [Sampling type thing]
