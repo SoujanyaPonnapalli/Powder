@@ -22,3 +22,4 @@ Memory, CPU, and Networks:
 - [PBFT Proof of Correctness](https://pmg.csail.mit.edu/~castro/tm590.pdf)
 - [Stellar](https://stellar.org/learn/stellar-consensus-protocol) [Kinda Quorum Systems-ey]
 - Avalanche [Sampling type thing]
+- [Probabillistic Quorum Systems](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=e3c07bdf0d7da13c62be4d53b24202420505fe63)
