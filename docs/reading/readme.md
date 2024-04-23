@@ -8,6 +8,7 @@ SSDs:
 - [HeART: Improving storage efficiency by exploiting disk-reliability heterogeneity | FAST'19](https://www.usenix.org/system/files/fast19-kadekodi.pdf)
 - [Estimating Drive Reliability in Desktop Computers and Consumer Electronics Systems | TechPaper](http://kc.ors-pc.com/bbs/img/8.pdf)
 - [Hard disk drive reliability and MTBF / AFR | BlogPost](https://www.seagate.com/support/kb/hard-disk-drive-reliability-and-mtbf-afr-174791en/)
+- [Mean time to meaningless: MTTDL, Markov models, and storage system reliability](https://www.usenix.org/legacy/event/hotstorage10/tech/full_papers/Greenan.pdf)
 
 Memory, CPU, and Networks:
 
