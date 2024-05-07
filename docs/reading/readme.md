@@ -11,6 +11,7 @@ SSDs:
 - [Mean time to meaningless: MTTDL, Markov models, and storage system reliability](https://www.usenix.org/legacy/event/hotstorage10/tech/full_papers/Greenan.pdf)
 
 Memory, CPU, and Networks:
+- [Cores that don't count](https://sigops.org/s/conferences/hotos/2021/papers/hotos21-s01-hochschild.pdf)
 
 
 #### Byzantine Fault Tolerance
