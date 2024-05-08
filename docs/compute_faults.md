@@ -106,9 +106,9 @@ time; we have some evidence that aging is a factor. In a multicore processor, ty
 
 ## References
 [1] The Use of Triple-Modular Redundancy to Improve Computer Reliability. IBM Journal of Research and
-Development, 6(2):200–209, 1962
-[2] Miguel Castro and Barbara Liskov. Practical Byzantine Fault Tolerance. In Proc. OSDI, 1999.
-[3] Upright Cluster Services. 
+Development, 6(2):200–209, 1962 \
+[2] Miguel Castro and Barbara Liskov. Practical Byzantine Fault Tolerance. In Proc. OSDI, 1999. \
+[3] Upright Cluster Services. \
 
 ## [Silent Data Corruptions at Scale](https://arxiv.org/pdf/2102.11245)
 *Harish Dattatraya Dixit, Sneha Pendharkar, Matt Beadon, Chris Mason, Tejasvi Chakravarthy, Bharath Muthiah, Sriram Sankar, Facebook Inc*
