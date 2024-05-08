@@ -23,15 +23,11 @@ In Workshop on Hot Topics in Operating Systems (HotOS ’21)*
   and that they typically afflict specific cores aka `mercurial cores` on multi-core CPUs, 
   rather than the entire chip.
 - CEEs can appear to be sudden and unpredictable for several reasons including *minor software changes*; Software updates that result in heavy-use of otherwise rarely employed instructions
-- They observe on the order of a `few mercurial cores per several thousand machines`
-- 
-
 
 Some quoted examples of interest: 
   - A subset of servers that are repeatedly responsible for producing erroneous results
   - Common assumptions: storage devices and networks can corrupt data at rest or in transit, we are accustomed
-to thinking of processors as fail-stop or fail-noisy; but silent computational errors are common
-
+to thinking of processors as fail-stop or fail-noisy; but silent computational errors are common; we observe on the order of a `few mercurial cores per several thousand machines`
 
 ### Summary:
 
