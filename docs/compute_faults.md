@@ -46,7 +46,12 @@ Together, these create new challenges for the verification methods to detect div
 *How common are silent computational faults?*
 - storage devices and networks can corrupt data at rest or in transit, we are accustomed
 to thinking of processors as fail-stop or fail-noisy; but silent computational errors are common; we observe on the order of a `few mercurial cores per several thousand machines`
-How easy are they to be fixed outside software?
+
+*How easy are they to be fixed outside software?*
+- Storage and memory faults causes data corruption at rest; network faults cause data corruption errors 
+  while data is being transmitted. Nevertheless, it is easy to find the correct value of the data and to
+  detect mismatches unlike computational faults. However, the cost of detecting and correcting storage and network errors can be amortized 
+  over larger data chunks which seems harder to do for computational instructions
 
 *Why are these errors of interest to us?*
 - The trade-off between performance and hardware reliability is becoming more difficult;
@@ -79,13 +84,13 @@ some cases.
 - The authors coin the term `mercurial cores` to refer to cores that silently produce erroneous results
 - Micro-code updates?
 - Silent data corruption is a symptom that is caused by mercurial cores. Different types of observed symptoms 
-* Wrong answers that are detected nearly immediately,
+    - Wrong answers that are detected nearly immediately,
 through self-checking, exceptions, or segmentation faults,
 which might allow automated retries.
-* Machine checks, which are more disruptive.
-* Wrong answers that are detected, but only after it is too
+    - Machine checks, which are more disruptive.
+    -  Wrong answers that are detected, but only after it is too
 late to retry the computation.
-* Wrong answers that are never detected
+    - Wrong answers that are never detected
 
 - Wrong answers that are not immediately
 detected have potential real-world consequences: these can
@@ -97,12 +102,6 @@ an entire file system, and a corrupted encryption key can render large amounts o
 fail repeatedly and intermittently, and often get worse with
 time; we have some evidence that aging is a factor. In a multicore processor, typically just one core fails, often consistently.
 
-- Storage and memory faults causes data corruption at rest; network faults cause data corruption errors 
-  while data is being transmitted. However, it is easy to find the correct value of the data and to
-  detect mismatches unlike computational faults
-
-- The cost of detecting and correcting storage and network errors can be amortized over larger
-  data chunks which seems harder to do for computational instructions
 
 
 ## References
