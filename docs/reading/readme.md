@@ -25,3 +25,4 @@ Memory, CPU, and Networks:
 - [Stellar](https://stellar.org/learn/stellar-consensus-protocol) [Kinda Quorum Systems-ey]
 - Avalanche [Sampling type thing]
 - [Probabillistic Quorum Systems](https://citeseerx.ist.psu.edu/document?repid=rep1&type=pdf&doi=e3c07bdf0d7da13c62be4d53b24202420505fe63)
+- [Dynamic Quorum Systems](https://link.springer.com/chapter/10.1007/978-3-540-39989-6_5)
