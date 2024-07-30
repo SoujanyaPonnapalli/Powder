@@ -30,3 +30,4 @@ Memory, CPU, and Networks:
 
 #### Other
 - [IA-CCF risk analysis s3?](https://www.usenix.org/conference/nsdi22/presentation/shamis)
+- [Fault-Tolerance, Fast and Slow: Exploiting Failure Asynchrony in Distributed Systems (For us: Failure Rate vs Recovery Rate?)](https://www.usenix.org/conference/osdi18/presentation/alagappan)
