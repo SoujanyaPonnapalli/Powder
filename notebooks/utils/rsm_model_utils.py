@@ -46,6 +46,7 @@ def get_cmm(
             )
         )
     return ContinuousMarkovModel(
+        state_to_id=get_state_to_id_dict(state_transitions),
         initial_state_dist=initial_state_dist,
         state_transitions=state_transitions,
     )
@@ -138,6 +139,7 @@ def get_dr_cmm(
         )
 
     cmm = ContinuousMarkovModel(
+        state_to_id=get_state_to_id_dict(state_transitions),
         initial_state_dist=initial_state_dist,
         state_transitions=state_transitions,
     )
@@ -325,6 +327,7 @@ def get_dr_good_bad_cmm(
         )
 
     cmm = ContinuousMarkovModel(
+        state_to_id=get_state_to_id_dict(state_transitions),
         initial_state_dist=initial_state_dist,
         state_transitions=state_transitions,
     )
@@ -497,6 +500,7 @@ def get_dr_backup_cmm(
         )
 
     cmm = ContinuousMarkovModel(
+        state_to_id=get_state_to_id_dict(state_transitions),
         initial_state_dist=initial_state_dist,
         state_transitions=state_transitions,
     )

@@ -7,6 +7,7 @@ from graphviz import Digraph
 from dataclasses import dataclass
 from fractions import Fraction
 from typing import Union, Tuple, Optional
+from functools import cache
 from numbers import Number
 from wolframclient.evaluation import WolframLanguageSession
 from wolframclient.language import wl, wlexpr
@@ -26,6 +27,7 @@ class StateTransition:
 
 @dataclass
 class ContinuousMarkovModel:
+    state_to_id: dict[str, int]
     initial_state_dist: dict[str, lossless_numerics]
     state_transitions: list[StateTransition]
 
@@ -42,6 +44,23 @@ class FailureParameters:
     update_rps: lossless_numerics
     outdate_rps: lossless_numerics
 
+def get_state_to_id_dict(
+    state_transitions: list[StateTransition],
+) -> Optional[dict[str, int]]:
+    """
+    Algorithm:
+    * state_transitions[i].cur_state_name becomes state i
+    * states in initial_state_dist are ignored
+    """
+    state_name_to_id = {}
+    for i, state_transition in enumerate(state_transitions):
+        if state_transition.state_name in state_name_to_id:
+            print(
+                f"Error -- cannot generate transition matrix, found duplicate state [state_transition.state_name]"
+            )
+            return
+        state_name_to_id[state_transition.state_name] = i
+    return state_name_to_id
 
 def fill_empty_transitions(markov_model: ContinuousMarkovModel):
     states_with_transitions = set(
@@ -152,40 +171,19 @@ def working_and_backup_grouping(markov_model: ContinuousMarkovModel) -> dict[str
         working_and_backup_grouping[cur_state_name] = num_working + "_" + num_backups
     return working_and_backup_grouping
 
-
-def get_state_to_id_dict(
-    markov_model: ContinuousMarkovModel,
-) -> Optional[dict[str, int]]:
-    """
-    Algorithm:
-    * state_transitions[i].cur_state_name becomes state i
-    * states in initial_state_dist are ignored
-    """
-    state_name_to_id = {}
-    for i, state_transition in enumerate(markov_model.state_transitions):
-        if state_transition.state_name in state_name_to_id:
-            print(
-                f"Error -- cannot generate transition matrix, found duplicate state [state_transition.state_name]"
-            )
-            return
-        state_name_to_id[state_transition.state_name] = i
-    return state_name_to_id
-
-
 def get_wolfram_failed_id(cmm: ContinuousMarkovModel) -> int:
-    return get_state_to_id_dict(cmm)["Failed"] + 1
+    return cmm.state_to_id["Failed"] + 1
 
 
 def get_initial_state_dist(
     markov_model: ContinuousMarkovModel,
 ) -> Optional[list[lossless_numerics]]:
-    state_name_to_id = get_state_to_id_dict(markov_model)
-    if state_name_to_id is None:
+    if markov_model.state_to_id is None:
         return
-    num_states = len(state_name_to_id)
+    num_states = len(markov_model.state_to_id)
     output_vector = [0] * num_states
     for state_name, probability in markov_model.initial_state_dist.items():
-        state_id = state_name_to_id[state_name]
+        state_id = markov_model.state_to_id[state_name]
         output_vector[state_id] = probability
     return output_vector
 
@@ -199,17 +197,14 @@ def get_transition_matrix(markov_model: ContinuousMarkovModel) -> Optional[sym.M
             otw:       let Q[i][i] = be -(Q[i][0] + Q[i][1] +...+ Q[i][i-1] + Q[i][i+1] +...+Q[i][len(all_transition_rates])
     *** 2b is required for wolfram logic
     """
-    state_name_to_id = get_state_to_id_dict(markov_model)
-    if state_name_to_id is None:
-        return None
-    num_states = len(state_name_to_id)
+    num_states = len(markov_model.state_to_id)
     output_matrix = sym.zeros(num_states, num_states)
     # Set transitions to be the rate per second
     for state_transition in markov_model.state_transitions:
         starting_state_name = state_transition.state_name
-        starting_state_id = state_name_to_id[starting_state_name]
+        starting_state_id = markov_model.state_to_id[starting_state_name]
         for ending_state_name, transition_rate in state_transition.transition_rates:
-            ending_state_id = state_name_to_id[ending_state_name]
+            ending_state_id = markov_model.state_to_id[ending_state_name]
             output_matrix[starting_state_id, ending_state_id] = transition_rate
 
     # Set diagonal to be negative total transition
