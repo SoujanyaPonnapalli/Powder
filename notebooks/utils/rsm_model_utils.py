@@ -191,11 +191,7 @@ def get_dr_good_bad_cmm(
         )
         nodes_working = reliable_nodes_working + unreliable_nodes_working
         transition_rates = []
-
-        is_reliable_full_updated = num_reliable_up_to_date == reliable_nodes_working
-        is_unreliable_full_updated = (
-            num_unreliable_up_to_date == unreliable_nodes_working
-        )
+        
         min_reliable_updated_to_commit = (
             min_updated_to_commit - num_unreliable_up_to_date
         )
@@ -234,7 +230,7 @@ def get_dr_good_bad_cmm(
             transition_rates.append((starting_state, overall_human_recovery_rate))
 
         # Reliable Update/Outdate
-        if not is_reliable_full_updated:
+        if num_up_to_date > 0 and num_reliable_out_of_date > 0:
             transition_rates.append(
                 (
                     f"{num_reliable_up_to_date + 1}:{num_reliable_out_of_date - 1}:{num_unreliable_up_to_date}:{num_unreliable_out_of_date}",
@@ -253,7 +249,7 @@ def get_dr_good_bad_cmm(
             )
 
         # Unreliable Update/Outdate
-        if not is_unreliable_full_updated:
+        if num_up_to_date > 0 and num_unreliable_out_of_date > 0:
             transition_rates.append(
                 (
                     f"{num_reliable_up_to_date}:{num_reliable_out_of_date}:{num_unreliable_up_to_date + 1}:{num_unreliable_out_of_date - 1}",
