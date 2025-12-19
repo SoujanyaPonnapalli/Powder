@@ -34,7 +34,7 @@ def make_fig(graph: Graph) -> go.Figure:
         showlegend=True,
     )
 
-    fig.update_xaxes(type="log")
+    # fig.update_xaxes(type="log")
     fig.update_yaxes(type="log")
 
     return fig

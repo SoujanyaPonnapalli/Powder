@@ -91,6 +91,9 @@ def get_graphviz(
     hide_edges_to_nodes: Optional[set[str]] = None,
     source_node: Optional[str] = None,
 ) -> Digraph:
+    """
+    TODO: Take in an argument for coloring -- i.e. live nodes green, connected to Failed node = yellow, Failed = red
+    """
     if node_to_group is None:
         node_to_group = {}
     if hide_edges_to_nodes is None:
