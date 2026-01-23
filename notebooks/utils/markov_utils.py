@@ -215,6 +215,30 @@ def get_percent_in_states_bounded(
     return wolfram_session.evaluate(wl.N(average_probability, 10))
 
 
+def get_percent_in_states_bounded_given_not_failed(
+    wolfram_cmm: WLFunction,
+    live_state_ids: list[int],
+    failed_state_id: int,
+    time: int,
+    wolfram_session: WolframLanguageSession,
+    precision: int = 10,
+) -> float:
+    """
+    Average percent of time in live states conditioned on not being in Failed.
+
+    Note: This conditions on the instantaneous state occupancy (not failed at t),
+    which matches "has not transitioned to Failed" when Failed is absorbing.
+    """
+    live_probability = wl.Apply(wl.Plus, wl.PDF(wolfram_cmm(wl.t), live_state_ids))
+    failed_probability = wl.PDF(wolfram_cmm(wl.t), failed_state_id)
+    non_failed_probability = wl.Subtract(1, failed_probability)
+    conditional_live_probability = wl.Divide(live_probability, non_failed_probability)
+    average_probability = wl.Divide(
+        wl.Integrate(conditional_live_probability, [wl.t, 0, time]), time
+    )
+    return wolfram_session.evaluate(wl.N(average_probability, precision))
+
+
 def get_percent_in_states_unbounded(
     wolfram_cmm: WLFunction,
     state_ids: list[int],
