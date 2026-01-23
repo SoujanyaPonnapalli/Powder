@@ -22,3 +22,53 @@ Overall, it aims to provide a sustainable solution that extends the lifecycle
     - Extending server lifecycle to lower carbon emissions
     - Latency and throughput overheads
     - CPU, memory, and network bandwidth consumptions
+
+## Setup
+
+### Python environment
+
+1. Create and activate a virtual environment.
+2. Install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+### Wolfram kernel configuration
+
+The notebooks use Wolfram via `wolframclient`. Configure the kernel path in
+`notebooks/config.yaml` (or set `WOLFRAM_KERNEL_PATH` in your environment).
+
+Example config snippet:
+
+```
+wolfram:
+  kernel_paths:
+    darwin: "/Applications/Wolfram.app/Contents/MacOS/WolframKernel"
+    linux: "/usr/local/Wolfram/Desktop/11.3/Executables/WolframKernel"
+    windows: "C:\\Program Files\\Wolfram Research\\Wolfram Desktop\\11.3\\WolframKernel.exe"
+```
+
+If you are new to the Wolfram Python client, see:
+https://reference.wolfram.com/language/WolframClientForPython/docpages/basic_usages.html
+
+### Running notebooks
+
+From the repo root:
+
+```
+jupyter lab
+```
+
+Open notebooks in `notebooks/` (e.g., `markov-calculator.ipynb`).
+
+### Notebook output hygiene (optional but recommended)
+
+To keep diffs clean, consider `nbstripout`:
+
+```
+pip install nbstripout
+nbstripout --install
+```
+
+This strips notebook outputs on commit while preserving the code cells.

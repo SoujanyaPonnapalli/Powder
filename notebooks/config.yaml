@@ -1,0 +1,5 @@
+wolfram:
+  kernel_paths:
+    darwin: "/Applications/Wolfram.app/Contents/MacOS/WolframKernel"
+    linux: "/usr/local/Wolfram/Desktop/11.3/Executables/WolframKernel"
+    windows: "C:\\Program Files\\Wolfram Research\\Wolfram Desktop\\11.3\\WolframKernel.exe"

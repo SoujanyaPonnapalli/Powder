@@ -1,0 +1,10 @@
+numpy
+sympy
+graphviz
+wolframclient
+plotly
+pyyaml
+scipy
+pandas
+jupyterlab
+pytest
