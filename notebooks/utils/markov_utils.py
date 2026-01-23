@@ -11,6 +11,7 @@ from functools import cache
 from numbers import Number
 from wolframclient.evaluation import WolframLanguageSession
 from wolframclient.language import wl, wlexpr
+from wolframclient.language.expression import WLFunction
 
 lossless_numerics = Union[Fraction, sym.Basic]
 
@@ -176,6 +177,52 @@ def working_and_backup_grouping(markov_model: ContinuousMarkovModel) -> dict[str
 
 def get_wolfram_failed_id(cmm: ContinuousMarkovModel) -> int:
     return cmm.state_to_id["Failed"] + 1
+
+
+def is_state_live(state: str, num_nodes: int) -> bool:
+    vals = state.split(":")
+    if "f" in vals[0]:
+        # Hack to translate 0f, 1f, etc. to num_nodes, num_nodes - 1, etc.
+        vals[0] = str(num_nodes - int(vals[0].replace("f", "")))
+    if not vals[0].isnumeric():
+        return False
+    if len(vals) <= 2:
+        return int(vals[0]) > num_nodes // 2
+    elif len(vals) == 4:
+        return int(vals[0]) > num_nodes // 2
+    raise False
+
+
+def get_live_state_ids(cmm: ContinuousMarkovModel, num_nodes: int) -> list[int]:
+    ids = []
+    for state, id in cmm.state_to_id.items():
+        if is_state_live(state, num_nodes):
+            ids.append(id)
+    return ids
+
+
+def get_percent_in_states_bounded(
+    wolfram_cmm: WLFunction,
+    state_ids: list[int],
+    time: int,
+    wolfram_session: WolframLanguageSession,
+) -> float:
+    probability_dist = wl.PDF(wolfram_cmm(wl.t), state_ids)
+    total_probability = wl.Apply(wl.Plus, probability_dist)
+    average_probability = wl.Divide(
+        wl.Integrate(total_probability, [wl.t, 0, time]), time
+    )
+    return wolfram_session.evaluate(wl.N(average_probability, 10))
+
+
+def get_percent_in_states_unbounded(
+    wolfram_cmm: WLFunction,
+    state_ids: list[int],
+    wolfram_session: WolframLanguageSession,
+) -> float:
+    probability_dist = wl.PDF(wolfram_cmm(wl.Infinity), state_ids)
+    total_probability = wl.Apply(wl.Plus, probability_dist)
+    return wolfram_session.evaluate(wl.N(total_probability, 10))
 
 
 def get_initial_state_dist(
