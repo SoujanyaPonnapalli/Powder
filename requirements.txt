@@ -9,3 +9,4 @@ pandas
 jupyterlab
 setuptools==80.0.0
 pytest
+nbstripout
