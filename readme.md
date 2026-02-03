@@ -1,4 +1,4 @@
-## Powder: Fading Into Larger Quorums for Consensus with an Aging Cluster
+## [Powder: Real Life is Uncertain. Consensus Should Be Too!](https://dl.acm.org/doi/10.1145/3713082.3730374)
 
 This project aims to dyanmically determine two constants in a heteorogenous cloud cluster: 
   - Total number of servers in this cluster (n), and 
@@ -72,3 +72,4 @@ nbstripout --install
 ```
 
 This strips notebook outputs on commit while preserving the code cells.
+
