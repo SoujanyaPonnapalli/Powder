@@ -1,3 +1,7 @@
+# Compiled binaries
+a.out
+*.out
+
 ### MacOS ###
 # General
 .DS_Store

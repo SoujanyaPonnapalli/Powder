@@ -46,6 +46,7 @@ class WolframSessionManager:
 
 
 def _default_config_path() -> Path:
+    """Find config.yaml at the project root (parent of powder/ package)."""
     return Path(__file__).resolve().parent.parent / "config.yaml"
 
 
@@ -79,7 +80,7 @@ def get_wolfram_kernel_path(config_path: Optional[str] = None) -> str:
     if not kernel_path:
         raise KeyError(
             f"No Wolfram kernel path configured for '{os_key}'. "
-            "Update notebooks/config.yaml or set WOLFRAM_KERNEL_PATH."
+            "Update config.yaml or set WOLFRAM_KERNEL_PATH."
         )
 
     return kernel_path

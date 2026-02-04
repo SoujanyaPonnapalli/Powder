@@ -35,10 +35,18 @@ The requirements are all to match a certain 9s of durability and availability SL
 pip install -r requirements.txt
 ```
 
+3. (Optional) Install the `powder` package in editable mode:
+
+```
+pip install -e .
+```
+
+This makes the `powder` package importable from anywhere (useful for running tests or scripts outside of notebooks). The notebooks work without this step since they add the project root to `sys.path` automatically.
+
 ### Wolfram kernel configuration
 
 The notebooks use Wolfram via `wolframclient`. Configure the kernel path in
-`notebooks/config.yaml` (or set `WOLFRAM_KERNEL_PATH` in your environment).
+`config.yaml` at the project root (or set `WOLFRAM_KERNEL_PATH` in your environment).
 
 Example config snippet:
 

@@ -1,10 +1,6 @@
-from pathlib import Path
-import sys
 from fractions import Fraction
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "notebooks"))
-
-from utils.markov_utils import (  # noqa: E402
+from powder.markov_utils import (
     ContinuousMarkovModel,
     StateTransition,
     get_initial_state_dist,

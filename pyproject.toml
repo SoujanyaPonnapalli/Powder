@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "powder"
+version = "0.1.0"
+description = "Markov modeling utilities for distributed systems analysis"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "sympy",
+    "graphviz",
+    "wolframclient",
+    "plotly",
+    "pyyaml",
+    "scipy",
+    "pandas",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "jupyterlab",
+    "nbstripout",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["powder*"]

@@ -1,11 +1,7 @@
-from pathlib import Path
-import sys
 from fractions import Fraction
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "notebooks"))
-
-from utils.markov_utils import FailureParameters  # noqa: E402
-from utils.rsm_model_utils import get_cmm  # noqa: E402
+from powder.markov_utils import FailureParameters
+from powder.rsm_model_utils import get_cmm
 
 
 def test_get_cmm_has_failed_state():
