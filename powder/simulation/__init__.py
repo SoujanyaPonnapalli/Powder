@@ -1,0 +1,73 @@
+"""
+Monte Carlo simulation package for RSM deployments.
+
+This package provides discrete-event simulation capabilities for analyzing
+replicated state machine availability and data loss scenarios.
+"""
+
+from .distributions import (
+    Seconds,
+    hours,
+    days,
+    minutes,
+    Distribution,
+    Exponential,
+    Weibull,
+    Normal,
+    Uniform,
+    Constant,
+)
+from .node import NodeConfig, NodeState
+from .network import RegionPair, NetworkConfig, NetworkState, make_region_pair
+from .events import EventType, Event, EventQueue
+from .cluster import ClusterState
+from .strategy import (
+    ClusterStrategy,
+    Action,
+    ActionType,
+    SimpleReplacementStrategy,
+    NoOpStrategy,
+)
+from .simulator import Simulator, SimulationResult
+from .metrics import MetricsCollector, MetricsSnapshot
+
+__all__ = [
+    # Time units
+    "Seconds",
+    "hours",
+    "days",
+    "minutes",
+    # Distributions
+    "Distribution",
+    "Exponential",
+    "Weibull",
+    "Normal",
+    "Uniform",
+    "Constant",
+    # Node
+    "NodeConfig",
+    "NodeState",
+    # Network
+    "RegionPair",
+    "NetworkConfig",
+    "NetworkState",
+    "make_region_pair",
+    # Events
+    "EventType",
+    "Event",
+    "EventQueue",
+    # Cluster
+    "ClusterState",
+    # Strategy
+    "ClusterStrategy",
+    "Action",
+    "ActionType",
+    "SimpleReplacementStrategy",
+    "NoOpStrategy",
+    # Simulator
+    "Simulator",
+    "SimulationResult",
+    # Metrics
+    "MetricsCollector",
+    "MetricsSnapshot",
+]
