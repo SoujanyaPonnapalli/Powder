@@ -68,26 +68,92 @@ class ClusterState:
         return len(self.nodes) // 2 + 1
 
     def can_commit(self) -> bool:
-        """Check if quorum of up-to-date nodes exists.
+        """Check if a quorum of up-to-date nodes exists that can communicate.
 
-        The system can commit new requests if a majority of nodes
-        are up-to-date, available, and have data.
+        The system can commit new requests if there exists a connected
+        component (accounting for network partitions) where a majority
+        of nodes are up-to-date, available, and have data.
 
         Returns:
             True if the system can accept new commits.
         """
-        return self.num_up_to_date() >= self.quorum_size()
+        # Get up-to-date nodes
+        up_to_date_nodes = [
+            n for n in self.nodes.values()
+            if n.is_up_to_date(self.current_time) and n.is_available and n.has_data
+        ]
+
+        if len(up_to_date_nodes) < self.quorum_size():
+            return False  # Not enough up-to-date nodes globally
+
+        # If no network partitions, simple check suffices
+        if not self.network.active_outages:
+            return True
+
+        # Check if any connected component has a quorum
+        return self._has_quorum_in_connected_component(up_to_date_nodes)
+
+    def _has_quorum_in_connected_component(self, nodes: list["NodeState"]) -> bool:
+        """Check if any connected component of nodes forms a quorum.
+
+        Args:
+            nodes: List of candidate nodes (should be up-to-date and available).
+
+        Returns:
+            True if any connected component has >= quorum_size nodes.
+        """
+        if not nodes:
+            return False
+
+        all_regions = self.all_regions()
+        quorum = self.quorum_size()
+
+        # Group nodes by region
+        nodes_by_region: dict[str, list["NodeState"]] = {}
+        for node in nodes:
+            region = node.config.region
+            if region not in nodes_by_region:
+                nodes_by_region[region] = []
+            nodes_by_region[region].append(node)
+
+        # Get connected components of regions
+        components = self.network.get_connected_components(all_regions)
+
+        # Check if any component has enough nodes
+        for component in components:
+            component_node_count = sum(
+                len(nodes_by_region.get(region, []))
+                for region in component
+            )
+            if component_node_count >= quorum:
+                return True
+
+        return False
 
     def has_potential_data_loss(self) -> bool:
         """Check if quorum is lost (potential data loss).
 
-        When fewer than a quorum of nodes are available, we can't be
-        certain the remaining nodes have the latest committed data.
+        When fewer than a quorum of available nodes can communicate,
+        we can't be certain the remaining nodes have the latest committed data.
+        This accounts for network partitions that may split available nodes.
 
         Returns:
-            True if quorum is lost.
+            True if no connected component has a quorum of available nodes.
         """
-        return self.num_available() < self.quorum_size()
+        available_nodes = [
+            n for n in self.nodes.values()
+            if n.is_available and n.has_data
+        ]
+
+        if len(available_nodes) < self.quorum_size():
+            return True  # Not enough available nodes globally
+
+        # If no network partitions, simple check suffices
+        if not self.network.active_outages:
+            return False
+
+        # Check if any connected component has a quorum of available nodes
+        return not self._has_quorum_in_connected_component(available_nodes)
 
     def has_actual_data_loss(self) -> bool:
         """Check if all up-to-date nodes have failed (definite data loss).
@@ -127,6 +193,56 @@ class ClusterState:
             Set of region names.
         """
         return {n.config.region for n in self.nodes.values()}
+
+    def largest_reachable_quorum_size(self) -> int:
+        """Get the size of the largest connected component of up-to-date nodes.
+
+        Useful for understanding how close we are to losing quorum due to
+        network partitions.
+
+        Returns:
+            Number of up-to-date nodes in the largest connected component.
+        """
+        up_to_date_nodes = [
+            n for n in self.nodes.values()
+            if n.is_up_to_date(self.current_time) and n.is_available and n.has_data
+        ]
+
+        if not up_to_date_nodes:
+            return 0
+
+        if not self.network.active_outages:
+            return len(up_to_date_nodes)
+
+        all_regions = self.all_regions()
+        components = self.network.get_connected_components(all_regions)
+
+        # Group nodes by region
+        nodes_by_region: dict[str, list["NodeState"]] = {}
+        for node in up_to_date_nodes:
+            region = node.config.region
+            if region not in nodes_by_region:
+                nodes_by_region[region] = []
+            nodes_by_region[region].append(node)
+
+        # Find the largest component
+        max_size = 0
+        for component in components:
+            component_size = sum(
+                len(nodes_by_region.get(region, []))
+                for region in component
+            )
+            max_size = max(max_size, component_size)
+
+        return max_size
+
+    def is_network_partitioned(self) -> bool:
+        """Check if there are any active network partitions.
+
+        Returns:
+            True if at least one region pair is partitioned.
+        """
+        return len(self.network.active_outages) > 0
 
     def most_lagging_node(self) -> NodeState | None:
         """Return the available node furthest behind in sync.
@@ -189,8 +305,12 @@ class ClusterState:
         available = self.num_available()
         total = len(self.nodes)
         can_commit = "can_commit" if self.can_commit() else "cannot_commit"
+        partition_info = ""
+        if self.is_network_partitioned():
+            largest = self.largest_reachable_quorum_size()
+            partition_info = f", partitioned (largest_component={largest})"
         return (
             f"ClusterState(t={self.current_time:.1f}s, "
             f"{up_to_date}/{available}/{total} up-to-date/available/total, "
-            f"{can_commit})"
+            f"{can_commit}{partition_info})"
         )

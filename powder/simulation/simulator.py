@@ -81,6 +81,7 @@ class Simulator:
         self.event_log: list[Event] = []
 
         self._initialized = False
+        self._previous_time: Seconds = Seconds(0)  # Track previous event time
 
     def _initialize(self) -> None:
         """Set up initial events and state."""
@@ -174,6 +175,7 @@ class Simulator:
         """Process a single event and update cluster state."""
         # Update metrics for time elapsed
         self.metrics.update(self.cluster, event.time)
+        self._previous_time = self.cluster.current_time
         self.cluster.current_time = event.time
 
         if self.log_events:
@@ -201,12 +203,80 @@ class Simulator:
         elif event.event_type == EventType.NETWORK_OUTAGE_END:
             self._apply_network_outage_end(event)
 
+        # Advance nodes in the committing partition (they stay up-to-date)
+        self._advance_nodes_in_committing_partition()
+
         # Let strategy react
         actions = self.strategy.on_event(
             event, self.cluster, self.event_queue, self.rng
         )
         for action in actions:
             self._execute_action(action)
+
+    def _advance_nodes_in_committing_partition(self) -> None:
+        """Advance last_up_to_date_time for nodes in a partition that can commit.
+
+        When the cluster can commit, all available nodes in the committing
+        partition receive the new commits and stay up-to-date. Nodes in
+        minority partitions fall behind because they can't receive commits.
+
+        We check if nodes were up-to-date at the PREVIOUS time, because time
+        has already advanced to current_time and we want to advance nodes that
+        were participating in commits before this event.
+        """
+        current_time = self.cluster.current_time
+        previous_time = self._previous_time
+        all_regions = self.cluster.all_regions()
+
+        # A node was "in sync" if it was up-to-date at the previous time
+        def was_in_sync(node: NodeState) -> bool:
+            return (node.is_available and node.has_data and 
+                    node.last_up_to_date_time >= previous_time)
+
+        # Check if the cluster can still commit (has quorum in some partition)
+        # We need to evaluate this with the previous time's sync status
+        in_sync_nodes = [n for n in self.cluster.nodes.values() if was_in_sync(n)]
+        
+        if len(in_sync_nodes) < self.cluster.quorum_size():
+            return  # Not enough nodes were in sync, can't commit
+
+        # Find the committing partition (the one with quorum)
+        if not self.cluster.network.active_outages:
+            # No partitions - all in-sync available nodes stay up-to-date
+            for node in in_sync_nodes:
+                node.last_up_to_date_time = current_time
+            return
+
+        # With partitions, find which component can commit
+        components = self.cluster.network.get_connected_components(all_regions)
+        quorum = self.cluster.quorum_size()
+
+        # Group in-sync nodes by region
+        in_sync_by_region: dict[str, list[NodeState]] = {}
+        for node in in_sync_nodes:
+            region = node.config.region
+            if region not in in_sync_by_region:
+                in_sync_by_region[region] = []
+            in_sync_by_region[region].append(node)
+
+        # Find the component that has quorum
+        committing_regions = None
+        for component in components:
+            component_in_sync_count = sum(
+                len(in_sync_by_region.get(region, []))
+                for region in component
+            )
+            if component_in_sync_count >= quorum:
+                committing_regions = component
+                break
+
+        if committing_regions is None:
+            return  # No partition has quorum
+
+        # Advance nodes that were in-sync and are in the committing partition
+        for node in in_sync_nodes:
+            if node.config.region in committing_regions:
+                node.last_up_to_date_time = current_time
 
     def _apply_node_failure(self, event: Event) -> None:
         """Apply a transient node failure."""
@@ -391,7 +461,10 @@ class Simulator:
             if end_time is not None and next_event.time > end_time:
                 # Update metrics up to end_time
                 self.metrics.update(self.cluster, end_time)
+                self._previous_time = self.cluster.current_time
                 self.cluster.current_time = end_time
+                # Advance nodes in committing partition up to end_time
+                self._advance_nodes_in_committing_partition()
                 end_reason = "time_limit"
                 break
 

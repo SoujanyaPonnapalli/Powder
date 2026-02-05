@@ -102,7 +102,10 @@ class NetworkState:
         self.active_outages.discard(pair)
 
     def regions_reachable_from(self, region: str, all_regions: set[str]) -> set[str]:
-        """Get all regions reachable from the given region.
+        """Get all regions transitively reachable from the given region.
+
+        Uses BFS to find all regions that can communicate with the starting
+        region, considering that partitions block communication.
 
         Args:
             region: Starting region.
@@ -112,10 +115,54 @@ class NetworkState:
             Set of regions reachable from the starting region (includes itself).
         """
         reachable = {region}
-        for other in all_regions:
-            if other != region and not self.is_partitioned(region, other):
-                reachable.add(other)
+        frontier = [region]
+
+        while frontier:
+            current = frontier.pop()
+            for other in all_regions:
+                if other not in reachable and not self.is_partitioned(current, other):
+                    reachable.add(other)
+                    frontier.append(other)
+
         return reachable
+
+    def get_connected_components(self, all_regions: set[str]) -> list[set[str]]:
+        """Get all connected components of regions.
+
+        Regions in the same component can all communicate with each other.
+
+        Args:
+            all_regions: Set of all known regions.
+
+        Returns:
+            List of sets, where each set is a connected component of regions.
+        """
+        remaining = set(all_regions)
+        components = []
+
+        while remaining:
+            start = next(iter(remaining))
+            component = self.regions_reachable_from(start, all_regions)
+            components.append(component)
+            remaining -= component
+
+        return components
+
+    def can_communicate(self, region_a: str, region_b: str, all_regions: set[str]) -> bool:
+        """Check if two regions can communicate (directly or transitively).
+
+        Args:
+            region_a: First region.
+            region_b: Second region.
+            all_regions: Set of all known regions.
+
+        Returns:
+            True if the regions are in the same connected component.
+        """
+        if region_a == region_b:
+            return True
+        reachable = self.regions_reachable_from(region_a, all_regions)
+        return region_b in reachable
 
     def __repr__(self) -> str:
         if not self.active_outages:

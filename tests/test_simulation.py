@@ -349,6 +349,181 @@ class TestClusterState:
         assert cluster.has_actual_data_loss()
 
 
+class TestNetworkPartitions:
+    """Tests for network partition effects on availability."""
+
+    def _make_multi_region_cluster(self) -> ClusterState:
+        """Create a 5-node cluster across 3 regions."""
+        nodes = {}
+        regions = ["us-east", "us-west", "eu-west"]
+        for i in range(5):
+            region = regions[i % 3]
+            config = make_test_node_config(region=region)
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_up_to_date_time=Seconds(0),
+            )
+        # Nodes: node0=us-east, node1=us-west, node2=eu-west, node3=us-east, node4=us-west
+
+        return ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=5,
+            current_time=Seconds(0),
+        )
+
+    def test_no_partition_can_commit(self):
+        """Without partitions, cluster can commit if quorum exists."""
+        cluster = self._make_multi_region_cluster()
+        assert cluster.can_commit()
+        assert not cluster.is_network_partitioned()
+
+    def test_partition_splits_quorum(self):
+        """Network partition can prevent quorum even with enough nodes."""
+        cluster = self._make_multi_region_cluster()
+        # 5 nodes, quorum = 3
+        # Nodes: node0=us-east, node1=us-west, node2=eu-west, node3=us-east, node4=us-west
+        # us-east has 2 nodes, us-west has 2 nodes, eu-west has 1 node
+
+        # Partition eu-west from both us-east and us-west
+        cluster.network.add_outage(RegionPair("eu-west", "us-east"))
+        cluster.network.add_outage(RegionPair("eu-west", "us-west"))
+
+        # Now we have: us-east+us-west (4 nodes) and eu-west (1 node)
+        # The larger component has 4 nodes >= quorum of 3, so can still commit
+        assert cluster.can_commit()
+
+    def test_partition_isolates_all_regions(self):
+        """Complete partition prevents quorum."""
+        cluster = self._make_multi_region_cluster()
+        # Partition all regions from each other
+        cluster.network.add_outage(RegionPair("us-east", "us-west"))
+        cluster.network.add_outage(RegionPair("us-east", "eu-west"))
+        cluster.network.add_outage(RegionPair("us-west", "eu-west"))
+
+        # Now each region is isolated:
+        # us-east: 2 nodes, us-west: 2 nodes, eu-west: 1 node
+        # No component has 3 nodes (quorum), so cannot commit
+        assert not cluster.can_commit()
+        assert cluster.is_network_partitioned()
+
+    def test_partition_with_failures(self):
+        """Combined failures and partitions."""
+        cluster = self._make_multi_region_cluster()
+        # Partition us-west from others
+        cluster.network.add_outage(RegionPair("us-west", "us-east"))
+        cluster.network.add_outage(RegionPair("us-west", "eu-west"))
+
+        # us-east + eu-west = 3 nodes (quorum), us-west = 2 nodes
+        assert cluster.can_commit()
+
+        # Now fail one node in the larger partition
+        cluster.nodes["node0"].is_available = False  # us-east node
+
+        # us-east + eu-west = 2 nodes (not quorum)
+        assert not cluster.can_commit()
+        assert cluster.has_potential_data_loss()
+
+    def test_largest_reachable_quorum_size(self):
+        """Test the largest connected component calculation."""
+        cluster = self._make_multi_region_cluster()
+
+        # No partitions - all 5 nodes reachable
+        assert cluster.largest_reachable_quorum_size() == 5
+
+        # Partition eu-west
+        cluster.network.add_outage(RegionPair("eu-west", "us-east"))
+        cluster.network.add_outage(RegionPair("eu-west", "us-west"))
+
+        # Largest component is us-east + us-west = 4 nodes
+        assert cluster.largest_reachable_quorum_size() == 4
+
+        # Full partition
+        cluster.network.add_outage(RegionPair("us-east", "us-west"))
+
+        # Largest component is us-east or us-west = 2 nodes
+        assert cluster.largest_reachable_quorum_size() == 2
+
+    def test_transitive_reachability(self):
+        """Test that reachability is transitive through connected regions."""
+        cluster = self._make_multi_region_cluster()
+
+        # Partition us-east from us-west, but both can reach eu-west
+        cluster.network.add_outage(RegionPair("us-east", "us-west"))
+
+        # us-east can reach eu-west, eu-west can reach us-west
+        # So all regions are in one connected component
+        all_regions = cluster.all_regions()
+        component = cluster.network.regions_reachable_from("us-east", all_regions)
+        assert component == {"us-east", "us-west", "eu-west"}
+
+        # All 5 nodes can form quorum through eu-west
+        assert cluster.can_commit()
+        assert cluster.largest_reachable_quorum_size() == 5
+
+    def test_partitioned_nodes_fall_behind(self):
+        """Test that nodes in minority partitions fall behind during simulation."""
+        # Create cluster with nodes in different regions
+        nodes = {}
+        regions = ["us-east", "us-east", "us-east", "eu-west", "eu-west"]
+        for i, region in enumerate(regions):
+            config = make_test_node_config(region=region)
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_up_to_date_time=Seconds(0),
+            )
+        # us-east has 3 nodes (node0, node1, node2), eu-west has 2 nodes (node3, node4)
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=5,
+            current_time=Seconds(0),
+        )
+
+        # Partition eu-west from us-east
+        cluster.network.add_outage(RegionPair("us-east", "eu-west"))
+
+        # Simulate time passing - us-east (3 nodes) can commit, eu-west (2 nodes) cannot
+        # Create a simulator with very low failure rates so we can test the partition behavior
+        from powder.simulation import Simulator, NoOpStrategy, Exponential, Constant, days
+
+        # Override configs to have very rare failures
+        for node in cluster.nodes.values():
+            node.config = NodeConfig(
+                region=node.config.region,
+                cost_per_hour=1.0,
+                failure_dist=Exponential(rate=1 / days(3650)),  # 1 failure per 10 years
+                recovery_dist=Constant(60),
+                data_loss_dist=Exponential(rate=1 / days(3650)),
+                sync_rate_dist=Constant(2.0),
+                spawn_dist=Constant(600),
+            )
+
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            seed=42,
+        )
+
+        # Run for 1000 seconds
+        result = simulator.run_for(Seconds(1000))
+
+        # Check that us-east nodes are up-to-date
+        for node_id in ["node0", "node1", "node2"]:
+            node = result.final_cluster.nodes[node_id]
+            assert node.last_up_to_date_time >= Seconds(1000), \
+                f"{node_id} in majority partition should be up-to-date"
+
+        # Check that eu-west nodes fell behind (still at time 0)
+        for node_id in ["node3", "node4"]:
+            node = result.final_cluster.nodes[node_id]
+            assert node.last_up_to_date_time == Seconds(0), \
+                f"{node_id} in minority partition should have fallen behind"
+
+
 # =============================================================================
 # Simulator Tests
 # =============================================================================
