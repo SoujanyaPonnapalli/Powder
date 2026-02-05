@@ -22,6 +22,7 @@ class EventType(Enum):
     NODE_DATA_LOSS = "node_data_loss"  # Permanent data loss (e.g., disk failure)
     NODE_SYNC_COMPLETE = "node_sync_complete"  # Node finished syncing
     NODE_SPAWN_COMPLETE = "node_spawn_complete"  # New node finished spawning
+    NODE_SNAPSHOT_CREATE = "node_snapshot_create"  # Node creates a snapshot
 
     # Network events
     NETWORK_OUTAGE_START = "network_outage_start"  # Partition begins

@@ -132,7 +132,9 @@ def make_test_node_config(region: str = "us-east") -> NodeConfig:
         failure_dist=Exponential(rate=1 / hours(24)),  # ~1 failure per day
         recovery_dist=Constant(minutes(5)),
         data_loss_dist=Exponential(rate=1 / days(365)),  # ~1 per year
-        sync_rate_dist=Constant(2.0),  # Syncs 2x faster than commits
+        log_replay_rate_dist=Constant(2.0),  # Replays 2x faster than commits
+        snapshot_download_time_dist=Constant(minutes(5)),  # 5 minutes to download snapshot
+        snapshot_interval_dist=Constant(hours(1)),  # Create snapshot every hour
         spawn_dist=Constant(minutes(10)),
     )
 
@@ -162,7 +164,7 @@ class TestNodeState:
         assert node.lag_seconds(Seconds(150)) == 50
         assert node.lag_seconds(Seconds(50)) == 0  # Can't have negative lag
 
-    def test_time_to_sync(self):
+    def test_time_to_sync_via_log(self):
         config = make_test_node_config()
         node = NodeState(
             node_id="node1",
@@ -170,14 +172,63 @@ class TestNodeState:
             last_up_to_date_time=Seconds(80),
         )
 
-        # 20 seconds behind, sync rate 2.0 -> net rate 1.0 -> 20 seconds to sync
-        assert node.time_to_sync(Seconds(100), sync_rate=2.0) == 20
+        # 20 seconds behind, log_replay_rate=2.0, commit_rate=1.0 -> net rate 1.0 -> 20 seconds
+        assert node.time_to_sync_via_log(Seconds(100), log_replay_rate=2.0, commit_rate=1.0) == 20
 
-        # Sync rate 1.0 can never catch up
-        assert node.time_to_sync(Seconds(100), sync_rate=1.0) is None
+        # log_replay_rate equal to commit_rate can never catch up
+        assert node.time_to_sync_via_log(Seconds(100), log_replay_rate=1.0, commit_rate=1.0) is None
 
-        # Sync rate 0.5 can never catch up
-        assert node.time_to_sync(Seconds(100), sync_rate=0.5) is None
+        # log_replay_rate slower than commit_rate can never catch up
+        assert node.time_to_sync_via_log(Seconds(100), log_replay_rate=0.5, commit_rate=1.0) is None
+
+    def test_time_to_sync_via_snapshot(self):
+        config = make_test_node_config()
+        node = NodeState(
+            node_id="node1",
+            config=config,
+            last_up_to_date_time=Seconds(0),  # Very far behind
+        )
+
+        # Node is 100 seconds behind. Snapshot is at time 90.
+        # After 10s download, time will be 110, node will be at 90, need to catch 20s of log.
+        # With log_replay_rate=2.0 and commit_rate=1.0, net rate=1.0, need 20s to catch up.
+        # Total: 10 + 20 = 30 seconds
+        result = node.time_to_sync_via_snapshot(
+            current_time=Seconds(100),
+            snapshot_time=Seconds(90),
+            snapshot_download_time=10.0,
+            log_replay_rate=2.0,
+            commit_rate=1.0,
+        )
+        assert result == 30
+
+        # If log replay rate can't keep up, returns None
+        result = node.time_to_sync_via_snapshot(
+            current_time=Seconds(100),
+            snapshot_time=Seconds(90),
+            snapshot_download_time=10.0,
+            log_replay_rate=0.5,
+            commit_rate=1.0,
+        )
+        assert result is None
+
+    def test_snapshot_creation(self):
+        config = make_test_node_config()
+        node = NodeState(
+            node_id="node1",
+            config=config,
+            last_up_to_date_time=Seconds(100),
+        )
+
+        assert not node.has_snapshot()
+        node.create_snapshot(Seconds(100))
+        assert node.has_snapshot()
+        assert node.snapshot_time == Seconds(100)
+
+        # Snapshot creation updates time
+        node.last_up_to_date_time = Seconds(200)
+        node.create_snapshot(Seconds(200))
+        assert node.snapshot_time == Seconds(200)
 
 
 # =============================================================================
@@ -498,7 +549,9 @@ class TestNetworkPartitions:
                 failure_dist=Exponential(rate=1 / days(3650)),  # 1 failure per 10 years
                 recovery_dist=Constant(60),
                 data_loss_dist=Exponential(rate=1 / days(3650)),
-                sync_rate_dist=Constant(2.0),
+                log_replay_rate_dist=Constant(2.0),
+                snapshot_download_time_dist=Constant(300),
+                snapshot_interval_dist=Constant(hours(1)),
                 spawn_dist=Constant(600),
             )
 
@@ -556,7 +609,9 @@ class TestSimulator:
                 failure_dist=Exponential(rate=1 / 10),  # Failure every ~10s
                 recovery_dist=Constant(100),  # Long recovery
                 data_loss_dist=Constant(50),  # Data loss at 50s
-                sync_rate_dist=Constant(2.0),
+                log_replay_rate_dist=Constant(2.0),
+                snapshot_download_time_dist=Constant(300),
+                snapshot_interval_dist=Constant(3600),
                 spawn_dist=Constant(1000),
             )
             nodes[f"node{i}"] = NodeState(

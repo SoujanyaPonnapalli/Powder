@@ -22,12 +22,14 @@ class ClusterState:
         network: Current network partition state.
         target_cluster_size: Desired number of nodes in the cluster.
         current_time: Current simulation time in seconds.
+        commit_rate: Seconds of new committed data per second of real time.
     """
 
     nodes: dict[str, NodeState]
     network: NetworkState
     target_cluster_size: int
     current_time: Seconds = field(default_factory=lambda: Seconds(0))
+    commit_rate: float = 1.0  # 1 second of data committed per second of real time
 
     def num_up_to_date(self) -> int:
         """Count nodes that are fully synced to current_time.
@@ -269,6 +271,71 @@ class ClusterState:
         if not with_data:
             return None
         return max(with_data, key=lambda n: n.last_up_to_date_time)
+
+    def best_reachable_snapshot_for_node(self, node: NodeState) -> tuple[NodeState, Seconds] | None:
+        """Find the most recent snapshot reachable from a node.
+
+        Nodes can only download snapshots from other nodes that they are not
+        partitioned from via network outages.
+
+        Args:
+            node: The node looking for a snapshot.
+
+        Returns:
+            Tuple of (source_node, snapshot_time) for the best snapshot, or None.
+        """
+        node_region = node.config.region
+        all_regions = self.all_regions()
+
+        best_snapshot: tuple[NodeState, Seconds] | None = None
+
+        for other in self.nodes.values():
+            if other.node_id == node.node_id:
+                continue
+            if not other.is_available or not other.has_data:
+                continue
+            if other.snapshot_time is None:
+                continue
+
+            # Check if the two nodes can communicate (not partitioned)
+            if not self.network.can_communicate(node_region, other.config.region, all_regions):
+                continue
+
+            # Found a reachable snapshot
+            if best_snapshot is None or other.snapshot_time > best_snapshot[1]:
+                best_snapshot = (other, other.snapshot_time)
+
+        return best_snapshot
+
+    def nodes_with_log_reachable_from(self, node: NodeState) -> list[NodeState]:
+        """Find nodes with log data reachable from a node.
+
+        Log entries can be downloaded from any available node that has data
+        and is not partitioned from the requesting node.
+
+        Args:
+            node: The node looking for log sources.
+
+        Returns:
+            List of nodes that can provide log entries.
+        """
+        node_region = node.config.region
+        all_regions = self.all_regions()
+
+        sources = []
+        for other in self.nodes.values():
+            if other.node_id == node.node_id:
+                continue
+            if not other.is_available or not other.has_data:
+                continue
+
+            # Check if they can communicate
+            if not self.network.can_communicate(node_region, other.config.region, all_regions):
+                continue
+
+            sources.append(other)
+
+        return sources
 
     def get_node(self, node_id: str) -> NodeState | None:
         """Get a node by ID.

@@ -106,7 +106,7 @@ class Simulator:
         self._initialized = True
 
     def _schedule_node_events(self, node: NodeState) -> None:
-        """Schedule failure and data loss events for a node."""
+        """Schedule failure, data loss, and snapshot events for a node."""
         current_time = self.cluster.current_time
 
         # Schedule transient failure
@@ -128,6 +128,10 @@ class Simulator:
                 target_id=node.node_id,
             )
         )
+
+        # Schedule snapshot creation for up-to-date nodes
+        if node.is_up_to_date(current_time) and node.is_available and node.has_data:
+            self._schedule_snapshot_creation(node)
 
     def _schedule_network_outage(self) -> None:
         """Schedule the next network outage event."""
@@ -151,17 +155,52 @@ class Simulator:
         )
 
     def _schedule_sync_complete(self, node: NodeState) -> None:
-        """Schedule sync completion for a lagging node."""
+        """Schedule sync completion for a lagging node.
+
+        The node will choose the fastest method to sync:
+        1. Log replay from a reachable node
+        2. Snapshot download + log replay from a reachable node
+
+        If the node is partitioned from all sources, sync cannot proceed.
+        """
         current_time = self.cluster.current_time
 
         if node.is_up_to_date(current_time):
             return  # Already up to date
 
-        sync_rate = node.config.sync_rate_dist.sample(self.rng)
-        time_to_sync = node.time_to_sync(current_time, sync_rate)
+        commit_rate = self.cluster.commit_rate
+        log_replay_rate = node.config.log_replay_rate_dist.sample(self.rng)
+        snapshot_download_time = node.config.snapshot_download_time_dist.sample(self.rng)
 
-        if time_to_sync is not None and time_to_sync > 0:
-            sync_complete_time = Seconds(current_time + time_to_sync)
+        # Check if node can reach any sources for log/snapshot data
+        log_sources = self.cluster.nodes_with_log_reachable_from(node)
+        if not log_sources:
+            # Node is partitioned from all sources - can't sync
+            return
+
+        # Option 1: Sync via log replay only
+        time_via_log = node.time_to_sync_via_log(current_time, log_replay_rate, commit_rate)
+
+        # Option 2: Sync via snapshot + log replay
+        time_via_snapshot: Seconds | None = None
+        best_snapshot = self.cluster.best_reachable_snapshot_for_node(node)
+        if best_snapshot is not None:
+            source_node, snapshot_time = best_snapshot
+            time_via_snapshot = node.time_to_sync_via_snapshot(
+                current_time, snapshot_time, snapshot_download_time, log_replay_rate, commit_rate
+            )
+
+        # Choose the faster method
+        best_time: Seconds | None = None
+        if time_via_log is not None and time_via_snapshot is not None:
+            best_time = Seconds(min(time_via_log, time_via_snapshot))
+        elif time_via_log is not None:
+            best_time = time_via_log
+        elif time_via_snapshot is not None:
+            best_time = time_via_snapshot
+
+        if best_time is not None and best_time > 0:
+            sync_complete_time = Seconds(current_time + best_time)
             self.event_queue.push(
                 Event(
                     time=sync_complete_time,
@@ -170,6 +209,24 @@ class Simulator:
                     metadata={"sync_to_time": sync_complete_time},
                 )
             )
+
+    def _schedule_snapshot_creation(self, node: NodeState) -> None:
+        """Schedule periodic snapshot creation for an up-to-date node."""
+        current_time = self.cluster.current_time
+
+        if not node.is_up_to_date(current_time) or not node.is_available or not node.has_data:
+            return
+
+        snapshot_interval = node.config.snapshot_interval_dist.sample(self.rng)
+        snapshot_time = Seconds(current_time + snapshot_interval)
+
+        self.event_queue.push(
+            Event(
+                time=snapshot_time,
+                event_type=EventType.NODE_SNAPSHOT_CREATE,
+                target_id=node.node_id,
+            )
+        )
 
     def _process_event(self, event: Event) -> None:
         """Process a single event and update cluster state."""
@@ -196,6 +253,9 @@ class Simulator:
 
         elif event.event_type == EventType.NODE_SPAWN_COMPLETE:
             self._apply_node_spawn_complete(event)
+
+        elif event.event_type == EventType.NODE_SNAPSHOT_CREATE:
+            self._apply_node_snapshot_create(event)
 
         elif event.event_type == EventType.NETWORK_OUTAGE_START:
             self._apply_network_outage_start(event)
@@ -284,9 +344,12 @@ class Simulator:
         if node and node.has_data:
             node.is_available = False
 
-            # Cancel any pending sync for this node
+            # Cancel any pending sync and snapshot events for this node
             self.event_queue.cancel_events_for(
                 event.target_id, EventType.NODE_SYNC_COMPLETE
+            )
+            self.event_queue.cancel_events_for(
+                event.target_id, EventType.NODE_SNAPSHOT_CREATE
             )
 
             # Schedule recovery
@@ -320,6 +383,9 @@ class Simulator:
             # Node may need to sync if it fell behind
             if not node.is_up_to_date(self.cluster.current_time):
                 self._schedule_sync_complete(node)
+            else:
+                # Node is up-to-date, resume snapshot creation
+                self._schedule_snapshot_creation(node)
 
     def _apply_node_data_loss(self, event: Event) -> None:
         """Apply permanent data loss to a node."""
@@ -337,6 +403,18 @@ class Simulator:
         if node and node.is_available and node.has_data:
             sync_to_time = event.metadata.get("sync_to_time", self.cluster.current_time)
             node.last_up_to_date_time = sync_to_time
+            # Now that node is up-to-date, schedule snapshot creation
+            self._schedule_snapshot_creation(node)
+
+    def _apply_node_snapshot_create(self, event: Event) -> None:
+        """Apply snapshot creation for a node."""
+        node = self.cluster.get_node(event.target_id)
+        if node and node.is_available and node.has_data:
+            current_time = self.cluster.current_time
+            if node.is_up_to_date(current_time):
+                node.create_snapshot(current_time)
+                # Schedule next snapshot
+                self._schedule_snapshot_creation(node)
 
     def _apply_node_spawn_complete(self, event: Event) -> None:
         """Apply completion of node spawning."""
