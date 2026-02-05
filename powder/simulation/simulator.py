@@ -96,6 +96,10 @@ class Simulator:
         if self.network_config and self.network_config.affected_regions:
             self._schedule_network_outage()
 
+        # Initialize leader if leader-based consensus is enabled
+        if self.cluster.leader_config.enabled:
+            self._initialize_leader()
+
         # Let strategy take initial actions
         actions = self.strategy.on_simulation_start(
             self.cluster, self.event_queue, self.rng
@@ -104,6 +108,75 @@ class Simulator:
             self._execute_action(action)
 
         self._initialized = True
+
+    def _initialize_leader(self) -> None:
+        """Initialize the leader for leader-based consensus.
+
+        At simulation start, we assume a leader is already elected.
+        The initial leader is chosen from available, up-to-date nodes.
+        """
+        candidates = self.cluster.get_election_candidates()
+        if candidates:
+            # Pick a random initial leader
+            leader = self.rng.choice(candidates)
+            self.cluster.leader_state.leader_id = leader.node_id
+            self.cluster.leader_state.term = 1
+            self.cluster.leader_state.election_in_progress = False
+
+            # Schedule heartbeat timeout for followers to detect leader failure
+            self._schedule_heartbeat_timeouts()
+
+    def _schedule_heartbeat_timeouts(self) -> None:
+        """Schedule heartbeat timeout events for all non-leader nodes.
+
+        In Raft, followers detect leader failure via heartbeat timeout.
+        We schedule a single cluster-wide timeout event that triggers
+        election if the leader is unavailable.
+        """
+        if not self.cluster.leader_config.enabled:
+            return
+        if self.cluster.leader_config.election_timeout_dist is None:
+            return
+
+        timeout = self.cluster.leader_config.election_timeout_dist.sample(self.rng)
+        self.event_queue.push(
+            Event(
+                time=Seconds(self.cluster.current_time + timeout),
+                event_type=EventType.LEADER_HEARTBEAT_TIMEOUT,
+                target_id="cluster",  # Cluster-wide event
+            )
+        )
+
+    def _schedule_leader_election(self) -> None:
+        """Schedule a leader election to complete.
+
+        Called when election starts. Schedules the election completion
+        event based on the election duration distribution.
+        """
+        if not self.cluster.leader_config.enabled:
+            return
+        if self.cluster.leader_config.election_duration_dist is None:
+            return
+
+        duration = self.cluster.leader_config.election_duration_dist.sample(self.rng)
+        self.event_queue.push(
+            Event(
+                time=Seconds(self.cluster.current_time + duration),
+                event_type=EventType.LEADER_ELECTION_COMPLETE,
+                target_id="cluster",
+            )
+        )
+
+    def _start_leader_election(self) -> None:
+        """Start a new leader election.
+
+        Called when the leader fails or heartbeat timeout occurs.
+        """
+        if self.cluster.leader_state.election_in_progress:
+            return  # Election already in progress
+
+        self.cluster.leader_state.start_election(self.cluster.current_time)
+        self._schedule_leader_election()
 
     def _schedule_node_events(self, node: NodeState) -> None:
         """Schedule failure, data loss, and snapshot events for a node."""
@@ -263,6 +336,15 @@ class Simulator:
         elif event.event_type == EventType.NETWORK_OUTAGE_END:
             self._apply_network_outage_end(event)
 
+        elif event.event_type == EventType.LEADER_HEARTBEAT_TIMEOUT:
+            self._apply_leader_heartbeat_timeout(event)
+
+        elif event.event_type == EventType.LEADER_ELECTION_START:
+            self._apply_leader_election_start(event)
+
+        elif event.event_type == EventType.LEADER_ELECTION_COMPLETE:
+            self._apply_leader_election_complete(event)
+
         # Advance nodes in the committing partition (they stay up-to-date)
         self._advance_nodes_in_committing_partition()
 
@@ -352,6 +434,13 @@ class Simulator:
                 event.target_id, EventType.NODE_SNAPSHOT_CREATE
             )
 
+            # If this node was the leader, trigger an election
+            if (
+                self.cluster.leader_config.enabled
+                and self.cluster.leader_state.leader_id == node.node_id
+            ):
+                self._start_leader_election()
+
             # Schedule recovery
             recovery_time = node.config.recovery_dist.sample(self.rng)
             self.event_queue.push(
@@ -391,6 +480,13 @@ class Simulator:
         """Apply permanent data loss to a node."""
         node = self.cluster.get_node(event.target_id)
         if node:
+            # If this node was the leader, trigger an election
+            if (
+                self.cluster.leader_config.enabled
+                and self.cluster.leader_state.leader_id == node.node_id
+            ):
+                self._start_leader_election()
+
             node.has_data = False
             node.is_available = False
 
@@ -463,6 +559,67 @@ class Simulator:
 
             # Schedule next outage
             self._schedule_network_outage()
+
+    def _apply_leader_heartbeat_timeout(self, event: Event) -> None:
+        """Apply leader heartbeat timeout - check if leader is still available.
+
+        If the leader is unavailable, start an election. Otherwise,
+        schedule the next heartbeat timeout.
+        """
+        if not self.cluster.leader_config.enabled:
+            return
+
+        leader_id = self.cluster.leader_state.leader_id
+        leader = self.cluster.nodes.get(leader_id) if leader_id else None
+
+        # Check if leader is still healthy
+        if leader and leader.is_available and leader.has_data:
+            # Leader is fine, schedule next timeout
+            self._schedule_heartbeat_timeouts()
+        else:
+            # Leader is unavailable, start election
+            self._start_leader_election()
+
+    def _apply_leader_election_start(self, event: Event) -> None:
+        """Apply explicit leader election start event."""
+        if not self.cluster.leader_config.enabled:
+            return
+
+        self._start_leader_election()
+
+    def _apply_leader_election_complete(self, event: Event) -> None:
+        """Apply leader election completion - elect a new leader.
+
+        Selects a new leader from available, up-to-date candidates.
+        If no candidates exist, the election fails and another is scheduled.
+        """
+        if not self.cluster.leader_config.enabled:
+            return
+
+        if not self.cluster.leader_state.election_in_progress:
+            return  # No election in progress
+
+        # Check if election can succeed
+        if not self.cluster.can_elect_leader():
+            # Cannot form election quorum - schedule retry
+            self._schedule_leader_election()
+            return
+
+        # Get candidates that could become leader
+        candidates = self.cluster.get_election_candidates()
+
+        if not candidates:
+            # No valid candidates - schedule retry
+            self._schedule_leader_election()
+            return
+
+        # Select new leader (in practice, the most up-to-date node with
+        # highest term wins; we simplify by random selection from candidates)
+        new_leader = self.rng.choice(candidates)
+        self.cluster.leader_state.complete_election(new_leader.node_id)
+
+        # Schedule heartbeat timeouts for the new term
+        self._schedule_heartbeat_timeouts()
 
     def _execute_action(self, action: Action) -> None:
         """Execute a strategy action."""

@@ -20,7 +20,7 @@ from .distributions import (
 from .node import NodeConfig, NodeState
 from .network import RegionPair, NetworkConfig, NetworkState, make_region_pair
 from .events import EventType, Event, EventQueue
-from .cluster import ClusterState
+from .cluster import ClusterState, LeaderElectionConfig, LeaderState
 from .strategy import (
     ClusterStrategy,
     Action,
@@ -58,6 +58,8 @@ __all__ = [
     "EventQueue",
     # Cluster
     "ClusterState",
+    "LeaderElectionConfig",
+    "LeaderState",
     # Strategy
     "ClusterStrategy",
     "Action",

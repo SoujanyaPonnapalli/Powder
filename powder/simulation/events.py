@@ -28,6 +28,11 @@ class EventType(Enum):
     NETWORK_OUTAGE_START = "network_outage_start"  # Partition begins
     NETWORK_OUTAGE_END = "network_outage_end"  # Partition ends
 
+    # Leader election events (for leader-based consensus like Raft)
+    LEADER_ELECTION_START = "leader_election_start"  # Election begins (leader lost)
+    LEADER_ELECTION_COMPLETE = "leader_election_complete"  # New leader elected
+    LEADER_HEARTBEAT_TIMEOUT = "leader_heartbeat_timeout"  # Followers detect leader failure
+
 
 @dataclass(order=True)
 class Event:

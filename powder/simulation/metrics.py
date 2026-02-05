@@ -20,6 +20,9 @@ class MetricsCollector:
         total_cost: Accumulated node costs in dollars.
         time_to_potential_data_loss: Time when quorum was first lost (or None).
         time_to_actual_data_loss: Time when data was definitely lost (or None).
+        time_in_election: Total time spent in leader elections (seconds).
+        election_count: Number of leader elections that occurred.
+        time_unavailable_due_to_election: Time unavailable specifically due to elections.
     """
 
     time_available: Seconds = field(default_factory=lambda: Seconds(0))
@@ -29,11 +32,17 @@ class MetricsCollector:
     time_to_potential_data_loss: Seconds | None = None
     time_to_actual_data_loss: Seconds | None = None
 
+    # Leader election metrics
+    time_in_election: Seconds = field(default_factory=lambda: Seconds(0))
+    election_count: int = 0
+    time_unavailable_due_to_election: Seconds = field(default_factory=lambda: Seconds(0))
+
     # Internal state for tracking
     _last_update_time: Seconds = field(default_factory=lambda: Seconds(0))
     _was_available: bool = True
     _had_potential_loss: bool = False
     _had_actual_loss: bool = False
+    _was_in_election: bool = False
 
     def update(self, cluster: ClusterState, current_time: Seconds) -> None:
         """Update metrics based on cluster state.
@@ -56,6 +65,16 @@ class MetricsCollector:
             else:
                 self.time_unavailable = Seconds(self.time_unavailable + time_delta)
 
+            # Update leader election time tracking
+            if self._was_in_election:
+                self.time_in_election = Seconds(self.time_in_election + time_delta)
+                # Track unavailability specifically due to election
+                # (only if we would have been available without the election)
+                if not self._was_available:
+                    self.time_unavailable_due_to_election = Seconds(
+                        self.time_unavailable_due_to_election + time_delta
+                    )
+
             # Update cost (sum of all node costs for the time period)
             hours_elapsed = time_delta / 3600.0
             for node in cluster.nodes.values():
@@ -65,6 +84,16 @@ class MetricsCollector:
         # Check current state for next interval
         self._was_available = cluster.can_commit()
         self._last_update_time = current_time
+
+        # Track leader election state changes
+        is_in_election = (
+            cluster.leader_config.enabled
+            and cluster.leader_state.election_in_progress
+        )
+        if is_in_election and not self._was_in_election:
+            # Election just started
+            self.election_count += 1
+        self._was_in_election = is_in_election
 
         # Track data loss events (only record first occurrence)
         if not self._had_potential_loss and cluster.has_potential_data_loss():
@@ -130,6 +159,9 @@ class MetricsCollector:
             total_cost=self.total_cost,
             time_to_potential_data_loss=self.time_to_potential_data_loss,
             time_to_actual_data_loss=self.time_to_actual_data_loss,
+            time_in_election=self.time_in_election,
+            election_count=self.election_count,
+            time_unavailable_due_to_election=self.time_unavailable_due_to_election,
         )
 
     def __repr__(self) -> str:
@@ -155,6 +187,9 @@ class MetricsSnapshot:
     total_cost: float
     time_to_potential_data_loss: Seconds | None
     time_to_actual_data_loss: Seconds | None
+    time_in_election: Seconds = Seconds(0)
+    election_count: int = 0
+    time_unavailable_due_to_election: Seconds = Seconds(0)
 
     def availability_fraction(self) -> float:
         """Calculate fraction of time the system was available."""
@@ -167,9 +202,32 @@ class MetricsSnapshot:
         """Get total simulated time."""
         return Seconds(self.time_available + self.time_unavailable)
 
+    def election_unavailability_fraction(self) -> float:
+        """Calculate fraction of unavailability due to leader elections.
+
+        Returns:
+            Fraction of unavailable time that was due to elections.
+        """
+        if self.time_unavailable <= 0:
+            return 0.0
+        return self.time_unavailable_due_to_election / self.time_unavailable
+
+    def average_election_duration(self) -> Seconds | None:
+        """Calculate average duration of leader elections.
+
+        Returns:
+            Average election duration, or None if no elections occurred.
+        """
+        if self.election_count == 0:
+            return None
+        return Seconds(self.time_in_election / self.election_count)
+
     def __repr__(self) -> str:
         avail = self.availability_fraction() * 100
+        election_info = ""
+        if self.election_count > 0:
+            election_info = f", elections={self.election_count}"
         return (
             f"MetricsSnapshot(availability={avail:.2f}%, "
-            f"cost=${self.total_cost:.2f})"
+            f"cost=${self.total_cost:.2f}{election_info})"
         )
