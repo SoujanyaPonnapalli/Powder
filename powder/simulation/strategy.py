@@ -14,7 +14,7 @@ import numpy as np
 
 from .cluster import ClusterState
 from .distributions import Seconds
-from .events import Event, EventQueue, EventType
+from .events import Event, EventType
 from .node import NodeConfig, NodeState
 
 
@@ -62,7 +62,6 @@ class ClusterStrategy(ABC):
         self,
         event: Event,
         cluster: ClusterState,
-        event_queue: EventQueue,
         rng: np.random.Generator,
     ) -> list[Action]:
         """React to a simulation event.
@@ -74,7 +73,6 @@ class ClusterStrategy(ABC):
         Args:
             event: The event that just occurred.
             cluster: Current cluster state (after event was applied).
-            event_queue: Event queue (for scheduling future events).
             rng: Random number generator for reproducibility.
 
         Returns:
@@ -85,7 +83,6 @@ class ClusterStrategy(ABC):
     def on_simulation_start(
         self,
         cluster: ClusterState,
-        event_queue: EventQueue,
         rng: np.random.Generator,
     ) -> list[Action]:
         """Called once at simulation start.
@@ -94,7 +91,6 @@ class ClusterStrategy(ABC):
 
         Args:
             cluster: Initial cluster state.
-            event_queue: Event queue.
             rng: Random number generator.
 
         Returns:
@@ -114,7 +110,6 @@ class NoOpStrategy(ClusterStrategy):
         self,
         event: Event,
         cluster: ClusterState,
-        event_queue: EventQueue,
         rng: np.random.Generator,
     ) -> list[Action]:
         return []
@@ -153,7 +148,6 @@ class SimpleReplacementStrategy(ClusterStrategy):
         self,
         event: Event,
         cluster: ClusterState,
-        event_queue: EventQueue,
         rng: np.random.Generator,
     ) -> list[Action]:
         actions: list[Action] = []
@@ -244,7 +238,6 @@ class SimpleReplacementStrategy(ClusterStrategy):
     def on_simulation_start(
         self,
         cluster: ClusterState,
-        event_queue: EventQueue,
         rng: np.random.Generator,
     ) -> list[Action]:
         """Ensure we have target number of nodes at start."""

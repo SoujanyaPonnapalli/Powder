@@ -16,6 +16,7 @@ from .events import Event, EventQueue, EventType
 from .metrics import MetricsCollector, MetricsSnapshot
 from .network import NetworkConfig
 from .node import NodeConfig, NodeState
+from .protocol import LeaderlessUpToDateQuorumProtocol, Protocol
 from .strategy import Action, ActionType, ClusterStrategy
 
 
@@ -58,6 +59,7 @@ class Simulator:
         initial_cluster: ClusterState,
         strategy: ClusterStrategy,
         network_config: NetworkConfig | None = None,
+        protocol: Protocol | None = None,
         seed: int | None = None,
         log_events: bool = False,
     ):
@@ -67,12 +69,15 @@ class Simulator:
             initial_cluster: Starting cluster state.
             strategy: Strategy for reacting to events.
             network_config: Optional network partition configuration.
+            protocol: Optional protocol for algorithm-specific availability.
+                Defaults to LeaderlessUpToDateQuorumProtocol (backward-compatible).
             seed: Random seed for reproducibility.
             log_events: Whether to keep a log of all events.
         """
         self.cluster = initial_cluster
         self.strategy = strategy
         self.network_config = network_config
+        self.protocol = protocol if protocol is not None else LeaderlessUpToDateQuorumProtocol()
         self.log_events = log_events
 
         self.rng = np.random.default_rng(seed)
@@ -95,10 +100,12 @@ class Simulator:
         if self.network_config and self.network_config.affected_regions:
             self._schedule_network_outage()
 
+        # Initialize protocol (e.g., pick initial leader)
+        for event in self.protocol.on_simulation_start(self.cluster, self.rng):
+            self.event_queue.push(event)
+
         # Let strategy take initial actions
-        actions = self.strategy.on_simulation_start(
-            self.cluster, self.event_queue, self.rng
-        )
+        actions = self.strategy.on_simulation_start(self.cluster, self.rng)
         for action in actions:
             self._execute_action(action)
 
@@ -172,8 +179,8 @@ class Simulator:
 
     def _process_event(self, event: Event) -> None:
         """Process a single event and update cluster state."""
-        # Update metrics for time elapsed
-        self.metrics.update(self.cluster, event.time)
+        # Update metrics for time elapsed (using protocol for availability check)
+        self.metrics.update(self.cluster, event.time, protocol=self.protocol)
         self.cluster.current_time = event.time
 
         if self.log_events:
@@ -201,10 +208,15 @@ class Simulator:
         elif event.event_type == EventType.NETWORK_OUTAGE_END:
             self._apply_network_outage_end(event)
 
+        elif event.event_type == EventType.LEADER_ELECTION_COMPLETE:
+            pass  # Handled by protocol below
+
+        # Let protocol react (e.g., detect leader failure, complete election)
+        for new_event in self.protocol.on_event(event, self.cluster, self.rng):
+            self.event_queue.push(new_event)
+
         # Let strategy react
-        actions = self.strategy.on_event(
-            event, self.cluster, self.event_queue, self.rng
-        )
+        actions = self.strategy.on_event(event, self.cluster, self.rng)
         for action in actions:
             self._execute_action(action)
 
@@ -390,7 +402,7 @@ class Simulator:
             # Check time limit
             if end_time is not None and next_event.time > end_time:
                 # Update metrics up to end_time
-                self.metrics.update(self.cluster, end_time)
+                self.metrics.update(self.cluster, end_time, protocol=self.protocol)
                 self.cluster.current_time = end_time
                 end_reason = "time_limit"
                 break

@@ -4,10 +4,16 @@ Metrics collection for the Monte Carlo RSM simulator.
 Tracks availability, cost, and data loss timing during simulation runs.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from .distributions import Seconds
 from .cluster import ClusterState
+
+if TYPE_CHECKING:
+    from .protocol import Protocol
 
 
 @dataclass
@@ -35,7 +41,12 @@ class MetricsCollector:
     _had_potential_loss: bool = False
     _had_actual_loss: bool = False
 
-    def update(self, cluster: ClusterState, current_time: Seconds) -> None:
+    def update(
+        self,
+        cluster: ClusterState,
+        current_time: Seconds,
+        protocol: Protocol | None = None,
+    ) -> None:
         """Update metrics based on cluster state.
 
         Should be called after each event is processed to track
@@ -44,6 +55,9 @@ class MetricsCollector:
         Args:
             cluster: Current cluster state.
             current_time: Current simulation time.
+            protocol: Optional protocol for algorithm-specific availability.
+                If provided, uses protocol.can_commit() instead of
+                cluster.can_commit() for availability tracking.
         """
         time_delta = Seconds(current_time - self._last_update_time)
         if time_delta < 0:
@@ -63,7 +77,10 @@ class MetricsCollector:
                     self.total_cost += node.config.cost_per_hour * hours_elapsed
 
         # Check current state for next interval
-        self._was_available = cluster.can_commit()
+        if protocol is not None:
+            self._was_available = protocol.can_commit(cluster)
+        else:
+            self._was_available = cluster.can_commit()
         self._last_update_time = current_time
 
         # Track data loss events (only record first occurrence)

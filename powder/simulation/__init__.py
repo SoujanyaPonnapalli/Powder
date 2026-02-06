@@ -28,6 +28,12 @@ from .strategy import (
     SimpleReplacementStrategy,
     NoOpStrategy,
 )
+from .protocol import (
+    Protocol,
+    LeaderlessUpToDateQuorumProtocol,
+    LeaderlessMajorityAvailableProtocol,
+    RaftLikeProtocol,
+)
 from .simulator import Simulator, SimulationResult
 from .metrics import MetricsCollector, MetricsSnapshot
 
@@ -62,6 +68,11 @@ __all__ = [
     "ActionType",
     "SimpleReplacementStrategy",
     "NoOpStrategy",
+    # Protocol
+    "Protocol",
+    "LeaderlessUpToDateQuorumProtocol",
+    "LeaderlessMajorityAvailableProtocol",
+    "RaftLikeProtocol",
     # Simulator
     "Simulator",
     "SimulationResult",
