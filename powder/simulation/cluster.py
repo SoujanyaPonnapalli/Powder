@@ -29,10 +29,19 @@ class ClusterState:
     target_cluster_size: int
     current_time: Seconds = field(default_factory=lambda: Seconds(0))
 
+    def _node_effectively_available(self, node: NodeState) -> bool:
+        """True if node is available and not in a region with an active network outage."""
+        return (
+            node.is_available
+            and node.has_data
+            and not self.network.is_region_down(node.config.region)
+        )
+
     def num_up_to_date(self) -> int:
         """Count nodes that are fully synced to current_time.
 
-        Only counts nodes that are available, have data, and are up-to-date.
+        Only counts nodes that are available, have data, are up-to-date,
+        and not in a region with an active network outage.
 
         Returns:
             Number of up-to-date nodes.
@@ -40,16 +49,18 @@ class ClusterState:
         return sum(
             1
             for n in self.nodes.values()
-            if n.is_up_to_date(self.current_time) and n.is_available and n.has_data
+            if n.is_up_to_date(self.current_time) and self._node_effectively_available(n)
         )
 
     def num_available(self) -> int:
         """Count nodes that are available (may be lagging).
 
+        Excludes nodes in regions with an active network outage.
+
         Returns:
             Number of available nodes with data.
         """
-        return sum(1 for n in self.nodes.values() if n.is_available and n.has_data)
+        return sum(1 for n in self.nodes.values() if self._node_effectively_available(n))
 
     def num_with_data(self) -> int:
         """Count nodes that have data (available or not).
@@ -132,11 +143,12 @@ class ClusterState:
         """Return the available node furthest behind in sync.
 
         Useful for prioritizing which nodes to sync first.
+        Excludes nodes in regions with an active network outage.
 
         Returns:
             The most lagging available node, or None if no available nodes.
         """
-        available = [n for n in self.nodes.values() if n.is_available and n.has_data]
+        available = [n for n in self.nodes.values() if self._node_effectively_available(n)]
         if not available:
             return None
         return min(available, key=lambda n: n.last_up_to_date_time)
@@ -145,14 +157,12 @@ class ClusterState:
         """Return the node with the most recent data.
 
         Useful for determining what data is available for recovery.
-
-        Returns:
-            The most up-to-date node with data, or None if no nodes have data.
+        Only considers effectively available nodes (not in a region outage).
         """
-        with_data = [n for n in self.nodes.values() if n.has_data]
-        if not with_data:
+        available = [n for n in self.nodes.values() if self._node_effectively_available(n)]
+        if not available:
             return None
-        return max(with_data, key=lambda n: n.last_up_to_date_time)
+        return max(available, key=lambda n: n.last_up_to_date_time)
 
     def get_node(self, node_id: str) -> NodeState | None:
         """Get a node by ID.

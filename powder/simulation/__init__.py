@@ -18,7 +18,7 @@ from .distributions import (
     Constant,
 )
 from .node import NodeConfig, NodeState
-from .network import RegionPair, NetworkConfig, NetworkState, make_region_pair
+from .network import NetworkConfig, NetworkState
 from .events import EventType, Event, EventQueue
 from .cluster import ClusterState
 from .strategy import (
@@ -48,10 +48,8 @@ __all__ = [
     "NodeConfig",
     "NodeState",
     # Network
-    "RegionPair",
     "NetworkConfig",
     "NetworkState",
-    "make_region_pair",
     # Events
     "EventType",
     "Event",

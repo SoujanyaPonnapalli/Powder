@@ -37,13 +37,13 @@ class Event:
     Attributes:
         time: When the event occurs (in seconds).
         event_type: Type of event (not used for ordering).
-        target_id: Identifier for the event target (node_id or region_pair string).
+        target_id: Identifier for the event target (node_id or region name).
         metadata: Additional event-specific data (not used for ordering).
 
     Metadata conventions:
         - NODE_SYNC_COMPLETE: {"sync_to_time": Seconds} - time node will be synced to
         - NODE_SPAWN_COMPLETE: {"node_config": NodeConfig} - config for new node
-        - NETWORK_OUTAGE_*: {"region_pair": RegionPair} - affected region pair
+        - NETWORK_OUTAGE_*: {"region": str} - affected region name
     """
 
     time: Seconds

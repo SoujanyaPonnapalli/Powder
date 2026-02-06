@@ -14,7 +14,7 @@ from .cluster import ClusterState
 from .distributions import Seconds
 from .events import Event, EventQueue, EventType
 from .metrics import MetricsCollector, MetricsSnapshot
-from .network import NetworkConfig, RegionPair
+from .network import NetworkConfig
 from .node import NodeConfig, NodeState
 from .strategy import Action, ActionType, ClusterStrategy
 
@@ -136,16 +136,16 @@ class Simulator:
         current_time = self.cluster.current_time
         outage_delay = self.network_config.outage_dist.sample(self.rng)
 
-        # Pick a random region pair
-        pair_idx = self.rng.integers(len(self.network_config.affected_regions))
-        pair = self.network_config.affected_regions[pair_idx]
+        # Pick a random region that can experience an outage
+        region_idx = self.rng.integers(len(self.network_config.affected_regions))
+        region = self.network_config.affected_regions[region_idx]
 
         self.event_queue.push(
             Event(
                 time=Seconds(current_time + outage_delay),
                 event_type=EventType.NETWORK_OUTAGE_START,
-                target_id=f"{pair.region_a}:{pair.region_b}",
-                metadata={"region_pair": pair},
+                target_id=region,
+                metadata={"region": region},
             )
         )
 
@@ -291,10 +291,10 @@ class Simulator:
             self._schedule_sync_complete(new_node)
 
     def _apply_network_outage_start(self, event: Event) -> None:
-        """Apply start of a network partition."""
-        pair = event.metadata.get("region_pair")
-        if pair:
-            self.cluster.network.add_outage(pair)
+        """Apply start of a region network outage (all nodes in region become unavailable)."""
+        region = event.metadata.get("region", event.target_id)
+        if region:
+            self.cluster.network.add_outage(region)
 
             # Schedule outage end
             duration = self.network_config.outage_duration_dist.sample(self.rng)
@@ -302,16 +302,16 @@ class Simulator:
                 Event(
                     time=Seconds(self.cluster.current_time + duration),
                     event_type=EventType.NETWORK_OUTAGE_END,
-                    target_id=event.target_id,
-                    metadata={"region_pair": pair},
+                    target_id=region,
+                    metadata={"region": region},
                 )
             )
 
     def _apply_network_outage_end(self, event: Event) -> None:
-        """Apply end of a network partition."""
-        pair = event.metadata.get("region_pair")
-        if pair:
-            self.cluster.network.remove_outage(pair)
+        """Apply end of a region network outage."""
+        region = event.metadata.get("region", event.target_id)
+        if region:
+            self.cluster.network.remove_outage(region)
 
             # Schedule next outage
             self._schedule_network_outage()

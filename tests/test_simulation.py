@@ -23,7 +23,6 @@ from powder.simulation import (
     NodeConfig,
     NodeState,
     # Network
-    RegionPair,
     NetworkConfig,
     NetworkState,
     # Events
@@ -185,42 +184,39 @@ class TestNodeState:
 # =============================================================================
 
 
-class TestRegionPair:
-    def test_normalized_ordering(self):
-        pair1 = RegionPair("us-west", "us-east")
-        pair2 = RegionPair("us-east", "us-west")
-
-        # Both should normalize to same ordering
-        assert pair1 == pair2
-        assert pair1.region_a == "us-east"
-        assert pair1.region_b == "us-west"
-
-    def test_contains(self):
-        pair = RegionPair("us-east", "us-west")
-        assert pair.contains("us-east")
-        assert pair.contains("us-west")
-        assert not pair.contains("eu-west")
-
-    def test_other(self):
-        pair = RegionPair("us-east", "us-west")
-        assert pair.other("us-east") == "us-west"
-        assert pair.other("us-west") == "us-east"
-        assert pair.other("eu-west") is None
-
-
 class TestNetworkState:
+    def test_is_region_down(self):
+        state = NetworkState()
+
+        assert not state.is_region_down("us-east")
+
+        state.add_outage("us-east")
+        assert state.is_region_down("us-east")
+
+        state.remove_outage("us-east")
+        assert not state.is_region_down("us-east")
+
     def test_is_partitioned(self):
         state = NetworkState()
-        pair = RegionPair("us-east", "us-west")
 
         assert not state.is_partitioned("us-east", "us-west")
 
-        state.add_outage(pair)
+        state.add_outage("us-east")
         assert state.is_partitioned("us-east", "us-west")
-        assert state.is_partitioned("us-west", "us-east")  # Order doesn't matter
+        assert state.is_partitioned("us-west", "us-east")
 
-        state.remove_outage(pair)
+        state.remove_outage("us-east")
         assert not state.is_partitioned("us-east", "us-west")
+
+    def test_regions_reachable_from(self):
+        state = NetworkState()
+        all_regions = {"us-east", "us-west", "eu-west"}
+
+        assert state.regions_reachable_from("us-east", all_regions) == all_regions
+
+        state.add_outage("us-east")
+        assert state.regions_reachable_from("us-east", all_regions) == set()
+        assert state.regions_reachable_from("us-west", all_regions) == {"us-west", "eu-west"}
 
 
 # =============================================================================
