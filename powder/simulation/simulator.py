@@ -274,9 +274,14 @@ class Simulator:
             self.event_queue.cancel_events_for(event.target_id)
 
     def _apply_node_sync_complete(self, event: Event) -> None:
-        """Apply sync completion for a node."""
+        """Apply sync completion for a node.
+
+        Sync is only applied if the node is effectively available, which
+        includes checking that the node's region is not in a network outage.
+        A partitioned node cannot sync because it can't communicate with peers.
+        """
         node = self.cluster.get_node(event.target_id)
-        if node and node.is_available and node.has_data:
+        if node and self.cluster._node_effectively_available(node):
             sync_to_time = event.metadata.get("sync_to_time", self.cluster.current_time)
             node.last_up_to_date_time = sync_to_time
 
@@ -303,10 +308,22 @@ class Simulator:
             self._schedule_sync_complete(new_node)
 
     def _apply_network_outage_start(self, event: Event) -> None:
-        """Apply start of a region network outage (all nodes in region become unavailable)."""
+        """Apply start of a region network outage (all nodes in region become unavailable).
+
+        Cancels any pending sync events for nodes in the affected region,
+        since partitioned nodes cannot communicate with peers to sync.
+        """
         region = event.metadata.get("region", event.target_id)
         if region:
             self.cluster.network.add_outage(region)
+
+            # Cancel pending syncs for nodes in the affected region —
+            # they can't sync while partitioned from the rest of the cluster.
+            for node in self.cluster.nodes.values():
+                if node.config.region == region:
+                    self.event_queue.cancel_events_for(
+                        node.node_id, EventType.NODE_SYNC_COMPLETE
+                    )
 
             # Schedule outage end
             duration = self.network_config.outage_duration_dist.sample(self.rng)
@@ -320,10 +337,25 @@ class Simulator:
             )
 
     def _apply_network_outage_end(self, event: Event) -> None:
-        """Apply end of a region network outage."""
+        """Apply end of a region network outage.
+
+        Schedules sync for any nodes in the recovered region that fell
+        behind during the outage, mirroring the behavior of node recovery.
+        """
         region = event.metadata.get("region", event.target_id)
         if region:
             self.cluster.network.remove_outage(region)
+
+            # Nodes in the recovered region may have fallen behind during
+            # the outage — schedule syncs so they can catch up.
+            for node in self.cluster.nodes.values():
+                if (
+                    node.config.region == region
+                    and node.is_available
+                    and node.has_data
+                    and not node.is_up_to_date(self.cluster.current_time)
+                ):
+                    self._schedule_sync_complete(node)
 
             # Schedule next outage
             self._schedule_network_outage()
