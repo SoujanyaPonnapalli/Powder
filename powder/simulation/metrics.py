@@ -37,30 +37,50 @@ class MetricsCollector:
 
     # Internal state for tracking
     _last_update_time: Seconds = field(default_factory=lambda: Seconds(0))
-    _last_cost_time: Seconds = field(default_factory=lambda: Seconds(0))
     _was_available: bool = True
     _had_potential_loss: bool = False
     _had_actual_loss: bool = False
 
-    def record_elapsed(self, current_time: Seconds) -> None:
-        """Record elapsed time using the availability state from the previous update.
+    def record_elapsed(
+        self,
+        current_time: Seconds,
+        cluster: ClusterState | None = None,
+    ) -> None:
+        """Record elapsed time and costs using the pre-event cluster state.
 
         This should be called BEFORE an event is applied so that the interval
-        since the last event is categorised using the post-previous-event state
+        since the last event is categorized using the post-previous-event state
         (which correctly represents the cluster during the interval).
+
+        Costs are also computed here (rather than in ``update``) so that they
+        reflect the nodes that actually existed during the interval, not
+        nodes that were added or removed by the event being processed.
 
         Args:
             current_time: Current simulation time.
+            cluster: Current cluster state (before event applied).
+                When provided, node costs are accumulated for the elapsed
+                interval. All nodes are billed regardless of availability
+                state, matching real cloud provider billing.
         """
         time_delta = Seconds(current_time - self._last_update_time)
         if time_delta < 0:
             raise ValueError(f"Time went backwards: {self._last_update_time} -> {current_time}")
 
         if time_delta > 0:
+            # Availability
             if self._was_available:
                 self.time_available = Seconds(self.time_available + time_delta)
             else:
                 self.time_unavailable = Seconds(self.time_unavailable + time_delta)
+
+            # Cost: bill all nodes (active + provisioning) regardless of state.
+            # In cloud environments you pay for VMs from launch through
+            # failures until termination.
+            if cluster is not None:
+                hours_elapsed = time_delta / 3600.0
+                for node in cluster.all_nodes_for_billing():
+                    self.total_cost += node.config.cost_per_hour * hours_elapsed
 
         self._last_update_time = current_time
 
@@ -70,14 +90,15 @@ class MetricsCollector:
         current_time: Seconds,
         protocol: Protocol | None = None,
     ) -> None:
-        """Update availability state and costs based on current cluster state.
+        """Update availability state based on current cluster state.
 
         Should be called AFTER each event is fully applied so that
         ``_was_available`` reflects the post-event state for the next
-        interval.
+        interval. Also checks for data-loss milestones.
 
-        Also records costs for the elapsed interval and checks for data-loss
-        milestones.
+        Note: cost accumulation happens in ``record_elapsed`` (before the
+        event) so that costs reflect the nodes that existed during the
+        interval rather than nodes added/removed by the event.
 
         Args:
             cluster: Current cluster state (after event applied).
@@ -86,15 +107,6 @@ class MetricsCollector:
                 If provided, uses protocol.can_commit() instead of
                 cluster.can_commit() for availability tracking.
         """
-        # Accumulate node costs for the interval that just ended.
-        time_delta = Seconds(current_time - self._last_cost_time)
-        if time_delta > 0:
-            hours_elapsed = time_delta / 3600.0
-            for node in cluster.nodes.values():
-                if node.is_available and node.has_data:
-                    self.total_cost += node.config.cost_per_hour * hours_elapsed
-        self._last_cost_time = current_time
-
         # Set availability state for the *next* interval (post-event).
         if protocol is not None:
             self._was_available = protocol.can_commit(cluster)

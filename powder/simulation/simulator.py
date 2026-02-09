@@ -226,10 +226,12 @@ class Simulator:
         elapsed = event.time - self.cluster.current_time
         self._advance_commit_index(elapsed)
 
-        # Record elapsed time in metrics BEFORE applying the event.
+        # Record elapsed time and costs BEFORE applying the event.
         # The _was_available flag from the previous update correctly describes
         # the interval we just observed (it was set after the previous event).
-        self.metrics.record_elapsed(event.time)
+        # Costs use the pre-event cluster state so that nodes added/removed
+        # by this event are not incorrectly billed for the prior interval.
+        self.metrics.record_elapsed(event.time, cluster=self.cluster)
         self.cluster.current_time = event.time
 
         if self.log_events:
@@ -341,12 +343,19 @@ class Simulator:
             node.last_applied_index = self.cluster.commit_index
 
     def _apply_node_spawn_complete(self, event: Event) -> None:
-        """Apply completion of node spawning."""
+        """Apply completion of node spawning.
+
+        Moves the node from the provisioning set (where it was placed at
+        spawn request time for billing) to the active node set.
+        """
         node_config = event.metadata.get("node_config")
         node_id = event.metadata.get("node_id", event.target_id)
 
         if node_config:
-            # Create new node (starts with no data, needs to sync)
+            # Remove from provisioning (was added at spawn request time)
+            self.cluster.remove_provisioning_node(node_id)
+
+            # Create active node (starts with data, needs to sync)
             new_node = NodeState(
                 node_id=node_id,
                 config=node_config,
@@ -425,6 +434,7 @@ class Simulator:
             node_id = action.params.get("node_id")
             if node_id:
                 self.cluster.remove_node(node_id)
+                self.cluster.remove_provisioning_node(node_id)
                 self.event_queue.cancel_events_for(node_id)
 
         elif action.action_type == ActionType.SCALE_DOWN:
@@ -470,11 +480,26 @@ class Simulator:
             )
 
     def _action_spawn_node(self, action: Action) -> None:
-        """Execute a spawn node action."""
+        """Execute a spawn node action.
+
+        Immediately adds the node to the cluster's provisioning set so
+        that it is billed from the moment it is requested (matching
+        real cloud provider billing). The node moves to the active set
+        when NODE_SPAWN_COMPLETE fires.
+        """
         node_config: NodeConfig = action.params.get("node_config")
         node_id: str = action.params.get("node_id", f"spawned_{self.rng.integers(10000)}")
 
         if node_config:
+            # Add to provisioning immediately for cost tracking
+            provisioning_node = NodeState(
+                node_id=node_id,
+                config=node_config,
+                is_available=False,
+                has_data=False,
+            )
+            self.cluster.add_provisioning_node(provisioning_node)
+
             spawn_time = node_config.spawn_dist.sample(self.rng)
             self.event_queue.push(
                 Event(
@@ -521,9 +546,9 @@ class Simulator:
                 elapsed = end_time - self.cluster.current_time
                 self._advance_commit_index(elapsed)
 
-                # Record elapsed time and update metrics up to end_time.
+                # Record elapsed time/cost and update metrics up to end_time.
                 # No event to apply, so state doesn't change — record + update together.
-                self.metrics.record_elapsed(end_time)
+                self.metrics.record_elapsed(end_time, cluster=self.cluster)
                 self.metrics.update(self.cluster, end_time, protocol=self.protocol)
                 self.cluster.current_time = end_time
                 end_reason = "time_limit"

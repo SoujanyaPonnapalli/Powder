@@ -25,6 +25,9 @@ class ClusterState:
         commit_index: Current position in the committed data stream.
             Advances only when the system can commit, at the protocol's
             commit_rate. Raw float, not a wall-clock time.
+        provisioning_nodes: Nodes being provisioned (not yet active).
+            These nodes are tracked for cost billing but do not participate
+            in quorum calculations or availability checks.
     """
 
     nodes: dict[str, NodeState]
@@ -32,6 +35,7 @@ class ClusterState:
     target_cluster_size: int
     current_time: Seconds = field(default_factory=lambda: Seconds(0))
     commit_index: float = 0.0
+    provisioning_nodes: dict[str, NodeState] = field(default_factory=dict)
 
     def _node_effectively_available(self, node: NodeState) -> bool:
         """True if node is available and not in a region with an active network outage."""
@@ -197,6 +201,41 @@ class ClusterState:
             The removed node, or None if not found.
         """
         return self.nodes.pop(node_id, None)
+
+    def add_provisioning_node(self, node: NodeState) -> None:
+        """Add a node to the provisioning set (not yet active).
+
+        Provisioning nodes are tracked for cost billing but do not
+        participate in quorum calculations or availability checks.
+
+        Args:
+            node: Node being provisioned.
+        """
+        self.provisioning_nodes[node.node_id] = node
+
+    def remove_provisioning_node(self, node_id: str) -> NodeState | None:
+        """Remove a node from the provisioning set.
+
+        Args:
+            node_id: ID of node to remove.
+
+        Returns:
+            The removed node, or None if not found.
+        """
+        return self.provisioning_nodes.pop(node_id, None)
+
+    def all_nodes_for_billing(self) -> list[NodeState]:
+        """Return all nodes that should be billed, including provisioning.
+
+        In cloud environments, you pay for VMs from the moment they're
+        launched (provisioning) through transient failures and data loss,
+        until they're explicitly terminated. This method returns all such
+        nodes for cost calculation.
+
+        Returns:
+            List of all active and provisioning nodes.
+        """
+        return list(self.nodes.values()) + list(self.provisioning_nodes.values())
 
     def __repr__(self) -> str:
         up_to_date = self.num_up_to_date()

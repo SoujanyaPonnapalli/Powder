@@ -26,6 +26,7 @@ from .strategy import (
     Action,
     ActionType,
     SimpleReplacementStrategy,
+    NodeReplacementStrategy,
     NoOpStrategy,
 )
 from .protocol import (
@@ -67,6 +68,7 @@ __all__ = [
     "Action",
     "ActionType",
     "SimpleReplacementStrategy",
+    "NodeReplacementStrategy",
     "NoOpStrategy",
     # Protocol
     "Protocol",

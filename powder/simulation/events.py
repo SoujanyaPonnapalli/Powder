@@ -27,6 +27,9 @@ class EventType(Enum):
     NETWORK_OUTAGE_START = "network_outage_start"  # Partition begins
     NETWORK_OUTAGE_END = "network_outage_end"  # Partition ends
 
+    # Replacement events
+    NODE_REPLACEMENT_TIMEOUT = "node_replacement_timeout"  # Node replacement timeout reached
+
     # Protocol events
     LEADER_ELECTION_COMPLETE = "leader_election_complete"  # Leader election finished
 
