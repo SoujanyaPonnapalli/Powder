@@ -2,12 +2,23 @@
 Tests for the Monte Carlo RSM simulator.
 
 Tests cover distributions, node/cluster state, events, strategies,
-protocols, and the simulator engine.
+protocols, the simulator engine, and adaptive Monte Carlo convergence.
 """
 
 import numpy as np
 import pytest
 
+from powder.monte_carlo import (
+    ConvergenceCriteria,
+    ConvergenceMetric,
+    ConvergenceResult,
+    MonteCarloConfig,
+    MonteCarloRunner,
+    MonteCarloResults,
+    estimate_required_runs,
+    run_monte_carlo,
+    run_monte_carlo_converged,
+)
 from powder.simulation import (
     # Distributions
     Seconds,
@@ -346,6 +357,7 @@ class TestSimulator:
         simulator = Simulator(
             initial_cluster=cluster,
             strategy=strategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
             seed=42,
         )
 
@@ -383,6 +395,7 @@ class TestSimulator:
         simulator = Simulator(
             initial_cluster=cluster,
             strategy=NoOpStrategy(),
+            protocol=LeaderlessUpToDateQuorumProtocol(),
             seed=42,
         )
 
@@ -401,6 +414,7 @@ class TestSimulator:
             simulator = Simulator(
                 initial_cluster=cluster,
                 strategy=NoOpStrategy(),
+                protocol=LeaderlessUpToDateQuorumProtocol(),
                 seed=12345,
             )
             result = simulator.run_for(Seconds(100))
@@ -492,24 +506,6 @@ class TestLeaderlessUpToDateQuorumProtocol:
         cluster.nodes["node2"].is_available = False
         assert protocol.can_commit(cluster) == cluster.can_commit()
         assert protocol.can_commit(cluster) is False
-
-    def test_simulation_with_default_protocol_matches_no_protocol(self):
-        """Simulator with explicit default protocol should produce same results."""
-        results = []
-
-        for protocol in [None, LeaderlessUpToDateQuorumProtocol()]:
-            cluster = make_test_cluster(3)
-            simulator = Simulator(
-                initial_cluster=cluster,
-                strategy=NoOpStrategy(),
-                protocol=protocol,
-                seed=42,
-            )
-            result = simulator.run_for(Seconds(1000))
-            results.append(result)
-
-        assert results[0].metrics.time_available == results[1].metrics.time_available
-        assert results[0].metrics.time_unavailable == results[1].metrics.time_unavailable
 
     def test_commit_rate_and_snapshot_interval(self):
         """Protocol should expose configurable commit_rate and snapshot_interval."""
@@ -1209,3 +1205,436 @@ class TestSnapshotRecovery:
                 assert node.last_snapshot_index > 0
                 # Snapshot should be at a multiple of the interval
                 assert node.last_snapshot_index % 50.0 == pytest.approx(0.0, abs=1e-9)
+
+
+# =============================================================================
+# Convergence Criteria Tests
+# =============================================================================
+
+
+class TestConvergenceCriteria:
+    def test_defaults(self):
+        criteria = ConvergenceCriteria()
+        assert criteria.confidence_level == 0.95
+        assert criteria.relative_error == 0.05
+        assert criteria.absolute_error is None
+        assert not criteria.uses_absolute_error
+        assert criteria.metrics == [ConvergenceMetric.AVAILABILITY]
+        assert criteria.min_runs == 30
+        assert criteria.max_runs == 10_000
+        assert criteria.batch_size == 10
+
+    def test_absolute_error_mode(self):
+        criteria = ConvergenceCriteria(absolute_error=0.01)
+        assert criteria.absolute_error == 0.01
+        assert criteria.relative_error is None
+        assert criteria.uses_absolute_error
+        assert criteria.error_threshold == 0.01
+
+    def test_relative_error_mode(self):
+        criteria = ConvergenceCriteria(relative_error=0.10)
+        assert criteria.relative_error == 0.10
+        assert criteria.absolute_error is None
+        assert not criteria.uses_absolute_error
+        assert criteria.error_threshold == 0.10
+
+    def test_cannot_specify_both_errors(self):
+        with pytest.raises(ValueError, match="exactly one"):
+            ConvergenceCriteria(relative_error=0.05, absolute_error=0.01)
+
+    def test_invalid_confidence_level(self):
+        with pytest.raises(ValueError, match="confidence_level"):
+            ConvergenceCriteria(confidence_level=0.0)
+        with pytest.raises(ValueError, match="confidence_level"):
+            ConvergenceCriteria(confidence_level=1.0)
+        with pytest.raises(ValueError, match="confidence_level"):
+            ConvergenceCriteria(confidence_level=1.5)
+
+    def test_invalid_relative_error(self):
+        with pytest.raises(ValueError, match="relative_error"):
+            ConvergenceCriteria(relative_error=0.0)
+        with pytest.raises(ValueError, match="relative_error"):
+            ConvergenceCriteria(relative_error=-0.1)
+
+    def test_invalid_absolute_error(self):
+        with pytest.raises(ValueError, match="absolute_error"):
+            ConvergenceCriteria(absolute_error=0.0)
+        with pytest.raises(ValueError, match="absolute_error"):
+            ConvergenceCriteria(absolute_error=-0.01)
+
+    def test_invalid_min_runs(self):
+        with pytest.raises(ValueError, match="min_runs"):
+            ConvergenceCriteria(min_runs=1)
+
+    def test_invalid_max_runs(self):
+        with pytest.raises(ValueError, match="max_runs"):
+            ConvergenceCriteria(min_runs=100, max_runs=50)
+
+
+# =============================================================================
+# Adaptive Monte Carlo Tests
+# =============================================================================
+
+
+def _make_fast_cluster() -> ClusterState:
+    """Create a fast cluster for convergence tests (short simulations)."""
+    config = NodeConfig(
+        region="us-east",
+        cost_per_hour=1.0,
+        failure_dist=Exponential(rate=1 / hours(24)),
+        recovery_dist=Constant(minutes(5)),
+        data_loss_dist=Exponential(rate=1 / days(365)),
+        log_replay_rate_dist=Constant(2.0),
+        snapshot_download_time_dist=Constant(0),
+        spawn_dist=Constant(minutes(10)),
+    )
+    nodes = {
+        f"node{i}": NodeState(node_id=f"node{i}", config=config)
+        for i in range(3)
+    }
+    return ClusterState(
+        nodes=nodes,
+        network=NetworkState(),
+        target_cluster_size=3,
+    )
+
+
+class TestAdaptiveMonteCarlo:
+    def test_run_until_converged_basic(self):
+        """Adaptive runner should produce results and report convergence status."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            stop_on_data_loss=True,
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        convergence = ConvergenceCriteria(
+            confidence_level=0.95,
+            relative_error=0.10,  # 10% relative error (easy to converge)
+            metrics=[ConvergenceMetric.AVAILABILITY],
+            min_runs=10,
+            max_runs=500,
+            batch_size=10,
+        )
+
+        result = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=convergence,
+        )
+
+        assert isinstance(result, ConvergenceResult)
+        assert result.total_runs >= convergence.min_runs
+        assert result.total_runs <= convergence.max_runs
+        assert len(result.results.availability_samples) == result.total_runs
+        assert len(result.metric_statuses) == 1
+        assert result.metric_statuses[0].metric == ConvergenceMetric.AVAILABILITY
+
+    def test_convergence_reduces_ci(self):
+        """Running more simulations should reduce the confidence interval."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        # Run with tight convergence to force many runs
+        loose = ConvergenceCriteria(
+            confidence_level=0.95,
+            relative_error=0.20,
+            min_runs=10,
+            max_runs=500,
+            batch_size=10,
+        )
+        tight = ConvergenceCriteria(
+            confidence_level=0.95,
+            relative_error=0.03,
+            min_runs=10,
+            max_runs=5000,
+            batch_size=20,
+        )
+
+        result_loose = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=loose,
+        )
+        result_tight = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=tight,
+        )
+
+        # Tighter convergence should require more runs
+        assert result_tight.total_runs >= result_loose.total_runs
+
+    def test_max_runs_respected(self):
+        """Runner should stop at max_runs even if not converged."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        convergence = ConvergenceCriteria(
+            confidence_level=0.99,
+            relative_error=0.001,  # Extremely tight - unlikely to converge
+            min_runs=5,
+            max_runs=20,
+            batch_size=5,
+        )
+
+        result = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=convergence,
+        )
+
+        assert result.total_runs == convergence.max_runs
+
+    def test_multiple_metrics(self):
+        """Should check convergence for all specified metrics."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        convergence = ConvergenceCriteria(
+            confidence_level=0.95,
+            relative_error=0.10,
+            metrics=[
+                ConvergenceMetric.AVAILABILITY,
+                ConvergenceMetric.COST,
+            ],
+            min_runs=10,
+            max_runs=500,
+            batch_size=10,
+        )
+
+        result = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=convergence,
+        )
+
+        assert len(result.metric_statuses) == 2
+        metric_names = {s.metric for s in result.metric_statuses}
+        assert ConvergenceMetric.AVAILABILITY in metric_names
+        assert ConvergenceMetric.COST in metric_names
+
+    def test_progress_callback_called(self):
+        """Progress callback should be invoked during convergence run."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        convergence = ConvergenceCriteria(
+            confidence_level=0.95,
+            relative_error=0.20,
+            min_runs=10,
+            max_runs=100,
+            batch_size=10,
+        )
+
+        progress_calls = []
+
+        def on_progress(completed: int, estimated_total: int, converged: bool):
+            progress_calls.append((completed, estimated_total, converged))
+
+        runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=convergence,
+            progress_callback=on_progress,
+        )
+
+        assert len(progress_calls) >= 1
+        # First call should be after min_runs
+        assert progress_calls[0][0] == convergence.min_runs
+        # Completed count should be non-decreasing
+        completed_counts = [c[0] for c in progress_calls]
+        assert completed_counts == sorted(completed_counts)
+
+    def test_convenience_function(self):
+        """run_monte_carlo_converged convenience function should work."""
+        result = run_monte_carlo_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            max_time=days(30),
+            confidence_level=0.95,
+            relative_error=0.15,
+            seed=42,
+            min_runs=10,
+            max_runs=200,
+            batch_size=10,
+        )
+
+        assert isinstance(result, ConvergenceResult)
+        assert result.total_runs >= 10
+        assert len(result.results.availability_samples) == result.total_runs
+
+    def test_estimate_required_runs(self):
+        """estimate_required_runs should give a reasonable estimate from pilot data."""
+        # Run a small pilot
+        pilot = run_monte_carlo(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            num_simulations=30,
+            max_time=days(30),
+            seed=42,
+        )
+
+        convergence = ConvergenceCriteria(
+            confidence_level=0.95,
+            relative_error=0.05,
+        )
+
+        estimates = estimate_required_runs(pilot, convergence)
+
+        assert ConvergenceMetric.AVAILABILITY in estimates
+        # Should estimate more than the pilot size for tight convergence
+        assert estimates[ConvergenceMetric.AVAILABILITY] >= 30
+
+    def test_convergence_summary(self):
+        """ConvergenceResult.summary() should produce readable output."""
+        result = run_monte_carlo_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            max_time=days(30),
+            confidence_level=0.95,
+            relative_error=0.15,
+            seed=42,
+            min_runs=10,
+            max_runs=200,
+            batch_size=10,
+        )
+
+        summary = result.summary()
+        assert "Convergence:" in summary
+        assert "availability" in summary
+        assert "runs" in summary.lower() or str(result.total_runs) in summary
+
+    def test_absolute_error_convergence(self):
+        """Absolute error mode should converge when CI half-width <= threshold."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        convergence = ConvergenceCriteria(
+            confidence_level=0.95,
+            absolute_error=0.05,  # ±0.05 on availability (±5 percentage points)
+            metrics=[ConvergenceMetric.AVAILABILITY],
+            min_runs=10,
+            max_runs=2000,
+            batch_size=20,
+        )
+
+        result = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=convergence,
+        )
+
+        assert isinstance(result, ConvergenceResult)
+        assert result.total_runs >= convergence.min_runs
+        # If converged, the CI half-width should be within the threshold
+        if result.converged:
+            for status in result.metric_statuses:
+                assert status.ci_half_width <= convergence.absolute_error
+
+    def test_absolute_error_tighter_needs_more_runs(self):
+        """Tighter absolute error should require more runs."""
+        config = MonteCarloConfig(
+            num_simulations=10_000,
+            max_time=days(30),
+            base_seed=42,
+        )
+        runner = MonteCarloRunner(config)
+
+        loose = ConvergenceCriteria(
+            absolute_error=0.10,
+            min_runs=10,
+            max_runs=2000,
+            batch_size=10,
+        )
+        tight = ConvergenceCriteria(
+            absolute_error=0.02,
+            min_runs=10,
+            max_runs=5000,
+            batch_size=20,
+        )
+
+        result_loose = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=loose,
+        )
+        result_tight = runner.run_until_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            convergence=tight,
+        )
+
+        assert result_tight.total_runs >= result_loose.total_runs
+
+    def test_absolute_error_convenience_function(self):
+        """run_monte_carlo_converged should accept absolute_error kwarg."""
+        result = run_monte_carlo_converged(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            max_time=days(30),
+            absolute_error=0.05,
+            seed=42,
+            min_runs=10,
+            max_runs=500,
+            batch_size=10,
+        )
+
+        assert isinstance(result, ConvergenceResult)
+        assert result.total_runs >= 10
+
+    def test_absolute_error_estimate_required_runs(self):
+        """estimate_required_runs should work with absolute error criteria."""
+        pilot = run_monte_carlo(
+            cluster_factory=_make_fast_cluster,
+            strategy_factory=NoOpStrategy,
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            num_simulations=30,
+            max_time=days(30),
+            seed=42,
+        )
+
+        criteria = ConvergenceCriteria(
+            confidence_level=0.95,
+            absolute_error=0.01,  # Very tight
+        )
+
+        estimates = estimate_required_runs(pilot, criteria)
+        assert ConvergenceMetric.AVAILABILITY in estimates
+        # Should need many runs for ±0.01 accuracy
+        assert estimates[ConvergenceMetric.AVAILABILITY] >= 30
