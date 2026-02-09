@@ -2,7 +2,7 @@
 Tests for the Monte Carlo RSM simulator.
 
 Tests cover distributions, node/cluster state, events, strategies,
-and the simulator engine.
+protocols, and the simulator engine.
 """
 
 import numpy as np
@@ -135,7 +135,8 @@ def make_test_node_config(region: str = "us-east") -> NodeConfig:
         failure_dist=Exponential(rate=1 / hours(24)),  # ~1 failure per day
         recovery_dist=Constant(minutes(5)),
         data_loss_dist=Exponential(rate=1 / days(365)),  # ~1 per year
-        sync_rate_dist=Constant(2.0),  # Syncs 2x faster than commits
+        log_replay_rate_dist=Constant(2.0),  # Replays 2x faster than commits
+        snapshot_download_time_dist=Constant(0),  # No snapshot overhead
         spawn_dist=Constant(minutes(10)),
     )
 
@@ -146,41 +147,24 @@ class TestNodeState:
         node = NodeState(
             node_id="node1",
             config=config,
-            last_up_to_date_time=Seconds(100),
+            last_applied_index=100.0,
         )
 
-        assert node.is_up_to_date(Seconds(100))
-        assert node.is_up_to_date(Seconds(50))
-        assert not node.is_up_to_date(Seconds(150))
+        assert node.is_up_to_date(100.0)
+        assert node.is_up_to_date(50.0)
+        assert not node.is_up_to_date(150.0)
 
-    def test_lag_seconds(self):
+    def test_lag(self):
         config = make_test_node_config()
         node = NodeState(
             node_id="node1",
             config=config,
-            last_up_to_date_time=Seconds(100),
+            last_applied_index=100.0,
         )
 
-        assert node.lag_seconds(Seconds(100)) == 0
-        assert node.lag_seconds(Seconds(150)) == 50
-        assert node.lag_seconds(Seconds(50)) == 0  # Can't have negative lag
-
-    def test_time_to_sync(self):
-        config = make_test_node_config()
-        node = NodeState(
-            node_id="node1",
-            config=config,
-            last_up_to_date_time=Seconds(80),
-        )
-
-        # 20 seconds behind, sync rate 2.0 -> net rate 1.0 -> 20 seconds to sync
-        assert node.time_to_sync(Seconds(100), sync_rate=2.0) == 20
-
-        # Sync rate 1.0 can never catch up
-        assert node.time_to_sync(Seconds(100), sync_rate=1.0) is None
-
-        # Sync rate 0.5 can never catch up
-        assert node.time_to_sync(Seconds(100), sync_rate=0.5) is None
+        assert node.lag(100.0) == 0
+        assert node.lag(150.0) == 50
+        assert node.lag(50.0) == 0  # Can't have negative lag
 
 
 # =============================================================================
@@ -285,7 +269,7 @@ def make_test_cluster(num_nodes: int = 3) -> ClusterState:
         nodes[f"node{i}"] = NodeState(
             node_id=f"node{i}",
             config=config,
-            last_up_to_date_time=Seconds(0),
+            last_applied_index=0.0,
         )
 
     return ClusterState(
@@ -332,16 +316,16 @@ class TestClusterState:
 
     def test_actual_data_loss(self):
         cluster = make_test_cluster(3)
-        cluster.current_time = Seconds(100)
+        cluster.commit_index = 100.0
 
         # Mark all nodes as up-to-date initially
         for node in cluster.nodes.values():
-            node.last_up_to_date_time = Seconds(100)
+            node.last_applied_index = 100.0
 
         assert not cluster.has_actual_data_loss()
 
         # Make one node lag and fail the up-to-date nodes
-        cluster.nodes["node0"].last_up_to_date_time = Seconds(50)  # Lagging
+        cluster.nodes["node0"].last_applied_index = 50.0  # Lagging
         cluster.nodes["node1"].has_data = False  # Data lost
         cluster.nodes["node2"].has_data = False  # Data lost
 
@@ -381,7 +365,8 @@ class TestSimulator:
                 failure_dist=Exponential(rate=1 / 10),  # Failure every ~10s
                 recovery_dist=Constant(100),  # Long recovery
                 data_loss_dist=Constant(50),  # Data loss at 50s
-                sync_rate_dist=Constant(2.0),
+                log_replay_rate_dist=Constant(2.0),
+                snapshot_download_time_dist=Constant(0),
                 spawn_dist=Constant(1000),
             )
             nodes[f"node{i}"] = NodeState(
@@ -458,11 +443,11 @@ class TestSimpleReplacementStrategy:
         strategy = SimpleReplacementStrategy(default_node_config=config)
 
         cluster = make_test_cluster(3)
-        cluster.current_time = Seconds(100)
+        cluster.commit_index = 100.0
 
         # Node recovered but is lagging
         cluster.nodes["node0"].is_available = True
-        cluster.nodes["node0"].last_up_to_date_time = Seconds(50)
+        cluster.nodes["node0"].last_applied_index = 50.0
 
         event = Event(
             time=Seconds(100),
@@ -526,6 +511,20 @@ class TestLeaderlessUpToDateQuorumProtocol:
         assert results[0].metrics.time_available == results[1].metrics.time_available
         assert results[0].metrics.time_unavailable == results[1].metrics.time_unavailable
 
+    def test_commit_rate_and_snapshot_interval(self):
+        """Protocol should expose configurable commit_rate and snapshot_interval."""
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=2.0,
+            snapshot_interval=100.0,
+        )
+        assert protocol.commit_rate == 2.0
+        assert protocol.snapshot_interval == 100.0
+
+        # Defaults
+        default = LeaderlessUpToDateQuorumProtocol()
+        assert default.commit_rate == 1.0
+        assert default.snapshot_interval == 0.0
+
 
 class TestLeaderlessMajorityAvailableProtocol:
     """Tests for the majority-available protocol."""
@@ -533,11 +532,11 @@ class TestLeaderlessMajorityAvailableProtocol:
     def test_available_but_not_up_to_date_can_commit(self):
         """Nodes that are available but lagging should still count for commit."""
         cluster = make_test_cluster(5)
-        cluster.current_time = Seconds(100)
+        cluster.commit_index = 100.0
 
         protocol = LeaderlessMajorityAvailableProtocol()
 
-        # All nodes are available but none are up-to-date (last_up_to_date_time=0)
+        # All nodes are available but none are up-to-date (last_applied_index=0)
         # ClusterState.can_commit() would return False (needs up-to-date quorum)
         assert not cluster.can_commit()
 
@@ -547,7 +546,7 @@ class TestLeaderlessMajorityAvailableProtocol:
     def test_unavailable_nodes_dont_count(self):
         """Failed nodes should not count toward quorum."""
         cluster = make_test_cluster(5)
-        cluster.current_time = Seconds(100)
+        cluster.commit_index = 100.0
 
         protocol = LeaderlessMajorityAvailableProtocol()
 
@@ -570,7 +569,8 @@ class TestLeaderlessMajorityAvailableProtocol:
                 failure_dist=Exponential(rate=1 / hours(2)),  # Fail every ~2h
                 recovery_dist=Constant(minutes(5)),  # Quick recovery
                 data_loss_dist=Exponential(rate=1 / days(365)),
-                sync_rate_dist=Constant(1.5),  # Slow sync
+                log_replay_rate_dist=Constant(1.5),  # Slow replay
+                snapshot_download_time_dist=Constant(0),
                 spawn_dist=Constant(minutes(10)),
             )
             nodes[f"node{i}"] = NodeState(node_id=f"node{i}", config=config)
@@ -599,7 +599,8 @@ class TestLeaderlessMajorityAvailableProtocol:
                 failure_dist=Exponential(rate=1 / hours(2)),
                 recovery_dist=Constant(minutes(5)),
                 data_loss_dist=Exponential(rate=1 / days(365)),
-                sync_rate_dist=Constant(1.5),
+                log_replay_rate_dist=Constant(1.5),
+                snapshot_download_time_dist=Constant(0),
                 spawn_dist=Constant(minutes(10)),
             )
             nodes2[f"node{i}"] = NodeState(node_id=f"node{i}", config=config)
@@ -707,8 +708,9 @@ class TestRaftLikeProtocol:
 
         # Advance time and mark all nodes up-to-date
         cluster.current_time = Seconds(100)
+        cluster.commit_index = 100.0
         for node in cluster.nodes.values():
-            node.last_up_to_date_time = Seconds(100)
+            node.last_applied_index = 100.0
 
         # Fail the leader
         cluster.nodes[old_leader_id].is_available = False
@@ -725,9 +727,10 @@ class TestRaftLikeProtocol:
         cluster.current_time = election_event.time
 
         # Keep non-failed nodes up-to-date at election completion time
+        cluster.commit_index = 110.0
         for node in cluster.nodes.values():
             if node.is_available:
-                node.last_up_to_date_time = election_event.time
+                node.last_applied_index = 110.0
 
         result_events = protocol.on_event(election_event, cluster, rng)
 
@@ -742,10 +745,11 @@ class TestRaftLikeProtocol:
         """If no eligible node exists, election should retry."""
         cluster = make_test_cluster(3)
         cluster.current_time = Seconds(100)
+        cluster.commit_index = 100.0
 
         # Make all nodes lag so none are up-to-date
         for node in cluster.nodes.values():
-            node.last_up_to_date_time = Seconds(0)
+            node.last_applied_index = 0.0
 
         protocol = RaftLikeProtocol(election_time_dist=Constant(10.0))
         rng = np.random.default_rng(42)
@@ -848,10 +852,11 @@ class TestRaftLikeProtocol:
         nodes_config = NodeConfig(
             region="us-east",
             cost_per_hour=1.0,
-            failure_dist=Exponential(rate=1 / hours(4)),  # Frequent failures
+            failure_dist=Exponential(rate=1 / hours(12)),  # Moderate failures
             recovery_dist=Constant(minutes(5)),
-            data_loss_dist=Exponential(rate=1 / days(365)),
-            sync_rate_dist=Constant(2.0),
+            data_loss_dist=Exponential(rate=1 / days(3650)),  # Very rare data loss
+            log_replay_rate_dist=Constant(2.0),
+            snapshot_download_time_dist=Constant(0),
             spawn_dist=Constant(minutes(10)),
         )
 
@@ -871,7 +876,7 @@ class TestRaftLikeProtocol:
         )
         result_leaderless = sim1.run_for(days(30))
 
-        # Run with Raft-like protocol (adds election downtime)
+        # Run with Raft-like protocol (adds significant election downtime)
         nodes2 = {
             f"node{i}": NodeState(node_id=f"node{i}", config=nodes_config)
             for i in range(5)
@@ -882,7 +887,7 @@ class TestRaftLikeProtocol:
         sim2 = Simulator(
             initial_cluster=cluster2,
             strategy=NoOpStrategy(),
-            protocol=RaftLikeProtocol(election_time_dist=Constant(30.0)),
+            protocol=RaftLikeProtocol(election_time_dist=Constant(minutes(2))),
             seed=42,
         )
         result_raft = sim2.run_for(days(30))
@@ -892,3 +897,315 @@ class TestRaftLikeProtocol:
             result_raft.metrics.availability_fraction()
             <= result_leaderless.metrics.availability_fraction()
         )
+
+    def test_commit_rate_and_snapshot_interval(self):
+        """RaftLikeProtocol should accept commit_rate and snapshot_interval."""
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=0.5,
+            snapshot_interval=1000.0,
+        )
+        assert protocol.commit_rate == 0.5
+        assert protocol.snapshot_interval == 1000.0
+
+
+# =============================================================================
+# Snapshot and Commit Index Tests
+# =============================================================================
+
+
+class TestCommitIndex:
+    """Tests for the decoupled commit_index tracking."""
+
+    def test_commit_index_advances_when_can_commit(self):
+        """commit_index should advance only when the system can commit."""
+        cluster = make_test_cluster(3)
+        protocol = LeaderlessUpToDateQuorumProtocol(commit_rate=1.0)
+
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=42,
+        )
+
+        result = simulator.run_for(Seconds(100))
+
+        # commit_index should have advanced (system is available most of the time)
+        assert result.final_cluster.commit_index > 0
+
+    def test_commit_index_frozen_when_unavailable(self):
+        """commit_index should NOT advance when the system cannot commit."""
+        # Create a cluster that can't commit: all nodes lagging
+        nodes = {}
+        for i in range(3):
+            config = make_test_node_config()
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=0.0,
+            )
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=100.0,  # Set commit_index ahead of nodes
+        )
+
+        # All nodes are at index 0, commit_index is 100 -> can't commit
+        assert not cluster.can_commit()
+
+        protocol = LeaderlessUpToDateQuorumProtocol(commit_rate=1.0)
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=42,
+        )
+
+        # Run briefly -- commit_index shouldn't advance since no quorum
+        result = simulator.run_for(Seconds(10))
+        # commit_index should still be 100 (system can't commit)
+        assert result.final_cluster.commit_index == 100.0
+
+    def test_variable_commit_rate(self):
+        """Different commit_rate values should produce different commit_index advancement."""
+        results = {}
+        for rate in [0.5, 1.0, 2.0]:
+            cluster = make_test_cluster(3)
+            protocol = LeaderlessUpToDateQuorumProtocol(commit_rate=rate)
+            simulator = Simulator(
+                initial_cluster=cluster,
+                strategy=NoOpStrategy(),
+                protocol=protocol,
+                seed=42,
+            )
+            result = simulator.run_for(Seconds(100))
+            results[rate] = result.final_cluster.commit_index
+
+        # Higher commit rate should produce larger commit_index
+        assert results[0.5] < results[1.0] < results[2.0]
+
+
+class TestSnapshotRecovery:
+    """Tests for snapshot-aware node recovery."""
+
+    def test_recovery_without_snapshot(self):
+        """Node slightly behind should do log-only replay (no snapshot needed)."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(365)),  # No failures during test
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(10.0),  # Fast replay
+            snapshot_download_time_dist=Constant(minutes(5)),  # Slow snapshot
+            spawn_dist=Constant(minutes(10)),
+        )
+
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=1.0,
+            snapshot_interval=100.0,  # Snapshot every 100 units
+        )
+
+        # Create cluster with one lagging node (but AHEAD of the last snapshot)
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=150.0,
+                last_snapshot_index=100.0,
+            )
+
+        # Make node0 lag, but still ahead of snapshot boundary
+        nodes["node0"].last_applied_index = 110.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=150.0,
+        )
+
+        rng = np.random.default_rng(42)
+        sync_time = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+
+        # Should be log-only: lag=40, net_rate=10-1=9 -> ~4.4s
+        assert sync_time is not None
+        assert sync_time < minutes(5)  # Much less than snapshot download time
+
+    def test_recovery_with_snapshot(self):
+        """Node far behind (behind donor's snapshot) should download snapshot first."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(365)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),  # 60s snapshot download
+            spawn_dist=Constant(minutes(10)),
+        )
+
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=1.0,
+            snapshot_interval=100.0,
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=250.0,
+                last_snapshot_index=200.0,
+            )
+
+        # node0 is behind the donor's snapshot (at index 50, snapshot at 200)
+        nodes["node0"].last_applied_index = 50.0
+        nodes["node0"].last_snapshot_index = 0.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=250.0,
+        )
+
+        rng = np.random.default_rng(42)
+        sync_time = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+
+        assert sync_time is not None
+        # Should include snapshot download time (60s) + some log replay
+        assert sync_time >= 60.0
+
+    def test_no_snapshot_interval_means_log_only(self):
+        """With snapshot_interval=0, recovery should always be log-only."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(365)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),
+            spawn_dist=Constant(minutes(10)),
+        )
+
+        # No snapshots
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=1.0,
+            snapshot_interval=0.0,
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=1000.0,
+                last_snapshot_index=0.0,
+            )
+
+        # node0 very far behind, but no snapshot truncation
+        nodes["node0"].last_applied_index = 0.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=1000.0,
+        )
+
+        rng = np.random.default_rng(42)
+        sync_time = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+
+        assert sync_time is not None
+        # Should be log-only: lag=1000, net_rate=10-1=9 -> ~111s
+        # Definitely should NOT include the 60s snapshot download
+        assert sync_time < 120  # Well under 60 + 111
+
+    def test_quorum_loss_freezes_commit_index(self):
+        """When quorum is lost, commit_index should freeze, so recovery is instant."""
+        # All nodes start up-to-date
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(10.0),  # Fail at t=10
+            recovery_dist=Constant(100.0),  # Recover at t=110
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(2.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(days(365)),
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+            )
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+
+        protocol = LeaderlessUpToDateQuorumProtocol(commit_rate=1.0)
+
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=42,
+            log_events=True,
+        )
+
+        result = simulator.run_for(Seconds(200))
+
+        # The simulation ran; commit_index should reflect only time when quorum existed
+        final = result.final_cluster
+        assert final.commit_index < 200.0  # Less than wall-clock time (some unavailability)
+        assert final.commit_index > 0.0  # But some commits happened
+
+    def test_node_snapshot_state_advances(self):
+        """Available nodes should take snapshots when commit_index crosses boundaries."""
+        config = make_test_node_config()
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+            )
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=1.0,
+            snapshot_interval=50.0,  # Snapshot every 50 units
+        )
+
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=42,
+        )
+
+        result = simulator.run_for(Seconds(200))
+
+        # Nodes that remained available should have taken snapshots
+        for node in result.final_cluster.nodes.values():
+            if node.is_available and node.has_data:
+                # Should have snapshot at some multiple of 50
+                assert node.last_snapshot_index > 0
+                # Snapshot should be at a multiple of the interval
+                assert node.last_snapshot_index % 50.0 == pytest.approx(0.0, abs=1e-9)

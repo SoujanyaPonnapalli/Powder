@@ -52,6 +52,10 @@ class Simulator:
     1. Update cluster state (e.g., node fails)
     2. Trigger strategy reactions (e.g., spawn replacement)
     3. Schedule new events (e.g., recovery time)
+
+    Between events, the simulator advances commit_index for the elapsed
+    wall-clock interval (if the system can commit) and keeps available
+    nodes' applied indices in sync.
     """
 
     def __init__(
@@ -156,29 +160,73 @@ class Simulator:
             )
         )
 
-    def _schedule_sync_complete(self, node: NodeState) -> None:
-        """Schedule sync completion for a lagging node."""
-        current_time = self.cluster.current_time
+    def _advance_commit_index(self, elapsed: float) -> None:
+        """Advance commit_index and keep available nodes in sync.
 
-        if node.is_up_to_date(current_time):
+        Called before processing each event (or at time-limit) for the
+        wall-clock interval since the last event.
+
+        If the system can commit, commit_index advances by
+        elapsed * protocol.commit_rate.  Available, up-to-date nodes
+        keep up with the frontier and take snapshots when crossing
+        snapshot boundaries.
+
+        Args:
+            elapsed: Wall-clock seconds since last event.
+        """
+        if elapsed <= 0:
+            return
+
+        if not self.protocol.can_commit(self.cluster):
+            return
+
+        commit_amount = elapsed * self.protocol.commit_rate
+        old_index = self.cluster.commit_index
+        new_index = old_index + commit_amount
+        self.cluster.commit_index = new_index
+
+        snapshot_interval = self.protocol.snapshot_interval
+        for node in self.cluster.nodes.values():
+            if (
+                self.cluster._node_effectively_available(node)
+                and node.last_applied_index >= old_index
+            ):
+                # Node keeps up with commit frontier
+                node.last_applied_index = new_index
+                # Advance snapshot if crossing a boundary
+                if snapshot_interval > 0:
+                    new_snap = int(new_index / snapshot_interval) * snapshot_interval
+                    if new_snap > node.last_snapshot_index:
+                        node.last_snapshot_index = new_snap
+
+    def _schedule_sync_complete(self, node: NodeState) -> None:
+        """Schedule sync completion for a lagging node.
+
+        Delegates to the protocol's compute_sync_time to determine how
+        long the sync will take (accounting for snapshots, log replay,
+        and commit rate).
+        """
+        if node.is_up_to_date(self.cluster.commit_index):
             return  # Already up to date
 
-        sync_rate = node.config.sync_rate_dist.sample(self.rng)
-        time_to_sync = node.time_to_sync(current_time, sync_rate)
+        time_to_sync = self.protocol.compute_sync_time(node, self.cluster, self.rng)
 
         if time_to_sync is not None and time_to_sync > 0:
-            sync_complete_time = Seconds(current_time + time_to_sync)
+            sync_complete_time = Seconds(self.cluster.current_time + time_to_sync)
             self.event_queue.push(
                 Event(
                     time=sync_complete_time,
                     event_type=EventType.NODE_SYNC_COMPLETE,
                     target_id=node.node_id,
-                    metadata={"sync_to_time": sync_complete_time},
                 )
             )
 
     def _process_event(self, event: Event) -> None:
         """Process a single event and update cluster state."""
+        # Advance commit_index for the wall-clock interval since last event
+        elapsed = event.time - self.cluster.current_time
+        self._advance_commit_index(elapsed)
+
         # Update metrics for time elapsed (using protocol for availability check)
         self.metrics.update(self.cluster, event.time, protocol=self.protocol)
         self.cluster.current_time = event.time
@@ -260,7 +308,7 @@ class Simulator:
             node.is_available = True
 
             # Node may need to sync if it fell behind
-            if not node.is_up_to_date(self.cluster.current_time):
+            if not node.is_up_to_date(self.cluster.commit_index):
                 self._schedule_sync_complete(node)
 
     def _apply_node_data_loss(self, event: Event) -> None:
@@ -282,8 +330,7 @@ class Simulator:
         """
         node = self.cluster.get_node(event.target_id)
         if node and self.cluster._node_effectively_available(node):
-            sync_to_time = event.metadata.get("sync_to_time", self.cluster.current_time)
-            node.last_up_to_date_time = sync_to_time
+            node.last_applied_index = self.cluster.commit_index
 
     def _apply_node_spawn_complete(self, event: Event) -> None:
         """Apply completion of node spawning."""
@@ -297,7 +344,8 @@ class Simulator:
                 config=node_config,
                 is_available=True,
                 has_data=True,
-                last_up_to_date_time=Seconds(0),  # Needs full sync
+                last_applied_index=0.0,
+                last_snapshot_index=0.0,
             )
             self.cluster.add_node(new_node)
 
@@ -353,7 +401,7 @@ class Simulator:
                     node.config.region == region
                     and node.is_available
                     and node.has_data
-                    and not node.is_up_to_date(self.cluster.current_time)
+                    and not node.is_up_to_date(self.cluster.commit_index)
                 ):
                     self._schedule_sync_complete(node)
 
@@ -433,6 +481,10 @@ class Simulator:
 
             # Check time limit
             if end_time is not None and next_event.time > end_time:
+                # Advance commit_index up to end_time
+                elapsed = end_time - self.cluster.current_time
+                self._advance_commit_index(elapsed)
+
                 # Update metrics up to end_time
                 self.metrics.update(self.cluster, end_time, protocol=self.protocol)
                 self.cluster.current_time = end_time

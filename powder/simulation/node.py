@@ -20,7 +20,10 @@ class NodeConfig:
         failure_dist: Distribution for time (seconds) until transient unavailability.
         recovery_dist: Distribution for time (seconds) to recover from transient failure.
         data_loss_dist: Distribution for time (seconds) until permanent data loss.
-        sync_rate_dist: Distribution for sync rate (seconds of data per second of real time).
+        log_replay_rate_dist: Distribution for log replay rate (committed-data units
+            replayed per second of wall time).
+        snapshot_download_time_dist: Distribution for wall-clock time (seconds) to
+            download a full snapshot from a donor node.
         spawn_dist: Distribution for time (seconds) to spawn a fresh replacement node.
     """
 
@@ -29,7 +32,8 @@ class NodeConfig:
     failure_dist: Distribution
     recovery_dist: Distribution
     data_loss_dist: Distribution
-    sync_rate_dist: Distribution
+    log_replay_rate_dist: Distribution
+    snapshot_download_time_dist: Distribution
     spawn_dist: Distribution
 
 
@@ -42,64 +46,42 @@ class NodeState:
         config: Static configuration for the node.
         is_available: Whether the node is currently available (not transiently failed).
         has_data: Whether the node has data (False = permanent data loss).
-        last_up_to_date_time: Simulation time when node was last fully synced.
+        last_applied_index: Position in the committed data stream that this node
+            has applied up to. Raw float, not a wall-clock time.
+        last_snapshot_index: Position in the committed data stream at which this
+            node last took a snapshot. Log entries before this can be truncated.
     """
 
     node_id: str
     config: NodeConfig
     is_available: bool = True
     has_data: bool = True
-    last_up_to_date_time: Seconds = field(default_factory=lambda: Seconds(0))
+    last_applied_index: float = 0.0
+    last_snapshot_index: float = 0.0
 
-    def is_up_to_date(self, current_time: Seconds) -> bool:
-        """Check if node is up-to-date at the given time.
+    def is_up_to_date(self, commit_index: float) -> bool:
+        """Check if node is up-to-date at the given commit index.
 
-        A node is up-to-date if its last sync time equals or exceeds current time.
+        A node is up-to-date if it has applied all data up to commit_index.
 
         Args:
-            current_time: Current simulation time in seconds.
+            commit_index: Current committed data position.
 
         Returns:
-            True if node has all committed data up to current_time.
+            True if node has all committed data up to commit_index.
         """
-        return self.last_up_to_date_time >= current_time
+        return self.last_applied_index >= commit_index
 
-    def lag_seconds(self, current_time: Seconds) -> Seconds:
+    def lag(self, commit_index: float) -> float:
         """Calculate how far behind the node is in committed data.
 
         Args:
-            current_time: Current simulation time in seconds.
+            commit_index: Current committed data position.
 
         Returns:
-            Number of seconds of committed data the node is missing.
+            Amount of committed data the node is missing.
         """
-        return Seconds(max(0.0, current_time - self.last_up_to_date_time))
-
-    def time_to_sync(self, current_time: Seconds, sync_rate: float) -> Seconds | None:
-        """Calculate time needed to catch up to current state.
-
-        The sync_rate represents seconds of data synced per second of real time.
-        For example:
-        - sync_rate = 2.0: Node syncs 2 seconds of data per 1 second of real time
-        - sync_rate = 1.0: Node syncs at exactly commit rate (stays same distance behind)
-        - sync_rate = 0.5: Node syncs slower than commits arrive (falls further behind)
-
-        Args:
-            current_time: Current simulation time in seconds.
-            sync_rate: Seconds of data synced per second of real time.
-
-        Returns:
-            Time in seconds to catch up, or None if sync_rate <= 1.0 (can never catch up).
-        """
-        if sync_rate <= 1.0:
-            return None  # Cannot catch up if syncing slower than commits arrive
-
-        lag = self.lag_seconds(current_time)
-        if lag <= 0:
-            return Seconds(0.0)  # Already up to date
-
-        # Net catch-up rate = sync_rate - 1.0 (since 1 second of new commits per second)
-        return Seconds(lag / (sync_rate - 1.0))
+        return max(0.0, commit_index - self.last_applied_index)
 
     def __repr__(self) -> str:
         status = []
@@ -108,4 +90,4 @@ class NodeState:
         if not self.has_data:
             status.append("data_lost")
         status_str = ", ".join(status) if status else "healthy"
-        return f"NodeState({self.node_id}, {status_str}, synced_to={self.last_up_to_date_time:.1f}s)"
+        return f"NodeState({self.node_id}, {status_str}, applied={self.last_applied_index:.1f})"

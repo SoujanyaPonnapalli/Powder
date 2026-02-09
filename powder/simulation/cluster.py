@@ -21,13 +21,17 @@ class ClusterState:
         nodes: Dictionary mapping node_id to NodeState.
         network: Current network partition state.
         target_cluster_size: Desired number of nodes in the cluster.
-        current_time: Current simulation time in seconds.
+        current_time: Current wall-clock simulation time in seconds.
+        commit_index: Current position in the committed data stream.
+            Advances only when the system can commit, at the protocol's
+            commit_rate. Raw float, not a wall-clock time.
     """
 
     nodes: dict[str, NodeState]
     network: NetworkState
     target_cluster_size: int
     current_time: Seconds = field(default_factory=lambda: Seconds(0))
+    commit_index: float = 0.0
 
     def _node_effectively_available(self, node: NodeState) -> bool:
         """True if node is available and not in a region with an active network outage."""
@@ -38,7 +42,7 @@ class ClusterState:
         )
 
     def num_up_to_date(self) -> int:
-        """Count nodes that are fully synced to current_time.
+        """Count nodes that are fully synced to commit_index.
 
         Only counts nodes that are available, have data, are up-to-date,
         and not in a region with an active network outage.
@@ -49,7 +53,7 @@ class ClusterState:
         return sum(
             1
             for n in self.nodes.values()
-            if n.is_up_to_date(self.current_time) and self._node_effectively_available(n)
+            if n.is_up_to_date(self.commit_index) and self._node_effectively_available(n)
         )
 
     def num_available(self) -> int:
@@ -114,7 +118,7 @@ class ClusterState:
 
         # Check if any node has data but is not up-to-date
         for n in self.nodes.values():
-            if n.has_data and not n.is_up_to_date(self.current_time):
+            if n.has_data and not n.is_up_to_date(self.commit_index):
                 return True
 
         # If no nodes have data at all, that's also data loss
@@ -151,7 +155,7 @@ class ClusterState:
         available = [n for n in self.nodes.values() if self._node_effectively_available(n)]
         if not available:
             return None
-        return min(available, key=lambda n: n.last_up_to_date_time)
+        return min(available, key=lambda n: n.last_applied_index)
 
     def most_up_to_date_node(self) -> NodeState | None:
         """Return the node with the most recent data.
@@ -162,7 +166,7 @@ class ClusterState:
         available = [n for n in self.nodes.values() if self._node_effectively_available(n)]
         if not available:
             return None
-        return max(available, key=lambda n: n.last_up_to_date_time)
+        return max(available, key=lambda n: n.last_applied_index)
 
     def get_node(self, node_id: str) -> NodeState | None:
         """Get a node by ID.
@@ -201,6 +205,7 @@ class ClusterState:
         can_commit = "can_commit" if self.can_commit() else "cannot_commit"
         return (
             f"ClusterState(t={self.current_time:.1f}s, "
+            f"commit_index={self.commit_index:.1f}, "
             f"{up_to_date}/{available}/{total} up-to-date/available/total, "
             f"{can_commit})"
         )

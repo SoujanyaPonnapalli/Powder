@@ -8,15 +8,24 @@ for when the system can commit (quorum rules, leader presence, etc.).
 The Protocol layer computes what the physical cluster state means for the
 algorithm -- can we commit? is there a leader? is an election happening?
 ClusterState remains a pure representation of physical reality.
+
+Protocols also define recovery semantics: commit rate, snapshot intervals,
+and how nodes sync when they fall behind.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import numpy as np
 
-from .cluster import ClusterState
 from .distributions import Distribution, Seconds
 from .events import Event, EventType
+
+if TYPE_CHECKING:
+    from .cluster import ClusterState
+    from .node import NodeState
 
 
 class Protocol(ABC):
@@ -29,7 +38,30 @@ class Protocol(ABC):
     The simulator calls on_event() after each event is applied to the cluster,
     and uses can_commit() for metrics collection instead of the cluster's
     built-in can_commit().
+
+    Protocols also control:
+    - commit_rate: how fast data is committed (data units per second of wall time)
+    - snapshot_interval: how often nodes take snapshots (in commit-index units)
+    - compute_sync_time: how long it takes a lagging node to catch up
     """
+
+    @property
+    def commit_rate(self) -> float:
+        """Committed data units produced per second of wall time when system can commit.
+
+        Default is 1.0 (one unit of data committed per second of wall time).
+        """
+        return 1.0
+
+    @property
+    def snapshot_interval(self) -> float:
+        """Commit-index interval between snapshots.
+
+        When a node's applied index crosses a multiple of this value,
+        it takes a snapshot and can truncate log entries before it.
+        0 means no snapshots / no log truncation.
+        """
+        return 0.0
 
     @abstractmethod
     def can_commit(self, cluster: ClusterState) -> bool:
@@ -85,6 +117,79 @@ class Protocol(ABC):
         """
         return []
 
+    def compute_sync_time(
+        self,
+        node: NodeState,
+        cluster: ClusterState,
+        rng: np.random.Generator,
+    ) -> Seconds | None:
+        """Compute wall-clock time for a lagging node to catch up to commit_index.
+
+        The default implementation uses the standard snapshot + log replay model:
+        - If the node is behind the best donor's last snapshot, it must download
+          the snapshot first (fixed cost), then replay the remaining log suffix.
+        - If the node is ahead of the donor's snapshot, it replays the log directly.
+
+        During recovery, new commits continue arriving at commit_rate, so the
+        net catch-up rate is (log_replay_rate - commit_rate).
+
+        Args:
+            node: The lagging node that needs to sync.
+            cluster: Current cluster state.
+            rng: Random number generator for sampling distributions.
+
+        Returns:
+            Wall-clock seconds to complete sync, or None if the node cannot
+            catch up (replay rate <= commit rate).
+        """
+        committed_lag = cluster.commit_index - node.last_applied_index
+        if committed_lag <= 0:
+            return Seconds(0)
+
+        log_replay_rate = node.config.log_replay_rate_dist.sample(rng)
+        commit_rate = self.commit_rate
+        snapshot_interval = self.snapshot_interval
+
+        # Find the best donor node (most up-to-date available node, excluding self)
+        donor = None
+        for n in cluster.nodes.values():
+            if n.node_id != node.node_id and cluster._node_effectively_available(n):
+                if donor is None or n.last_applied_index > donor.last_applied_index:
+                    donor = n
+
+        if donor is None:
+            return None  # No donor available to sync from
+
+        # Determine if snapshot download is needed:
+        # The donor's log only goes back to its last snapshot.
+        # If the recovering node is behind that, it must download the snapshot.
+        needs_snapshot = (
+            snapshot_interval > 0 and node.last_applied_index < donor.last_snapshot_index
+        )
+
+        if needs_snapshot:
+            snapshot_download_time = node.config.snapshot_download_time_dist.sample(rng)
+
+            # After downloading, node is at donor.last_snapshot_index.
+            # During the download, commit_rate * download_time new data arrives.
+            remaining_log = (
+                cluster.commit_index
+                - donor.last_snapshot_index
+                + commit_rate * snapshot_download_time
+            )
+
+            net_rate = log_replay_rate - commit_rate
+            if net_rate <= 0:
+                return None  # Can't catch up
+            log_replay_time = remaining_log / net_rate
+            return Seconds(snapshot_download_time + log_replay_time)
+        else:
+            # Log-only replay
+            net_rate = log_replay_rate - commit_rate
+            if net_rate <= 0:
+                return None  # Can't catch up
+            return Seconds(committed_lag / net_rate)
+
 
 class LeaderlessUpToDateQuorumProtocol(Protocol):
     """Leaderless protocol requiring a quorum of up-to-date nodes.
@@ -96,6 +201,22 @@ class LeaderlessUpToDateQuorumProtocol(Protocol):
     Suitable for modeling protocols like EPaxos or multi-decree Paxos variants
     where any node can propose and a quorum of up-to-date replicas is needed.
     """
+
+    def __init__(
+        self,
+        commit_rate: float = 1.0,
+        snapshot_interval: float = 0.0,
+    ) -> None:
+        self._commit_rate = commit_rate
+        self._snapshot_interval = snapshot_interval
+
+    @property
+    def commit_rate(self) -> float:
+        return self._commit_rate
+
+    @property
+    def snapshot_interval(self) -> float:
+        return self._snapshot_interval
 
     def can_commit(self, cluster: ClusterState) -> bool:
         """Commit requires a majority of up-to-date nodes."""
@@ -129,6 +250,22 @@ class LeaderlessMajorityAvailableProtocol(Protocol):
     Suitable for modeling eventually-consistent systems or protocols where
     lagging replicas can still participate in commits.
     """
+
+    def __init__(
+        self,
+        commit_rate: float = 1.0,
+        snapshot_interval: float = 0.0,
+    ) -> None:
+        self._commit_rate = commit_rate
+        self._snapshot_interval = snapshot_interval
+
+    @property
+    def commit_rate(self) -> float:
+        return self._commit_rate
+
+    @property
+    def snapshot_interval(self) -> float:
+        return self._snapshot_interval
 
     def can_commit(self, cluster: ClusterState) -> bool:
         """Commit requires a majority of available nodes (not necessarily up-to-date)."""
@@ -169,16 +306,33 @@ class RaftLikeProtocol(Protocol):
         election_time_dist: Distribution for leader election duration.
     """
 
-    def __init__(self, election_time_dist: Distribution) -> None:
+    def __init__(
+        self,
+        election_time_dist: Distribution,
+        commit_rate: float = 1.0,
+        snapshot_interval: float = 0.0,
+    ) -> None:
         """Initialize the Raft-like protocol.
 
         Args:
             election_time_dist: Distribution for time (seconds) to complete
                 a leader election after the leader fails.
+            commit_rate: Committed data units per second of wall time.
+            snapshot_interval: Commit-index interval between snapshots.
         """
         self.election_time_dist = election_time_dist
+        self._commit_rate = commit_rate
+        self._snapshot_interval = snapshot_interval
         self._leader_id: str | None = None
         self._election_in_progress: bool = False
+
+    @property
+    def commit_rate(self) -> float:
+        return self._commit_rate
+
+    @property
+    def snapshot_interval(self) -> float:
+        return self._snapshot_interval
 
     @property
     def leader_id(self) -> str | None:
@@ -323,7 +477,7 @@ class RaftLikeProtocol(Protocol):
             node
             for node in cluster.nodes.values()
             if cluster._node_effectively_available(node)
-            and node.is_up_to_date(cluster.current_time)
+            and node.is_up_to_date(cluster.commit_index)
         ]
 
         if not eligible:

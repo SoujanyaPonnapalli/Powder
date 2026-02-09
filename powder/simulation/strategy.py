@@ -210,7 +210,7 @@ class SimpleReplacementStrategy(ClusterStrategy):
     ) -> list[Action]:
         """Handle a node recovering from transient failure."""
         node = cluster.get_node(event.target_id)
-        if node and not node.is_up_to_date(cluster.current_time):
+        if node and not node.is_up_to_date(cluster.commit_index):
             # Node recovered but is lagging, start sync
             return [Action(ActionType.START_SYNC, {"node_id": node.node_id})]
         return []
