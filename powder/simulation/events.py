@@ -73,9 +73,19 @@ class EventQueue:
     def push(self, event: Event) -> None:
         """Add an event to the queue.
 
+        Clears any stale cancellation key matching this event so that
+        a freshly scheduled event is never silently dropped by a
+        cancellation that targeted an earlier (already-consumed or
+        never-existing) event.
+
         Args:
             event: Event to schedule.
         """
+        # Prevent stale cancellation keys from killing this new event.
+        # Cancellations are only meant to affect events that were already
+        # in the queue at the time cancel_events_for() was called.
+        key = (event.target_id, event.event_type)
+        self._cancelled.discard(key)
         heapq.heappush(self._heap, event)
 
     def pop(self) -> Event | None:
