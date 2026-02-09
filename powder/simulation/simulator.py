@@ -16,7 +16,7 @@ from .events import Event, EventQueue, EventType
 from .metrics import MetricsCollector, MetricsSnapshot
 from .network import NetworkConfig
 from .node import NodeConfig, NodeState
-from .protocol import LeaderlessUpToDateQuorumProtocol, Protocol
+from .protocol import Protocol
 from .strategy import Action, ActionType, ClusterStrategy
 
 
@@ -62,8 +62,8 @@ class Simulator:
         self,
         initial_cluster: ClusterState,
         strategy: ClusterStrategy,
+        protocol: Protocol,
         network_config: NetworkConfig | None = None,
-        protocol: Protocol | None = None,
         seed: int | None = None,
         log_events: bool = False,
     ):
@@ -72,16 +72,15 @@ class Simulator:
         Args:
             initial_cluster: Starting cluster state.
             strategy: Strategy for reacting to events.
+            protocol: Protocol for algorithm-specific availability semantics.
             network_config: Optional network partition configuration.
-            protocol: Optional protocol for algorithm-specific availability.
-                Defaults to LeaderlessUpToDateQuorumProtocol (backward-compatible).
             seed: Random seed for reproducibility.
             log_events: Whether to keep a log of all events.
         """
         self.cluster = initial_cluster
         self.strategy = strategy
         self.network_config = network_config
-        self.protocol = protocol if protocol is not None else LeaderlessUpToDateQuorumProtocol()
+        self.protocol = protocol
         self.log_events = log_events
 
         self.rng = np.random.default_rng(seed)
