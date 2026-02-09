@@ -33,6 +33,7 @@ class ConvergenceMetric(Enum):
     AVAILABILITY = "availability"
     DATA_LOSS_PROBABILITY = "data_loss_probability"
     COST = "cost"
+    MEAN_TIME_TO_DATA_LOSS = "mean_time_to_data_loss"
 
 
 @dataclass
@@ -186,13 +187,27 @@ class ConvergenceResult:
             symbol = "+" if status.converged else "-"
             ci_lo = status.current_mean - status.ci_half_width
             ci_hi = status.current_mean + status.ci_half_width
-            lines.append(
-                f"  [{symbol}] {status.metric.value}: "
-                f"mean={status.current_mean:.4f}, "
-                f"CI=[{ci_lo:.4f}, {ci_hi:.4f}], "
-                f"±{status.ci_half_width:.4f} (rel={status.relative_error:.4f}), "
-                f"est_n={status.estimated_runs_needed}"
-            )
+            if status.metric == ConvergenceMetric.MEAN_TIME_TO_DATA_LOSS:
+                # Display MTTDL in days for readability
+                mean_d = status.current_mean / 86400
+                lo_d = ci_lo / 86400
+                hi_d = ci_hi / 86400
+                hw_d = status.ci_half_width / 86400
+                lines.append(
+                    f"  [{symbol}] {status.metric.value}: "
+                    f"mean={mean_d:.1f} days, "
+                    f"CI=[{lo_d:.1f}, {hi_d:.1f}] days, "
+                    f"±{hw_d:.1f} days (rel={status.relative_error:.4f}), "
+                    f"est_n={status.estimated_runs_needed}"
+                )
+            else:
+                lines.append(
+                    f"  [{symbol}] {status.metric.value}: "
+                    f"mean={status.current_mean:.4f}, "
+                    f"CI=[{ci_lo:.4f}, {ci_hi:.4f}], "
+                    f"±{status.ci_half_width:.4f} (rel={status.relative_error:.4f}), "
+                    f"est_n={status.estimated_runs_needed}"
+                )
         return "\n".join(lines)
 
 
@@ -202,17 +217,26 @@ class MonteCarloConfig:
 
     Attributes:
         num_simulations: Number of simulation runs to execute.
-        max_time: Maximum time per simulation in seconds.
+        max_time: Maximum time per simulation in seconds. If None and
+            stop_on_data_loss is True, each run continues indefinitely
+            until data loss occurs (useful for MTTDL estimation).
         stop_on_data_loss: Whether to stop each run when data loss occurs.
         parallel_workers: Number of parallel worker processes (1 = sequential).
         base_seed: Base seed for reproducibility (each run gets base_seed + run_index).
     """
 
     num_simulations: int
-    max_time: Seconds
+    max_time: Seconds | None = None
     stop_on_data_loss: bool = True
     parallel_workers: int = 1
     base_seed: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.max_time is None and not self.stop_on_data_loss:
+            raise ValueError(
+                "max_time is required when stop_on_data_loss is False, "
+                "otherwise simulations would run indefinitely"
+            )
 
 
 @dataclass
@@ -296,6 +320,42 @@ class MonteCarloResults:
             return None
         return float(np.mean(filtered))
 
+    def std_time_to_actual_loss(self) -> float | None:
+        """Calculate standard deviation of time to actual data loss.
+
+        Returns:
+            Standard deviation in seconds, or None if fewer than 2 runs had data loss.
+        """
+        filtered = self.time_to_actual_loss_samples_filtered()
+        if len(filtered) < 2:
+            return None
+        return float(np.std(filtered, ddof=1))
+
+    def ci_time_to_actual_loss(
+        self, confidence_level: float = 0.95
+    ) -> tuple[float, float] | None:
+        """Calculate confidence interval for mean time to actual data loss.
+
+        Uses the t-distribution for the CI.
+
+        Args:
+            confidence_level: Desired confidence level (e.g., 0.95 for 95% CI).
+
+        Returns:
+            Tuple of (lower_bound, upper_bound) in seconds, or None if
+            fewer than 2 runs had data loss.
+        """
+        filtered = self.time_to_actual_loss_samples_filtered()
+        n = len(filtered)
+        if n < 2:
+            return None
+        sample_mean = float(np.mean(filtered))
+        sample_std = float(np.std(filtered, ddof=1))
+        alpha = 1.0 - confidence_level
+        t_crit = scipy_stats.t.ppf(1 - alpha / 2, df=n - 1)
+        margin = t_crit * sample_std / math.sqrt(n)
+        return (sample_mean - margin, sample_mean + margin)
+
     def mean_time_to_potential_loss(self) -> float | None:
         """Calculate mean time to potential data loss.
 
@@ -363,7 +423,14 @@ class MonteCarloResults:
 
         mttl = self.mean_time_to_actual_loss()
         if mttl is not None:
-            lines.append(f"  Mean time to data loss: {mttl/86400:.1f} days")
+            ci = self.ci_time_to_actual_loss()
+            if ci is not None:
+                lines.append(
+                    f"  Mean time to data loss: {mttl/86400:.1f} days "
+                    f"(95% CI: [{ci[0]/86400:.1f}, {ci[1]/86400:.1f}] days)"
+                )
+            else:
+                lines.append(f"  Mean time to data loss: {mttl/86400:.1f} days")
 
         lines.append(f"  Mean cost: ${self.cost_mean():.2f}")
 
@@ -381,7 +448,7 @@ def _run_single_simulation(
     strategy_factory: Callable[[], ClusterStrategy],
     protocol: Protocol,
     network_config: NetworkConfig | None,
-    max_time: Seconds,
+    max_time: Seconds | None,
     stop_on_data_loss: bool,
     seed: int,
 ) -> SimulationResult:
@@ -721,6 +788,10 @@ def _get_metric_samples(
         return np.array(
             [1.0 if t is not None else 0.0 for t in results.time_to_actual_loss_samples]
         )
+    elif metric == ConvergenceMetric.MEAN_TIME_TO_DATA_LOSS:
+        # Only include runs where data loss actually occurred
+        filtered = results.time_to_actual_loss_samples_filtered()
+        return np.array(filtered) if filtered else np.array([])
     else:
         raise ValueError(f"Unknown convergence metric: {metric}")
 
@@ -848,6 +919,15 @@ def _check_convergence(
             else:
                 estimated_n = criteria.max_runs
 
+            # For MTTDL, estimated_n is the number of loss-event *samples*
+            # needed.  Scale up by the inverse of the observed loss rate to
+            # estimate total simulation runs required.
+            if metric == ConvergenceMetric.MEAN_TIME_TO_DATA_LOSS:
+                total_runs = len(results.availability_samples)
+                if 0 < n < total_runs:
+                    loss_rate = n / total_runs
+                    estimated_n = int(math.ceil(estimated_n / loss_rate))
+
             statuses.append(
                 MetricConvergenceStatus(
                     metric=metric,
@@ -889,7 +969,7 @@ def run_monte_carlo(
     strategy_factory: Callable[[], ClusterStrategy],
     protocol: Protocol,
     num_simulations: int,
-    max_time: Seconds,
+    max_time: Seconds | None = None,
     network_config: NetworkConfig | None = None,
     stop_on_data_loss: bool = True,
     parallel_workers: int = 1,
@@ -902,7 +982,9 @@ def run_monte_carlo(
         strategy_factory: Callable that creates a fresh ClusterStrategy for each run.
         protocol: Protocol instance (deep-copied for each run).
         num_simulations: Number of simulation runs.
-        max_time: Maximum time per simulation in seconds.
+        max_time: Maximum time per simulation in seconds. If None and
+            stop_on_data_loss is True, runs continue until data loss
+            (useful for MTTDL estimation).
         network_config: Optional network configuration.
         stop_on_data_loss: Whether to stop on data loss.
         parallel_workers: Number of parallel workers.
@@ -932,7 +1014,7 @@ def run_monte_carlo_converged(
     cluster_factory: Callable[[], ClusterState],
     strategy_factory: Callable[[], ClusterStrategy],
     protocol: Protocol,
-    max_time: Seconds,
+    max_time: Seconds | None = None,
     confidence_level: float = 0.95,
     relative_error: float | None = None,
     absolute_error: float | None = None,
@@ -958,11 +1040,16 @@ def run_monte_carlo_converged(
         2 decimal places on the fraction: absolute_error=0.01 (±0.01)
         3 decimal places: absolute_error=0.001 (±0.001)
 
+    For MTTDL convergence, set stop_on_data_loss=True and max_time=None
+    so that every run produces a data loss event and contributes to the
+    MTTDL estimate.
+
     Args:
         cluster_factory: Callable that creates a fresh ClusterState for each run.
         strategy_factory: Callable that creates a fresh ClusterStrategy for each run.
         protocol: Protocol instance (deep-copied for each run).
-        max_time: Maximum time per simulation in seconds.
+        max_time: Maximum time per simulation in seconds. If None and
+            stop_on_data_loss is True, runs continue until data loss.
         confidence_level: Desired confidence level (default 0.95 for 95% CI).
         relative_error: Maximum relative error as fraction of mean.
         absolute_error: Maximum absolute CI half-width in metric units.
