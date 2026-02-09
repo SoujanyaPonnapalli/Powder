@@ -37,9 +37,32 @@ class MetricsCollector:
 
     # Internal state for tracking
     _last_update_time: Seconds = field(default_factory=lambda: Seconds(0))
+    _last_cost_time: Seconds = field(default_factory=lambda: Seconds(0))
     _was_available: bool = True
     _had_potential_loss: bool = False
     _had_actual_loss: bool = False
+
+    def record_elapsed(self, current_time: Seconds) -> None:
+        """Record elapsed time using the availability state from the previous update.
+
+        This should be called BEFORE an event is applied so that the interval
+        since the last event is categorised using the post-previous-event state
+        (which correctly represents the cluster during the interval).
+
+        Args:
+            current_time: Current simulation time.
+        """
+        time_delta = Seconds(current_time - self._last_update_time)
+        if time_delta < 0:
+            raise ValueError(f"Time went backwards: {self._last_update_time} -> {current_time}")
+
+        if time_delta > 0:
+            if self._was_available:
+                self.time_available = Seconds(self.time_available + time_delta)
+            else:
+                self.time_unavailable = Seconds(self.time_unavailable + time_delta)
+
+        self._last_update_time = current_time
 
     def update(
         self,
@@ -47,41 +70,36 @@ class MetricsCollector:
         current_time: Seconds,
         protocol: Protocol | None = None,
     ) -> None:
-        """Update metrics based on cluster state.
+        """Update availability state and costs based on current cluster state.
 
-        Should be called after each event is processed to track
-        time spent in various states.
+        Should be called AFTER each event is fully applied so that
+        ``_was_available`` reflects the post-event state for the next
+        interval.
+
+        Also records costs for the elapsed interval and checks for data-loss
+        milestones.
 
         Args:
-            cluster: Current cluster state.
+            cluster: Current cluster state (after event applied).
             current_time: Current simulation time.
             protocol: Optional protocol for algorithm-specific availability.
                 If provided, uses protocol.can_commit() instead of
                 cluster.can_commit() for availability tracking.
         """
-        time_delta = Seconds(current_time - self._last_update_time)
-        if time_delta < 0:
-            raise ValueError(f"Time went backwards: {self._last_update_time} -> {current_time}")
-
+        # Accumulate node costs for the interval that just ended.
+        time_delta = Seconds(current_time - self._last_cost_time)
         if time_delta > 0:
-            # Update availability time
-            if self._was_available:
-                self.time_available = Seconds(self.time_available + time_delta)
-            else:
-                self.time_unavailable = Seconds(self.time_unavailable + time_delta)
-
-            # Update cost (sum of all node costs for the time period)
             hours_elapsed = time_delta / 3600.0
             for node in cluster.nodes.values():
                 if node.is_available and node.has_data:
                     self.total_cost += node.config.cost_per_hour * hours_elapsed
+        self._last_cost_time = current_time
 
-        # Check current state for next interval
+        # Set availability state for the *next* interval (post-event).
         if protocol is not None:
             self._was_available = protocol.can_commit(cluster)
         else:
             self._was_available = cluster.can_commit()
-        self._last_update_time = current_time
 
         # Track data loss events (only record first occurrence)
         if not self._had_potential_loss and cluster.has_potential_data_loss():

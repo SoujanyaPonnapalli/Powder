@@ -226,8 +226,10 @@ class Simulator:
         elapsed = event.time - self.cluster.current_time
         self._advance_commit_index(elapsed)
 
-        # Update metrics for time elapsed (using protocol for availability check)
-        self.metrics.update(self.cluster, event.time, protocol=self.protocol)
+        # Record elapsed time in metrics BEFORE applying the event.
+        # The _was_available flag from the previous update correctly describes
+        # the interval we just observed (it was set after the previous event).
+        self.metrics.record_elapsed(event.time)
         self.cluster.current_time = event.time
 
         if self.log_events:
@@ -255,6 +257,9 @@ class Simulator:
         elif event.event_type == EventType.NETWORK_OUTAGE_END:
             self._apply_network_outage_end(event)
 
+        elif event.event_type == EventType.NODE_REPLACEMENT_TIMEOUT:
+            pass  # Handled by strategy below
+
         elif event.event_type == EventType.LEADER_ELECTION_COMPLETE:
             pass  # Handled by protocol below
 
@@ -266,6 +271,10 @@ class Simulator:
         actions = self.strategy.on_event(event, self.cluster, self.rng)
         for action in actions:
             self._execute_action(action)
+
+        # Update availability state AFTER the event is fully applied so that
+        # _was_available reflects the post-event state for the next interval.
+        self.metrics.update(self.cluster, event.time, protocol=self.protocol)
 
     def _apply_node_failure(self, event: Event) -> None:
         """Apply a transient node failure."""
@@ -432,6 +441,34 @@ class Simulator:
             if node:
                 self._schedule_sync_complete(node)
 
+        elif action.action_type == ActionType.SCHEDULE_REPLACEMENT_CHECK:
+            self._action_schedule_replacement_check(action)
+
+        elif action.action_type == ActionType.CANCEL_REPLACEMENT_CHECK:
+            self._action_cancel_replacement_check(action)
+
+    def _action_schedule_replacement_check(self, action: Action) -> None:
+        """Schedule a replacement timeout event for a node."""
+        node_id: str = action.params.get("node_id", "")
+        timeout: float = action.params.get("timeout", 0)
+
+        if node_id and timeout > 0:
+            self.event_queue.push(
+                Event(
+                    time=Seconds(self.cluster.current_time + timeout),
+                    event_type=EventType.NODE_REPLACEMENT_TIMEOUT,
+                    target_id=node_id,
+                )
+            )
+
+    def _action_cancel_replacement_check(self, action: Action) -> None:
+        """Cancel a pending replacement timeout event for a node."""
+        node_id: str = action.params.get("node_id", "")
+        if node_id:
+            self.event_queue.cancel_events_for(
+                node_id, EventType.NODE_REPLACEMENT_TIMEOUT
+            )
+
     def _action_spawn_node(self, action: Action) -> None:
         """Execute a spawn node action."""
         node_config: NodeConfig = action.params.get("node_config")
@@ -484,7 +521,9 @@ class Simulator:
                 elapsed = end_time - self.cluster.current_time
                 self._advance_commit_index(elapsed)
 
-                # Update metrics up to end_time
+                # Record elapsed time and update metrics up to end_time.
+                # No event to apply, so state doesn't change — record + update together.
+                self.metrics.record_elapsed(end_time)
                 self.metrics.update(self.cluster, end_time, protocol=self.protocol)
                 self.cluster.current_time = end_time
                 end_reason = "time_limit"

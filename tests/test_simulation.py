@@ -345,6 +345,190 @@ class TestClusterState:
 
 
 # =============================================================================
+# Deterministic Metrics Tests
+# =============================================================================
+
+
+class TestDeterministicDataLossMetrics:
+    """Exact-fraction tests with no randomness: only deterministic data-loss events."""
+
+    @staticmethod
+    def _make_data_loss_only_config(data_loss_time: float) -> NodeConfig:
+        """Node that only experiences permanent data loss at a fixed time.
+
+        No transient failures or network issues — the only event that fires
+        within the test window is NODE_DATA_LOSS.
+        """
+        return NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),  # effectively never
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(data_loss_time),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+    def test_availability_is_two_thirds(self):
+        """3 nodes lose data at hours 1, 2, 3.
+
+        Timeline
+        --------
+        0–1 h : 3 data-bearing nodes, quorum = 2  →  can_commit = True
+        1–2 h : 2 data-bearing nodes, quorum = 2  →  can_commit = True
+        2–3 h : 1 data-bearing node,  quorum = 2  →  can_commit = False
+        3 h   : last node loses data                →  actual data loss, sim stops
+
+        Availability = 2 h / 3 h = 2/3
+        """
+        nodes = {
+            "node0": NodeState(
+                node_id="node0",
+                config=self._make_data_loss_only_config(hours(1)),
+            ),
+            "node1": NodeState(
+                node_id="node1",
+                config=self._make_data_loss_only_config(hours(2)),
+            ),
+            "node2": NodeState(
+                node_id="node2",
+                config=self._make_data_loss_only_config(hours(3)),
+            ),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            seed=0,
+            log_events=True,
+        )
+
+        result = simulator.run_for(hours(4))
+
+        # Simulation should stop on data loss at exactly 3 hours
+        assert result.end_reason == "data_loss"
+        assert result.end_time == pytest.approx(hours(3))
+
+        # Availability must be exactly 2/3
+        assert result.metrics.availability_fraction() == pytest.approx(2 / 3)
+
+        # Potential data loss recorded at hour 2 (quorum lost)
+        assert result.metrics.time_to_potential_data_loss == pytest.approx(hours(2))
+
+        # Actual data loss recorded at hour 3 (all data gone)
+        assert result.metrics.time_to_actual_data_loss == pytest.approx(hours(3))
+
+        # Only data-loss events should have fired (no syncs, no transient failures)
+        data_loss_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_DATA_LOSS
+        ]
+        sync_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+        ]
+        assert len(data_loss_events) == 3
+        assert len(sync_events) == 0
+
+
+class TestDeterministicTransientFailureMetrics:
+    """Exact-fraction test with deterministic transient failures only."""
+
+    def test_availability_is_three_quarters(self):
+        """Two nodes fail at hour 2, recover at hour 3. Run for 4 hours.
+
+        Timeline  (3 nodes, quorum = 2)
+        --------
+        0–2 h : 3 nodes up-to-date      →  can_commit = True
+        2–3 h : only node2 up-to-date    →  can_commit = False  (commit frozen)
+        3–4 h : all 3 nodes up-to-date   →  can_commit = True
+                (commit was frozen so recovered nodes are still up-to-date)
+
+        Availability = 3 h / 4 h = 3/4
+        """
+        # node0 and node1: fail at 2 h, recover 1 h later
+        fragile_config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(hours(2)),
+            recovery_dist=Constant(hours(1)),
+            data_loss_dist=Constant(days(9999)),  # effectively never
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        # node2: never fails within the test window
+        stable_config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=fragile_config),
+            "node1": NodeState(node_id="node1", config=fragile_config),
+            "node2": NodeState(node_id="node2", config=stable_config),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessUpToDateQuorumProtocol(),
+            seed=0,
+            log_events=True,
+        )
+
+        result = simulator.run_for(hours(4))
+
+        # No data loss — simulation runs to time limit
+        assert result.end_reason == "time_limit"
+        assert result.end_time == pytest.approx(hours(4))
+
+        # Availability must be exactly 3/4
+        assert result.metrics.availability_fraction() == pytest.approx(3 / 4)
+
+        # Commit index should reflect the 3 hours of availability
+        # (commit_rate = 1.0, so commit_index ≈ 3 hours in seconds)
+        assert result.final_cluster.commit_index == pytest.approx(hours(3))
+
+        # No sync events: commit was frozen during downtime so
+        # recovered nodes are already up-to-date
+        sync_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+        ]
+        assert len(sync_events) == 0
+
+        # Exactly 2 failure events and 2 recovery events within 4 h
+        failure_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_FAILURE
+        ]
+        recovery_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_RECOVERY
+        ]
+        assert len(failure_events) == 2
+        assert len(recovery_events) == 2
+
+
+# =============================================================================
 # Simulator Tests
 # =============================================================================
 
