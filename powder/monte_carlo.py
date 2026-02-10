@@ -10,6 +10,7 @@ automatically determine the required sample size for high-confidence results.
 
 import copy
 import math
+import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from enum import Enum
@@ -221,14 +222,15 @@ class MonteCarloConfig:
             stop_on_data_loss is True, each run continues indefinitely
             until data loss occurs (useful for MTTDL estimation).
         stop_on_data_loss: Whether to stop each run when data loss occurs.
-        parallel_workers: Number of parallel worker processes (1 = sequential).
+        parallel_workers: Number of parallel worker processes (defaults to CPU count,
+            1 = sequential).
         base_seed: Base seed for reproducibility (each run gets base_seed + run_index).
     """
 
     num_simulations: int
     max_time: Seconds | None = None
     stop_on_data_loss: bool = True
-    parallel_workers: int = 1
+    parallel_workers: int = os.cpu_count() or 1
     base_seed: int | None = None
 
     def __post_init__(self) -> None:
@@ -972,7 +974,7 @@ def run_monte_carlo(
     max_time: Seconds | None = None,
     network_config: NetworkConfig | None = None,
     stop_on_data_loss: bool = True,
-    parallel_workers: int = 1,
+    parallel_workers: int = os.cpu_count() or 1,
     seed: int | None = None,
 ) -> MonteCarloResults:
     """Convenience function to run Monte Carlo simulations.
@@ -987,7 +989,7 @@ def run_monte_carlo(
             (useful for MTTDL estimation).
         network_config: Optional network configuration.
         stop_on_data_loss: Whether to stop on data loss.
-        parallel_workers: Number of parallel workers.
+        parallel_workers: Number of parallel workers (defaults to CPU count).
         seed: Base random seed.
 
     Returns:
@@ -1021,7 +1023,7 @@ def run_monte_carlo_converged(
     metrics: list[ConvergenceMetric] | None = None,
     network_config: NetworkConfig | None = None,
     stop_on_data_loss: bool = True,
-    parallel_workers: int = 1,
+    parallel_workers: int = os.cpu_count() or 1,
     seed: int | None = None,
     min_runs: int = 30,
     max_runs: int = 10_000,
@@ -1056,7 +1058,7 @@ def run_monte_carlo_converged(
         metrics: Which metrics to converge on (default: [AVAILABILITY]).
         network_config: Optional network configuration.
         stop_on_data_loss: Whether to stop on data loss.
-        parallel_workers: Number of parallel workers.
+        parallel_workers: Number of parallel workers (defaults to CPU count).
         seed: Base random seed.
         min_runs: Minimum runs before checking convergence (default 30).
         max_runs: Maximum runs safety cap (default 10000).
