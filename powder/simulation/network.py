@@ -22,7 +22,7 @@ class NetworkConfig:
 
     outage_dist: Distribution
     outage_duration_dist: Distribution
-    affected_regions: list[str] = field(default_factory=list)
+    regions: list[str] = field(default_factory=list)
 
 
 @dataclass

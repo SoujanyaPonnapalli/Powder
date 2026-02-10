@@ -100,8 +100,9 @@ class Simulator:
             self._schedule_node_events(node)
 
         # Schedule network events if configured
-        if self.network_config and self.network_config.affected_regions:
-            self._schedule_network_outage()
+        if self.network_config and self.network_config.regions:
+            for region in self.network_config.regions:
+                self._schedule_network_outage(region)
 
         # Initialize protocol (e.g., pick initial leader)
         for event in self.protocol.on_simulation_start(self.cluster, self.rng):
@@ -138,17 +139,20 @@ class Simulator:
             )
         )
 
-    def _schedule_network_outage(self) -> None:
-        """Schedule the next network outage event."""
-        if not self.network_config or not self.network_config.affected_regions:
+    def _schedule_network_outage(self, region: str) -> None:
+        """Schedule the next network outage event for a region.
+
+        Each affected region maintains its own independent outage chain,
+        allowing multiple regions to experience outages simultaneously.
+
+        Args:
+            region: The region to schedule an outage for.
+        """
+        if not self.network_config:
             return
 
         current_time = self.cluster.current_time
         outage_delay = self.network_config.outage_dist.sample(self.rng)
-
-        # Pick a random region that can experience an outage
-        region_idx = self.rng.integers(len(self.network_config.affected_regions))
-        region = self.network_config.affected_regions[region_idx]
 
         self.event_queue.push(
             Event(
@@ -422,8 +426,8 @@ class Simulator:
                 ):
                     self._schedule_sync_complete(node)
 
-            # Schedule next outage
-            self._schedule_network_outage()
+            # Schedule next outage for this region
+            self._schedule_network_outage(region)
 
     def _execute_action(self, action: Action) -> None:
         """Execute a strategy action."""
