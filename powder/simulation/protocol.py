@@ -117,6 +117,51 @@ class Protocol(ABC):
         """
         return []
 
+    def quorum_size(self, cluster: ClusterState) -> int:
+        """Calculate the quorum size needed for commits.
+
+        Default implementation uses majority quorum (n // 2 + 1).
+        Override for protocols with different quorum requirements.
+
+        Args:
+            cluster: Current cluster state.
+
+        Returns:
+            Minimum number of nodes needed for quorum.
+        """
+        return len(cluster.nodes) // 2 + 1
+
+    def has_potential_data_loss(self, cluster: ClusterState) -> bool:
+        """Check if quorum is lost (potential data loss).
+
+        When fewer than a quorum of nodes are available, we can't be
+        certain the remaining nodes have the latest committed data.
+
+        Args:
+            cluster: Current cluster state.
+
+        Returns:
+            True if quorum is lost.
+        """
+        return cluster.num_available() < self.quorum_size(cluster)
+
+    def has_actual_data_loss(self, cluster: ClusterState) -> bool:
+        """Check if all up-to-date nodes have failed (definite data loss).
+
+        Data is definitely lost when no nodes have the latest committed
+        data, even if some nodes exist with older data.
+
+        Args:
+            cluster: Current cluster state.
+
+        Returns:
+            True if data is definitely lost.
+        """
+        for n in cluster.nodes.values():
+            if n.has_data and n.is_up_to_date(cluster.commit_index):
+                return False
+        return True
+
     def compute_sync_time(
         self,
         node: NodeState,
@@ -220,7 +265,7 @@ class LeaderlessUpToDateQuorumProtocol(Protocol):
 
     def can_commit(self, cluster: ClusterState) -> bool:
         """Commit requires a majority of up-to-date nodes."""
-        return cluster.num_up_to_date() >= cluster.quorum_size()
+        return cluster.num_up_to_date() >= self.quorum_size(cluster)
 
     def on_event(
         self,
@@ -269,7 +314,7 @@ class LeaderlessMajorityAvailableProtocol(Protocol):
 
     def can_commit(self, cluster: ClusterState) -> bool:
         """Commit requires a majority of available nodes (not necessarily up-to-date)."""
-        return cluster.num_available() >= cluster.quorum_size()
+        return cluster.num_available() >= self.quorum_size(cluster)
 
     def on_event(
         self,
@@ -364,7 +409,7 @@ class RaftLikeProtocol(Protocol):
         if leader is None or not cluster._node_effectively_available(leader):
             return False
 
-        return cluster.num_up_to_date() >= cluster.quorum_size()
+        return cluster.num_up_to_date() >= self.quorum_size(cluster)
 
     def on_simulation_start(
         self,

@@ -7,6 +7,7 @@ for quorum checks, data loss detection, and cluster queries.
 
 from collections import defaultdict
 from dataclasses import dataclass, field
+from powder.simulation.node import NodeState
 
 from .distributions import Seconds
 from .network import NetworkState
@@ -77,56 +78,6 @@ class ClusterState:
             Number of nodes that haven't lost data.
         """
         return sum(1 for n in self.nodes.values() if n.has_data)
-
-    def quorum_size(self) -> int:
-        """Calculate the quorum size needed for commits.
-
-        Returns:
-            Minimum number of nodes needed for quorum (majority).
-        """
-        return len(self.nodes) // 2 + 1
-
-    def can_commit(self) -> bool:
-        """Check if quorum of up-to-date nodes exists.
-
-        The system can commit new requests if a majority of nodes
-        are up-to-date, available, and have data.
-
-        Returns:
-            True if the system can accept new commits.
-        """
-        return self.num_up_to_date() >= self.quorum_size()
-
-    def has_potential_data_loss(self) -> bool:
-        """Check if quorum is lost (potential data loss).
-
-        When fewer than a quorum of nodes are available, we can't be
-        certain the remaining nodes have the latest committed data.
-
-        Returns:
-            True if quorum is lost.
-        """
-        return self.num_available() < self.quorum_size()
-
-    def has_actual_data_loss(self) -> bool:
-        """Check if all up-to-date nodes have failed (definite data loss).
-
-        Data is definitely lost when no nodes have the latest committed
-        data, but some nodes still exist with older data.
-
-        Returns:
-            True if data is definitely lost.
-        """
-        if self.num_up_to_date() > 0:
-            return False  # Still have up-to-date nodes
-
-        # Check if any node has data but is not up-to-date
-        for n in self.nodes.values():
-            if n.has_data and not n.is_up_to_date(self.commit_index):
-                return True
-
-        # If no nodes have data at all, that's also data loss
-        return self.num_with_data() == 0 and len(self.nodes) > 0
 
     def nodes_by_region(self) -> dict[str, list[NodeState]]:
         """Group nodes by their region.
@@ -227,24 +178,23 @@ class ClusterState:
     def all_nodes_for_billing(self) -> list[NodeState]:
         """Return all nodes that should be billed, including provisioning.
 
-        In cloud environments, you pay for VMs from the moment they're
-        launched (provisioning) through transient failures and data loss,
-        until they're explicitly terminated. This method returns all such
-        nodes for cost calculation.
+        Only bills nodes that have not incurred data loss. In cloud environments,
+        you pay for VMs from launch (including provisioning), through failures,
+        until explicit termination or data loss. Nodes with data loss are not billed.
 
         Returns:
-            List of all active and provisioning nodes.
+            List of all active and provisioning nodes that have not lost data.
         """
-        return list(self.nodes.values()) + list(self.provisioning_nodes.values())
+        active_billable = [n for n in self.nodes.values() if n.has_data]
+        provisioning_billable = [n for n in self.provisioning_nodes.values() if n.has_data]
+        return active_billable + provisioning_billable
 
     def __repr__(self) -> str:
         up_to_date = self.num_up_to_date()
         available = self.num_available()
         total = len(self.nodes)
-        can_commit = "can_commit" if self.can_commit() else "cannot_commit"
         return (
             f"ClusterState(t={self.current_time:.1f}s, "
             f"commit_index={self.commit_index:.1f}, "
-            f"{up_to_date}/{available}/{total} up-to-date/available/total, "
-            f"{can_commit})"
+            f"{up_to_date}/{available}/{total} up-to-date/available/total)"
         )

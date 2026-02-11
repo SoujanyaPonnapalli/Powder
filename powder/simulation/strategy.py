@@ -5,10 +5,12 @@ Strategies define how the cluster management system reacts to events
 like node failures, recoveries, and data loss.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -16,6 +18,9 @@ from .cluster import ClusterState
 from .distributions import Seconds
 from .events import Event, EventType
 from .node import NodeConfig, NodeState
+
+if TYPE_CHECKING:
+    from .protocol import Protocol
 
 
 class ActionType(Enum):
@@ -65,6 +70,7 @@ class ClusterStrategy(ABC):
         event: Event,
         cluster: ClusterState,
         rng: np.random.Generator,
+        protocol: Protocol,
     ) -> list[Action]:
         """React to a simulation event.
 
@@ -76,6 +82,8 @@ class ClusterStrategy(ABC):
             event: The event that just occurred.
             cluster: Current cluster state (after event was applied).
             rng: Random number generator for reproducibility.
+            protocol: Protocol for algorithm-specific queries
+                (e.g. can_commit, quorum_size).
 
         Returns:
             List of actions for the simulator to execute.
@@ -113,6 +121,7 @@ class NoOpStrategy(ClusterStrategy):
         event: Event,
         cluster: ClusterState,
         rng: np.random.Generator,
+        protocol: Protocol,
     ) -> list[Action]:
         return []
 
@@ -151,6 +160,7 @@ class SimpleReplacementStrategy(ClusterStrategy):
         event: Event,
         cluster: ClusterState,
         rng: np.random.Generator,
+        protocol: Protocol,
     ) -> list[Action]:
         actions: list[Action] = []
 
@@ -309,6 +319,7 @@ class NodeReplacementStrategy(ClusterStrategy):
         event: Event,
         cluster: ClusterState,
         rng: np.random.Generator,
+        protocol: Protocol,
     ) -> list[Action]:
         actions: list[Action] = []
 
@@ -319,10 +330,10 @@ class NodeReplacementStrategy(ClusterStrategy):
             actions.extend(self._handle_recovery(event, cluster))
 
         elif event.event_type == EventType.NODE_DATA_LOSS:
-            actions.extend(self._handle_data_loss(event, cluster, rng))
+            actions.extend(self._handle_data_loss(event, cluster, rng, protocol))
 
         elif event.event_type == EventType.NODE_REPLACEMENT_TIMEOUT:
-            actions.extend(self._handle_replacement_timeout(event, cluster, rng))
+            actions.extend(self._handle_replacement_timeout(event, cluster, rng, protocol))
 
         elif event.event_type == EventType.NODE_SPAWN_COMPLETE:
             node_id = event.metadata.get("node_id", event.target_id)
@@ -384,13 +395,14 @@ class NodeReplacementStrategy(ClusterStrategy):
         event: Event,
         cluster: ClusterState,
         rng: np.random.Generator,
+        protocol: Protocol,
     ) -> list[Action]:
         """Handle permanent data loss: immediately replace if cluster can commit."""
         # Cancel any pending replacement timeout (data loss is handled immediately)
         self._timeout_pending.discard(event.target_id)
 
         # Only replace if the cluster can still commit
-        if not cluster.can_commit():
+        if not protocol.can_commit(cluster):
             return []
 
         return self._replace_node(event.target_id, cluster)
@@ -400,6 +412,7 @@ class NodeReplacementStrategy(ClusterStrategy):
         event: Event,
         cluster: ClusterState,
         rng: np.random.Generator,
+        protocol: Protocol,
     ) -> list[Action]:
         """Handle replacement timeout: replace node if still unavailable and cluster can commit."""
         node_id = event.target_id
@@ -414,7 +427,7 @@ class NodeReplacementStrategy(ClusterStrategy):
             return []  # Node recovered, no replacement needed
 
         # Check if cluster can still commit (needed for membership change)
-        if not cluster.can_commit():
+        if not protocol.can_commit(cluster):
             return []
 
         return self._replace_node(node_id, cluster)

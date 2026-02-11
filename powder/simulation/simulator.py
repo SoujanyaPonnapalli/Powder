@@ -554,7 +554,7 @@ class Simulator:
                 # Record elapsed time/cost and update metrics up to end_time.
                 # No event to apply, so state doesn't change — record + update together.
                 self.metrics.record_elapsed(end_time, cluster=self.cluster, protocol=self.protocol)
-                self.metrics.update(self.cluster, end_time)
+                self.metrics.update(self.cluster, end_time, self.protocol)
                 self.cluster.current_time = end_time
                 end_reason = "time_limit"
                 break

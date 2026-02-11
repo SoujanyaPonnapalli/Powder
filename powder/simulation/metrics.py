@@ -43,8 +43,8 @@ class MetricsCollector:
     def record_elapsed(
         self,
         current_time: Seconds,
-        cluster: ClusterState | None = None,
-        protocol: Protocol | None = None,
+        cluster: ClusterState,
+        protocol: Protocol,
     ) -> None:
         """Record elapsed time and costs using the pre-event cluster state.
 
@@ -54,7 +54,6 @@ class MetricsCollector:
         the cluster during the interval).
 
         Availability is determined via the protocol's ``can_commit()`` method.
-        A protocol must be provided when a cluster is provided.
 
         Costs are also computed here (rather than in ``update``) so that they
         reflect the nodes that actually existed during the interval, not
@@ -63,22 +62,15 @@ class MetricsCollector:
         Args:
             current_time: Current simulation time.
             cluster: Current cluster state (before event applied).
-                When provided, availability and node costs are computed
-                for the elapsed interval.
             protocol: Protocol for algorithm-specific availability.
-                Required when cluster is provided; uses
-                protocol.can_commit() for availability tracking.
+                Uses protocol.can_commit() for availability tracking.
         """
         time_delta = Seconds(current_time - self._last_update_time)
         if time_delta < 0:
             raise ValueError(f"Time went backwards: {self._last_update_time} -> {current_time}")
 
         if time_delta > 0:
-            # Availability: query protocol directly.
-            if cluster is not None and protocol is not None:
-                available = protocol.can_commit(cluster)
-            else:
-                raise ValueError("Protocol and cluster must be provided")
+            available = protocol.can_commit(cluster)
 
             if available:
                 self.time_available = Seconds(self.time_available + time_delta)
@@ -88,10 +80,9 @@ class MetricsCollector:
             # Cost: bill all nodes (active + provisioning) regardless of state.
             # In cloud environments you pay for VMs from launch through
             # failures until termination.
-            if cluster is not None:
-                hours_elapsed = time_delta / 3600.0
-                for node in cluster.all_nodes_for_billing():
-                    self.total_cost += node.config.cost_per_hour * hours_elapsed
+            hours_elapsed = time_delta / 3600.0
+            for node in cluster.all_nodes_for_billing():
+                self.total_cost += node.config.cost_per_hour * hours_elapsed
 
         self._last_update_time = current_time
 
@@ -99,7 +90,7 @@ class MetricsCollector:
         self,
         cluster: ClusterState,
         current_time: Seconds,
-        protocol: Protocol | None = None,
+        protocol: Protocol,
     ) -> None:
         """Check for data-loss milestones after an event is applied.
 
@@ -113,36 +104,17 @@ class MetricsCollector:
             cluster: Current cluster state (after event applied).
             current_time: Current simulation time.
             protocol: Protocol for algorithm-specific data loss detection.
-                When provided, uses protocol.has_potential_data_loss() and
-                protocol.has_actual_data_loss() instead of hardcoded rules.
+                Uses protocol.has_potential_data_loss() and
+                protocol.has_actual_data_loss().
         """
         # Track data loss events (only record first occurrence)
-        if protocol is not None:
-            potential_loss = protocol.has_potential_data_loss(cluster)
-            actual_loss = protocol.has_actual_data_loss(cluster)
-        else:
-            # Fallback: majority quorum rules
-            quorum = len(cluster.nodes) // 2 + 1
-            potential_loss = cluster.num_available() < quorum
-            actual_loss = self._check_actual_data_loss_fallback(cluster)
-
-        if not self._had_potential_loss and potential_loss:
+        if not self._had_potential_loss and protocol.has_potential_data_loss(cluster):
             self.time_to_potential_data_loss = current_time
             self._had_potential_loss = True
 
-        if not self._had_actual_loss and actual_loss:
+        if not self._had_actual_loss and protocol.has_actual_data_loss(cluster):
             self.time_to_actual_data_loss = current_time
             self._had_actual_loss = True
-
-    @staticmethod
-    def _check_actual_data_loss_fallback(cluster: ClusterState) -> bool:
-        """Fallback actual data loss check when no protocol is provided."""
-        if cluster.num_up_to_date() > 0:
-            return False
-        for n in cluster.nodes.values():
-            if n.has_data and not n.is_up_to_date(cluster.commit_index):
-                return True
-        return cluster.num_with_data() == 0 and len(cluster.nodes) > 0
 
     def availability_fraction(self) -> float:
         """Calculate fraction of time the system was available.

@@ -292,48 +292,76 @@ def make_test_cluster(num_nodes: int = 3) -> ClusterState:
 
 
 class TestClusterState:
-    def test_quorum_calculations(self):
+    def test_node_counts(self):
         cluster = make_test_cluster(5)
 
-        assert cluster.quorum_size() == 3
         assert cluster.num_available() == 5
-        assert cluster.can_commit()
+        assert cluster.num_up_to_date() == 5
+        assert cluster.num_with_data() == 5
+
+    def test_node_counts_with_failures(self):
+        cluster = make_test_cluster(5)
+
+        # Fail 2 nodes
+        cluster.nodes["node0"].is_available = False
+        cluster.nodes["node1"].is_available = False
+
+        assert cluster.num_available() == 3
+
+        # Fail one more
+        cluster.nodes["node2"].is_available = False
+        assert cluster.num_available() == 2
+
+
+class TestProtocolQuorumAndDataLoss:
+    """Tests for protocol-level quorum, commit, and data loss methods."""
+
+    def test_quorum_calculations(self):
+        cluster = make_test_cluster(5)
+        protocol = LeaderlessUpToDateQuorumProtocol()
+
+        assert protocol.quorum_size(cluster) == 3
+        assert cluster.num_available() == 5
+        assert protocol.can_commit(cluster)
 
     def test_can_commit_with_failures(self):
         cluster = make_test_cluster(5)
+        protocol = LeaderlessUpToDateQuorumProtocol()
 
         # Fail 2 nodes - should still have quorum
         cluster.nodes["node0"].is_available = False
         cluster.nodes["node1"].is_available = False
 
         assert cluster.num_available() == 3
-        assert cluster.can_commit()
+        assert protocol.can_commit(cluster)
 
         # Fail one more - no quorum
         cluster.nodes["node2"].is_available = False
         assert cluster.num_available() == 2
-        assert not cluster.can_commit()
+        assert not protocol.can_commit(cluster)
 
     def test_potential_data_loss(self):
         cluster = make_test_cluster(3)
+        protocol = LeaderlessUpToDateQuorumProtocol()
 
-        assert not cluster.has_potential_data_loss()
+        assert not protocol.has_potential_data_loss(cluster)
 
         # Lose quorum
         cluster.nodes["node0"].is_available = False
         cluster.nodes["node1"].is_available = False
 
-        assert cluster.has_potential_data_loss()
+        assert protocol.has_potential_data_loss(cluster)
 
     def test_actual_data_loss(self):
         cluster = make_test_cluster(3)
         cluster.commit_index = 100.0
+        protocol = LeaderlessUpToDateQuorumProtocol()
 
         # Mark all nodes as up-to-date initially
         for node in cluster.nodes.values():
             node.last_applied_index = 100.0
 
-        assert not cluster.has_actual_data_loss()
+        assert not protocol.has_actual_data_loss(cluster)
 
         # Make one node lag and fail the up-to-date nodes
         cluster.nodes["node0"].last_applied_index = 50.0  # Lagging
@@ -341,7 +369,7 @@ class TestClusterState:
         cluster.nodes["node2"].has_data = False  # Data lost
 
         # node0 has data but is not up-to-date -> actual data loss
-        assert cluster.has_actual_data_loss()
+        assert protocol.has_actual_data_loss(cluster)
 
 
 # =============================================================================
@@ -629,8 +657,9 @@ class TestSimpleReplacementStrategy:
         )
 
         rng = np.random.default_rng(42)
+        protocol = LeaderlessUpToDateQuorumProtocol()
 
-        actions = strategy.on_event(event, cluster, rng)
+        actions = strategy.on_event(event, cluster, rng, protocol)
 
         # Should spawn a replacement
         spawn_actions = [a for a in actions if a.action_type == ActionType.SPAWN_NODE]
@@ -654,8 +683,9 @@ class TestSimpleReplacementStrategy:
         )
 
         rng = np.random.default_rng(42)
+        protocol = LeaderlessUpToDateQuorumProtocol()
 
-        actions = strategy.on_event(event, cluster, rng)
+        actions = strategy.on_event(event, cluster, rng, protocol)
 
         # Should start sync for lagging node
         sync_actions = [a for a in actions if a.action_type == ActionType.START_SYNC]
@@ -671,24 +701,21 @@ class TestSimpleReplacementStrategy:
 class TestLeaderlessUpToDateQuorumProtocol:
     """Tests for the default backward-compatible protocol."""
 
-    def test_matches_cluster_can_commit(self):
-        """Default protocol should match ClusterState.can_commit() exactly."""
+    def test_can_commit_with_up_to_date_quorum(self):
+        """Default protocol should commit when a majority of up-to-date nodes exist."""
         cluster = make_test_cluster(5)
         protocol = LeaderlessUpToDateQuorumProtocol()
 
-        # All up-to-date: both should agree
-        assert protocol.can_commit(cluster) == cluster.can_commit()
+        # All up-to-date: should be able to commit
         assert protocol.can_commit(cluster) is True
 
-        # Fail 2 nodes
+        # Fail 2 nodes - still have 3 up-to-date (quorum)
         cluster.nodes["node0"].is_available = False
         cluster.nodes["node1"].is_available = False
-        assert protocol.can_commit(cluster) == cluster.can_commit()
         assert protocol.can_commit(cluster) is True
 
-        # Fail one more: lose quorum
+        # Fail one more: lose quorum (only 2 of 5 available)
         cluster.nodes["node2"].is_available = False
-        assert protocol.can_commit(cluster) == cluster.can_commit()
         assert protocol.can_commit(cluster) is False
 
     def test_commit_rate_and_snapshot_interval(self):
@@ -715,10 +742,11 @@ class TestLeaderlessMajorityAvailableProtocol:
         cluster.commit_index = 100.0
 
         protocol = LeaderlessMajorityAvailableProtocol()
+        utd_protocol = LeaderlessUpToDateQuorumProtocol()
 
         # All nodes are available but none are up-to-date (last_applied_index=0)
-        # ClusterState.can_commit() would return False (needs up-to-date quorum)
-        assert not cluster.can_commit()
+        # Up-to-date quorum protocol would return False
+        assert not utd_protocol.can_commit(cluster)
 
         # But majority-available protocol should return True (5 available >= quorum of 3)
         assert protocol.can_commit(cluster) is True
@@ -1134,9 +1162,8 @@ class TestCommitIndex:
         )
 
         # All nodes are at index 0, commit_index is 100 -> can't commit
-        assert not cluster.can_commit()
-
         protocol = LeaderlessUpToDateQuorumProtocol(commit_rate=1.0)
+        assert not protocol.can_commit(cluster)
         simulator = Simulator(
             initial_cluster=cluster,
             strategy=NoOpStrategy(),
