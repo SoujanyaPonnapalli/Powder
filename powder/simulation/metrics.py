@@ -13,7 +13,7 @@ from .distributions import Seconds
 from .cluster import ClusterState
 
 if TYPE_CHECKING:
-    from .protocol import Protocol
+    from .protocol import Protocol  # Used in record_elapsed type hints
 
 
 @dataclass
@@ -37,7 +37,6 @@ class MetricsCollector:
 
     # Internal state for tracking
     _last_update_time: Seconds = field(default_factory=lambda: Seconds(0))
-    _was_available: bool = True
     _had_potential_loss: bool = False
     _had_actual_loss: bool = False
 
@@ -45,12 +44,17 @@ class MetricsCollector:
         self,
         current_time: Seconds,
         cluster: ClusterState | None = None,
+        protocol: Protocol | None = None,
     ) -> None:
         """Record elapsed time and costs using the pre-event cluster state.
 
         This should be called BEFORE an event is applied so that the interval
-        since the last event is categorized using the post-previous-event state
-        (which correctly represents the cluster during the interval).
+        since the last event is categorized using the pre-event cluster state
+        (which is unchanged since the previous event and correctly represents
+        the cluster during the interval).
+
+        Availability is determined via the protocol's ``can_commit()`` method.
+        A protocol must be provided when a cluster is provided.
 
         Costs are also computed here (rather than in ``update``) so that they
         reflect the nodes that actually existed during the interval, not
@@ -59,17 +63,24 @@ class MetricsCollector:
         Args:
             current_time: Current simulation time.
             cluster: Current cluster state (before event applied).
-                When provided, node costs are accumulated for the elapsed
-                interval. All nodes are billed regardless of availability
-                state, matching real cloud provider billing.
+                When provided, availability and node costs are computed
+                for the elapsed interval.
+            protocol: Protocol for algorithm-specific availability.
+                Required when cluster is provided; uses
+                protocol.can_commit() for availability tracking.
         """
         time_delta = Seconds(current_time - self._last_update_time)
         if time_delta < 0:
             raise ValueError(f"Time went backwards: {self._last_update_time} -> {current_time}")
 
         if time_delta > 0:
-            # Availability
-            if self._was_available:
+            # Availability: query protocol directly.
+            if cluster is not None and protocol is not None:
+                available = protocol.can_commit(cluster)
+            else:
+                raise ValueError("Protocol and cluster must be provided")
+
+            if available:
                 self.time_available = Seconds(self.time_available + time_delta)
             else:
                 self.time_unavailable = Seconds(self.time_unavailable + time_delta)
@@ -90,37 +101,48 @@ class MetricsCollector:
         current_time: Seconds,
         protocol: Protocol | None = None,
     ) -> None:
-        """Update availability state based on current cluster state.
+        """Check for data-loss milestones after an event is applied.
 
-        Should be called AFTER each event is fully applied so that
-        ``_was_available`` reflects the post-event state for the next
-        interval. Also checks for data-loss milestones.
+        Should be called AFTER each event is fully applied.
 
-        Note: cost accumulation happens in ``record_elapsed`` (before the
-        event) so that costs reflect the nodes that existed during the
-        interval rather than nodes added/removed by the event.
+        Note: availability tracking and cost accumulation happen in
+        ``record_elapsed`` (before the event) so that they reflect the
+        cluster state during the interval rather than the post-event state.
 
         Args:
             cluster: Current cluster state (after event applied).
             current_time: Current simulation time.
-            protocol: Optional protocol for algorithm-specific availability.
-                If provided, uses protocol.can_commit() instead of
-                cluster.can_commit() for availability tracking.
+            protocol: Protocol for algorithm-specific data loss detection.
+                When provided, uses protocol.has_potential_data_loss() and
+                protocol.has_actual_data_loss() instead of hardcoded rules.
         """
-        # Set availability state for the *next* interval (post-event).
-        if protocol is not None:
-            self._was_available = protocol.can_commit(cluster)
-        else:
-            self._was_available = cluster.can_commit()
-
         # Track data loss events (only record first occurrence)
-        if not self._had_potential_loss and cluster.has_potential_data_loss():
+        if protocol is not None:
+            potential_loss = protocol.has_potential_data_loss(cluster)
+            actual_loss = protocol.has_actual_data_loss(cluster)
+        else:
+            # Fallback: majority quorum rules
+            quorum = len(cluster.nodes) // 2 + 1
+            potential_loss = cluster.num_available() < quorum
+            actual_loss = self._check_actual_data_loss_fallback(cluster)
+
+        if not self._had_potential_loss and potential_loss:
             self.time_to_potential_data_loss = current_time
             self._had_potential_loss = True
 
-        if not self._had_actual_loss and cluster.has_actual_data_loss():
+        if not self._had_actual_loss and actual_loss:
             self.time_to_actual_data_loss = current_time
             self._had_actual_loss = True
+
+    @staticmethod
+    def _check_actual_data_loss_fallback(cluster: ClusterState) -> bool:
+        """Fallback actual data loss check when no protocol is provided."""
+        if cluster.num_up_to_date() > 0:
+            return False
+        for n in cluster.nodes.values():
+            if n.has_data and not n.is_up_to_date(cluster.commit_index):
+                return True
+        return cluster.num_with_data() == 0 and len(cluster.nodes) > 0
 
     def availability_fraction(self) -> float:
         """Calculate fraction of time the system was available.

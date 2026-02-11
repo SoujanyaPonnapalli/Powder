@@ -100,7 +100,7 @@ class Simulator:
             self._schedule_node_events(node)
 
         # Schedule network events if configured
-        if self.network_config and self.network_config.regions:
+        if self.network_config:
             for region in self.network_config.regions:
                 self._schedule_network_outage(region)
 
@@ -148,7 +148,7 @@ class Simulator:
         Args:
             region: The region to schedule an outage for.
         """
-        if not self.network_config:
+        if not self.network_config or region not in self.network_config.regions:
             return
 
         current_time = self.cluster.current_time
@@ -198,7 +198,7 @@ class Simulator:
                 node.last_applied_index = new_index
                 # Advance snapshot if crossing a boundary
                 if snapshot_interval > 0:
-                    new_snap = int(new_index / snapshot_interval) * snapshot_interval
+                    new_snap = int(new_index // snapshot_interval) * snapshot_interval
                     if new_snap > node.last_snapshot_index:
                         node.last_snapshot_index = new_snap
 
@@ -228,14 +228,16 @@ class Simulator:
         """Process a single event and update cluster state."""
         # Advance commit_index for the wall-clock interval since last event
         elapsed = event.time - self.cluster.current_time
+        # Record elapsed time, availability, and costs BEFORE applying the
+        # event.  The pre-event cluster state is unchanged since the previous
+        # event, so querying cluster/protocol directly gives the correct
+        # availability for the interval.  Costs use the pre-event cluster
+        # state so that nodes added/removed by this event are not incorrectly
+        # billed for the prior interval.
+        self.metrics.record_elapsed(event.time, cluster=self.cluster, protocol=self.protocol)
+        
+        
         self._advance_commit_index(elapsed)
-
-        # Record elapsed time and costs BEFORE applying the event.
-        # The _was_available flag from the previous update correctly describes
-        # the interval we just observed (it was set after the previous event).
-        # Costs use the pre-event cluster state so that nodes added/removed
-        # by this event are not incorrectly billed for the prior interval.
-        self.metrics.record_elapsed(event.time, cluster=self.cluster)
         self.cluster.current_time = event.time
 
         if self.log_events:
@@ -274,13 +276,12 @@ class Simulator:
             self.event_queue.push(new_event)
 
         # Let strategy react
-        actions = self.strategy.on_event(event, self.cluster, self.rng)
+        actions = self.strategy.on_event(event, self.cluster, self.rng, self.protocol)
         for action in actions:
             self._execute_action(action)
 
-        # Update availability state AFTER the event is fully applied so that
-        # _was_available reflects the post-event state for the next interval.
-        self.metrics.update(self.cluster, event.time, protocol=self.protocol)
+        # Check for data-loss milestones AFTER the event is fully applied.
+        self.metrics.update(self.cluster, event.time, self.protocol)
 
     def _apply_node_failure(self, event: Event) -> None:
         """Apply a transient node failure."""
@@ -552,8 +553,8 @@ class Simulator:
 
                 # Record elapsed time/cost and update metrics up to end_time.
                 # No event to apply, so state doesn't change — record + update together.
-                self.metrics.record_elapsed(end_time, cluster=self.cluster)
-                self.metrics.update(self.cluster, end_time, protocol=self.protocol)
+                self.metrics.record_elapsed(end_time, cluster=self.cluster, protocol=self.protocol)
+                self.metrics.update(self.cluster, end_time)
                 self.cluster.current_time = end_time
                 end_reason = "time_limit"
                 break
@@ -564,7 +565,7 @@ class Simulator:
                 self._process_event(event)
 
             # Check for data loss first (more specific)
-            if self.cluster.has_actual_data_loss():
+            if self.protocol.has_actual_data_loss(self.cluster):
                 end_reason = "data_loss"
                 break
 
@@ -606,5 +607,5 @@ class Simulator:
         """
         return self.run_until(
             end_time=max_time,
-            stop_condition=lambda c: c.has_actual_data_loss(),
+            stop_condition=lambda c: self.protocol.has_actual_data_loss(c),
         )
