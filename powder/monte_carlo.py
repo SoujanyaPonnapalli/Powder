@@ -446,27 +446,26 @@ class MonteCarloResults:
 
 
 def _run_single_simulation(
-    cluster_factory: Callable[[], ClusterState],
-    strategy_factory: Callable[[], ClusterStrategy],
+    cluster: ClusterState,
+    strategy: ClusterStrategy,
     protocol: Protocol,
     network_config: NetworkConfig | None,
     max_time: Seconds | None,
     stop_on_data_loss: bool,
     seed: int,
 ) -> SimulationResult:
-    """Run a single simulation (used for parallel execution).
+    """Run a single simulation.
 
     This is a module-level function to support multiprocessing.
-    The protocol is deep-copied so each run has independent state
-    (important for stateful protocols like RaftLikeProtocol).
+    All mutable arguments are deep-copied so each run has independent state.
     """
-    cluster = cluster_factory()
-    strategy = strategy_factory()
+    run_cluster = copy.deepcopy(cluster)
+    run_strategy = copy.deepcopy(strategy)
     run_protocol = copy.deepcopy(protocol)
 
     simulator = Simulator(
-        initial_cluster=cluster,
-        strategy=strategy,
+        initial_cluster=run_cluster,
+        strategy=run_strategy,
         protocol=run_protocol,
         network_config=network_config,
         seed=seed,
@@ -495,8 +494,8 @@ class MonteCarloRunner:
 
     def run(
         self,
-        cluster_factory: Callable[[], ClusterState],
-        strategy_factory: Callable[[], ClusterStrategy],
+        cluster: ClusterState,
+        strategy: ClusterStrategy,
         protocol: Protocol,
         network_config: NetworkConfig | None = None,
         progress_callback: Callable[[int, int], None] | None = None,
@@ -504,8 +503,8 @@ class MonteCarloRunner:
         """Run Monte Carlo simulations.
 
         Args:
-            cluster_factory: Callable that creates a fresh ClusterState for each run.
-            strategy_factory: Callable that creates a fresh ClusterStrategy for each run.
+            cluster: Initial cluster state (deep-copied for each run).
+            strategy: Cluster strategy (deep-copied for each run).
             protocol: Protocol instance (deep-copied for each run).
             network_config: Optional network configuration (shared across runs).
             progress_callback: Optional callback(completed, total) for progress updates.
@@ -517,8 +516,8 @@ class MonteCarloRunner:
 
         if self.config.parallel_workers > 1:
             self._run_parallel(
-                cluster_factory,
-                strategy_factory,
+                cluster,
+                strategy,
                 protocol,
                 network_config,
                 results,
@@ -526,8 +525,8 @@ class MonteCarloRunner:
             )
         else:
             self._run_sequential(
-                cluster_factory,
-                strategy_factory,
+                cluster,
+                strategy,
                 protocol,
                 network_config,
                 results,
@@ -538,8 +537,8 @@ class MonteCarloRunner:
 
     def _run_sequential(
         self,
-        cluster_factory: Callable[[], ClusterState],
-        strategy_factory: Callable[[], ClusterStrategy],
+        cluster: ClusterState,
+        strategy: ClusterStrategy,
         protocol: Protocol,
         network_config: NetworkConfig | None,
         results: MonteCarloResults,
@@ -550,8 +549,8 @@ class MonteCarloRunner:
             seed = (self.config.base_seed + i) if self.config.base_seed else None
 
             sim_result = _run_single_simulation(
-                cluster_factory=cluster_factory,
-                strategy_factory=strategy_factory,
+                cluster=cluster,
+                strategy=strategy,
                 protocol=protocol,
                 network_config=network_config,
                 max_time=self.config.max_time,
@@ -566,14 +565,19 @@ class MonteCarloRunner:
 
     def _run_parallel(
         self,
-        cluster_factory: Callable[[], ClusterState],
-        strategy_factory: Callable[[], ClusterStrategy],
+        cluster: ClusterState,
+        strategy: ClusterStrategy,
         protocol: Protocol,
         network_config: NetworkConfig | None,
         results: MonteCarloResults,
         progress_callback: Callable[[int, int], None] | None,
     ) -> None:
-        """Run simulations in parallel using ProcessPoolExecutor."""
+        """Run simulations in parallel using ProcessPoolExecutor.
+
+        All objects are plain dataclasses and always picklable, so they
+        are sent directly to worker processes.  Each worker deep-copies
+        the objects to ensure independent state.
+        """
         completed = 0
 
         with ProcessPoolExecutor(max_workers=self.config.parallel_workers) as executor:
@@ -584,8 +588,8 @@ class MonteCarloRunner:
 
                 future = executor.submit(
                     _run_single_simulation,
-                    cluster_factory=cluster_factory,
-                    strategy_factory=strategy_factory,
+                    cluster=cluster,
+                    strategy=strategy,
                     protocol=protocol,
                     network_config=network_config,
                     max_time=self.config.max_time,
@@ -604,8 +608,8 @@ class MonteCarloRunner:
 
     def run_until_converged(
         self,
-        cluster_factory: Callable[[], ClusterState],
-        strategy_factory: Callable[[], ClusterStrategy],
+        cluster: ClusterState,
+        strategy: ClusterStrategy,
         protocol: Protocol,
         convergence: ConvergenceCriteria,
         network_config: NetworkConfig | None = None,
@@ -619,8 +623,8 @@ class MonteCarloRunner:
         max_runs is reached.
 
         Args:
-            cluster_factory: Callable that creates a fresh ClusterState for each run.
-            strategy_factory: Callable that creates a fresh ClusterStrategy for each run.
+            cluster: Initial cluster state (deep-copied for each run).
+            strategy: Cluster strategy (deep-copied for each run).
             protocol: Protocol instance (deep-copied for each run).
             convergence: Convergence criteria specifying confidence level,
                 relative error, and target metrics.
@@ -638,8 +642,8 @@ class MonteCarloRunner:
         # Phase 1: Run minimum batch
         initial_batch = convergence.min_runs
         self._run_batch(
-            cluster_factory=cluster_factory,
-            strategy_factory=strategy_factory,
+            cluster=cluster,
+            strategy=strategy,
             protocol=protocol,
             network_config=network_config,
             results=results,
@@ -665,8 +669,8 @@ class MonteCarloRunner:
                 break
 
             self._run_batch(
-                cluster_factory=cluster_factory,
-                strategy_factory=strategy_factory,
+                cluster=cluster,
+                strategy=strategy,
                 protocol=protocol,
                 network_config=network_config,
                 results=results,
@@ -693,8 +697,8 @@ class MonteCarloRunner:
 
     def _run_batch(
         self,
-        cluster_factory: Callable[[], ClusterState],
-        strategy_factory: Callable[[], ClusterStrategy],
+        cluster: ClusterState,
+        strategy: ClusterStrategy,
         protocol: Protocol,
         network_config: NetworkConfig | None,
         results: MonteCarloResults,
@@ -704,8 +708,8 @@ class MonteCarloRunner:
         """Run a batch of simulations and collect results.
 
         Args:
-            cluster_factory: Callable that creates a fresh ClusterState.
-            strategy_factory: Callable that creates a fresh ClusterStrategy.
+            cluster: Initial cluster state (deep-copied for each run).
+            strategy: Cluster strategy (deep-copied for each run).
             protocol: Protocol instance.
             network_config: Optional network configuration.
             results: Results object to append to.
@@ -725,8 +729,8 @@ class MonteCarloRunner:
                     )
                     future = executor.submit(
                         _run_single_simulation,
-                        cluster_factory=cluster_factory,
-                        strategy_factory=strategy_factory,
+                        cluster=cluster,
+                        strategy=strategy,
                         protocol=protocol,
                         network_config=network_config,
                         max_time=self.config.max_time,
@@ -746,8 +750,8 @@ class MonteCarloRunner:
                     else None
                 )
                 sim_result = _run_single_simulation(
-                    cluster_factory=cluster_factory,
-                    strategy_factory=strategy_factory,
+                    cluster=cluster,
+                    strategy=strategy,
                     protocol=protocol,
                     network_config=network_config,
                     max_time=self.config.max_time,
@@ -967,8 +971,8 @@ def estimate_required_runs(
 
 
 def run_monte_carlo(
-    cluster_factory: Callable[[], ClusterState],
-    strategy_factory: Callable[[], ClusterStrategy],
+    cluster: ClusterState,
+    strategy: ClusterStrategy,
     protocol: Protocol,
     num_simulations: int,
     max_time: Seconds | None = None,
@@ -980,8 +984,8 @@ def run_monte_carlo(
     """Convenience function to run Monte Carlo simulations.
 
     Args:
-        cluster_factory: Callable that creates a fresh ClusterState for each run.
-        strategy_factory: Callable that creates a fresh ClusterStrategy for each run.
+        cluster: Initial cluster state (deep-copied for each run).
+        strategy: Cluster strategy (deep-copied for each run).
         protocol: Protocol instance (deep-copied for each run).
         num_simulations: Number of simulation runs.
         max_time: Maximum time per simulation in seconds. If None and
@@ -1005,16 +1009,16 @@ def run_monte_carlo(
 
     runner = MonteCarloRunner(config)
     return runner.run(
-        cluster_factory=cluster_factory,
-        strategy_factory=strategy_factory,
+        cluster=cluster,
+        strategy=strategy,
         protocol=protocol,
         network_config=network_config,
     )
 
 
 def run_monte_carlo_converged(
-    cluster_factory: Callable[[], ClusterState],
-    strategy_factory: Callable[[], ClusterStrategy],
+    cluster: ClusterState,
+    strategy: ClusterStrategy,
     protocol: Protocol,
     max_time: Seconds | None = None,
     confidence_level: float = 0.95,
@@ -1047,8 +1051,8 @@ def run_monte_carlo_converged(
     MTTDL estimate.
 
     Args:
-        cluster_factory: Callable that creates a fresh ClusterState for each run.
-        strategy_factory: Callable that creates a fresh ClusterStrategy for each run.
+        cluster: Initial cluster state (deep-copied for each run).
+        strategy: Cluster strategy (deep-copied for each run).
         protocol: Protocol instance (deep-copied for each run).
         max_time: Maximum time per simulation in seconds. If None and
             stop_on_data_loss is True, runs continue until data loss.
@@ -1091,8 +1095,8 @@ def run_monte_carlo_converged(
 
     runner = MonteCarloRunner(config)
     return runner.run_until_converged(
-        cluster_factory=cluster_factory,
-        strategy_factory=strategy_factory,
+        cluster=cluster,
+        strategy=strategy,
         protocol=protocol,
         convergence=convergence,
         network_config=network_config,

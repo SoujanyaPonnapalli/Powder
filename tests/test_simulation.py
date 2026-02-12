@@ -1991,8 +1991,8 @@ class TestAdaptiveMonteCarlo:
         )
 
         result = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=convergence,
         )
@@ -2030,14 +2030,14 @@ class TestAdaptiveMonteCarlo:
         )
 
         result_loose = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=loose,
         )
         result_tight = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=tight,
         )
@@ -2063,8 +2063,8 @@ class TestAdaptiveMonteCarlo:
         )
 
         result = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=convergence,
         )
@@ -2093,8 +2093,8 @@ class TestAdaptiveMonteCarlo:
         )
 
         result = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=convergence,
         )
@@ -2127,8 +2127,8 @@ class TestAdaptiveMonteCarlo:
             progress_calls.append((completed, estimated_total, converged))
 
         runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=convergence,
             progress_callback=on_progress,
@@ -2144,8 +2144,8 @@ class TestAdaptiveMonteCarlo:
     def test_convenience_function(self):
         """run_monte_carlo_converged convenience function should work."""
         result = run_monte_carlo_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             max_time=days(30),
             confidence_level=0.95,
@@ -2164,8 +2164,8 @@ class TestAdaptiveMonteCarlo:
         """estimate_required_runs should give a reasonable estimate from pilot data."""
         # Run a small pilot
         pilot = run_monte_carlo(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             num_simulations=30,
             max_time=days(30),
@@ -2186,8 +2186,8 @@ class TestAdaptiveMonteCarlo:
     def test_convergence_summary(self):
         """ConvergenceResult.summary() should produce readable output."""
         result = run_monte_carlo_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             max_time=days(30),
             confidence_level=0.95,
@@ -2222,8 +2222,8 @@ class TestAdaptiveMonteCarlo:
         )
 
         result = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=convergence,
         )
@@ -2258,14 +2258,14 @@ class TestAdaptiveMonteCarlo:
         )
 
         result_loose = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=loose,
         )
         result_tight = runner.run_until_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             convergence=tight,
         )
@@ -2275,8 +2275,8 @@ class TestAdaptiveMonteCarlo:
     def test_absolute_error_convenience_function(self):
         """run_monte_carlo_converged should accept absolute_error kwarg."""
         result = run_monte_carlo_converged(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             max_time=days(30),
             absolute_error=0.05,
@@ -2292,8 +2292,8 @@ class TestAdaptiveMonteCarlo:
     def test_absolute_error_estimate_required_runs(self):
         """estimate_required_runs should work with absolute error criteria."""
         pilot = run_monte_carlo(
-            cluster_factory=_make_fast_cluster,
-            strategy_factory=NoOpStrategy,
+            cluster=_make_fast_cluster(),
+            strategy=NoOpStrategy(),
             protocol=LeaderlessUpToDateQuorumProtocol(),
             num_simulations=30,
             max_time=days(30),
