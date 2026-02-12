@@ -17,7 +17,7 @@ from .distributions import (
     Uniform,
     Constant,
 )
-from .node import NodeConfig, NodeState
+from .node import NodeConfig, NodeState, SyncState
 from .network import NetworkConfig, NetworkState
 from .events import EventType, Event, EventQueue
 from .cluster import ClusterState
@@ -54,6 +54,7 @@ __all__ = [
     # Node
     "NodeConfig",
     "NodeState",
+    "SyncState",
     # Network
     "NetworkConfig",
     "NetworkState",

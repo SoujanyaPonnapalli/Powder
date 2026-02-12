@@ -63,6 +63,21 @@ class Protocol(ABC):
         """
         return 0.0
 
+    @property
+    def log_retention_ops(self) -> float:
+        """Number of committed-data units of log a node retains.
+
+        A node at ``last_applied_index = D`` keeps log entries from
+        ``max(0, D - log_retention_ops)`` to ``D``.  Entries before
+        that boundary have been garbage-collected and are no longer
+        available for log-only replay by syncing peers.
+
+        0 means infinite retention (no garbage collection).  Nodes
+        may still keep transactions preceding their latest snapshot,
+        so the log window and snapshot schedule are independent.
+        """
+        return 0.0
+
     @abstractmethod
     def can_commit(self, cluster: ClusterState) -> bool:
         """Determine if the system can accept writes right now.
@@ -168,15 +183,25 @@ class Protocol(ABC):
         cluster: ClusterState,
         rng: np.random.Generator,
     ) -> Seconds | None:
-        """Compute wall-clock time for a lagging node to catch up to commit_index.
+        """Compute wall-clock time for a lagging node to catch up to its donor.
 
-        The default implementation uses the standard snapshot + log replay model:
-        - If the node is behind the best donor's last snapshot, it must download
-          the snapshot first (fixed cost), then replay the remaining log suffix.
-        - If the node is ahead of the donor's snapshot, it replays the log directly.
+        The sync target is the donor's ``last_applied_index`` (the data the
+        donor actually has), not ``cluster.commit_index``.  The donor's
+        position advances at ``commit_rate`` while the syncing node replays
+        at ``log_replay_rate``, giving a net catch-up rate of
+        ``log_replay_rate - commit_rate`` when the cluster can commit, or
+        ``log_replay_rate`` when it cannot.
 
-        During recovery, new commits continue arriving at commit_rate, so the
-        net catch-up rate is (log_replay_rate - commit_rate).
+        The sync path (log-only vs snapshot + log suffix) depends on the
+        donor's log garbage-collection state:
+
+        * If the donor has GC'd log entries the node needs
+          (``node.last_applied_index < donor.last_applied_index - log_retention_ops``),
+          the node **must** download the donor's latest snapshot first, then
+          replay the remaining log suffix.
+        * If the log is still available, the node **may** choose log-only
+          replay *or* snapshot + log.  The faster path is chosen by
+          comparing estimated times using ``Distribution.mean``.
 
         Args:
             node: The lagging node that needs to sync.
@@ -185,55 +210,95 @@ class Protocol(ABC):
 
         Returns:
             Wall-clock seconds to complete sync, or None if the node cannot
-            catch up (replay rate <= commit rate).
+            catch up (replay rate <= commit rate) or no donor is available.
         """
-        committed_lag = cluster.commit_index - node.last_applied_index
-        if committed_lag <= 0:
+        donor = cluster.find_sync_donor(node)
+        if donor is None:
+            return None  # No donor available
+
+        donor_lag = donor.last_applied_index - node.last_applied_index
+        if donor_lag <= 0:
             return Seconds(0)
 
+        can_commit = self.can_commit(cluster)
+        commit_rate_eff = self.commit_rate if can_commit else 0.0
         log_replay_rate = node.config.log_replay_rate_dist.sample(rng)
-        commit_rate = self.commit_rate
+        net_rate = log_replay_rate - commit_rate_eff
+
+        if net_rate <= 0:
+            return None  # Can't catch up
+
         snapshot_interval = self.snapshot_interval
+        log_retention = self.log_retention_ops
 
-        # Find the best donor node (most up-to-date available node, excluding self)
-        donor = None
-        for n in cluster.nodes.values():
-            if n.node_id != node.node_id and cluster._node_effectively_available(n):
-                if donor is None or n.last_applied_index > donor.last_applied_index:
-                    donor = n
+        # Determine the donor's earliest available log entry
+        if log_retention > 0:
+            donor_earliest_log = max(0.0, donor.last_applied_index - log_retention)
+        else:
+            donor_earliest_log = 0.0  # Infinite retention
 
-        if donor is None:
-            return None  # No donor available to sync from
-
-        # Determine if snapshot download is needed:
-        # The donor's log only goes back to its last snapshot.
-        # If the recovering node is behind that, it must download the snapshot.
-        needs_snapshot = (
-            snapshot_interval > 0 and node.last_applied_index < donor.last_snapshot_index
+        # Determine if the donor has GC'd log entries the node needs
+        must_snapshot = (
+            log_retention > 0
+            and node.last_applied_index < donor_earliest_log
         )
 
-        if needs_snapshot:
+        if must_snapshot and snapshot_interval > 0:
+            # --- Forced snapshot path ---
+            # Pick donor's latest snapshot as the target
+            target_snap = (
+                int(donor.last_applied_index // snapshot_interval)
+                * snapshot_interval
+            )
             snapshot_download_time = node.config.snapshot_download_time_dist.sample(rng)
 
-            # After downloading, node is at donor.last_snapshot_index.
-            # During the download, commit_rate * download_time new data arrives.
+            # After downloading, node is at target_snap.  During the download,
+            # the donor advances by commit_rate_eff * download_time.
             remaining_log = (
-                cluster.commit_index
-                - donor.last_snapshot_index
-                + commit_rate * snapshot_download_time
+                donor.last_applied_index
+                - target_snap
+                + commit_rate_eff * snapshot_download_time
             )
+            return Seconds(snapshot_download_time + remaining_log / net_rate)
 
-            net_rate = log_replay_rate - commit_rate
-            if net_rate <= 0:
-                return None  # Can't catch up
-            log_replay_time = remaining_log / net_rate
-            return Seconds(snapshot_download_time + log_replay_time)
+        elif snapshot_interval > 0 and not must_snapshot:
+            # --- Log is available; choose the faster path via mean estimates ---
+            mean_replay_rate = node.config.log_replay_rate_dist.mean
+            mean_net_rate = mean_replay_rate - commit_rate_eff
+            if mean_net_rate <= 0:
+                mean_net_rate = mean_replay_rate  # Fallback
+
+            log_only_est = donor_lag / mean_net_rate
+
+            target_snap = (
+                int(donor.last_applied_index // snapshot_interval)
+                * snapshot_interval
+            )
+            if target_snap > node.last_applied_index:
+                mean_snap_time = node.config.snapshot_download_time_dist.mean
+                remaining_after_snap = (
+                    donor.last_applied_index
+                    - target_snap
+                    + commit_rate_eff * mean_snap_time
+                )
+                snap_est = mean_snap_time + remaining_after_snap / mean_net_rate
+
+                if snap_est < log_only_est:
+                    # Snapshot path is estimated faster -- use it
+                    snapshot_download_time = node.config.snapshot_download_time_dist.sample(rng)
+                    remaining_log = (
+                        donor.last_applied_index
+                        - target_snap
+                        + commit_rate_eff * snapshot_download_time
+                    )
+                    return Seconds(snapshot_download_time + remaining_log / net_rate)
+
+            # Log-only replay (default when no snapshot advantage)
+            return Seconds(donor_lag / net_rate)
+
         else:
-            # Log-only replay
-            net_rate = log_replay_rate - commit_rate
-            if net_rate <= 0:
-                return None  # Can't catch up
-            return Seconds(committed_lag / net_rate)
+            # --- No snapshots configured: log-only replay ---
+            return Seconds(donor_lag / net_rate)
 
 
 class LeaderlessUpToDateQuorumProtocol(Protocol):
@@ -251,9 +316,11 @@ class LeaderlessUpToDateQuorumProtocol(Protocol):
         self,
         commit_rate: float = 1.0,
         snapshot_interval: float = 0.0,
+        log_retention_ops: float = 0.0,
     ) -> None:
         self._commit_rate = commit_rate
         self._snapshot_interval = snapshot_interval
+        self._log_retention_ops = log_retention_ops
 
     @property
     def commit_rate(self) -> float:
@@ -262,6 +329,10 @@ class LeaderlessUpToDateQuorumProtocol(Protocol):
     @property
     def snapshot_interval(self) -> float:
         return self._snapshot_interval
+
+    @property
+    def log_retention_ops(self) -> float:
+        return self._log_retention_ops
 
     def can_commit(self, cluster: ClusterState) -> bool:
         """Commit requires a majority of up-to-date nodes."""
@@ -300,9 +371,11 @@ class LeaderlessMajorityAvailableProtocol(Protocol):
         self,
         commit_rate: float = 1.0,
         snapshot_interval: float = 0.0,
+        log_retention_ops: float = 0.0,
     ) -> None:
         self._commit_rate = commit_rate
         self._snapshot_interval = snapshot_interval
+        self._log_retention_ops = log_retention_ops
 
     @property
     def commit_rate(self) -> float:
@@ -311,6 +384,10 @@ class LeaderlessMajorityAvailableProtocol(Protocol):
     @property
     def snapshot_interval(self) -> float:
         return self._snapshot_interval
+
+    @property
+    def log_retention_ops(self) -> float:
+        return self._log_retention_ops
 
     def can_commit(self, cluster: ClusterState) -> bool:
         """Commit requires a majority of available nodes (not necessarily up-to-date)."""
@@ -356,6 +433,7 @@ class RaftLikeProtocol(Protocol):
         election_time_dist: Distribution,
         commit_rate: float = 1.0,
         snapshot_interval: float = 0.0,
+        log_retention_ops: float = 0.0,
     ) -> None:
         """Initialize the Raft-like protocol.
 
@@ -364,10 +442,13 @@ class RaftLikeProtocol(Protocol):
                 a leader election after the leader fails.
             commit_rate: Committed data units per second of wall time.
             snapshot_interval: Commit-index interval between snapshots.
+            log_retention_ops: Number of committed-data units of log retained.
+                0 means infinite retention.
         """
         self.election_time_dist = election_time_dist
         self._commit_rate = commit_rate
         self._snapshot_interval = snapshot_interval
+        self._log_retention_ops = log_retention_ops
         self._leader_id: str | None = None
         self._election_in_progress: bool = False
 
@@ -378,6 +459,10 @@ class RaftLikeProtocol(Protocol):
     @property
     def snapshot_interval(self) -> float:
         return self._snapshot_interval
+
+    @property
+    def log_retention_ops(self) -> float:
+        return self._log_retention_ops
 
     @property
     def leader_id(self) -> str | None:

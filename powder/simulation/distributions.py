@@ -5,6 +5,7 @@ All time values use seconds as the canonical unit. Helper functions provide
 readable constructors for common time units.
 """
 
+import math
 from abc import ABC, abstractmethod
 from typing import NewType
 
@@ -44,6 +45,17 @@ class Distribution(ABC):
         """
         pass
 
+    @property
+    @abstractmethod
+    def mean(self) -> float:
+        """Theoretical mean (expected value) of the distribution.
+
+        Used for upfront estimation when planning sync paths
+        (log-only vs snapshot), where sampling is not appropriate
+        because the decision must be made before the sync starts.
+        """
+        pass
+
 
 class Exponential(Distribution):
     """Exponential distribution parameterized by rate.
@@ -59,6 +71,10 @@ class Exponential(Distribution):
         if rate <= 0:
             raise ValueError(f"Rate must be positive, got {rate}")
         self.rate = rate
+
+    @property
+    def mean(self) -> float:
+        return 1.0 / self.rate
 
     def sample(self, rng: np.random.Generator) -> float:
         """Sample time until next event."""
@@ -91,6 +107,10 @@ class Weibull(Distribution):
         self.shape = shape
         self.scale = scale
 
+    @property
+    def mean(self) -> float:
+        return self.scale * math.gamma(1.0 + 1.0 / self.shape)
+
     def sample(self, rng: np.random.Generator) -> float:
         """Sample a value from the Weibull distribution."""
         return self.scale * rng.weibull(self.shape)
@@ -111,17 +131,21 @@ class Normal(Distribution):
     def __init__(self, mean: float, std: float, min_val: float = 0.0):
         if std <= 0:
             raise ValueError(f"Standard deviation must be positive, got {std}")
-        self.mean = mean
+        self._mean = mean
         self.std = std
         self.min_val = min_val
 
+    @property
+    def mean(self) -> float:
+        return self._mean
+
     def sample(self, rng: np.random.Generator) -> float:
         """Sample a value, clamped to min_val."""
-        value = rng.normal(self.mean, self.std)
+        value = rng.normal(self._mean, self.std)
         return max(self.min_val, value)
 
     def __repr__(self) -> str:
-        return f"Normal(mean={self.mean}, std={self.std}, min_val={self.min_val})"
+        return f"Normal(mean={self._mean}, std={self.std}, min_val={self.min_val})"
 
 
 class Uniform(Distribution):
@@ -137,6 +161,10 @@ class Uniform(Distribution):
             raise ValueError(f"Low must be less than high, got low={low}, high={high}")
         self.low = low
         self.high = high
+
+    @property
+    def mean(self) -> float:
+        return (self.low + self.high) / 2.0
 
     def sample(self, rng: np.random.Generator) -> float:
         """Sample a value uniformly from [low, high)."""
@@ -158,6 +186,10 @@ class Constant(Distribution):
 
     def __init__(self, value: float):
         self.value = value
+
+    @property
+    def mean(self) -> float:
+        return self.value
 
     def sample(self, rng: np.random.Generator) -> float:
         """Return the constant value."""

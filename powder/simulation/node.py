@@ -38,6 +38,33 @@ class NodeConfig:
 
 
 @dataclass
+class SyncState:
+    """Active sync state for a node catching up to its donor.
+
+    Tracks the ongoing sync process: which donor the node is syncing from,
+    what phase it is in (snapshot download or log replay), and the sampled
+    rates that govern the sync speed.
+
+    Attributes:
+        donor_id: Node ID of the peer this node is syncing from.
+        phase: Current sync phase -- "snapshot_download" or "log_replay".
+        log_replay_rate: Sampled replay rate (committed-data units per second
+            of wall time) for this sync session.
+        snapshot_remaining: Wall-clock seconds remaining for the snapshot
+            download. Only meaningful when phase == "snapshot_download".
+        target_snapshot_index: Commit-index position the node will jump to
+            once the snapshot download completes. Only meaningful when
+            phase == "snapshot_download".
+    """
+
+    donor_id: str
+    phase: str  # "snapshot_download" or "log_replay"
+    log_replay_rate: float
+    snapshot_remaining: float = 0.0
+    target_snapshot_index: float = 0.0
+
+
+@dataclass
 class NodeState:
     """Dynamic state of a node during simulation.
 
@@ -58,6 +85,7 @@ class NodeState:
     has_data: bool = True
     last_applied_index: float = 0.0
     last_snapshot_index: float = 0.0
+    sync: SyncState | None = None
 
     def is_up_to_date(self, commit_index: float) -> bool:
         """Check if node is up-to-date at the given commit index.

@@ -15,7 +15,7 @@ from .distributions import Seconds
 from .events import Event, EventQueue, EventType
 from .metrics import MetricsCollector, MetricsSnapshot
 from .network import NetworkConfig
-from .node import NodeConfig, NodeState
+from .node import NodeConfig, NodeState, SyncState
 from .protocol import Protocol
 from .strategy import Action, ActionType, ClusterStrategy
 
@@ -113,6 +113,9 @@ class Simulator:
         for action in actions:
             self._execute_action(action)
 
+        # Start syncs for any initially lagging nodes
+        self._retry_pending_syncs()
+
         self._initialized = True
 
     def _schedule_node_events(self, node: NodeState) -> None:
@@ -164,15 +167,19 @@ class Simulator:
         )
 
     def _advance_commit_index(self, elapsed: float) -> None:
-        """Advance commit_index and keep available nodes in sync.
+        """Advance commit_index, up-to-date nodes, and syncing nodes.
 
         Called before processing each event (or at time-limit) for the
         wall-clock interval since the last event.
 
         If the system can commit, commit_index advances by
-        elapsed * protocol.commit_rate.  Available, up-to-date nodes
-        keep up with the frontier and take snapshots when crossing
+        elapsed * protocol.commit_rate.  Available, up-to-date, non-syncing
+        nodes keep up with the frontier and take snapshots when crossing
         snapshot boundaries.
+
+        Syncing nodes advance independently -- even when the cluster
+        cannot commit -- because they are replaying data the donor
+        already has.
 
         Args:
             elapsed: Wall-clock seconds since last event.
@@ -180,49 +187,339 @@ class Simulator:
         if elapsed <= 0:
             return
 
-        if not self.protocol.can_commit(self.cluster):
-            return
+        can_commit = self.protocol.can_commit(self.cluster)
 
-        commit_amount = elapsed * self.protocol.commit_rate
-        old_index = self.cluster.commit_index
-        new_index = old_index + commit_amount
-        self.cluster.commit_index = new_index
+        if can_commit:
+            commit_amount = elapsed * self.protocol.commit_rate
+            old_index = self.cluster.commit_index
+            new_index = old_index + commit_amount
+            self.cluster.commit_index = new_index
 
+            snapshot_interval = self.protocol.snapshot_interval
+            for node in self.cluster.nodes.values():
+                if (
+                    self.cluster._node_effectively_available(node)
+                    and node.sync is None  # Not actively syncing
+                    and node.last_applied_index >= old_index
+                ):
+                    # Node keeps up with commit frontier
+                    node.last_applied_index = new_index
+                    # Advance snapshot if crossing a boundary
+                    if snapshot_interval > 0:
+                        new_snap = int(new_index // snapshot_interval) * snapshot_interval
+                        if new_snap > node.last_snapshot_index:
+                            node.last_snapshot_index = new_snap
+
+        # Advance syncing nodes (even when cluster can't commit)
+        self._advance_syncing_nodes(elapsed)
+
+    def _advance_syncing_nodes(self, elapsed: float) -> None:
+        """Advance sync progress for all actively syncing nodes.
+
+        Syncing nodes advance regardless of whether the cluster can commit.
+        A node replays data from its donor at ``log_replay_rate`` and cannot
+        advance past the donor's ``last_applied_index`` -- a node can only
+        obtain data the donor actually has.
+
+        When the cluster cannot commit the donor's position is frozen, so
+        the syncing node closes the gap at the full replay rate.
+
+        Args:
+            elapsed: Wall-clock seconds to advance.
+        """
         snapshot_interval = self.protocol.snapshot_interval
+
         for node in self.cluster.nodes.values():
-            if (
-                self.cluster._node_effectively_available(node)
-                and node.last_applied_index >= old_index
-            ):
-                # Node keeps up with commit frontier
-                node.last_applied_index = new_index
-                # Advance snapshot if crossing a boundary
+            if node.sync is None:
+                continue
+            if not self.cluster._node_effectively_available(node):
+                continue
+
+            donor = self.cluster.get_node(node.sync.donor_id)
+            if donor is None or not self.cluster._node_effectively_available(donor):
+                continue  # Sync paused -- donor unavailable
+
+            remaining_time = elapsed
+
+            # Phase 1: snapshot download (if applicable)
+            if node.sync.phase == "snapshot_download":
+                if remaining_time >= node.sync.snapshot_remaining:
+                    # Snapshot finishes within this interval
+                    remaining_time -= node.sync.snapshot_remaining
+                    node.sync.snapshot_remaining = 0.0
+                    node.last_applied_index = node.sync.target_snapshot_index
+                    node.sync.phase = "log_replay"
+                    # Record the snapshot
+                    if (
+                        snapshot_interval > 0
+                        and node.sync.target_snapshot_index > node.last_snapshot_index
+                    ):
+                        node.last_snapshot_index = node.sync.target_snapshot_index
+                else:
+                    node.sync.snapshot_remaining -= remaining_time
+                    remaining_time = 0.0
+
+            # Phase 2: log replay (if time remains)
+            if node.sync.phase == "log_replay" and remaining_time > 0:
+                node.last_applied_index = min(
+                    node.last_applied_index
+                    + node.sync.log_replay_rate * remaining_time,
+                    donor.last_applied_index,
+                )
+                # Advance snapshot if crossing boundaries
                 if snapshot_interval > 0:
-                    new_snap = int(new_index // snapshot_interval) * snapshot_interval
+                    new_snap = (
+                        int(node.last_applied_index // snapshot_interval)
+                        * snapshot_interval
+                    )
                     if new_snap > node.last_snapshot_index:
                         node.last_snapshot_index = new_snap
 
-    def _schedule_sync_complete(self, node: NodeState) -> None:
-        """Schedule sync completion for a lagging node.
+    def _start_sync(self, node: NodeState) -> None:
+        """Start a sync for a lagging node.
 
-        Delegates to the protocol's compute_sync_time to determine how
-        long the sync will take (accounting for snapshots, log replay,
-        and commit rate).
+        Finds the best donor, determines the sync path (log-only vs
+        snapshot + log suffix) using ``Distribution.mean`` for estimation,
+        samples actual rates, creates ``SyncState`` on the node, and
+        schedules a ``NODE_SYNC_COMPLETE`` event.
+
+        The sync target is ``donor.last_applied_index`` -- a node can only
+        obtain data the donor actually has.
         """
-        if node.is_up_to_date(self.cluster.commit_index):
-            return  # Already up to date
+        if node.sync is not None:
+            return  # Already syncing
 
-        time_to_sync = self.protocol.compute_sync_time(node, self.cluster, self.rng)
+        donor = self.cluster.find_sync_donor(node)
+        if donor is None:
+            return  # No donor; _retry_pending_syncs will pick this up later
 
-        if time_to_sync is not None and time_to_sync > 0:
-            sync_complete_time = Seconds(self.cluster.current_time + time_to_sync)
+        donor_lag = donor.last_applied_index - node.last_applied_index
+        if donor_lag <= 0:
+            return  # Already caught up to donor
+
+        # Sample the actual log replay rate for this sync session
+        log_replay_rate = node.config.log_replay_rate_dist.sample(self.rng)
+
+        can_commit = self.protocol.can_commit(self.cluster)
+        commit_rate_eff = self.protocol.commit_rate if can_commit else 0.0
+
+        snapshot_interval = self.protocol.snapshot_interval
+        log_retention = self.protocol.log_retention_ops
+
+        # Determine donor's earliest available log entry
+        if log_retention > 0:
+            donor_earliest_log = max(
+                0.0, donor.last_applied_index - log_retention
+            )
+        else:
+            donor_earliest_log = 0.0  # Infinite retention
+
+        must_snapshot = (
+            log_retention > 0 and node.last_applied_index < donor_earliest_log
+        )
+
+        use_snapshot = False
+        target_snap = 0.0
+        snapshot_download_time = 0.0
+
+        if must_snapshot and snapshot_interval > 0:
+            # Donor has GC'd needed log entries -- must download snapshot
+            use_snapshot = True
+            target_snap = (
+                int(donor.last_applied_index // snapshot_interval)
+                * snapshot_interval
+            )
+            snapshot_download_time = (
+                node.config.snapshot_download_time_dist.sample(self.rng)
+            )
+
+        elif snapshot_interval > 0 and not must_snapshot:
+            # Log is available -- estimate both paths using mean, pick faster
+            mean_replay_rate = node.config.log_replay_rate_dist.mean
+            mean_net_rate = mean_replay_rate - commit_rate_eff
+            if mean_net_rate <= 0:
+                mean_net_rate = mean_replay_rate  # Fallback
+
+            log_only_est = donor_lag / mean_net_rate
+
+            target_snap_candidate = (
+                int(donor.last_applied_index // snapshot_interval)
+                * snapshot_interval
+            )
+            if target_snap_candidate > node.last_applied_index:
+                mean_snap_time = node.config.snapshot_download_time_dist.mean
+                remaining_after_snap = (
+                    donor.last_applied_index
+                    - target_snap_candidate
+                    + commit_rate_eff * mean_snap_time
+                )
+                snap_est = mean_snap_time + remaining_after_snap / mean_net_rate
+
+                if snap_est < log_only_est:
+                    use_snapshot = True
+                    target_snap = target_snap_candidate
+                    snapshot_download_time = (
+                        node.config.snapshot_download_time_dist.sample(self.rng)
+                    )
+
+        # Create the SyncState
+        if use_snapshot:
+            node.sync = SyncState(
+                donor_id=donor.node_id,
+                phase="snapshot_download",
+                log_replay_rate=log_replay_rate,
+                snapshot_remaining=snapshot_download_time,
+                target_snapshot_index=target_snap,
+            )
+        else:
+            node.sync = SyncState(
+                donor_id=donor.node_id,
+                phase="log_replay",
+                log_replay_rate=log_replay_rate,
+            )
+
+        # Schedule the initial SYNC_COMPLETE event
+        remaining = self._compute_remaining_sync_time(node)
+        if remaining is not None and remaining >= 0:
             self.event_queue.push(
                 Event(
-                    time=sync_complete_time,
+                    time=Seconds(self.cluster.current_time + max(remaining, 0)),
                     event_type=EventType.NODE_SYNC_COMPLETE,
                     target_id=node.node_id,
                 )
             )
+        # If remaining is None (net_rate <= 0), sync is active but no event
+        # scheduled. _reschedule_active_syncs will handle it when conditions
+        # change.
+
+    def _compute_remaining_sync_time(self, node: NodeState) -> Seconds | None:
+        """Compute wall-clock time until a syncing node catches up to its donor.
+
+        Uses ``donor.last_applied_index`` as the sync target -- the data the
+        donor actually has -- not ``cluster.commit_index``.
+
+        Returns:
+            Estimated seconds to sync completion, or None if sync cannot
+            complete under current conditions (no donor or net_rate <= 0).
+        """
+        sync = node.sync
+        if sync is None:
+            return None
+
+        donor = self.cluster.get_node(sync.donor_id)
+        if donor is None or not self.cluster._node_effectively_available(donor):
+            return None  # Donor unavailable, sync paused
+
+        can_commit = self.protocol.can_commit(self.cluster)
+        commit_rate_eff = self.protocol.commit_rate if can_commit else 0.0
+        net_rate = sync.log_replay_rate - commit_rate_eff
+
+        if sync.phase == "snapshot_download":
+            remaining_snapshot = max(0.0, sync.snapshot_remaining)
+
+            # After snapshot, node will be at target_snapshot_index.
+            # During download, donor advances by commit_rate * remaining_snapshot.
+            donor_at_download_end = (
+                donor.last_applied_index + commit_rate_eff * remaining_snapshot
+            )
+            remaining_log = donor_at_download_end - sync.target_snapshot_index
+
+            if remaining_log <= 0:
+                return Seconds(remaining_snapshot)
+            if net_rate <= 0:
+                return None  # Can't catch up the log suffix
+            return Seconds(remaining_snapshot + remaining_log / net_rate)
+
+        elif sync.phase == "log_replay":
+            remaining_lag = donor.last_applied_index - node.last_applied_index
+            if remaining_lag <= 0:
+                return Seconds(0)
+            if net_rate <= 0:
+                return None  # Can't catch up
+            return Seconds(remaining_lag / net_rate)
+
+        return None
+
+    def _cancel_syncs_from_donor(self, donor_id: str) -> None:
+        """Cancel or failover syncs when a donor becomes unavailable.
+
+        For each node syncing from the downed donor:
+        - If another donor exists *and* is ahead of the syncing node,
+          swap the donor reference and keep progress (seamless failover).
+        - Otherwise, cancel the SYNC_COMPLETE event and clear the sync
+          state.  ``_retry_pending_syncs`` will resume the sync when a
+          suitable donor becomes available later.
+        """
+        for node in self.cluster.nodes_syncing_from(donor_id):
+            alt_donor = self.cluster.find_sync_donor(node)
+            if (
+                alt_donor is not None
+                and alt_donor.last_applied_index > node.last_applied_index
+            ):
+                # Seamless failover: swap donor, keep progress
+                node.sync.donor_id = alt_donor.node_id
+            else:
+                # No useful donor available: pause sync
+                self.event_queue.cancel_events_for(
+                    node.node_id, EventType.NODE_SYNC_COMPLETE
+                )
+                node.sync = None
+
+    def _reschedule_active_syncs(self) -> None:
+        """Reschedule SYNC_COMPLETE events for all actively syncing nodes.
+
+        Called after every event to keep sync completion timing accurate
+        when conditions change (commit ability, donor availability).
+        """
+        for node in self.cluster.nodes.values():
+            if node.sync is None:
+                continue
+
+            # Check if donor is still available and ahead
+            donor = self.cluster.get_node(node.sync.donor_id)
+            if (
+                donor is None
+                or not self.cluster._node_effectively_available(donor)
+                or donor.last_applied_index <= node.last_applied_index
+            ):
+                # Try failover to a donor that is ahead of us
+                alt = self.cluster.find_sync_donor(node)
+                if (
+                    alt is not None
+                    and alt.last_applied_index > node.last_applied_index
+                ):
+                    node.sync.donor_id = alt.node_id
+                    donor = alt
+                else:
+                    # No useful donor: pause sync
+                    self.event_queue.cancel_events_for(
+                        node.node_id, EventType.NODE_SYNC_COMPLETE
+                    )
+                    node.sync = None
+                    continue
+
+            remaining = self._compute_remaining_sync_time(node)
+            if remaining is not None and remaining >= 0:
+                self.event_queue.reschedule(
+                    node.node_id,
+                    EventType.NODE_SYNC_COMPLETE,
+                    Seconds(self.cluster.current_time + max(remaining, 0)),
+                )
+            else:
+                # net_rate <= 0: can't catch up now, cancel event but keep
+                # sync state so it can be rescheduled when conditions improve
+                self.event_queue.cancel_events_for(
+                    node.node_id, EventType.NODE_SYNC_COMPLETE
+                )
+
+    def _retry_pending_syncs(self) -> None:
+        """Start syncs for lagging nodes that don't have an active sync.
+
+        Called whenever a potential donor becomes available (node recovery,
+        network outage end, sync completion).
+        """
+        for node in self.cluster.nodes_needing_sync():
+            self._start_sync(node)
 
     def _process_event(self, event: Event) -> None:
         """Process a single event and update cluster state."""
@@ -280,6 +577,11 @@ class Simulator:
         for action in actions:
             self._execute_action(action)
 
+        # Keep sync completion timing accurate after every event.
+        # Conditions may have changed (commit ability, donor availability).
+        self._reschedule_active_syncs()
+        self._retry_pending_syncs()
+
         # Check for data-loss milestones AFTER the event is fully applied.
         self.metrics.update(self.cluster, event.time, self.protocol)
 
@@ -289,10 +591,14 @@ class Simulator:
         if node and node.has_data:
             node.is_available = False
 
-            # Cancel any pending sync for this node
+            # Cancel any pending sync for this node and clear sync state
             self.event_queue.cancel_events_for(
                 event.target_id, EventType.NODE_SYNC_COMPLETE
             )
+            node.sync = None
+
+            # This node may have been a donor -- cancel/failover syncs from it
+            self._cancel_syncs_from_donor(event.target_id)
 
             # Schedule recovery
             recovery_time = node.config.recovery_dist.sample(self.rng)
@@ -317,14 +623,19 @@ class Simulator:
             )
 
     def _apply_node_recovery(self, event: Event) -> None:
-        """Apply node recovery from transient failure."""
+        """Apply node recovery from transient failure.
+
+        The recovered node may need to sync if it fell behind.  It may
+        also serve as a donor for other nodes, so pending syncs are
+        retried (handled by the _retry_pending_syncs call in _process_event).
+        """
         node = self.cluster.get_node(event.target_id)
         if node and node.has_data:
             node.is_available = True
 
             # Node may need to sync if it fell behind
             if not node.is_up_to_date(self.cluster.commit_index):
-                self._schedule_sync_complete(node)
+                self._start_sync(node)
 
     def _apply_node_data_loss(self, event: Event) -> None:
         """Apply permanent data loss to a node."""
@@ -332,20 +643,54 @@ class Simulator:
         if node:
             node.has_data = False
             node.is_available = False
+            node.sync = None
 
             # Cancel all pending events for this node
             self.event_queue.cancel_events_for(event.target_id)
 
+            # This node may have been a donor -- cancel/failover syncs from it
+            self._cancel_syncs_from_donor(event.target_id)
+
     def _apply_node_sync_complete(self, event: Event) -> None:
         """Apply sync completion for a node.
 
-        Sync is only applied if the node is effectively available, which
-        includes checking that the node's region is not in a network outage.
-        A partitioned node cannot sync because it can't communicate with peers.
+        Validates that the donor is still available.  If the donor went
+        down and no alternate exists, the sync is cleared and the node
+        will be picked up by ``_retry_pending_syncs``.
+
+        On success the node snaps to ``donor.last_applied_index`` (the
+        data the donor actually has) rather than ``cluster.commit_index``.
         """
         node = self.cluster.get_node(event.target_id)
-        if node and self.cluster._node_effectively_available(node):
-            node.last_applied_index = self.cluster.commit_index
+        if node is None or node.sync is None:
+            return
+
+        if not self.cluster._node_effectively_available(node):
+            node.sync = None
+            return
+
+        donor = self.cluster.get_node(node.sync.donor_id)
+        if donor is not None and self.cluster._node_effectively_available(donor):
+            # Sync complete: snap to donor's position
+            node.last_applied_index = donor.last_applied_index
+            # Take snapshot if crossing a boundary
+            snapshot_interval = self.protocol.snapshot_interval
+            if snapshot_interval > 0:
+                snap = (
+                    int(node.last_applied_index // snapshot_interval)
+                    * snapshot_interval
+                )
+                if snap > node.last_snapshot_index:
+                    node.last_snapshot_index = snap
+        else:
+            # Donor went down at completion -- try failover
+            alt = self.cluster.find_sync_donor(node)
+            if alt is not None:
+                node.sync.donor_id = alt.node_id
+                # Reschedule will handle the rest
+                return
+            # No donor: clear sync, will be retried
+        node.sync = None
 
     def _apply_node_spawn_complete(self, event: Event) -> None:
         """Apply completion of node spawning.
@@ -374,26 +719,29 @@ class Simulator:
             # Schedule events for new node
             self._schedule_node_events(new_node)
 
-            # Schedule sync
-            self._schedule_sync_complete(new_node)
+            # Start sync from a donor
+            self._start_sync(new_node)
 
     def _apply_network_outage_start(self, event: Event) -> None:
         """Apply start of a region network outage (all nodes in region become unavailable).
 
-        Cancels any pending sync events for nodes in the affected region,
-        since partitioned nodes cannot communicate with peers to sync.
+        Cancels syncs for nodes in the affected region and handles donor
+        failover for nodes that were syncing from them.
         """
         region = event.metadata.get("region", event.target_id)
         if region:
             self.cluster.network.add_outage(region)
 
-            # Cancel pending syncs for nodes in the affected region —
-            # they can't sync while partitioned from the rest of the cluster.
+            # Cancel syncs for nodes in the affected region and handle
+            # downstream syncs that used these nodes as donors.
             for node in self.cluster.nodes.values():
                 if node.config.region == region:
                     self.event_queue.cancel_events_for(
                         node.node_id, EventType.NODE_SYNC_COMPLETE
                     )
+                    node.sync = None
+                    # This node may have been a donor
+                    self._cancel_syncs_from_donor(node.node_id)
 
             # Schedule outage end
             duration = self.network_config.outage_duration_dist.sample(self.rng)
@@ -409,23 +757,24 @@ class Simulator:
     def _apply_network_outage_end(self, event: Event) -> None:
         """Apply end of a region network outage.
 
-        Schedules sync for any nodes in the recovered region that fell
-        behind during the outage, mirroring the behavior of node recovery.
+        Recovered nodes may need to sync.  They may also serve as donors,
+        so pending syncs are retried (handled by the _retry_pending_syncs
+        call in _process_event).
         """
         region = event.metadata.get("region", event.target_id)
         if region:
             self.cluster.network.remove_outage(region)
 
-            # Nodes in the recovered region may have fallen behind during
-            # the outage — schedule syncs so they can catch up.
+            # Start syncs for nodes in the recovered region that fell behind.
             for node in self.cluster.nodes.values():
                 if (
                     node.config.region == region
                     and node.is_available
                     and node.has_data
                     and not node.is_up_to_date(self.cluster.commit_index)
+                    and node.sync is None
                 ):
-                    self._schedule_sync_complete(node)
+                    self._start_sync(node)
 
             # Schedule next outage for this region
             self._schedule_network_outage(region)
@@ -454,7 +803,7 @@ class Simulator:
             node_id = action.params.get("node_id")
             node = self.cluster.get_node(node_id) if node_id else None
             if node:
-                self._schedule_sync_complete(node)
+                self._start_sync(node)
 
         elif action.action_type == ActionType.SCHEDULE_REPLACEMENT_CHECK:
             self._action_schedule_replacement_check(action)

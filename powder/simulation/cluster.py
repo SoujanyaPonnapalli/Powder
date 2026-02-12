@@ -112,6 +112,64 @@ class ClusterState:
             return None
         return min(available, key=lambda n: n.last_applied_index)
 
+    def find_sync_donor(self, node: NodeState) -> NodeState | None:
+        """Find the best available donor for a lagging node to sync from.
+
+        Returns the effectively available node (excluding *node*) with the
+        highest ``last_applied_index``.  The syncing node can only obtain
+        data that the donor actually has, so the donor's position -- not
+        ``commit_index`` -- determines what data is available.
+
+        Args:
+            node: The lagging node that needs a donor.
+
+        Returns:
+            The best donor NodeState, or None if no donor is available.
+        """
+        donor = None
+        for n in self.nodes.values():
+            if n.node_id != node.node_id and self._node_effectively_available(n):
+                if donor is None or n.last_applied_index > donor.last_applied_index:
+                    donor = n
+        return donor
+
+    def nodes_needing_sync(self) -> list[NodeState]:
+        """Return nodes that are lagging, available, and have no active sync.
+
+        These are candidates for ``_retry_pending_syncs`` -- they fell behind
+        and either never had a sync scheduled or had one cancelled (e.g. donor
+        went down with no replacement).
+
+        Returns:
+            List of nodes that need a sync to be started.
+        """
+        return [
+            n
+            for n in self.nodes.values()
+            if (
+                self._node_effectively_available(n)
+                and not n.is_up_to_date(self.commit_index)
+                and n.sync is None
+            )
+        ]
+
+    def nodes_syncing_from(self, donor_id: str) -> list[NodeState]:
+        """Return nodes currently syncing from a specific donor.
+
+        Used to cancel or failover syncs when a donor becomes unavailable.
+
+        Args:
+            donor_id: Node ID of the donor.
+
+        Returns:
+            List of nodes whose active sync references *donor_id*.
+        """
+        return [
+            n
+            for n in self.nodes.values()
+            if n.sync is not None and n.sync.donor_id == donor_id
+        ]
+
     def most_up_to_date_node(self) -> NodeState | None:
         """Return the node with the most recent data.
 

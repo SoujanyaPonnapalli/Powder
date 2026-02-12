@@ -33,6 +33,7 @@ from powder.simulation import (
     # Node
     NodeConfig,
     NodeState,
+    SyncState,
     # Network
     NetworkConfig,
     NetworkState,
@@ -1244,7 +1245,7 @@ class TestSnapshotRecovery:
         assert sync_time < minutes(5)  # Much less than snapshot download time
 
     def test_recovery_with_snapshot(self):
-        """Node far behind (behind donor's snapshot) should download snapshot first."""
+        """Node far behind (outside log GC window) should download snapshot first."""
         config = NodeConfig(
             region="us-east",
             cost_per_hour=1.0,
@@ -1256,9 +1257,12 @@ class TestSnapshotRecovery:
             spawn_dist=Constant(minutes(10)),
         )
 
+        # log_retention_ops=100 means donor at 250 keeps log from 150–250.
+        # Node at 50 is outside this window and must download a snapshot.
         protocol = LeaderlessUpToDateQuorumProtocol(
             commit_rate=1.0,
             snapshot_interval=100.0,
+            log_retention_ops=100.0,
         )
 
         nodes = {}
@@ -1270,7 +1274,7 @@ class TestSnapshotRecovery:
                 last_snapshot_index=200.0,
             )
 
-        # node0 is behind the donor's snapshot (at index 50, snapshot at 200)
+        # node0 is outside the donor's log GC window (at index 50, donor keeps 150-250)
         nodes["node0"].last_applied_index = 50.0
         nodes["node0"].last_snapshot_index = 0.0
 
