@@ -267,6 +267,23 @@ class TestEventQueue:
         queue.pop()
         assert queue.is_empty()
 
+    def test_cancel_all_events_for_target(self):
+        """cancel_events_for without event_type cancels ALL event types."""
+        queue = EventQueue()
+
+        queue.push(Event(Seconds(10), EventType.NODE_FAILURE, "node1"))
+        queue.push(Event(Seconds(20), EventType.NODE_RECOVERY, "node1"))
+        queue.push(Event(Seconds(15), EventType.NODE_FAILURE, "node2"))
+
+        queue.cancel_events_for("node1")  # no event_type → cancel all
+
+        event1 = queue.pop()
+        assert event1.target_id == "node2"
+        assert event1.time == 15
+
+        # node1 events are all gone
+        assert queue.pop() is None
+
 
 # =============================================================================
 # Cluster State Tests
@@ -1420,6 +1437,445 @@ class TestSnapshotRecovery:
                 assert node.last_snapshot_index > 0
                 # Snapshot should be at a multiple of the interval
                 assert node.last_snapshot_index % 50.0 == pytest.approx(0.0, abs=1e-9)
+
+
+# =============================================================================
+# Deterministic Sync Model Tests
+# =============================================================================
+
+
+class TestDeterministicSyncModel:
+    """Deterministic tests for the new sync model with donor tracking,
+    dynamic sync speed, and log GC-aware path selection.
+
+    All distributions are Constant so that outcomes are fully predictable.
+    """
+
+    # -- helpers --
+
+    @staticmethod
+    def _stable_config(region: str = "us-east") -> NodeConfig:
+        """Node that never fails or loses data within any reasonable test window."""
+        return NodeConfig(
+            region=region,
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(2.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+    @staticmethod
+    def _stable_config_fast(region: str = "us-east") -> NodeConfig:
+        """Node with log_replay_rate=3.0 that never fails."""
+        return NodeConfig(
+            region=region,
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+    @staticmethod
+    def _fragile_config(
+        failure_time: float, recovery_time: float, region: str = "us-east"
+    ) -> NodeConfig:
+        """Node that fails at *failure_time* and recovers *recovery_time* later."""
+        return NodeConfig(
+            region=region,
+            cost_per_hour=1.0,
+            failure_dist=Constant(failure_time),
+            recovery_dist=Constant(recovery_time),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+    # ------------------------------------------------------------------ #
+    # Test 1 – Basic sync timing                                          #
+    # ------------------------------------------------------------------ #
+
+    def test_basic_sync_timing(self):
+        """3-node cluster, one node 10 units behind, syncs in exactly 10 s.
+
+        Setup
+        -----
+        commit_rate   = 1.0   (1 unit / s)
+        replay_rate   = 2.0   (2 units / s)
+        net_rate      = 1.0   (closes 1 unit of gap / s)
+
+        node0 starts at last_applied_index = 0, donors at 10.
+        commit_index  = 10.
+
+        Expected: gap = 10 → sync time = 10 / 1.0 = 10 s.
+        """
+        cfg = self._stable_config()
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=cfg,
+                               last_applied_index=0.0),
+            "node1": NodeState(node_id="node1", config=cfg,
+                               last_applied_index=10.0),
+            "node2": NodeState(node_id="node2", config=cfg,
+                               last_applied_index=10.0),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=10.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessUpToDateQuorumProtocol(commit_rate=1.0),
+            seed=0,
+            log_events=True,
+        )
+
+        result = sim.run_for(Seconds(12))
+
+        # Sync should have fired at t ≈ 10
+        sync_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        assert len(sync_events) >= 1
+        assert sync_events[0].time == pytest.approx(10.0, abs=0.01)
+
+        # All nodes up-to-date at the end
+        for node in result.final_cluster.nodes.values():
+            assert node.last_applied_index >= result.final_cluster.commit_index - 0.01
+
+    # ------------------------------------------------------------------ #
+    # Test 2 – Sync pauses when donors are unavailable                    #
+    # ------------------------------------------------------------------ #
+
+    def test_sync_pauses_when_donors_unavailable(self):
+        """Donor outage pauses sync; total wall-clock time increases.
+
+        Setup
+        -----
+        commit_rate = 1.0, replay_rate = 3.0  →  net_rate = 2.0.
+        node0 lag = 10 units  →  base sync time = 10 / 2 = 5 s.
+
+        Donors (node1, node2) fail at t = 3, recover at t = 7 (4 s outage).
+
+        Timeline
+        --------
+        [0, 3)  : net_rate 2.0, close 6 units.  gap: 10 → 4.
+        [3, 7)  : outage.  Commit frozen, sync paused.  gap stays 4.
+        t = 7   : node1 recovers first → only 1 up-to-date → can't commit.
+                  node0 resumes sync at replay_rate = 3.0 (net_rate = 3.0
+                  because commit is frozen with only 1 up-to-date node).
+                  When node2 also recovers moments later → can_commit,
+                  reschedule adjusts net_rate back to 2.0.
+        gap = 4, net_rate = 2.0 → 2 s more.
+
+        Sync completes at t ≈ 9.  (5 s productive + 4 s frozen)
+        """
+        lagging_cfg = self._stable_config_fast()
+        donor_cfg = self._fragile_config(
+            failure_time=3.0, recovery_time=4.0
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=lagging_cfg,
+                               last_applied_index=0.0),
+            "node1": NodeState(node_id="node1", config=donor_cfg,
+                               last_applied_index=10.0),
+            "node2": NodeState(node_id="node2", config=donor_cfg,
+                               last_applied_index=10.0),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=10.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessUpToDateQuorumProtocol(commit_rate=1.0),
+            seed=0,
+            log_events=True,
+        )
+
+        result = sim.run_for(Seconds(9.5))
+
+        sync_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        assert len(sync_events) >= 1
+        # Sync completes around t = 9 (5 s productive + 4 s outage)
+        assert sync_events[0].time == pytest.approx(9.0, abs=0.2)
+
+        # node0 should be caught up
+        node0 = result.final_cluster.get_node("node0")
+        assert node0.sync is None
+        assert node0.last_applied_index >= result.final_cluster.commit_index - 0.1
+
+    # ------------------------------------------------------------------ #
+    # Test 3 – Multi-node sync with donor outage                          #
+    # ------------------------------------------------------------------ #
+
+    def test_multinode_sync_with_donor_outage(self):
+        """Two lagging nodes pause during donor outage and resume correctly.
+
+        Setup
+        -----
+        5 nodes.  commit_rate = 1.0, replay_rate = 3.0, net_rate = 2.0.
+        node0 lag = 10, node1 lag = 20.  Donors: node2-4 at index 100.
+        Donors fail at t = 2, recover at t = 8 (6 s outage).
+
+        Timeline
+        --------
+        [0, 2)  : net_rate 2.0.  node0 gap 10→6.  node1 gap 20→16.
+        [2, 8)  : outage.  Frozen.
+        [8, ..  : resume.  node0 needs 6/2 = 3 s → t ≈ 11.
+                           node1 needs 16/2 = 8 s → t ≈ 16.
+        Next donor failure at t = 2+6+2 = 10 → before node1 finishes,
+        but after node0 finishes (11 > 10). Let's adjust:
+
+        Use failure_time = 2.0, recovery_time = 6.0 → next failure at
+        2+6+2 = 10.  node0 sync done at t ≈ 11 → collision zone.
+
+        To avoid: use recovery_time = 5.0 → recover at t=7, next fail
+        at 7+2=9.  After t=7: node0 gap=6 → 6/2=3 → done t=10 → after
+        next fail at t=9.
+
+        Better: failure_time=2, recovery_time=6 → recover 8, next fail 10.
+        node0 done ~11 but fail at 10 pauses it.  That's fine, the test
+        just verifies both nodes eventually complete.
+
+        We'll verify: after running long enough, both nodes are up-to-date.
+        """
+        lagging_cfg = self._stable_config_fast()
+        donor_cfg = self._fragile_config(
+            failure_time=2.0, recovery_time=6.0
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=lagging_cfg,
+                               last_applied_index=90.0),
+            "node1": NodeState(node_id="node1", config=lagging_cfg,
+                               last_applied_index=80.0),
+            "node2": NodeState(node_id="node2", config=donor_cfg,
+                               last_applied_index=100.0),
+            "node3": NodeState(node_id="node3", config=donor_cfg,
+                               last_applied_index=100.0),
+            "node4": NodeState(node_id="node4", config=donor_cfg,
+                               last_applied_index=100.0),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=5,
+            commit_index=100.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessUpToDateQuorumProtocol(commit_rate=1.0),
+            seed=0,
+            log_events=True,
+        )
+
+        # Run long enough for multiple outage cycles
+        result = sim.run_for(Seconds(40))
+
+        # Both lagging nodes should be fully caught up
+        node0 = result.final_cluster.get_node("node0")
+        node1 = result.final_cluster.get_node("node1")
+        commit = result.final_cluster.commit_index
+
+        assert node0.sync is None, "node0 should have finished syncing"
+        assert node1.sync is None, "node1 should have finished syncing"
+        assert node0.last_applied_index >= commit - 0.1
+        assert node1.last_applied_index >= commit - 0.1
+
+        # Verify sync events fired for both nodes
+        sync_node0 = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        sync_node1 = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node1"
+        ]
+        assert len(sync_node0) >= 1, "node0 should have completed sync"
+        assert len(sync_node1) >= 1, "node1 should have completed sync"
+
+    # ------------------------------------------------------------------ #
+    # Test 4 – GC: log-only path (within retention window)                #
+    # ------------------------------------------------------------------ #
+
+    def test_gc_log_only_within_window(self):
+        """When donor's log covers the lagging node's position, log-only is used.
+
+        Setup
+        -----
+        commit_rate = 1.0, replay_rate = 10.0, net_rate = 9.0.
+        snapshot_interval = 100, log_retention_ops = 300 (large window).
+        Donor at 250, node0 at 150.  Donor keeps log from 0 to 250.
+        Node0 is within GC window → log-only chosen.
+
+        Sync time ≈ 100 / 9.0 ≈ 11.1 s  (no snapshot download overhead).
+        """
+        cfg = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),  # expensive snapshot
+            spawn_dist=Constant(0),
+        )
+
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=1.0,
+            snapshot_interval=100.0,
+            log_retention_ops=300.0,  # keeps all log → node is inside window
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=cfg,
+                               last_applied_index=150.0,
+                               last_snapshot_index=100.0),
+            "node1": NodeState(node_id="node1", config=cfg,
+                               last_applied_index=250.0,
+                               last_snapshot_index=200.0),
+            "node2": NodeState(node_id="node2", config=cfg,
+                               last_applied_index=250.0,
+                               last_snapshot_index=200.0),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=250.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=0,
+            log_events=True,
+        )
+
+        result = sim.run_for(Seconds(15))
+
+        # Sync should complete well before 60 s (no snapshot downloaded)
+        sync_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        assert len(sync_events) >= 1
+
+        # lag=100, net_rate=9.0 → ~11.1 s.  Should be < 15 s (no snapshot).
+        assert sync_events[0].time < 15.0
+        # Must NOT include 60 s snapshot download overhead
+        assert sync_events[0].time < 60.0
+
+        # Verify node0 used log-only (no snapshot_download phase)
+        node0 = result.final_cluster.get_node("node0")
+        assert node0.sync is None
+
+    # ------------------------------------------------------------------ #
+    # Test 5 – GC: forced snapshot (outside retention window)             #
+    # ------------------------------------------------------------------ #
+
+    def test_gc_forced_snapshot_outside_window(self):
+        """When donor's log is GC'd past the node's position, snapshot is forced.
+
+        Setup
+        -----
+        commit_rate = 1.0, replay_rate = 10.0, net_rate = 9.0.
+        snapshot_interval = 100, log_retention_ops = 100.
+        Donor at 250 keeps log from 150–250.
+        Node0 at 50: outside window (50 < 150).  Must download snapshot.
+
+        Sync time ≈ 60 s (snapshot) + remaining_log / net_rate.
+        Donor's latest snapshot index = floor(250/100)*100 = 200.
+        After snapshot download (60 s), node jumps to 200.
+        During download, donor advances 60 * 1.0 = 60 → donor at 310.
+        Remaining log = 310 - 200 = 110.  Time = 110/9 ≈ 12.2 s.
+        Total ≈ 72.2 s.
+        """
+        cfg = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),
+            spawn_dist=Constant(0),
+        )
+
+        protocol = LeaderlessUpToDateQuorumProtocol(
+            commit_rate=1.0,
+            snapshot_interval=100.0,
+            log_retention_ops=100.0,  # donor keeps log 150-250 only
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=cfg,
+                               last_applied_index=50.0,
+                               last_snapshot_index=0.0),
+            "node1": NodeState(node_id="node1", config=cfg,
+                               last_applied_index=250.0,
+                               last_snapshot_index=200.0),
+            "node2": NodeState(node_id="node2", config=cfg,
+                               last_applied_index=250.0,
+                               last_snapshot_index=200.0),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=250.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=0,
+            log_events=True,
+        )
+
+        result = sim.run_for(Seconds(80))
+
+        sync_events = [
+            e for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        assert len(sync_events) >= 1
+
+        # Must have taken >= 60 s (snapshot download is mandatory)
+        assert sync_events[0].time >= 60.0
+
+        # Total is snapshot (60) + log_suffix/net_rate ≈ 72.2 s
+        assert sync_events[0].time == pytest.approx(72.2, abs=1.0)
+
+        # node0 caught up
+        node0 = result.final_cluster.get_node("node0")
+        assert node0.sync is None
+        assert node0.last_applied_index >= result.final_cluster.commit_index - 0.1
 
 
 # =============================================================================

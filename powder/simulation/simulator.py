@@ -456,7 +456,13 @@ class Simulator:
                 alt_donor is not None
                 and alt_donor.last_applied_index > node.last_applied_index
             ):
-                # Seamless failover: swap donor, keep progress
+                # Seamless failover: swap donor, keep progress.
+                # Cancel the old SYNC_COMPLETE event so that
+                # _reschedule_active_syncs creates a fresh one based
+                # on the new donor's position.
+                self.event_queue.cancel_events_for(
+                    node.node_id, EventType.NODE_SYNC_COMPLETE
+                )
                 node.sync.donor_id = alt_donor.node_id
             else:
                 # No useful donor available: pause sync

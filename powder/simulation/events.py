@@ -65,31 +65,48 @@ class EventQueue:
     """Priority queue for simulation events ordered by time.
 
     Uses a min-heap to efficiently retrieve the next event.
-    Supports cancellation of events by target_id.
+    Supports lazy O(1) cancellation via generation thresholds.
+
+    Each pushed event is stamped with an incrementing generation counter.
+    Cancellation records the current counter as a threshold for the
+    cancelled key; any event whose generation is below that threshold
+    is silently discarded on ``pop``/``peek``.  Events pushed *after*
+    the cancellation carry a generation >= the threshold and are
+    unaffected.
     """
 
     def __init__(self) -> None:
-        self._heap: list[Event] = []
-        self._cancelled: set[tuple[str, EventType]] = set()
-        self._counter = 0  # For stable ordering of equal-time events
+        # Heap entries: (event.time, gen, event)
+        self._heap: list[tuple[float, int, Event]] = []
+        self._counter = 0
+        # Lazy cancellation thresholds.  An event is stale when its gen
+        # is below the recorded threshold for its key.
+        self._cancel_type: dict[tuple[str, EventType], int] = {}
+        self._cancel_target: dict[str, int] = {}
+
+    # -- internal helpers ------------------------------------------------
+
+    def _is_cancelled(self, gen: int, event: Event) -> bool:
+        """Return True if *event* at generation *gen* has been cancelled."""
+        target_thresh = self._cancel_target.get(event.target_id, 0)
+        if gen < target_thresh:
+            return True
+        type_thresh = self._cancel_type.get(
+            (event.target_id, event.event_type), 0
+        )
+        return gen < type_thresh
+
+    # -- public API ------------------------------------------------------
 
     def push(self, event: Event) -> None:
         """Add an event to the queue.
 
-        Clears any stale cancellation key matching this event so that
-        a freshly scheduled event is never silently dropped by a
-        cancellation that targeted an earlier (already-consumed or
-        never-existing) event.
-
         Args:
             event: Event to schedule.
         """
-        # Prevent stale cancellation keys from killing this new event.
-        # Cancellations are only meant to affect events that were already
-        # in the queue at the time cancel_events_for() was called.
-        key = (event.target_id, event.event_type)
-        self._cancelled.discard(key)
-        heapq.heappush(self._heap, event)
+        gen = self._counter
+        self._counter += 1
+        heapq.heappush(self._heap, (event.time, gen, event))
 
     def pop(self) -> Event | None:
         """Remove and return the next event.
@@ -100,10 +117,8 @@ class EventQueue:
             Next event by time, or None if queue is empty.
         """
         while self._heap:
-            event = heapq.heappop(self._heap)
-            key = (event.target_id, event.event_type)
-            if key in self._cancelled:
-                self._cancelled.discard(key)
+            _time, gen, event = heapq.heappop(self._heap)
+            if self._is_cancelled(gen, event):
                 continue
             return event
         return None
@@ -114,19 +129,22 @@ class EventQueue:
         Returns:
             Next event by time, or None if queue is empty.
         """
-        # Skip cancelled events
         while self._heap:
-            event = self._heap[0]
-            key = (event.target_id, event.event_type)
-            if key in self._cancelled:
+            _time, gen, event = self._heap[0]
+            if self._is_cancelled(gen, event):
                 heapq.heappop(self._heap)
-                self._cancelled.discard(key)
                 continue
             return event
         return None
 
-    def cancel_events_for(self, target_id: str, event_type: EventType | None = None) -> None:
-        """Cancel pending events for a target.
+    def cancel_events_for(
+        self, target_id: str, event_type: EventType | None = None
+    ) -> None:
+        """Cancel all pending events for *target_id* (optionally of a
+        specific *event_type*).
+
+        O(1) — just records the current generation counter as the
+        threshold.  Stale events are lazily discarded in ``pop``/``peek``.
 
         Args:
             target_id: Target whose events to cancel.
@@ -134,14 +152,21 @@ class EventQueue:
                        If None, cancel all event types for the target.
         """
         if event_type is not None:
-            self._cancelled.add((target_id, event_type))
+            key = (target_id, event_type)
+            self._cancel_type[key] = max(
+                self._cancel_type.get(key, 0), self._counter
+            )
         else:
-            # Cancel all event types for this target
-            for et in EventType:
-                self._cancelled.add((target_id, et))
+            self._cancel_target[target_id] = max(
+                self._cancel_target.get(target_id, 0), self._counter
+            )
 
     def reschedule(
-        self, target_id: str, event_type: EventType, new_time: Seconds, metadata: dict | None = None
+        self,
+        target_id: str,
+        event_type: EventType,
+        new_time: Seconds,
+        metadata: dict | None = None,
     ) -> None:
         """Cancel existing event and schedule a new one at a different time.
 
@@ -163,7 +188,6 @@ class EventQueue:
 
     def is_empty(self) -> bool:
         """Check if queue has no pending events."""
-        # Peek handles cancelled events
         return self.peek() is None
 
     def __len__(self) -> int:
@@ -172,3 +196,4 @@ class EventQueue:
 
     def __repr__(self) -> str:
         return f"EventQueue({len(self._heap)} events)"
+
