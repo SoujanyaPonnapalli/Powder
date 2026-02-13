@@ -204,9 +204,9 @@ class ConvergenceResult:
             else:
                 lines.append(
                     f"  [{symbol}] {status.metric.value}: "
-                    f"mean={status.current_mean:.4f}, "
-                    f"CI=[{ci_lo:.4f}, {ci_hi:.4f}], "
-                    f"±{status.ci_half_width:.4f} (rel={status.relative_error:.4f}), "
+                    f"mean={status.current_mean:.8f}, "
+                    f"CI=[{ci_lo:.8f}, {ci_hi:.8f}], "
+                    f"±{status.ci_half_width:.8f} (rel={status.relative_error:.8f}), "
                     f"est_n={status.estimated_runs_needed}"
                 )
         return "\n".join(lines)
@@ -599,12 +599,19 @@ class MonteCarloRunner:
                 futures.append(future)
 
             for future in as_completed(futures):
-                sim_result = future.result()
-                self._collect_result(sim_result, results)
-
-                completed += 1
-                if progress_callback:
-                    progress_callback(completed, self.config.num_simulations)
+                sim_results = future.result()
+                # If chunking used, we get a list of results
+                if isinstance(sim_results, list):
+                    for res in sim_results:
+                        self._collect_result(res, results)
+                        completed += 1
+                        if progress_callback:
+                            progress_callback(completed, self.config.num_simulations)
+                else:
+                    self._collect_result(sim_results, results)
+                    completed += 1
+                    if progress_callback:
+                        progress_callback(completed, self.config.num_simulations)
 
     def run_until_converged(
         self,
@@ -639,6 +646,10 @@ class MonteCarloRunner:
         results = MonteCarloResults()
         run_count = 0
 
+        executor = None
+        if self.config.parallel_workers > 1:
+            executor = ProcessPoolExecutor(max_workers=self.config.parallel_workers)
+
         # Phase 1: Run minimum batch
         initial_batch = convergence.min_runs
         self._run_batch(
@@ -649,6 +660,7 @@ class MonteCarloRunner:
             results=results,
             num_runs=initial_batch,
             start_index=run_count,
+            executor=executor,
         )
         run_count += initial_batch
 
@@ -676,6 +688,7 @@ class MonteCarloRunner:
                 results=results,
                 num_runs=batch,
                 start_index=run_count,
+                executor=executor,
             )
             run_count += batch
 
@@ -687,6 +700,9 @@ class MonteCarloRunner:
                     (s.estimated_runs_needed for s in statuses), default=run_count
                 )
                 progress_callback(run_count, estimated_total, all_converged)
+
+        if executor:
+            executor.shutdown()
 
         return ConvergenceResult(
             results=results,
@@ -704,6 +720,7 @@ class MonteCarloRunner:
         results: MonteCarloResults,
         num_runs: int,
         start_index: int,
+        executor: ProcessPoolExecutor | None = None,
     ) -> None:
         """Run a batch of simulations and collect results.
 
@@ -717,31 +734,60 @@ class MonteCarloRunner:
             start_index: Starting index for seed computation.
         """
         if self.config.parallel_workers > 1:
-            with ProcessPoolExecutor(
-                max_workers=self.config.parallel_workers
-            ) as executor:
+            # Use provided executor or create a temporary one (though reuse is preferred)
+            local_executor = None
+            if executor is None:
+                local_executor = ProcessPoolExecutor(max_workers=self.config.parallel_workers)
+                executor = local_executor
+
+            try:
                 futures = []
-                for i in range(num_runs):
+                # Simple chunking: distribute runs evenly across workers to minimize
+                # messaging overhead. Ensure at least 1 run per chunk.
+                # Target roughly 4 chunks per worker to allow some load balancing,
+                # but for short sims, fewer larger chunks is better.
+                # Let's target ~100ms per chunk minimum if possible, but we don't know duration.
+                # Just split into parallel_workers * 4 chunks if num_runs is large.
+                chunk_count = self.config.parallel_workers * 4
+                if num_runs < chunk_count:
+                    chunk_count = num_runs
+
+                base_chunk_size = num_runs // chunk_count
+                remainder = num_runs % chunk_count
+
+                current_idx = 0
+                for i in range(chunk_count):
+                    size = base_chunk_size + (1 if i < remainder else 0)
+                    if size == 0:
+                        continue
+
                     seed = (
-                        (self.config.base_seed + start_index + i)
+                        (self.config.base_seed + start_index + current_idx)
                         if self.config.base_seed is not None
                         else None
                     )
+
                     future = executor.submit(
-                        _run_single_simulation,
+                        _run_simulation_chunk,
                         cluster=cluster,
                         strategy=strategy,
                         protocol=protocol,
                         network_config=network_config,
                         max_time=self.config.max_time,
                         stop_on_data_loss=self.config.stop_on_data_loss,
-                        seed=seed,
+                        start_seed=seed,
+                        num_simulations=size,
                     )
                     futures.append(future)
+                    current_idx += size
 
                 for future in as_completed(futures):
-                    sim_result = future.result()
-                    self._collect_result(sim_result, results)
+                    chunk_results = future.result()
+                    for sim_result in chunk_results:
+                        self._collect_result(sim_result, results)
+            finally:
+                if local_executor:
+                    local_executor.shutdown()
         else:
             for i in range(num_runs):
                 seed = (
@@ -1102,3 +1148,32 @@ def run_monte_carlo_converged(
         network_config=network_config,
         progress_callback=progress_callback,
     )
+def _run_simulation_chunk(
+    cluster: ClusterState,
+    strategy: ClusterStrategy,
+    protocol: Protocol,
+    network_config: NetworkConfig | None,
+    max_time: float | None,
+    stop_on_data_loss: bool,
+    start_seed: int | None,
+    num_simulations: int,
+) -> list[SimulationResult]:
+    """Run a chunk of simulations sequentially in a worker process.
+
+    Returns:
+        List of SimulationResult objects.
+    """
+    results = []
+    for i in range(num_simulations):
+        seed = (start_seed + i) if start_seed is not None else None
+        res = _run_single_simulation(
+            cluster=cluster,
+            strategy=strategy,
+            protocol=protocol,
+            network_config=network_config,
+            max_time=max_time,
+            stop_on_data_loss=stop_on_data_loss,
+            seed=seed,
+        )
+        results.append(res)
+    return results
