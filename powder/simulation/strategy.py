@@ -296,6 +296,7 @@ class NodeReplacementStrategy(ClusterStrategy):
         self,
         failure_timeout: Seconds,
         default_node_config: NodeConfig | None = None,
+        safe_mode: bool = True,
     ):
         """Initialize the node replacement strategy.
 
@@ -306,6 +307,9 @@ class NodeReplacementStrategy(ClusterStrategy):
                 unnecessary replacements.
             default_node_config: Config template for replacement nodes.
                 If None, the failed node's own config is used.
+            safe_mode: Whether to use safe mode for replacement.
+                If True, the cluster must be able to commit before replacing a node.
+                If False, the cluster can replace a node even if it cannot commit.
         """
         self.failure_timeout = failure_timeout
         self.default_node_config = default_node_config
@@ -313,6 +317,7 @@ class NodeReplacementStrategy(ClusterStrategy):
         self._pending_spawns: set[str] = set()
         # Nodes currently being tracked for potential replacement
         self._timeout_pending: set[str] = set()
+        self.safe_mode = safe_mode
 
     def on_event(
         self,
@@ -401,8 +406,11 @@ class NodeReplacementStrategy(ClusterStrategy):
         # Cancel any pending replacement timeout (data loss is handled immediately)
         self._timeout_pending.discard(event.target_id)
 
-        # Only replace if the cluster can still commit
-        if not protocol.can_commit(cluster):
+        if self.safe_mode and not protocol.can_commit(cluster):
+            # With safe mode, we have to commit for configuration changes
+            return []
+        elif cluster.num_up_to_date() == 0:
+            # without safe mode, we can replace the node even if we cannot commit. We just need one replica to be up to date
             return []
 
         return self._replace_node(event.target_id, cluster)
@@ -426,8 +434,11 @@ class NodeReplacementStrategy(ClusterStrategy):
         if cluster._node_effectively_available(node):
             return []  # Node recovered, no replacement needed
 
-        # Check if cluster can still commit (needed for membership change)
-        if not protocol.can_commit(cluster):
+        if self.safe_mode and not protocol.can_commit(cluster):
+            # With safe mode, we have to commit for configuration changes
+            return []
+        elif cluster.num_up_to_date() == 0:
+            # without safe mode, we can replace the node even if we cannot commit. We just need one replica to be up to date
             return []
 
         return self._replace_node(node_id, cluster)
