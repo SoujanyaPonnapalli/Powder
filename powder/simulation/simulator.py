@@ -574,6 +574,9 @@ class Simulator:
         elif event.event_type == EventType.LEADER_ELECTION_COMPLETE:
             pass  # Handled by protocol below
 
+        elif event.event_type == EventType.CLUSTER_RECONFIGURATION:
+            pass  # Handled by strategy below
+
         # Let protocol react (e.g., detect leader failure, complete election)
         for new_event in self.protocol.on_event(event, self.cluster, self.rng):
             self.event_queue.push(new_event)
@@ -817,6 +820,9 @@ class Simulator:
         elif action.action_type == ActionType.CANCEL_REPLACEMENT_CHECK:
             self._action_cancel_replacement_check(action)
 
+        elif action.action_type == ActionType.SCHEDULE_RECONFIGURATION:
+            self._action_schedule_reconfiguration(action)
+
     def _action_schedule_replacement_check(self, action: Action) -> None:
         """Schedule a replacement timeout event for a node."""
         node_id: str = action.params.get("node_id", "")
@@ -837,6 +843,21 @@ class Simulator:
         if node_id:
             self.event_queue.cancel_events_for(
                 node_id, EventType.NODE_REPLACEMENT_TIMEOUT
+            )
+
+    def _action_schedule_reconfiguration(self, action: Action) -> None:
+        """Schedule a cluster reconfiguration event."""
+        delay: float = action.params.get("delay", 0)
+        target_size: int = action.params.get("target_size", 0)
+
+        if delay > 0 and target_size > 0:
+            self.event_queue.push(
+                Event(
+                    time=Seconds(self.cluster.current_time + delay),
+                    event_type=EventType.CLUSTER_RECONFIGURATION,
+                    target_id="cluster",  # Global target
+                    metadata={"target_size": target_size},
+                )
             )
 
     def _action_spawn_node(self, action: Action) -> None:

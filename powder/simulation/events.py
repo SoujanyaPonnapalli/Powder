@@ -33,6 +33,9 @@ class EventType(Enum):
     # Protocol events
     LEADER_ELECTION_COMPLETE = "leader_election_complete"  # Leader election finished
 
+    # Cluster events
+    CLUSTER_RECONFIGURATION = "cluster_reconfiguration"  # Attempt to reconfigure cluster size
+
 
 @dataclass(order=True)
 class Event:

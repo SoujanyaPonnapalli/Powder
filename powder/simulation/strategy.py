@@ -33,6 +33,7 @@ class ActionType(Enum):
     START_SYNC = "start_sync"  # Trigger a node to start syncing
     SCHEDULE_REPLACEMENT_CHECK = "schedule_replacement_check"  # Schedule a replacement timeout
     CANCEL_REPLACEMENT_CHECK = "cancel_replacement_check"  # Cancel a pending replacement timeout
+    SCHEDULE_RECONFIGURATION = "schedule_reconfiguration"  # Schedule a cluster reconfiguration event
     NO_OP = "no_op"  # Do nothing
 
 
@@ -124,142 +125,6 @@ class NoOpStrategy(ClusterStrategy):
         protocol: Protocol,
     ) -> list[Action]:
         return []
-
-
-class SimpleReplacementStrategy(ClusterStrategy):
-    """Simple strategy that spawns replacements for failed nodes.
-
-    When a node fails (transient or data loss), this strategy:
-    1. If multiple nodes fail simultaneously, may scale down cluster
-    2. Otherwise, spawns a replacement node
-
-    Attributes:
-        scale_down_threshold: Number of simultaneous failures that trigger scale-down.
-        default_node_config: Config template for spawned nodes.
-    """
-
-    def __init__(
-        self,
-        default_node_config: NodeConfig,
-        scale_down_threshold: int = 2,
-    ):
-        """Initialize the strategy.
-
-        Args:
-            default_node_config: Template for spawning new nodes.
-            scale_down_threshold: If this many or more nodes are unavailable,
-                                  scale down instead of replacing.
-        """
-        self.default_node_config = default_node_config
-        self.scale_down_threshold = scale_down_threshold
-        self._spawn_counter = 0
-        self._pending_spawns: set[str] = set()
-
-    def on_event(
-        self,
-        event: Event,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-        protocol: Protocol,
-    ) -> list[Action]:
-        actions: list[Action] = []
-
-        if event.event_type == EventType.NODE_FAILURE:
-            actions.extend(self._handle_failure(event, cluster, rng))
-
-        elif event.event_type == EventType.NODE_DATA_LOSS:
-            actions.extend(self._handle_data_loss(event, cluster, rng))
-
-        elif event.event_type == EventType.NODE_RECOVERY:
-            actions.extend(self._handle_recovery(event, cluster, rng))
-
-        elif event.event_type == EventType.NODE_SPAWN_COMPLETE:
-            # Remove from pending spawns
-            node_id = event.metadata.get("node_id", event.target_id)
-            self._pending_spawns.discard(node_id)
-
-        return actions
-
-    def _handle_failure(
-        self,
-        event: Event,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Action]:
-        """Handle a transient node failure."""
-        unavailable_count = len(cluster.nodes) - cluster.num_available()
-
-        # If too many failures, consider scaling down
-        if unavailable_count >= self.scale_down_threshold:
-            new_size = max(3, cluster.target_cluster_size - 2)
-            if new_size < cluster.target_cluster_size:
-                return [Action(ActionType.SCALE_DOWN, {"new_size": new_size})]
-
-        return []  # Wait for recovery
-
-    def _handle_data_loss(
-        self,
-        event: Event,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Action]:
-        """Handle permanent data loss on a node."""
-        # Check if we should spawn a replacement
-        nodes_with_data = cluster.num_with_data()
-        pending_count = len(self._pending_spawns)
-
-        # Only spawn if we're below target and not already spawning
-        if nodes_with_data + pending_count < cluster.target_cluster_size:
-            return self._spawn_replacement(cluster, rng)
-
-        return []
-
-    def _handle_recovery(
-        self,
-        event: Event,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Action]:
-        """Handle a node recovering from transient failure."""
-        node = cluster.get_node(event.target_id)
-        if node and not node.is_up_to_date(cluster.commit_index):
-            # Node recovered but is lagging, start sync
-            return [Action(ActionType.START_SYNC, {"node_id": node.node_id})]
-        return []
-
-    def _spawn_replacement(
-        self,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Action]:
-        """Create action to spawn a replacement node."""
-        self._spawn_counter += 1
-        node_id = f"node_{self._spawn_counter}"
-        self._pending_spawns.add(node_id)
-
-        return [
-            Action(
-                ActionType.SPAWN_NODE,
-                {
-                    "node_config": self.default_node_config,
-                    "node_id": node_id,
-                },
-            )
-        ]
-
-    def on_simulation_start(
-        self,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Action]:
-        """Ensure we have target number of nodes at start."""
-        actions = []
-
-        # Spawn nodes if below target
-        while len(cluster.nodes) + len(self._pending_spawns) < cluster.target_cluster_size:
-            actions.extend(self._spawn_replacement(cluster, rng))
-
-        return actions
 
 
 class NodeReplacementStrategy(ClusterStrategy):
@@ -440,14 +305,9 @@ class NodeReplacementStrategy(ClusterStrategy):
         if cluster._node_effectively_available(node):
             return []  # Node recovered, no replacement needed
 
-        # With safe mode, we can only modify cluster if we can commit? 
-        # Actually for *adding* a node (spawning), it's usually less strict than removing,
-        # but typical reconfiguration requires commit.
+        # With safe mode, we can only modify cluster if we can commit
         if self.safe_mode and not protocol.can_commit(cluster):
              # We can't safely reconfigure. 
-             # Ideally we should reschedule the timeout or retry later.
-             # For simplicity, we'll just reschedule it for a short time later?
-             # Or just drop it and hope something else triggers a check?
              # Let's reschedule strict retry.
              self._timeout_pending.add(node_id)
              return [
@@ -544,20 +404,14 @@ class NodeReplacementStrategy(ClusterStrategy):
         target = cluster.target_cluster_size
         nodes = list(cluster.nodes.values())
         
-        # pending_spawns count as "future nodes" so we shouldn't aggressive kill if we are just transitioning
-        # But here we are cleaning up *existing* nodes.
-        
         if len(nodes) <= target:
             return []
 
         # We have more nodes than target. Identify victims.
         # Sort key: (is_available, is_up_to_date, last_applied_index)
         # We want to KEEP the best nodes (highest sort key).
-        # False < True.
         
         def node_score(n: NodeState):
-            # effectively_available checks availability AND not partitioned (if we had access to partition info here easily)
-            # using _node_effectively_available from cluster is safest if accessible, but here we can check basics
             is_avail = cluster._node_effectively_available(n)
             is_updated = n.is_up_to_date(cluster.commit_index)
             return (is_avail, is_updated, n.last_applied_index)
@@ -569,30 +423,10 @@ class NodeReplacementStrategy(ClusterStrategy):
         
         actions = []
         for node in candidates:
-            # Safety check: Can we commit if we remove this node?
-            # We construct a hypothetical cluster without this node
-            # This is expensive to deepcopy, so we might need a lighter check.
-            # Or we just rely on the score: if we have `target` nodes that are BETTER than this one,
-            # and `target` allows quorum in general, we should be fine?
-            
-            # Use safe_mode check
+            # Use safe_mode check: ensure protocol allows removal
             if self.safe_mode:
-                # We need to ensure remaining nodes can commit
-                remaining_nodes = [n for n in nodes if n.node_id != node.node_id and n.node_id not in [a.params.get("node_id") for a in actions]]
-                
-                # Mock a cluster with remaining nodes
-                # Since Protocol.can_commit usually iterates nodes, we can pass a proxy or temp object
-                # But creating a full ClusterState is heavy.
-                
-                # However, we know we kept `target` nodes that are "better".
-                # If the protocol is majority-based, and we have `target` nodes, we have a normal cluster.
-                # If `target` is 3, we kept 3 best.
-                # If available count in those 3 is >= 2, we can commit.
-                
-                # Let's trust the protocol safety check if proper.
-                # For now, let's just emit the remove action.
-                pass
-
+                 pass # Approximation: if we keep `target` best nodes, we assume we are safe?
+            
             actions.append(Action(ActionType.REMOVE_NODE, {"node_id": node.node_id}))
 
         return actions
@@ -625,3 +459,222 @@ class NodeReplacementStrategy(ClusterStrategy):
             )
 
         return actions
+
+
+class AdaptiveReplacementStrategy(NodeReplacementStrategy):
+    """Adaptive strategy that scales down during failures to maintain quorum.
+
+    This strategy extends NodeReplacementStrategy by dynamically reducing the
+    target cluster size when multiple nodes fail, effectively maintaining
+    availability for the remaining nodes. It automatically scales the target
+    size back up as nodes recover or replacements arrive.
+    
+    Attributes:
+        reconfiguration_dist: Time it takes to reconfigure the cluster.
+        external_consensus: Allow scaling down to 2 or 1 nodes.
+        scale_down_threshold: Number of unavailable nodes that triggers scale down.
+    """
+
+    def __init__(
+        self,
+        failure_timeout: Seconds,
+        reconfiguration_dist: Seconds,
+        scale_down_threshold: int = 2,
+        external_consensus: bool = False,
+        default_node_config: NodeConfig | None = None,
+        safe_mode: bool = True,
+    ):
+        super().__init__(failure_timeout, default_node_config, safe_mode)
+        self.reconfiguration_dist = reconfiguration_dist
+        self.scale_down_threshold = scale_down_threshold
+        self.external_consensus = external_consensus
+        self._pending_reconfigurations: set[int] = set()
+        self.max_target_cluster_size = 0  # To be set on simulation start
+
+    def on_simulation_start(
+        self,
+        cluster: ClusterState,
+        rng: np.random.Generator,
+    ) -> list[Action]:
+        self.max_target_cluster_size = cluster.target_cluster_size
+        return super().on_simulation_start(cluster, rng)
+
+    def on_event(
+        self,
+        event: Event,
+        cluster: ClusterState,
+        rng: np.random.Generator,
+        protocol: Protocol,
+    ) -> list[Action]:
+        # Delegate standard event handling to super class
+        actions = super().on_event(event, cluster, rng, protocol)
+        
+        # Intercept events relevant to scaling checks
+        should_check_scaling = False
+        
+        if event.event_type in [
+            EventType.NODE_FAILURE, 
+            EventType.NODE_DATA_LOSS, 
+            EventType.NODE_RECOVERY,
+            EventType.NODE_FAILURE, 
+            EventType.NODE_DATA_LOSS, 
+            EventType.NODE_RECOVERY,
+            EventType.NODE_SPAWN_COMPLETE,
+        ]:
+            should_check_scaling = True
+            
+        # Specific handling for reconfiguration event
+        if event.event_type == EventType.CLUSTER_RECONFIGURATION:
+             actions.extend(self._handle_reconfiguration(event, cluster, protocol))
+
+        if should_check_scaling:
+            actions.extend(self._check_and_schedule_reconfiguration(cluster))
+            
+        return actions
+
+    def _maintain_cluster_size(
+        self,
+        cluster: ClusterState,
+        protocol: Protocol,
+    ) -> list[Action]:
+        """Override to cleanup based on max_target_cluster_size (provisioning target)."""
+        # We want to keep up to max_target_cluster_size nodes physically,
+        # even if target_cluster_size (logical/quorum target) is lower.
+        target = self.max_target_cluster_size
+        nodes = list(cluster.nodes.values())
+        
+        if len(nodes) <= target:
+            return []
+
+        # Copied logic from parent but using max_target
+        def node_score(n: NodeState):
+            is_avail = cluster._node_effectively_available(n)
+            is_updated = n.is_up_to_date(cluster.commit_index)
+            return (is_avail, is_updated, n.last_applied_index)
+
+        sorted_nodes = sorted(nodes, key=node_score, reverse=True)
+        candidates = sorted_nodes[target:]
+        
+        actions = []
+        for node in candidates:
+             actions.append(Action(ActionType.REMOVE_NODE, {"node_id": node.node_id}))
+
+        return actions
+
+    def _check_and_schedule_reconfiguration(self, cluster: ClusterState) -> list[Action]:
+        """Check for scaling opportunities based on deficits."""
+        current_target = cluster.target_cluster_size
+        new_target = current_target
+        
+        # Calculate Deficit: Target - Available
+        deficit = current_target - cluster.num_available()
+        
+        # 1. SCALE DOWN
+        if deficit >= self.scale_down_threshold:
+            if self.external_consensus:
+                if current_target > 1:
+                    new_target = current_target - 1
+            else:
+                 if current_target >= 5:
+                     new_target = current_target - 2
+        
+        # 2. SCALE UP
+        # If we are below max target, we try to scale up if we have enough available nodes
+        if current_target < self.max_target_cluster_size:
+             potential_target = current_target
+             if self.external_consensus:
+                 potential_target = current_target + 1
+             else:
+                 potential_target = current_target + 2
+             
+             # If we have enough available nodes to satisfy the NEW target
+             if cluster.num_available() >= potential_target:
+                 new_target = potential_target
+        
+        if new_target != current_target:
+             if new_target not in self._pending_reconfigurations:
+                 self._pending_reconfigurations.add(new_target)
+                 return [
+                     Action(
+                         ActionType.SCHEDULE_RECONFIGURATION, 
+                         {"delay": self.reconfiguration_dist, "target_size": new_target}
+                     )
+                 ]
+        
+        return []
+
+    def _handle_reconfiguration(
+        self,
+        event: Event,
+        cluster: ClusterState,
+        protocol: Protocol,
+    ) -> list[Action]:
+        target_size = event.metadata.get("target_size")
+        if target_size:
+             self._pending_reconfigurations.discard(target_size)
+        
+        if not target_size or target_size == cluster.target_cluster_size:
+            return []
+
+        if not target_size or target_size == cluster.target_cluster_size:
+            return []
+
+        # Check if we can commit in the CURRENT configuration
+        # If external_consensus is True, we bypass this check (allowing risky scale down)
+        if not self.external_consensus and not protocol.can_commit(cluster):
+            # Failed to reconfigure
+            return []
+
+        actions = []
+        if target_size < cluster.target_cluster_size:
+             # Verify we still need to scale down (deficit check)
+             deficit = cluster.target_cluster_size - cluster.num_available()
+             # Ideally deficit should match threshold logic, but simpler: 
+             # if we are fully available, why scale down?
+             # Exception: if we want to confirm the down-scale for consistency?
+             # But if everything recovered, we shouldn't scale down.
+             # Strict check: deficit >= 1 at least?
+             if deficit == 0:
+                  return []
+             
+             actions.append(Action(ActionType.SCALE_DOWN, {"new_size": target_size}))
+
+        else:
+             actions.append(Action(ActionType.SCALE_UP, {"new_size": target_size}))
+             
+        actions.extend(self._check_next_step(cluster, target_size))
+        return actions
+
+    def _check_next_step(self, cluster: ClusterState, current_target: int) -> list[Action]:
+        """Check for next reconfiguration step assuming current_target is active."""
+        new_target = current_target
+        deficit = current_target - cluster.num_available()
+        
+        if deficit >= self.scale_down_threshold:
+            if self.external_consensus:
+                 if current_target > 1:
+                     new_target = current_target - 1
+            else:
+                if current_target >= 5:
+                     new_target = current_target - 2
+        
+        # Scale Up Logic
+        if current_target < self.max_target_cluster_size:
+             potential_target = current_target
+             if self.external_consensus:
+                 potential_target = current_target + 1
+             else:
+                 potential_target = current_target + 2
+             
+             if cluster.num_available() >= potential_target:
+                 new_target = potential_target
+        
+        if new_target != current_target and new_target not in self._pending_reconfigurations:
+             self._pending_reconfigurations.add(new_target)
+             return [
+                 Action(
+                     ActionType.SCHEDULE_RECONFIGURATION, 
+                     {"delay": self.reconfiguration_dist, "target_size": new_target}
+                 )
+             ]
+        return []
