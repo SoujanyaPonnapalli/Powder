@@ -25,7 +25,7 @@ from .strategy import (
     ClusterStrategy,
     Action,
     ActionType,
-    SimpleReplacementStrategy,
+    AdaptiveReplacementStrategy,
     NodeReplacementStrategy,
     NoOpStrategy,
 )
@@ -68,7 +68,7 @@ __all__ = [
     "ClusterStrategy",
     "Action",
     "ActionType",
-    "SimpleReplacementStrategy",
+    "AdaptiveReplacementStrategy",
     "NodeReplacementStrategy",
     "NoOpStrategy",
     # Protocol
