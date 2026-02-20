@@ -45,7 +45,7 @@ from powder.simulation import (
     ClusterState,
     # Strategy
     NoOpStrategy,
-    SimpleReplacementStrategy,
+    NodeReplacementStrategy,
     ActionType,
     # Protocol
     LeaderlessUpToDateQuorumProtocol,
@@ -659,10 +659,22 @@ class TestSimulator:
 # =============================================================================
 
 
-class TestSimpleReplacementStrategy:
+class TestNodeReplacementStrategy:
+    def _create_node_config(self, region: str) -> NodeConfig:
+        return NodeConfig(
+            region=region,
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
     def test_spawns_replacement_on_data_loss(self):
-        config = make_test_node_config()
-        strategy = SimpleReplacementStrategy(default_node_config=config)
+        config = self._create_node_config("r1")
+        strategy = NodeReplacementStrategy(failure_timeout=Seconds(300.0), default_node_config=config)
 
         # Create cluster and process a data loss event
         cluster = make_test_cluster(3)
@@ -679,13 +691,14 @@ class TestSimpleReplacementStrategy:
 
         actions = strategy.on_event(event, cluster, rng, protocol)
 
-        # Should spawn a replacement
-        spawn_actions = [a for a in actions if a.action_type == ActionType.SPAWN_NODE]
-        assert len(spawn_actions) == 1
+        # Should schedule a replacement check
+        schedule_actions = [a for a in actions if a.action_type == ActionType.SCHEDULE_REPLACEMENT_CHECK]
+        assert len(schedule_actions) == 1
+        assert schedule_actions[0].params["node_id"] == "node0"
 
     def test_starts_sync_on_recovery(self):
-        config = make_test_node_config()
-        strategy = SimpleReplacementStrategy(default_node_config=config)
+        config = self._create_node_config("r1")
+        strategy = NodeReplacementStrategy(failure_timeout=Seconds(300.0), default_node_config=config)
 
         cluster = make_test_cluster(3)
         cluster.commit_index = 100.0

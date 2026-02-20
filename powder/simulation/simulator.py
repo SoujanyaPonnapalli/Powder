@@ -196,7 +196,8 @@ class Simulator:
             self.cluster.commit_index = new_index
 
             snapshot_interval = self.protocol.snapshot_interval
-            for node in self.cluster.nodes.values():
+            all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
+            for node in all_nodes:
                 if (
                     self.cluster._node_effectively_available(node)
                     and node.sync is None  # Not actively syncing
@@ -229,7 +230,8 @@ class Simulator:
         """
         snapshot_interval = self.protocol.snapshot_interval
 
-        for node in self.cluster.nodes.values():
+        all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
+        for node in all_nodes:
             if node.sync is None:
                 continue
             if not self.cluster._node_effectively_available(node):
@@ -477,7 +479,8 @@ class Simulator:
         Called after every event to keep sync completion timing accurate
         when conditions change (commit ability, donor availability).
         """
-        for node in self.cluster.nodes.values():
+        all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
+        for node in all_nodes:
             if node.sync is None:
                 continue
 
@@ -705,10 +708,11 @@ class Simulator:
         """Apply completion of node spawning.
 
         Moves the node from the provisioning set (where it was placed at
-        spawn request time for billing) to the active node set.
+        spawn request time for billing) to the active node set or standby block.
         """
         node_config = event.metadata.get("node_config")
         node_id = event.metadata.get("node_id", event.target_id)
+        standby = event.metadata.get("standby", False)
 
         if node_config:
             # Remove from provisioning (was added at spawn request time)
@@ -723,7 +727,10 @@ class Simulator:
                 last_applied_index=0.0,
                 last_snapshot_index=0.0,
             )
-            self.cluster.add_node(new_node)
+            if standby:
+                self.cluster.add_standby_node(new_node)
+            else:
+                self.cluster.add_node(new_node)
 
             # Schedule events for new node
             self._schedule_node_events(new_node)
@@ -743,7 +750,8 @@ class Simulator:
 
             # Cancel syncs for nodes in the affected region and handle
             # downstream syncs that used these nodes as donors.
-            for node in self.cluster.nodes.values():
+            all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
+            for node in all_nodes:
                 if node.config.region == region:
                     self.event_queue.cancel_events_for(
                         node.node_id, EventType.NODE_SYNC_COMPLETE
@@ -775,7 +783,8 @@ class Simulator:
             self.cluster.network.remove_outage(region)
 
             # Start syncs for nodes in the recovered region that fell behind.
-            for node in self.cluster.nodes.values():
+            all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
+            for node in all_nodes:
                 if (
                     node.config.region == region
                     and node.is_available
@@ -797,8 +806,16 @@ class Simulator:
             node_id = action.params.get("node_id")
             if node_id:
                 self.cluster.remove_node(node_id)
+                self.cluster.remove_standby_node(node_id)
                 self.cluster.remove_provisioning_node(node_id)
                 self.event_queue.cancel_events_for(node_id)
+
+        elif action.action_type == ActionType.PROMOTE_NODE:
+            node_id = action.params.get("node_id")
+            if node_id:
+                node = self.cluster.remove_standby_node(node_id)
+                if node:
+                    self.cluster.add_node(node)
 
         elif action.action_type == ActionType.SCALE_DOWN:
             new_size = action.params.get("new_size", self.cluster.target_cluster_size)
@@ -847,13 +864,18 @@ class Simulator:
 
     def _action_schedule_reconfiguration(self, action: Action) -> None:
         """Schedule a cluster reconfiguration event."""
-        delay: float = action.params.get("delay", 0)
+        delay = action.params.get("delay", 0)
         target_size: int = action.params.get("target_size", 0)
 
-        if delay > 0 and target_size > 0:
+        if hasattr(delay, "sample"):
+            delay_val = delay.sample(self.rng)
+        else:
+            delay_val = float(delay)
+
+        if delay_val >= 0 and target_size > 0:
             self.event_queue.push(
                 Event(
-                    time=Seconds(self.cluster.current_time + delay),
+                    time=Seconds(self.cluster.current_time + delay_val),
                     event_type=EventType.CLUSTER_RECONFIGURATION,
                     target_id="cluster",  # Global target
                     metadata={"target_size": target_size},
@@ -870,6 +892,7 @@ class Simulator:
         """
         node_config: NodeConfig = action.params.get("node_config")
         node_id: str = action.params.get("node_id", f"spawned_{self.rng.integers(10000)}")
+        standby: bool = action.params.get("standby", False)
 
         if node_config:
             # Add to provisioning immediately for cost tracking
@@ -887,7 +910,7 @@ class Simulator:
                     time=Seconds(self.cluster.current_time + spawn_time),
                     event_type=EventType.NODE_SPAWN_COMPLETE,
                     target_id=node_id,
-                    metadata={"node_config": node_config, "node_id": node_id},
+                    metadata={"node_config": node_config, "node_id": node_id, "standby": standby},
                 )
             )
 
