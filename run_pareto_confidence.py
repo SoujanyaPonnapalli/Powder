@@ -38,12 +38,16 @@ def read_pareto_from_csv(csv_path):
     with open(csv_path, 'r', newline='') as f:
         reader = csv.DictReader(f)
         for row in reader:
-            results.append({
-                'name': row['name'],
-                'cost': float(row['cost']),
-                'availability': float(row['availability']),
-                'prob_dataloss': float(row['prob_dataloss'])
-            })
+            avail = float(row['availability'])
+            name = row['name']
+            num_nodes = len(name.split('-'))
+            if num_nodes in (3, 5) and avail > 0.999:
+                results.append({
+                    'name': name,
+                    'cost': float(row['cost']),
+                    'availability': avail,
+                    'prob_dataloss': float(row['prob_dataloss'])
+                })
             
     pareto_optimal = []
     for r1 in results:
