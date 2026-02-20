@@ -2,6 +2,7 @@ import csv
 import itertools
 import os
 import sys
+import multiprocessing
 
 from powder.simulation.distributions import Exponential, Normal, Constant, days, hours, minutes, Seconds
 from powder.simulation.node import NodeConfig, NodeState
@@ -10,6 +11,56 @@ from powder.simulation.network import NetworkState
 from powder.simulation.protocol import LeaderlessUpToDateQuorumProtocol
 from powder.simulation.strategy import NodeReplacementStrategy
 from powder.monte_carlo import MonteCarloRunner, MonteCarloConfig
+
+def _run_single_combination(args):
+    combo_indices, node_configs, node_names = args
+    combo_name = "-".join([node_names[idx] for idx in combo_indices])
+    
+    nodes = {}
+    for j, node_idx in enumerate(combo_indices):
+        node_id = f"node_{j}"
+        nodes[node_id] = NodeState(node_id=node_id, config=node_configs[node_idx])
+        
+    cluster_state = ClusterState(
+        nodes=nodes,
+        network=NetworkState(),
+        target_cluster_size=len(combo_indices),
+    )
+    
+    # Run sequentially inside to avoid nesting overhead
+    mc_config = MonteCarloConfig(
+        num_simulations=1000,
+        max_time=days(365),
+        stop_on_data_loss=True,
+        parallel_workers=1, 
+    )
+
+    mc_runner = MonteCarloRunner(mc_config)
+    strategy = NodeReplacementStrategy(
+        failure_timeout=hours(1), 
+        safe_mode=False, 
+        default_node_config=None
+    )
+    protocol = LeaderlessUpToDateQuorumProtocol()
+    
+    results = mc_runner.run(
+        cluster=cluster_state,
+        strategy=strategy,
+        protocol=protocol,
+    )
+    
+    cost = results.cost_mean()
+    availability = results.availability_mean()
+    prob_dl = results.data_loss_probability()
+    mttl = results.mean_time_to_actual_loss()
+    
+    return {
+        'name': combo_name,
+        'cost': cost,
+        'availability': availability,
+        'prob_dataloss': prob_dl,
+        'mttl_days': mttl / 86400 if mttl is not None else float('inf')
+    }
 
 def main():
     failure_dists = [Exponential(1 / days(1)), Exponential(1 / days(7)), Exponential(1 / days(31))]
@@ -52,59 +103,17 @@ def main():
     
     print(f"Total unique cluster combinations: {len(combinations)}", flush=True)
     
+    worker_args = [(combo, node_configs, node_names) for combo in combinations]
     results_list = []
     
-    mc_config = MonteCarloConfig(
-        num_simulations=1000,
-        max_time=days(365),
-        stop_on_data_loss=True,
-        parallel_workers=os.cpu_count() or 1,
-    )
-    mc_runner = MonteCarloRunner(mc_config)
+    pool = multiprocessing.Pool(processes=os.cpu_count())
+    for idx, res in enumerate(pool.imap_unordered(_run_single_combination, worker_args)):
+        results_list.append(res)
+        print(f"Completed {idx+1}/{len(combinations)}: {res['name']} "
+              f"| Avail: {res['availability']*100:.4f}% | DL: {res['prob_dataloss']*100:.2f}% | Cost: ${res['cost']:.2f}", flush=True)
     
-    strategy = NodeReplacementStrategy(
-        failure_timeout=hours(1), 
-        safe_mode=False, 
-        default_node_config=None
-    )
-    protocol = LeaderlessUpToDateQuorumProtocol()
-    
-    for i, combo_indices in enumerate(combinations):
-        combo_name = "-".join([node_names[idx] for idx in combo_indices])
-        
-        nodes = {}
-        for j, node_idx in enumerate(combo_indices):
-            node_id = f"node_{j}"
-            nodes[node_id] = NodeState(node_id=node_id, config=node_configs[node_idx])
-            
-        cluster_state = ClusterState(
-            nodes=nodes,
-            network=NetworkState(),
-            target_cluster_size=len(combo_indices),
-        )
-        
-        print(f"Running {i+1}/{len(combinations)}: {combo_name}... ", end="", flush=True)
-        # Run Monte Carlo
-        results = mc_runner.run(
-            cluster=cluster_state,
-            strategy=strategy,
-            protocol=protocol,
-        )
-        
-        cost = results.cost_mean()
-        availability = results.availability_mean()
-        prob_dl = results.data_loss_probability()
-        mttl = results.mean_time_to_actual_loss()
-        
-        results_list.append({
-            'name': combo_name,
-            'cost': cost,
-            'availability': availability,
-            'prob_dataloss': prob_dl,
-            'mttl_days': mttl / 86400 if mttl is not None else float('inf')
-        })
-        
-        print(f"Avail: {availability*100:.4f}% | DL: {prob_dl*100:.2f}% | Cost: ${cost:.2f}", flush=True)
+    pool.close()
+    pool.join()
         
     with open('rsm_combinations.csv', 'w', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=['name', 'cost', 'availability', 'prob_dataloss', 'mttl_days'])
