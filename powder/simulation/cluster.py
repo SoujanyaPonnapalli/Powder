@@ -37,6 +37,7 @@ class ClusterState:
     current_time: Seconds = field(default_factory=lambda: Seconds(0))
     commit_index: float = 0.0
     provisioning_nodes: dict[str, NodeState] = field(default_factory=dict)
+    standby_nodes: dict[str, NodeState] = field(default_factory=dict)
 
     def _node_effectively_available(self, node: NodeState) -> bool:
         """True if node is available and not in a region with an active network outage."""
@@ -107,7 +108,8 @@ class ClusterState:
         Returns:
             The most lagging available node, or None if no available nodes.
         """
-        available = [n for n in self.nodes.values() if self._node_effectively_available(n)]
+        all_nodes = list(self.nodes.values()) + list(self.standby_nodes.values())
+        available = [n for n in all_nodes if self._node_effectively_available(n)]
         if not available:
             return None
         return min(available, key=lambda n: n.last_applied_index)
@@ -127,7 +129,8 @@ class ClusterState:
             The best donor NodeState, or None if no donor is available.
         """
         donor = None
-        for n in self.nodes.values():
+        all_nodes = list(self.nodes.values()) + list(self.standby_nodes.values())
+        for n in all_nodes:
             if n.node_id != node.node_id and self._node_effectively_available(n):
                 if donor is None or n.last_applied_index > donor.last_applied_index:
                     donor = n
@@ -143,9 +146,10 @@ class ClusterState:
         Returns:
             List of nodes that need a sync to be started.
         """
+        all_nodes = list(self.nodes.values()) + list(self.standby_nodes.values())
         return [
             n
-            for n in self.nodes.values()
+            for n in all_nodes
             if (
                 self._node_effectively_available(n)
                 and not n.is_up_to_date(self.commit_index)
@@ -164,9 +168,10 @@ class ClusterState:
         Returns:
             List of nodes whose active sync references *donor_id*.
         """
+        all_nodes = list(self.nodes.values()) + list(self.standby_nodes.values())
         return [
             n
-            for n in self.nodes.values()
+            for n in all_nodes
             if n.sync is not None and n.sync.donor_id == donor_id
         ]
 
@@ -176,7 +181,8 @@ class ClusterState:
         Useful for determining what data is available for recovery.
         Only considers effectively available nodes (not in a region outage).
         """
-        available = [n for n in self.nodes.values() if self._node_effectively_available(n)]
+        all_nodes = list(self.nodes.values()) + list(self.standby_nodes.values())
+        available = [n for n in all_nodes if self._node_effectively_available(n)]
         if not available:
             return None
         return max(available, key=lambda n: n.last_applied_index)
@@ -190,7 +196,7 @@ class ClusterState:
         Returns:
             NodeState if found, None otherwise.
         """
-        return self.nodes.get(node_id)
+        return self.nodes.get(node_id) or self.standby_nodes.get(node_id)
 
     def add_node(self, node: NodeState) -> None:
         """Add a node to the cluster.
@@ -233,6 +239,25 @@ class ClusterState:
         """
         return self.provisioning_nodes.pop(node_id, None)
 
+    def add_standby_node(self, node: NodeState) -> None:
+        """Add a node to the standby set (active but not part of quorum).
+
+        Args:
+            node: Node being added to standby.
+        """
+        self.standby_nodes[node.node_id] = node
+
+    def remove_standby_node(self, node_id: str) -> NodeState | None:
+        """Remove a node from the standby set.
+
+        Args:
+            node_id: ID of node to remove.
+
+        Returns:
+            The removed node, or None if not found.
+        """
+        return self.standby_nodes.pop(node_id, None)
+
     def all_nodes_for_billing(self) -> list[NodeState]:
         """Return all nodes that should be billed, including provisioning.
 
@@ -245,7 +270,8 @@ class ClusterState:
         """
         active_billable = [n for n in self.nodes.values() if n.has_data]
         provisioning_billable = [n for n in self.provisioning_nodes.values() if n.has_data]
-        return active_billable + provisioning_billable
+        standby_billable = [n for n in self.standby_nodes.values() if n.has_data]
+        return active_billable + provisioning_billable + standby_billable
 
     def __repr__(self) -> str:
         up_to_date = self.num_up_to_date()

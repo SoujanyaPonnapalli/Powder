@@ -34,6 +34,7 @@ class ActionType(Enum):
     SCHEDULE_REPLACEMENT_CHECK = "schedule_replacement_check"  # Schedule a replacement timeout
     CANCEL_REPLACEMENT_CHECK = "cancel_replacement_check"  # Cancel a pending replacement timeout
     SCHEDULE_RECONFIGURATION = "schedule_reconfiguration"  # Schedule a cluster reconfiguration event
+    PROMOTE_NODE = "promote_node"  # Promote a node from standby to active
     NO_OP = "no_op"  # Do nothing
 
 
@@ -187,187 +188,68 @@ class NodeReplacementStrategy(ClusterStrategy):
     ) -> list[Action]:
         actions: list[Action] = []
 
-        if event.event_type == EventType.NODE_FAILURE:
-            actions.extend(self._handle_failure(event, cluster))
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
-
-        elif event.event_type == EventType.NODE_RECOVERY:
-            actions.extend(self._handle_recovery(event, cluster))
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
-
-        elif event.event_type == EventType.NODE_DATA_LOSS:
-            actions.extend(self._handle_data_loss(event, cluster))
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
+        if event.event_type == EventType.NODE_RECOVERY:
+            node = cluster.get_node(event.target_id)
+            if node and not node.is_up_to_date(cluster.commit_index):
+                actions.append(Action(ActionType.START_SYNC, {"node_id": node.node_id}))
 
         elif event.event_type == EventType.NODE_REPLACEMENT_TIMEOUT:
-            actions.extend(self._handle_replacement_timeout(event, cluster, rng, protocol))
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
+            node_id = event.target_id
+            # Leave node_id in _timeout_pending so we don't spawn duplicate replacements
+            # self._timeout_pending.discard(node_id)
+            node = cluster.get_node(node_id)
+            if node is not None and not cluster._node_effectively_available(node):
+                actions.extend(self._replace_node(node_id, cluster))
 
         elif event.event_type == EventType.NODE_SPAWN_COMPLETE:
             node_id = event.metadata.get("node_id", event.target_id)
             self._pending_spawns.discard(node_id)
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
+            
+        # Reassess timeouts for ALL unavailable nodes based on global availability
+        actions.extend(self._reassess_timeouts(cluster))
 
-        elif event.event_type == EventType.NODE_SYNC_COMPLETE:
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
+        # Check if we can promote any synced standby nodes
+        actions.extend(self._promote_eligible_standbys(cluster, protocol))
 
-        elif event.event_type == EventType.NETWORK_OUTAGE_START:
-            actions.extend(self._handle_network_outage_start(event, cluster))
-
-        elif event.event_type == EventType.NETWORK_OUTAGE_END:
-            actions.extend(self._handle_network_outage_end(event, cluster))
-            actions.extend(self._maintain_cluster_size(cluster, protocol))
+        # Always check cluster size boundaries
+        actions.extend(self._maintain_cluster_size(cluster, protocol))
 
         return actions
 
-    def _handle_failure(
-        self,
-        event: Event,
-        cluster: ClusterState,
-    ) -> list[Action]:
-        """Handle a node failure by scheduling a replacement timeout."""
-        node = cluster.get_node(event.target_id)
-        if node is None:
-            return []  # Already removed
-
-        # If already tracked, do nothing
-        if event.target_id in self._timeout_pending:
-            return []
-
-        self._timeout_pending.add(event.target_id)
-        return [
-            Action(
-                ActionType.SCHEDULE_REPLACEMENT_CHECK,
-                {"node_id": event.target_id, "timeout": self.failure_timeout},
-            )
-        ]
-
-    def _handle_recovery(
-        self,
-        event: Event,
-        cluster: ClusterState,
-    ) -> list[Action]:
-        """Handle node recovery: cancel replacement timeout, start sync if lagging."""
+    def _reassess_timeouts(self, cluster: ClusterState) -> list[Action]:
+        """Cancel timeouts if totally unavailable, or schedule them appropriately."""
         actions: list[Action] = []
+        if cluster.num_available() == 0:
+            for pending_id in list(self._timeout_pending):
+                actions.append(Action(ActionType.CANCEL_REPLACEMENT_CHECK, {"node_id": pending_id}))
+            self._timeout_pending.clear()
+        else:
+            # Cancel timeouts for nodes that have recovered or no longer exist
+            for pending_id in list(self._timeout_pending):
+                node = cluster.get_node(pending_id)
+                if node is None or cluster._node_effectively_available(node):
+                    self._timeout_pending.discard(pending_id)
+                    actions.append(Action(ActionType.CANCEL_REPLACEMENT_CHECK, {"node_id": pending_id}))
 
-        # Cancel any pending replacement timeout for this node
-        if event.target_id in self._timeout_pending:
-            self._timeout_pending.discard(event.target_id)
-            actions.append(
-                Action(
-                    ActionType.CANCEL_REPLACEMENT_CHECK,
-                    {"node_id": event.target_id},
-                )
-            )
-
-        # If node is lagging, start sync
-        node = cluster.get_node(event.target_id)
-        if node and not node.is_up_to_date(cluster.commit_index):
-            actions.append(Action(ActionType.START_SYNC, {"node_id": node.node_id}))
-
-        return actions
-
-    def _handle_data_loss(
-        self,
-        event: Event,
-        cluster: ClusterState,
-    ) -> list[Action]:
-        """Handle permanent data loss by scheduling a replacement timeout."""
-        # Treat data loss as a failure that triggers timeout
-        # If already tracked, do nothing
-        if event.target_id in self._timeout_pending:
-            return []
-
-        self._timeout_pending.add(event.target_id)
-        return [
-            Action(
-                ActionType.SCHEDULE_REPLACEMENT_CHECK,
-                {"node_id": event.target_id, "timeout": self.failure_timeout},
-            )
-        ]
-
-    def _handle_replacement_timeout(
-        self,
-        event: Event,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-        protocol: Protocol,
-    ) -> list[Action]:
-        """Handle replacement timeout: spawn replacement if node still unavailable."""
-        node_id = event.target_id
-        self._timeout_pending.discard(node_id)
-
-        node = cluster.get_node(node_id)
-        if node is None:
-            return []  # Node was already removed
-
-        # Check if node is still unavailable
-        if cluster._node_effectively_available(node):
-            return []  # Node recovered, no replacement needed
-
-        # With safe mode, we can only modify cluster if we can commit
-        if self.safe_mode and not protocol.can_commit(cluster):
-             # We can't safely reconfigure. 
-             # Let's reschedule strict retry.
-             self._timeout_pending.add(node_id)
-             return [
-                Action(
-                    ActionType.SCHEDULE_REPLACEMENT_CHECK,
-                    {"node_id": node_id, "timeout": Seconds(1.0)}, # Retry soon
-                )
-             ]
-        elif not self.safe_mode and cluster.num_up_to_date() == 0:
-             # Cannot replace if no source of truth
-             self._timeout_pending.add(node_id)
-             return [
-                Action(
-                    ActionType.SCHEDULE_REPLACEMENT_CHECK,
-                    {"node_id": node_id, "timeout": Seconds(1.0)},
-                )
-             ]
-
-        return self._replace_node(node_id, cluster)
-
-    def _handle_network_outage_start(
-        self,
-        event: Event,
-        cluster: ClusterState,
-    ) -> list[Action]:
-        """Handle network outage: schedule replacement timeouts for affected nodes."""
-        region = event.metadata.get("region", event.target_id)
-        actions: list[Action] = []
-
-        for node in cluster.nodes.values():
-            if node.config.region == region and node.node_id not in self._timeout_pending:
-                self._timeout_pending.add(node.node_id)
-                actions.append(
-                    Action(
-                        ActionType.SCHEDULE_REPLACEMENT_CHECK,
-                        {"node_id": node.node_id, "timeout": self.failure_timeout},
+            # Schedule timeouts for nodes that are unavailable
+            for n in cluster.nodes.values():
+                if not cluster._node_effectively_available(n) and n.node_id not in self._timeout_pending:
+                    self._timeout_pending.add(n.node_id)
+                    actions.append(
+                        Action(
+                            ActionType.SCHEDULE_REPLACEMENT_CHECK,
+                            {"node_id": n.node_id, "timeout": self.failure_timeout},
+                        )
                     )
-                )
-
         return actions
 
-    def _handle_network_outage_end(
-        self,
-        event: Event,
-        cluster: ClusterState,
-    ) -> list[Action]:
-        """Handle network recovery: cancel replacement timeouts for recovered nodes."""
-        region = event.metadata.get("region", event.target_id)
+    def _promote_eligible_standbys(self, cluster: ClusterState, protocol: Protocol) -> list[Action]:
+        """Promote synced standby nodes if protocol safely permits."""
         actions: list[Action] = []
-
-        for node in cluster.nodes.values():
-            if node.config.region == region and node.node_id in self._timeout_pending:
-                self._timeout_pending.discard(node.node_id)
-                actions.append(
-                    Action(
-                        ActionType.CANCEL_REPLACEMENT_CHECK,
-                        {"node_id": node.node_id},
-                    )
-                )
-
+        for node_id, node in cluster.standby_nodes.items():
+            if node.is_up_to_date(cluster.commit_index):
+                if not self.safe_mode or protocol.can_commit(cluster):
+                    actions.append(Action(ActionType.PROMOTE_NODE, {"node_id": node_id}))
         return actions
 
     def _replace_node(
@@ -387,11 +269,11 @@ class NodeReplacementStrategy(ClusterStrategy):
         new_node_id = f"replacement_{self._spawn_counter}"
         self._pending_spawns.add(new_node_id)
 
-        # Purely additive replacement
+        # Purely additive replacement, deploy to standby first
         return [
             Action(
                 ActionType.SPAWN_NODE,
-                {"node_config": node_config, "node_id": new_node_id},
+                {"node_config": node_config, "node_id": new_node_id, "standby": True},
             ),
         ]
 
