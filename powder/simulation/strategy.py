@@ -360,7 +360,7 @@ class AdaptiveReplacementStrategy(NodeReplacementStrategy):
     def __init__(
         self,
         failure_timeout: Seconds,
-        reconfiguration_dist: Seconds,
+        reconfiguration_dist: Distribution,
         scale_down_threshold: int = 2,
         external_consensus: bool = False,
         default_node_config: NodeConfig | None = None,
