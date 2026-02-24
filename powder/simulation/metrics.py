@@ -45,6 +45,7 @@ class MetricsCollector:
         current_time: Seconds,
         cluster: ClusterState,
         protocol: Protocol,
+        can_commit: bool | None = None,
     ) -> None:
         """Record elapsed time and costs using the pre-event cluster state.
 
@@ -64,13 +65,16 @@ class MetricsCollector:
             cluster: Current cluster state (before event applied).
             protocol: Protocol for algorithm-specific availability.
                 Uses protocol.can_commit() for availability tracking.
+            can_commit: Pre-computed result of protocol.can_commit(cluster).
+                If None, it is computed here. Pass this to avoid a redundant
+                call when the caller has already evaluated it.
         """
         time_delta = Seconds(current_time - self._last_update_time)
         if time_delta < 0:
             raise ValueError(f"Time went backwards: {self._last_update_time} -> {current_time}")
 
         if time_delta > 0:
-            available = protocol.can_commit(cluster)
+            available = can_commit if can_commit is not None else protocol.can_commit(cluster)
 
             if available:
                 self.time_available = Seconds(self.time_available + time_delta)

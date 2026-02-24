@@ -41,11 +41,12 @@ class ClusterState:
 
     def _node_effectively_available(self, node: NodeState) -> bool:
         """True if node is available and not in a region with an active network outage."""
-        return (
-            node.is_available
-            and node.has_data
-            and not self.network.is_region_down(node.config.region)
-        )
+        if not (node.is_available and node.has_data):
+            return False
+        # Fast path: skip the set lookup when there are no active outages (common case)
+        if not self.network.active_outages:
+            return True
+        return not self.network.is_region_down(node.config.region)
 
     def num_up_to_date(self) -> int:
         """Count nodes that are fully synced to commit_index.

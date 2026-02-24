@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from .distributions import Distribution, Seconds
 
 
-@dataclass
+@dataclass(frozen=True)
 class NodeConfig:
     """Static configuration for a node.
 
@@ -35,6 +35,12 @@ class NodeConfig:
     log_replay_rate_dist: Distribution
     snapshot_download_time_dist: Distribution
     spawn_dist: Distribution
+
+    def __deepcopy__(self, memo: dict) -> "NodeConfig":
+        # NodeConfig is effectively immutable (only distributions and primitives).
+        # Returning self avoids recursing into Distribution objects on every sim copy.
+        memo[id(self)] = self
+        return self
 
 
 @dataclass

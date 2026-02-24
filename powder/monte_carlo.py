@@ -577,38 +577,54 @@ class MonteCarloRunner:
         All objects are plain dataclasses and always picklable, so they
         are sent directly to worker processes.  Each worker deep-copies
         the objects to ensure independent state.
+
+        Uses chunked dispatch: submits at most ``parallel_workers`` futures
+        regardless of ``num_simulations``.  Submitting one future per
+        simulation creates O(N) IPC round-trips; for short simulations the
+        overhead dominates and parallel becomes *slower* than sequential.
+        Chunking keeps the round-trip count at O(workers), which is small.
         """
         completed = 0
+        num_runs = self.config.num_simulations
+        num_workers = self.config.parallel_workers
 
-        with ProcessPoolExecutor(max_workers=self.config.parallel_workers) as executor:
+        # One chunk per worker (at most).  Each chunk runs its simulations
+        # sequentially inside the worker, returning a list of results.
+        chunk_count = min(num_runs, num_workers)
+        base_chunk_size = num_runs // chunk_count
+        remainder = num_runs % chunk_count
+
+        with ProcessPoolExecutor(max_workers=num_workers) as executor:
             futures = []
+            current_idx = 0
 
-            for i in range(self.config.num_simulations):
-                seed = (self.config.base_seed + i) if self.config.base_seed else None
+            for i in range(chunk_count):
+                size = base_chunk_size + (1 if i < remainder else 0)
+                if size == 0:
+                    continue
 
+                seed = (
+                    (self.config.base_seed + current_idx)
+                    if self.config.base_seed is not None
+                    else None
+                )
                 future = executor.submit(
-                    _run_single_simulation,
+                    _run_simulation_chunk,
                     cluster=cluster,
                     strategy=strategy,
                     protocol=protocol,
                     network_config=network_config,
                     max_time=self.config.max_time,
                     stop_on_data_loss=self.config.stop_on_data_loss,
-                    seed=seed,
+                    start_seed=seed,
+                    num_simulations=size,
                 )
                 futures.append(future)
+                current_idx += size
 
             for future in as_completed(futures):
-                sim_results = future.result()
-                # If chunking used, we get a list of results
-                if isinstance(sim_results, list):
-                    for res in sim_results:
-                        self._collect_result(res, results)
-                        completed += 1
-                        if progress_callback:
-                            progress_callback(completed, self.config.num_simulations)
-                else:
-                    self._collect_result(sim_results, results)
+                for res in future.result():
+                    self._collect_result(res, results)
                     completed += 1
                     if progress_callback:
                         progress_callback(completed, self.config.num_simulations)
@@ -742,15 +758,11 @@ class MonteCarloRunner:
 
             try:
                 futures = []
-                # Simple chunking: distribute runs evenly across workers to minimize
-                # messaging overhead. Ensure at least 1 run per chunk.
-                # Target roughly 4 chunks per worker to allow some load balancing,
-                # but for short sims, fewer larger chunks is better.
-                # Let's target ~100ms per chunk minimum if possible, but we don't know duration.
-                # Just split into parallel_workers * 4 chunks if num_runs is large.
-                chunk_count = self.config.parallel_workers * 4
-                if num_runs < chunk_count:
-                    chunk_count = num_runs
+                # One chunk per worker (at most): keeps IPC round-trips at
+                # O(workers) instead of O(num_runs).  For short simulations
+                # the serialization overhead of one-future-per-sim dominates,
+                # making parallel slower than sequential.
+                chunk_count = min(num_runs, self.config.parallel_workers)
 
                 base_chunk_size = num_runs // chunk_count
                 remainder = num_runs % chunk_count

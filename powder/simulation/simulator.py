@@ -166,7 +166,7 @@ class Simulator:
             )
         )
 
-    def _advance_commit_index(self, elapsed: float) -> None:
+    def _advance_commit_index(self, elapsed: float, can_commit: bool | None = None) -> None:
         """Advance commit_index, up-to-date nodes, and syncing nodes.
 
         Called before processing each event (or at time-limit) for the
@@ -183,11 +183,15 @@ class Simulator:
 
         Args:
             elapsed: Wall-clock seconds since last event.
+            can_commit: Pre-computed result of protocol.can_commit(). If None,
+                it is computed here. Pass this to avoid a redundant call when
+                the caller has already evaluated it for the same cluster state.
         """
         if elapsed <= 0:
             return
 
-        can_commit = self.protocol.can_commit(self.cluster)
+        if can_commit is None:
+            can_commit = self.protocol.can_commit(self.cluster)
 
         if can_commit:
             commit_amount = elapsed * self.protocol.commit_rate
@@ -277,7 +281,7 @@ class Simulator:
                     if new_snap > node.last_snapshot_index:
                         node.last_snapshot_index = new_snap
 
-    def _start_sync(self, node: NodeState) -> None:
+    def _start_sync(self, node: NodeState, can_commit: bool | None = None) -> None:
         """Start a sync for a lagging node.
 
         Finds the best donor, determines the sync path (log-only vs
@@ -287,6 +291,11 @@ class Simulator:
 
         The sync target is ``donor.last_applied_index`` -- a node can only
         obtain data the donor actually has.
+
+        Args:
+            node: The lagging node to start syncing.
+            can_commit: Pre-computed result of protocol.can_commit(). If None,
+                it is computed here.
         """
         if node.sync is not None:
             return  # Already syncing
@@ -302,7 +311,8 @@ class Simulator:
         # Sample the actual log replay rate for this sync session
         log_replay_rate = node.config.log_replay_rate_dist.sample(self.rng)
 
-        can_commit = self.protocol.can_commit(self.cluster)
+        if can_commit is None:
+            can_commit = self.protocol.can_commit(self.cluster)
         commit_rate_eff = self.protocol.commit_rate if can_commit else 0.0
 
         snapshot_interval = self.protocol.snapshot_interval
@@ -394,11 +404,18 @@ class Simulator:
         # scheduled. _reschedule_active_syncs will handle it when conditions
         # change.
 
-    def _compute_remaining_sync_time(self, node: NodeState) -> Seconds | None:
+    def _compute_remaining_sync_time(
+        self, node: NodeState, can_commit: bool | None = None
+    ) -> Seconds | None:
         """Compute wall-clock time until a syncing node catches up to its donor.
 
         Uses ``donor.last_applied_index`` as the sync target -- the data the
         donor actually has -- not ``cluster.commit_index``.
+
+        Args:
+            node: The syncing node.
+            can_commit: Pre-computed result of protocol.can_commit(). If None,
+                it is computed here.
 
         Returns:
             Estimated seconds to sync completion, or None if sync cannot
@@ -412,7 +429,8 @@ class Simulator:
         if donor is None or not self.cluster._node_effectively_available(donor):
             return None  # Donor unavailable, sync paused
 
-        can_commit = self.protocol.can_commit(self.cluster)
+        if can_commit is None:
+            can_commit = self.protocol.can_commit(self.cluster)
         commit_rate_eff = self.protocol.commit_rate if can_commit else 0.0
         net_rate = sync.log_replay_rate - commit_rate_eff
 
@@ -473,13 +491,21 @@ class Simulator:
                 )
                 node.sync = None
 
-    def _reschedule_active_syncs(self) -> None:
+    def _reschedule_active_syncs(self, can_commit: bool | None = None) -> None:
         """Reschedule SYNC_COMPLETE events for all actively syncing nodes.
 
         Called after every event to keep sync completion timing accurate
         when conditions change (commit ability, donor availability).
+
+        Args:
+            can_commit: Pre-computed result of protocol.can_commit(). If None,
+                it is computed once here and reused for all syncing nodes.
         """
         all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
+        # Compute can_commit once for all nodes in this pass rather than
+        # re-evaluating inside _compute_remaining_sync_time for each node.
+        if can_commit is None:
+            can_commit = self.protocol.can_commit(self.cluster)
         for node in all_nodes:
             if node.sync is None:
                 continue
@@ -507,7 +533,7 @@ class Simulator:
                     node.sync = None
                     continue
 
-            remaining = self._compute_remaining_sync_time(node)
+            remaining = self._compute_remaining_sync_time(node, can_commit=can_commit)
             if remaining is not None and remaining >= 0:
                 self.event_queue.reschedule(
                     node.node_id,
@@ -521,14 +547,19 @@ class Simulator:
                     node.node_id, EventType.NODE_SYNC_COMPLETE
                 )
 
-    def _retry_pending_syncs(self) -> None:
+    def _retry_pending_syncs(self, can_commit: bool | None = None) -> None:
         """Start syncs for lagging nodes that don't have an active sync.
 
         Called whenever a potential donor becomes available (node recovery,
         network outage end, sync completion).
+
+        Args:
+            can_commit: Pre-computed result of protocol.can_commit(). If None,
+                it is computed inside _start_sync for each node. Pass this to
+                avoid a redundant call per node when the caller already has it.
         """
         for node in self.cluster.nodes_needing_sync():
-            self._start_sync(node)
+            self._start_sync(node, can_commit=can_commit)
 
     def _process_event(self, event: Event) -> None:
         """Process a single event and update cluster state."""
@@ -540,10 +571,16 @@ class Simulator:
         # availability for the interval.  Costs use the pre-event cluster
         # state so that nodes added/removed by this event are not incorrectly
         # billed for the prior interval.
-        self.metrics.record_elapsed(event.time, cluster=self.cluster, protocol=self.protocol)
-        
-        
-        self._advance_commit_index(elapsed)
+        # Compute can_commit once for the pre-event state; both record_elapsed
+        # and _advance_commit_index need it for the same unchanged cluster.
+        pre_event_can_commit = self.protocol.can_commit(self.cluster)
+        self.metrics.record_elapsed(
+            event.time,
+            cluster=self.cluster,
+            protocol=self.protocol,
+            can_commit=pre_event_can_commit,
+        )
+        self._advance_commit_index(elapsed, can_commit=pre_event_can_commit)
         self.cluster.current_time = event.time
 
         if self.log_events:
@@ -591,8 +628,11 @@ class Simulator:
 
         # Keep sync completion timing accurate after every event.
         # Conditions may have changed (commit ability, donor availability).
-        self._reschedule_active_syncs()
-        self._retry_pending_syncs()
+        # Compute can_commit once for the post-event state; both calls need it
+        # for the same (now fully updated) cluster.
+        post_event_can_commit = self.protocol.can_commit(self.cluster)
+        self._reschedule_active_syncs(can_commit=post_event_can_commit)
+        self._retry_pending_syncs(can_commit=post_event_can_commit)
 
         # Check for data-loss milestones AFTER the event is fully applied.
         self.metrics.update(self.cluster, event.time, self.protocol)
