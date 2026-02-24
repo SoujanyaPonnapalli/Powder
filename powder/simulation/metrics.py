@@ -95,6 +95,7 @@ class MetricsCollector:
         cluster: ClusterState,
         current_time: Seconds,
         protocol: Protocol,
+        can_commit: bool | None = None,
     ) -> None:
         """Check for data-loss milestones after an event is applied.
 
@@ -110,11 +111,17 @@ class MetricsCollector:
             protocol: Protocol for algorithm-specific data loss detection.
                 Uses protocol.has_potential_data_loss() and
                 protocol.has_actual_data_loss().
+            can_commit: Pre-computed result of protocol.can_commit(cluster).
+                If True, potential data loss is impossible (quorum is met).
+                If None, has_potential_data_loss() is called normally.
         """
         # Track data loss events (only record first occurrence)
-        if not self._had_potential_loss and protocol.has_potential_data_loss(cluster):
-            self.time_to_potential_data_loss = current_time
-            self._had_potential_loss = True
+        if not self._had_potential_loss:
+            # If can_commit is True, quorum is met so no potential data loss
+            has_potential = False if can_commit else protocol.has_potential_data_loss(cluster)
+            if has_potential:
+                self.time_to_potential_data_loss = current_time
+                self._had_potential_loss = True
 
         if not self._had_actual_loss and protocol.has_actual_data_loss(cluster):
             self.time_to_actual_data_loss = current_time

@@ -90,6 +90,17 @@ class Simulator:
 
         self._initialized = False
 
+        # Dispatch table for event handlers (avoids if/elif chain per event)
+        self._event_dispatch = {
+            EventType.NODE_FAILURE: self._apply_node_failure,
+            EventType.NODE_RECOVERY: self._apply_node_recovery,
+            EventType.NODE_DATA_LOSS: self._apply_node_data_loss,
+            EventType.NODE_SYNC_COMPLETE: self._apply_node_sync_complete,
+            EventType.NODE_SPAWN_COMPLETE: self._apply_node_spawn_complete,
+            EventType.NETWORK_OUTAGE_START: self._apply_network_outage_start,
+            EventType.NETWORK_OUTAGE_END: self._apply_network_outage_end,
+        }
+
     def _initialize(self) -> None:
         """Set up initial events and state."""
         if self._initialized:
@@ -200,8 +211,7 @@ class Simulator:
             self.cluster.commit_index = new_index
 
             snapshot_interval = self.protocol.snapshot_interval
-            all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
-            for node in all_nodes:
+            for node in self.cluster._all_nodes:
                 if (
                     self.cluster._node_effectively_available(node)
                     and node.sync is None  # Not actively syncing
@@ -234,8 +244,7 @@ class Simulator:
         """
         snapshot_interval = self.protocol.snapshot_interval
 
-        all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
-        for node in all_nodes:
+        for node in self.cluster._all_nodes:
             if node.sync is None:
                 continue
             if not self.cluster._node_effectively_available(node):
@@ -501,12 +510,11 @@ class Simulator:
             can_commit: Pre-computed result of protocol.can_commit(). If None,
                 it is computed once here and reused for all syncing nodes.
         """
-        all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
         # Compute can_commit once for all nodes in this pass rather than
         # re-evaluating inside _compute_remaining_sync_time for each node.
         if can_commit is None:
             can_commit = self.protocol.can_commit(self.cluster)
-        for node in all_nodes:
+        for node in self.cluster._all_nodes:
             if node.sync is None:
                 continue
 
@@ -586,36 +594,10 @@ class Simulator:
         if self.log_events:
             self.event_log.append(event)
 
-        # Apply event to cluster state
-        if event.event_type == EventType.NODE_FAILURE:
-            self._apply_node_failure(event)
-
-        elif event.event_type == EventType.NODE_RECOVERY:
-            self._apply_node_recovery(event)
-
-        elif event.event_type == EventType.NODE_DATA_LOSS:
-            self._apply_node_data_loss(event)
-
-        elif event.event_type == EventType.NODE_SYNC_COMPLETE:
-            self._apply_node_sync_complete(event)
-
-        elif event.event_type == EventType.NODE_SPAWN_COMPLETE:
-            self._apply_node_spawn_complete(event)
-
-        elif event.event_type == EventType.NETWORK_OUTAGE_START:
-            self._apply_network_outage_start(event)
-
-        elif event.event_type == EventType.NETWORK_OUTAGE_END:
-            self._apply_network_outage_end(event)
-
-        elif event.event_type == EventType.NODE_REPLACEMENT_TIMEOUT:
-            pass  # Handled by strategy below
-
-        elif event.event_type == EventType.LEADER_ELECTION_COMPLETE:
-            pass  # Handled by protocol below
-
-        elif event.event_type == EventType.CLUSTER_RECONFIGURATION:
-            pass  # Handled by strategy below
+        # Apply event to cluster state via dispatch table
+        handler = self._event_dispatch.get(event.event_type)
+        if handler is not None:
+            handler(event)
 
         # Let protocol react (e.g., detect leader failure, complete election)
         for new_event in self.protocol.on_event(event, self.cluster, self.rng):
@@ -635,7 +617,7 @@ class Simulator:
         self._retry_pending_syncs(can_commit=post_event_can_commit)
 
         # Check for data-loss milestones AFTER the event is fully applied.
-        self.metrics.update(self.cluster, event.time, self.protocol)
+        self.metrics.update(self.cluster, event.time, self.protocol, can_commit=post_event_can_commit)
 
     def _apply_node_failure(self, event: Event) -> None:
         """Apply a transient node failure."""
@@ -790,8 +772,7 @@ class Simulator:
 
             # Cancel syncs for nodes in the affected region and handle
             # downstream syncs that used these nodes as donors.
-            all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
-            for node in all_nodes:
+            for node in self.cluster._all_nodes:
                 if node.config.region == region:
                     self.event_queue.cancel_events_for(
                         node.node_id, EventType.NODE_SYNC_COMPLETE
@@ -823,8 +804,7 @@ class Simulator:
             self.cluster.network.remove_outage(region)
 
             # Start syncs for nodes in the recovered region that fell behind.
-            all_nodes = list(self.cluster.nodes.values()) + list(self.cluster.standby_nodes.values())
-            for node in all_nodes:
+            for node in self.cluster._all_nodes:
                 if (
                     node.config.region == region
                     and node.is_available
@@ -973,19 +953,16 @@ class Simulator:
         end_reason = "unknown"
 
         while True:
-            # Check for empty queue
-            if self.event_queue.is_empty():
+            event = self.event_queue.pop()
+
+            if event is None:
                 end_reason = "no_events"
                 break
 
-            # Peek at next event
-            next_event = self.event_queue.peek()
-            if next_event is None:
-                end_reason = "no_events"
-                break
+            # Check time limit — push event back so subsequent run_until calls see it
+            if end_time is not None and event.time > end_time:
+                self.event_queue.push(event)
 
-            # Check time limit
-            if end_time is not None and next_event.time > end_time:
                 # Advance commit_index up to end_time
                 elapsed = end_time - self.cluster.current_time
                 self._advance_commit_index(elapsed)
@@ -998,10 +975,7 @@ class Simulator:
                 end_reason = "time_limit"
                 break
 
-            # Process event
-            event = self.event_queue.pop()
-            if event:
-                self._process_event(event)
+            self._process_event(event)
 
             # Check for data loss first (more specific)
             if self.protocol.has_actual_data_loss(self.cluster):
