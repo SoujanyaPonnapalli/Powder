@@ -205,8 +205,19 @@ class NodeReplacementStrategy(ClusterStrategy):
             node_id = event.metadata.get("node_id", event.target_id)
             self._pending_spawns.discard(node_id)
             
-        # Reassess timeouts for ALL unavailable nodes based on global availability
-        actions.extend(self._reassess_timeouts(cluster))
+        # Only reassess timeouts on events that can change node availability
+        _AVAILABILITY_EVENTS = (
+            EventType.NODE_FAILURE,
+            EventType.NODE_RECOVERY,
+            EventType.NODE_DATA_LOSS,
+            EventType.NETWORK_OUTAGE_START,
+            EventType.NETWORK_OUTAGE_END,
+            EventType.NODE_SPAWN_COMPLETE,
+        )
+        if event.event_type in _AVAILABILITY_EVENTS:
+            # Compute num_available once for reuse by multiple methods below
+            nav = cluster.num_available()
+            actions.extend(self._reassess_timeouts(cluster, num_available=nav))
 
         # Check if we can promote any synced standby nodes
         actions.extend(self._promote_eligible_standbys(cluster, protocol))
@@ -216,10 +227,10 @@ class NodeReplacementStrategy(ClusterStrategy):
 
         return actions
 
-    def _reassess_timeouts(self, cluster: ClusterState) -> list[Action]:
+    def _reassess_timeouts(self, cluster: ClusterState, num_available: int | None = None) -> list[Action]:
         """Cancel timeouts if totally unavailable, or schedule them appropriately."""
         actions: list[Action] = []
-        if cluster.num_available() == 0:
+        if (num_available if num_available is not None else cluster.num_available()) == 0:
             for pending_id in list(self._timeout_pending):
                 actions.append(Action(ActionType.CANCEL_REPLACEMENT_CHECK, {"node_id": pending_id}))
             self._timeout_pending.clear()
@@ -243,12 +254,14 @@ class NodeReplacementStrategy(ClusterStrategy):
                     )
         return actions
 
-    def _promote_eligible_standbys(self, cluster: ClusterState, protocol: Protocol) -> list[Action]:
+    def _promote_eligible_standbys(
+        self, cluster: ClusterState, protocol: Protocol, can_commit: bool | None = None,
+    ) -> list[Action]:
         """Promote synced standby nodes if protocol safely permits."""
         actions: list[Action] = []
         for node_id, node in cluster.standby_nodes.items():
             if node.is_up_to_date(cluster.commit_index):
-                if not self.safe_mode or protocol.can_commit(cluster):
+                if not self.safe_mode or (can_commit if can_commit is not None else protocol.can_commit(cluster)):
                     actions.append(Action(ActionType.PROMOTE_NODE, {"node_id": node_id}))
         return actions
 

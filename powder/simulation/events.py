@@ -6,35 +6,35 @@ simulation events ordered by time.
 """
 
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import IntEnum
 from typing import Any
 import heapq
 
 from .distributions import Seconds
 
 
-class EventType(Enum):
+class EventType(IntEnum):
     """Types of events that can occur during simulation."""
 
     # Node events
-    NODE_FAILURE = "node_failure"  # Transient unavailability
-    NODE_RECOVERY = "node_recovery"  # Recovery from transient failure
-    NODE_DATA_LOSS = "node_data_loss"  # Permanent data loss (e.g., disk failure)
-    NODE_SYNC_COMPLETE = "node_sync_complete"  # Node finished syncing
-    NODE_SPAWN_COMPLETE = "node_spawn_complete"  # New node finished spawning
+    NODE_FAILURE = 0  # Transient unavailability
+    NODE_RECOVERY = 1  # Recovery from transient failure
+    NODE_DATA_LOSS = 2  # Permanent data loss (e.g., disk failure)
+    NODE_SYNC_COMPLETE = 3  # Node finished syncing
+    NODE_SPAWN_COMPLETE = 4  # New node finished spawning
 
     # Network events
-    NETWORK_OUTAGE_START = "network_outage_start"  # Partition begins
-    NETWORK_OUTAGE_END = "network_outage_end"  # Partition ends
+    NETWORK_OUTAGE_START = 5  # Partition begins
+    NETWORK_OUTAGE_END = 6  # Partition ends
 
     # Replacement events
-    NODE_REPLACEMENT_TIMEOUT = "node_replacement_timeout"  # Node replacement timeout reached
+    NODE_REPLACEMENT_TIMEOUT = 7  # Node replacement timeout reached
 
     # Protocol events
-    LEADER_ELECTION_COMPLETE = "leader_election_complete"  # Leader election finished
+    LEADER_ELECTION_COMPLETE = 8  # Leader election finished
 
     # Cluster events
-    CLUSTER_RECONFIGURATION = "cluster_reconfiguration"  # Attempt to reconfigure cluster size
+    CLUSTER_RECONFIGURATION = 9  # Attempt to reconfigure cluster size
 
 
 @dataclass(order=True)
@@ -61,7 +61,7 @@ class Event:
     metadata: dict[str, Any] = field(default_factory=dict, compare=False)
 
     def __repr__(self) -> str:
-        return f"Event({self.time:.2f}s, {self.event_type.value}, {self.target_id})"
+        return f"Event({self.time:.2f}s, {self.event_type.name}, {self.target_id})"
 
 
 class EventQueue:
@@ -119,9 +119,15 @@ class EventQueue:
         Returns:
             Next event by time, or None if queue is empty.
         """
-        while self._heap:
-            _time, gen, event = heapq.heappop(self._heap)
-            if self._is_cancelled(gen, event):
+        _heap = self._heap
+        _cancel_target = self._cancel_target
+        _cancel_type = self._cancel_type
+        _heappop = heapq.heappop
+        while _heap:
+            _time, gen, event = _heappop(_heap)
+            if gen < _cancel_target.get(event.target_id, 0):
+                continue
+            if gen < _cancel_type.get((event.target_id, event.event_type), 0):
                 continue
             return event
         return None
@@ -132,10 +138,17 @@ class EventQueue:
         Returns:
             Next event by time, or None if queue is empty.
         """
-        while self._heap:
-            _time, gen, event = self._heap[0]
-            if self._is_cancelled(gen, event):
-                heapq.heappop(self._heap)
+        _heap = self._heap
+        _cancel_target = self._cancel_target
+        _cancel_type = self._cancel_type
+        _heappop = heapq.heappop
+        while _heap:
+            _time, gen, event = _heap[0]
+            if gen < _cancel_target.get(event.target_id, 0):
+                _heappop(_heap)
+                continue
+            if gen < _cancel_type.get((event.target_id, event.event_type), 0):
+                _heappop(_heap)
                 continue
             return event
         return None
