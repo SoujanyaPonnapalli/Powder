@@ -981,7 +981,7 @@ class TestRaftLikeProtocol:
         assert result_events == []
 
     def test_election_retries_when_no_eligible_node(self):
-        """If no eligible node exists, election should retry."""
+        """If no eligible node exists, election should stall and restart on recovery."""
         cluster = make_test_cluster(3)
         cluster.current_time = Seconds(100)
         cluster.commit_index = 100.0
@@ -1007,11 +1007,24 @@ class TestRaftLikeProtocol:
         assert protocol.election_in_progress is True
         assert protocol.leader_id is None
 
-        # Should have returned a retry event
-        assert len(new_events) == 1
-        retry_event = new_events[0]
-        assert retry_event.event_type == EventType.LEADER_ELECTION_COMPLETE
-        assert retry_event.time == Seconds(110)
+        # Should have stalled (no retry event), waiting for a node to come online
+        assert len(new_events) == 0
+        assert protocol._election_stalled is True
+
+        # Now simulate a node recovery — this should restart the election
+        # First, make a node up-to-date so _pick_leader can succeed after restart
+        list(cluster.nodes.values())[0].last_applied_index = 100.0
+        recovery_event = Event(
+            time=Seconds(200),
+            event_type=EventType.NODE_RECOVERY,
+            target_id=list(cluster.nodes.keys())[0],
+        )
+        restart_events = protocol.on_event(recovery_event, cluster, rng)
+
+        # Should have restarted the election
+        assert len(restart_events) == 1
+        assert restart_events[0].event_type == EventType.LEADER_ELECTION_COMPLETE
+        assert protocol._election_stalled is False
 
     def test_network_outage_on_leader_region_triggers_election(self):
         """Network outage in the leader's region should trigger election."""

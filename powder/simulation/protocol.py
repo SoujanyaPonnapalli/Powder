@@ -451,6 +451,8 @@ class RaftLikeProtocol(Protocol):
         self._log_retention_ops = log_retention_ops
         self._leader_id: str | None = None
         self._election_in_progress: bool = False
+        self._election_stalled: bool = False
+        self._election_epoch: int = 0
 
     @property
     def commit_rate(self) -> float:
@@ -505,6 +507,23 @@ class RaftLikeProtocol(Protocol):
         self._leader_id = self._pick_leader(cluster)
         return []
 
+    # Events that indicate a node may have become available/eligible,
+    # which could unblock a stalled election.
+    _AVAILABILITY_EVENTS = {
+        EventType.NODE_RECOVERY,
+        EventType.NETWORK_OUTAGE_END,
+        EventType.NODE_SYNC_COMPLETE,
+        EventType.NODE_SPAWN_COMPLETE,
+    }
+
+    # Events that indicate a node may have become unavailable,
+    # which could invalidate an in-progress election.
+    _FAILURE_EVENTS = {
+        EventType.NODE_FAILURE,
+        EventType.NODE_DATA_LOSS,
+        EventType.NETWORK_OUTAGE_START,
+    }
+
     def on_event(
         self,
         event: Event,
@@ -516,13 +535,21 @@ class RaftLikeProtocol(Protocol):
         - NODE_FAILURE of the leader: starts an election.
         - NODE_DATA_LOSS of the leader: starts an election.
         - NETWORK_OUTAGE_START affecting the leader's region: starts an election.
-        - LEADER_ELECTION_COMPLETE: finalizes the election.
+        - LEADER_ELECTION_COMPLETE: finalizes the election (if epoch matches).
+        - NODE_RECOVERY / NETWORK_OUTAGE_END / NODE_SYNC_COMPLETE /
+          NODE_SPAWN_COMPLETE: restarts a stalled election.
+        - NODE_FAILURE / NODE_DATA_LOSS / NETWORK_OUTAGE_START during election:
+          invalidates election if quorum is lost.
 
         Returns:
             List of new events to schedule (e.g., election completion).
         """
         if event.event_type == EventType.LEADER_ELECTION_COMPLETE:
             return self._handle_election_complete(event, cluster, rng)
+
+        # Check if a stalled election should be restarted
+        if self._election_stalled and event.event_type in self._AVAILABILITY_EVENTS:
+            return self._restart_election(cluster, rng)
 
         # Check if the leader was lost
         if self._leader_id is not None and not self._election_in_progress:
@@ -542,6 +569,17 @@ class RaftLikeProtocol(Protocol):
             if leader_lost:
                 return self._start_election(cluster, rng)
 
+        # Check if quorum was lost during an in-progress (non-stalled) election.
+        # If so, invalidate the current election immediately — it must restart
+        # from scratch when quorum is restored.
+        if (
+            self._election_in_progress
+            and not self._election_stalled
+            and event.event_type in self._FAILURE_EVENTS
+            and cluster.num_available() < self.quorum_size(cluster)
+        ):
+            self._election_stalled = True
+
         return []
 
     def _start_election(
@@ -556,6 +594,8 @@ class RaftLikeProtocol(Protocol):
         """
         self._leader_id = None
         self._election_in_progress = True
+        self._election_stalled = False
+        self._election_epoch += 1
 
         election_duration = self.election_time_dist.sample(rng)
         return [
@@ -563,6 +603,30 @@ class RaftLikeProtocol(Protocol):
                 time=Seconds(cluster.current_time + election_duration),
                 event_type=EventType.LEADER_ELECTION_COMPLETE,
                 target_id="protocol",
+                metadata={"epoch": self._election_epoch},
+            )
+        ]
+
+    def _restart_election(
+        self,
+        cluster: ClusterState,
+        rng: np.random.Generator,
+    ) -> list[Event]:
+        """Restart a stalled election after a node became available.
+
+        Returns:
+            List containing a new election completion event.
+        """
+        self._election_stalled = False
+        self._election_epoch += 1
+
+        election_duration = self.election_time_dist.sample(rng)
+        return [
+            Event(
+                time=Seconds(cluster.current_time + election_duration),
+                event_type=EventType.LEADER_ELECTION_COMPLETE,
+                target_id="protocol",
+                metadata={"epoch": self._election_epoch},
             )
         ]
 
@@ -572,37 +636,50 @@ class RaftLikeProtocol(Protocol):
         cluster: ClusterState,
         rng: np.random.Generator,
     ) -> list[Event]:
-        """Handle election completion: pick a new leader or retry.
+        """Handle election completion: pick a new leader or stall.
+
+        Ignores stale events from cancelled elections (epoch mismatch).
 
         Returns:
-            Empty list if a leader was elected, or a list containing
-            a retry event if no eligible node was found.
+            Empty list. If no leader was found, the election stalls
+            until a node-availability event triggers a restart.
         """
+        # Ignore stale election events from a previous (cancelled) epoch.
+        # This happens when quorum was lost mid-election, invalidating
+        # the pending event, and a new election was already restarted.
+        event_epoch = event.metadata.get("epoch", 0)
+        if event_epoch != self._election_epoch:
+            return []
+
         new_leader = self._pick_leader(cluster)
 
         if new_leader is not None:
             self._leader_id = new_leader
             self._election_in_progress = False
+            self._election_stalled = False
             return []
 
-        # No eligible node available -- schedule another attempt
-        retry_duration = self.election_time_dist.sample(rng)
-        return [
-            Event(
-                time=Seconds(cluster.current_time + retry_duration),
-                event_type=EventType.LEADER_ELECTION_COMPLETE,
-                target_id="protocol",
-            )
-        ]
+        # No eligible node available -- stall until a node comes online.
+        # on_event will restart the election when a recovery/outage-end/
+        # sync-complete/spawn-complete event arrives.
+        self._election_stalled = True
+        return []
 
     def _pick_leader(self, cluster: ClusterState) -> str | None:
         """Pick a leader from eligible nodes.
 
         A node is eligible if it is effectively available and up-to-date.
+        Additionally, a majority of nodes must be effectively available
+        (a leader needs votes from a quorum to win an election).
 
         Returns:
-            Node ID of the chosen leader, or None if no eligible node exists.
+            Node ID of the chosen leader, or None if no eligible node exists
+            or majority is not available.
         """
+        # A leader election requires a majority of nodes to participate
+        if cluster.num_available() < self.quorum_size(cluster):
+            return None
+
         eligible = [
             node
             for node in cluster.nodes.values()
