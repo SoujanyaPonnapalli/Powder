@@ -1905,6 +1905,491 @@ class TestDeterministicSyncModel:
 
 
 # =============================================================================
+# Raft Snapshot / Log Recovery Tests
+# =============================================================================
+
+
+class TestRaftSnapshotRecovery:
+    """Tests for snapshot-aware node recovery under RaftLikeProtocol.
+
+    Mirrors TestSnapshotRecovery but uses RaftLikeProtocol to confirm the
+    shared compute_sync_time logic works correctly in a leader-based context.
+    """
+
+    def test_recovery_without_snapshot(self):
+        """Node slightly behind should do log-only replay (no snapshot needed)."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(365)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(minutes(5)),  # Slow snapshot
+            spawn_dist=Constant(minutes(10)),
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+            snapshot_interval=100.0,
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=150.0,
+                last_snapshot_index=100.0,
+            )
+        nodes["node0"].last_applied_index = 110.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=150.0,
+        )
+
+        # Initialize protocol so there's a leader
+        rng = np.random.default_rng(42)
+        protocol.on_simulation_start(cluster, rng)
+        assert protocol.leader_id is not None
+
+        sync_time = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+
+        # Should be log-only: lag=40, net_rate=10-1=9 -> ~4.4s
+        assert sync_time is not None
+        assert sync_time < minutes(5)  # Much less than snapshot download time
+
+    def test_recovery_with_snapshot(self):
+        """Node far behind (outside log GC window) should download snapshot first."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(365)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),  # 60s snapshot download
+            spawn_dist=Constant(minutes(10)),
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+            snapshot_interval=100.0,
+            log_retention_ops=100.0,
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=250.0,
+                last_snapshot_index=200.0,
+            )
+        nodes["node0"].last_applied_index = 50.0
+        nodes["node0"].last_snapshot_index = 0.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=250.0,
+        )
+
+        rng = np.random.default_rng(42)
+        protocol.on_simulation_start(cluster, rng)
+
+        sync_time = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+
+        assert sync_time is not None
+        # Should include snapshot download time (60s) + some log replay
+        assert sync_time >= 60.0
+
+    def test_no_snapshot_interval_means_log_only(self):
+        """With snapshot_interval=0, recovery should always be log-only."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(365)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),
+            spawn_dist=Constant(minutes(10)),
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+            snapshot_interval=0.0,
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=1000.0,
+                last_snapshot_index=0.0,
+            )
+        nodes["node0"].last_applied_index = 0.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=1000.0,
+        )
+
+        rng = np.random.default_rng(42)
+        protocol.on_simulation_start(cluster, rng)
+
+        sync_time = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+
+        assert sync_time is not None
+        # log-only: lag=1000, net_rate=10-1=9 -> ~111s
+        assert sync_time < 120  # Well under 60 + 111
+
+    def test_quorum_loss_freezes_commit_index(self):
+        """When quorum is lost, commit_index should freeze, so recovery is instant."""
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(10.0),  # Fail at t=10
+            recovery_dist=Constant(100.0),  # Recover at t=110
+            data_loss_dist=Constant(days(365)),
+            log_replay_rate_dist=Constant(2.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(days(365)),
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+            )
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+        )
+
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=42,
+            log_events=True,
+        )
+
+        result = simulator.run_for(Seconds(200))
+
+        final = result.final_cluster
+        assert final.commit_index < 200.0  # Less than wall-clock (some unavailability)
+        assert final.commit_index > 0.0  # But some commits happened
+
+    def test_node_snapshot_state_advances(self):
+        """Available nodes should take snapshots when commit_index crosses boundaries."""
+        config = make_test_node_config()
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+            )
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+            snapshot_interval=50.0,
+        )
+
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=42,
+        )
+
+        result = simulator.run_for(Seconds(200))
+
+        for node in result.final_cluster.nodes.values():
+            if node.is_available and node.has_data:
+                assert node.last_snapshot_index > 0
+                assert node.last_snapshot_index % 50.0 == pytest.approx(0.0, abs=1e-9)
+
+
+# =============================================================================
+# Raft-Specific Sync Model Tests
+# =============================================================================
+
+
+class TestRaftSyncModel:
+    """Tests for Raft-specific sync behavior not covered by leaderless tests.
+
+    These test scenarios where the leader/election state affects sync timing.
+    """
+
+    def test_sync_during_election(self):
+        """Node syncing during election should use full replay rate (no commit drag).
+
+        When an election is in progress, can_commit() returns False, so the
+        effective commit_rate is 0.  The net sync rate is replay_rate instead
+        of replay_rate - commit_rate, making sync faster.
+
+        Setup
+        -----
+        commit_rate = 1.0, replay_rate = 2.0.
+        With leader:    net_rate = 2 - 1 = 1.0  →  gap 10 → 10 s.
+        Without leader: net_rate = 2 - 0 = 2.0  →  gap 10 →  5 s.
+        """
+        config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(2.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+        )
+
+        nodes = {}
+        for i in range(3):
+            nodes[f"node{i}"] = NodeState(
+                node_id=f"node{i}",
+                config=config,
+                last_applied_index=10.0,
+            )
+        nodes["node0"].last_applied_index = 0.0
+
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=10.0,
+        )
+
+        rng = np.random.default_rng(42)
+
+        # --- With leader: net_rate = 1.0 ---
+        protocol.on_simulation_start(cluster, rng)
+        assert protocol.leader_id is not None
+        assert protocol.can_commit(cluster)
+
+        sync_with_leader = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+        assert sync_with_leader is not None
+        assert sync_with_leader == pytest.approx(10.0, abs=0.01)
+
+        # --- During election: net_rate = 2.0 (no commit drag) ---
+        protocol._election_in_progress = True
+        protocol._leader_id = None
+        assert not protocol.can_commit(cluster)
+
+        sync_during_election = protocol.compute_sync_time(nodes["node0"], cluster, rng)
+        assert sync_during_election is not None
+        assert sync_during_election == pytest.approx(5.0, abs=0.01)
+
+        # Election sync should be faster
+        assert sync_during_election < sync_with_leader
+
+    def test_leader_failure_during_sync(self):
+        """Leader fails mid-sync; sync continues and completes after election resolves.
+
+        Setup
+        -----
+        3 nodes.  node0 lags 20 units.  commit_rate=1.0, replay_rate=3.0.
+        net_rate = 2.0 → base sync time = 10 s.
+        Leader (node1) fails at t=3, election takes 5 s (completes at t=8).
+
+        Timeline
+        --------
+        [0, 3)  : net_rate = 2.0, close 6 units → gap from 20 to 14.
+        [3, 8)  : election, can_commit=False, net_rate = 3.0.
+                  Close 15 units (14 gap) → sync completes around t ≈ 7.7.
+        """
+        stable_config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+        # Leader node that fails at t=3
+        leader_config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(3.0),
+            recovery_dist=Constant(20.0),  # Recovers long after test ends
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        nodes = {
+            "node0": NodeState(
+                node_id="node0", config=stable_config, last_applied_index=0.0
+            ),
+            "node1": NodeState(
+                node_id="node1", config=leader_config, last_applied_index=20.0
+            ),
+            "node2": NodeState(
+                node_id="node2", config=stable_config, last_applied_index=20.0
+            ),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=20.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=RaftLikeProtocol(
+                election_time_dist=Constant(5.0),
+                commit_rate=1.0,
+            ),
+            seed=0,
+            log_events=True,
+        )
+
+        result = sim.run_for(Seconds(15))
+
+        # node0 should have completed sync despite leader failure
+        sync_events = [
+            e
+            for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        assert len(sync_events) >= 1, "node0 should have completed sync"
+
+        # Sync should complete during or soon after the election
+        # (faster than the 10s it would take with a stable leader,
+        #  since election period has higher net_rate)
+        assert sync_events[0].time < 10.0
+
+        node0 = result.final_cluster.get_node("node0")
+        assert node0.sync is None
+
+    def test_gc_forced_snapshot_with_leader(self):
+        """Outside GC window with active leader → snapshot forced, same as leaderless.
+
+        Mirrors TestDeterministicSyncModel.test_gc_forced_snapshot_outside_window
+        but uses RaftLikeProtocol to confirm identical behavior.
+
+        Setup
+        -----
+        commit_rate = 1.0, replay_rate = 10.0, net_rate = 9.0.
+        snapshot_interval = 100, log_retention_ops = 100.
+        Donor at 250 keeps log from 150–250.
+        Node0 at 50: outside window → must download snapshot.
+
+        Expected: snapshot (60s) + remaining_log/net_rate ≈ 72.2 s.
+        """
+        cfg = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(10.0),
+            snapshot_download_time_dist=Constant(60.0),
+            spawn_dist=Constant(0),
+        )
+
+        protocol = RaftLikeProtocol(
+            election_time_dist=Constant(5.0),
+            commit_rate=1.0,
+            snapshot_interval=100.0,
+            log_retention_ops=100.0,
+        )
+
+        nodes = {
+            "node0": NodeState(
+                node_id="node0",
+                config=cfg,
+                last_applied_index=50.0,
+                last_snapshot_index=0.0,
+            ),
+            "node1": NodeState(
+                node_id="node1",
+                config=cfg,
+                last_applied_index=250.0,
+                last_snapshot_index=200.0,
+            ),
+            "node2": NodeState(
+                node_id="node2",
+                config=cfg,
+                last_applied_index=250.0,
+                last_snapshot_index=200.0,
+            ),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+            commit_index=250.0,
+        )
+        sim = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=protocol,
+            seed=0,
+            log_events=True,
+        )
+
+        result = sim.run_for(Seconds(80))
+
+        sync_events = [
+            e
+            for e in result.event_log
+            if e.event_type == EventType.NODE_SYNC_COMPLETE
+            and e.target_id == "node0"
+        ]
+        assert len(sync_events) >= 1
+
+        # Must have taken >= 60 s (snapshot download is mandatory)
+        assert sync_events[0].time >= 60.0
+
+        # Total is snapshot (60) + log_suffix/net_rate ≈ 72.2 s
+        assert sync_events[0].time == pytest.approx(72.2, abs=1.0)
+
+        node0 = result.final_cluster.get_node("node0")
+        assert node0.sync is None
+        assert node0.last_applied_index >= result.final_cluster.commit_index - 0.1
+
+
+# =============================================================================
 # Convergence Criteria Tests
 # =============================================================================
 
