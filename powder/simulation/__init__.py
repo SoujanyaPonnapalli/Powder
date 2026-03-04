@@ -31,6 +31,7 @@ from .strategy import (
 )
 from .protocol import (
     Protocol,
+    LeaderlessProtocol,
     LeaderlessUpToDateQuorumProtocol,
     LeaderlessMajorityAvailableProtocol,
     RaftLikeProtocol,
@@ -73,6 +74,7 @@ __all__ = [
     "NoOpStrategy",
     # Protocol
     "Protocol",
+    "LeaderlessProtocol",
     "LeaderlessUpToDateQuorumProtocol",
     "LeaderlessMajorityAvailableProtocol",
     "RaftLikeProtocol",
