@@ -47,7 +47,7 @@ from powder.simulation import (
     NoOpStrategy,
     NodeReplacementStrategy,
     ActionType,
-    # Protocol
+    LeaderlessProtocol,
     LeaderlessUpToDateQuorumProtocol,
     LeaderlessMajorityAvailableProtocol,
     RaftLikeProtocol,
@@ -938,6 +938,214 @@ class TestLeaderlessMajorityAvailableProtocol:
             result_avail.metrics.availability_fraction()
             >= result_utd.metrics.availability_fraction()
         )
+
+class TestLeaderlessProtocol:
+    """Tests for the unified LeaderlessProtocol with up_to_date_quorum flag."""
+
+    def test_up_to_date_quorum_true_requires_up_to_date_nodes(self):
+        """up_to_date_quorum=True should only commit when enough nodes are up-to-date."""
+        cluster = make_test_cluster(5)
+        cluster.commit_index = 100.0
+        protocol = LeaderlessProtocol(up_to_date_quorum=True)
+
+        # All nodes at index 0, commit_index 100 → none up-to-date
+        assert protocol.can_commit(cluster) is False
+
+        # Bring 3 nodes up-to-date (quorum = 3 for 5 nodes)
+        for nid in ["node0", "node1", "node2"]:
+            cluster.nodes[nid].last_applied_index = 100.0
+        assert protocol.can_commit(cluster) is True
+
+    def test_up_to_date_quorum_false_allows_lagging_nodes(self):
+        """up_to_date_quorum=False should commit when enough nodes are available, even if lagging."""
+        cluster = make_test_cluster(5)
+        cluster.commit_index = 100.0
+        protocol = LeaderlessProtocol(up_to_date_quorum=False)
+
+        # All nodes at index 0, commit_index 100 → all lagging but available
+        assert protocol.can_commit(cluster) is True
+
+        # Fail 3 nodes → only 2 available, below quorum
+        cluster.nodes["node0"].is_available = False
+        cluster.nodes["node1"].is_available = False
+        cluster.nodes["node2"].is_available = False
+        assert protocol.can_commit(cluster) is False
+
+    def test_default_is_up_to_date_quorum(self):
+        """Default up_to_date_quorum should be True."""
+        protocol = LeaderlessProtocol()
+        assert protocol.up_to_date_quorum is True
+
+    def test_is_alias_of_up_to_date_quorum_protocol(self):
+        """LeaderlessUpToDateQuorumProtocol should be the same class."""
+        assert LeaderlessUpToDateQuorumProtocol is LeaderlessProtocol
+
+    def test_majority_available_alias_defaults_false(self):
+        """LeaderlessMajorityAvailableProtocol should default to up_to_date_quorum=False."""
+        protocol = LeaderlessMajorityAvailableProtocol()
+        assert protocol.up_to_date_quorum is False
+
+    def test_configurable_properties(self):
+        """All properties should be configurable via __init__."""
+        protocol = LeaderlessProtocol(
+            commit_rate=2.0,
+            snapshot_interval=100.0,
+            log_retention_ops=50.0,
+            up_to_date_quorum=False,
+        )
+        assert protocol.commit_rate == 2.0
+        assert protocol.snapshot_interval == 100.0
+        assert protocol.log_retention_ops == 50.0
+        assert protocol.up_to_date_quorum is False
+
+    def test_staggered_failure_causes_downtime_when_up_to_date_quorum(self):
+        """Staggered transient failures should cause downtime with up_to_date_quorum=True.
+
+        Timeline  (3 nodes, quorum = 2)
+        --------
+        0–1 h : all 3 up-to-date, available          → can_commit = True
+        1–2 h : node0 down (transient), node1+2 up   → can_commit = True
+                commit_index advances, node0 falls behind
+        2–3 h : node0 recovers (lagging), node1 down → can_commit = False
+                only node2 is up-to-date (1 < quorum of 2)
+        3–4 h : node1 recovers, all available          → can_commit = True
+
+        With up_to_date_quorum=True, the lagging-but-available node0 does NOT
+        satisfy the quorum during hours 2–3, causing downtime.
+        """
+        # node0: fails at 1 h, recovers in 1 h → available-but-lagging at 2 h
+        # Very slow replay (1.001 ops/s vs commit_rate 1.0) ensures node0
+        # stays lagging for the entire test window.
+        staggered_config_0 = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(hours(1)),
+            recovery_dist=Constant(hours(1)),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(1.001),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        # node1: fails at 2 h, recovers in 1 h → back at 3 h
+        staggered_config_1 = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(hours(2)),
+            recovery_dist=Constant(hours(1)),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        # node2: never fails
+        stable_config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=staggered_config_0),
+            "node1": NodeState(node_id="node1", config=staggered_config_1),
+            "node2": NodeState(node_id="node2", config=stable_config),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessProtocol(up_to_date_quorum=True),
+            seed=0,
+            log_events=True,
+        )
+
+        result = simulator.run_for(hours(4))
+
+        assert result.end_reason == "time_limit"
+        # Hours 2–3 are unavailable → availability is ~75% (slightly above
+        # because node0 syncs very slowly during the frozen period)
+        assert result.metrics.availability_fraction() < 1.0
+        assert result.metrics.availability_fraction() == pytest.approx(3 / 4, abs=0.01)
+
+    def test_staggered_failure_no_downtime_when_any_quorum(self):
+        """Same staggered failure scenario should be 100% available with up_to_date_quorum=False.
+
+        Timeline  (3 nodes, quorum = 2)
+        --------
+        0–1 h : all 3 available                       → can_commit = True
+        1–2 h : node0 down, node1+2 available          → can_commit = True
+        2–3 h : node0 recovers (lagging), node1 down   → can_commit = True
+                node0 + node2 are available (2 >= quorum), lagging doesn't matter
+        3–4 h : all 3 available                        → can_commit = True
+
+        Available time = 4 h out of 4 h  → 100%
+        """
+        staggered_config_0 = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(hours(1)),
+            recovery_dist=Constant(hours(1)),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        staggered_config_1 = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(hours(2)),
+            recovery_dist=Constant(hours(1)),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        stable_config = NodeConfig(
+            region="us-east",
+            cost_per_hour=1.0,
+            failure_dist=Constant(days(9999)),
+            recovery_dist=Constant(0),
+            data_loss_dist=Constant(days(9999)),
+            log_replay_rate_dist=Constant(3.0),
+            snapshot_download_time_dist=Constant(0),
+            spawn_dist=Constant(0),
+        )
+
+        nodes = {
+            "node0": NodeState(node_id="node0", config=staggered_config_0),
+            "node1": NodeState(node_id="node1", config=staggered_config_1),
+            "node2": NodeState(node_id="node2", config=stable_config),
+        }
+        cluster = ClusterState(
+            nodes=nodes,
+            network=NetworkState(),
+            target_cluster_size=3,
+        )
+        simulator = Simulator(
+            initial_cluster=cluster,
+            strategy=NoOpStrategy(),
+            protocol=LeaderlessProtocol(up_to_date_quorum=False),
+            seed=0,
+            log_events=True,
+        )
+
+        result = simulator.run_for(hours(4))
+
+        assert result.end_reason == "time_limit"
+        # Always have 2+ available nodes → 100%
+        assert result.metrics.availability_fraction() == pytest.approx(1.0)
 
 
 class TestRaftLikeProtocol:

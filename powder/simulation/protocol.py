@@ -301,15 +301,18 @@ class Protocol(ABC):
             return Seconds(donor_lag / net_rate)
 
 
-class LeaderlessUpToDateQuorumProtocol(Protocol):
-    """Leaderless protocol requiring a quorum of up-to-date nodes.
+class LeaderlessProtocol(Protocol):
+    """Leaderless protocol with configurable quorum semantics.
 
-    This replicates the simulator's original hardcoded behavior and serves
-    as the backward-compatible default. The system can commit when a majority
-    of nodes are available, have data, and are up-to-date.
-
-    Suitable for modeling protocols like EPaxos or multi-decree Paxos variants
+    When ``up_to_date_quorum`` is True (the default), the system can only
+    commit when a majority of nodes are available, have data, **and** are
+    up-to-date.  This models protocols like EPaxos or multi-decree Paxos
     where any node can propose and a quorum of up-to-date replicas is needed.
+
+    When ``up_to_date_quorum`` is False, the system can commit when a
+    majority of nodes are available and have data, regardless of whether
+    they are up-to-date.  This models eventually-consistent systems or
+    protocols where lagging replicas can still participate in commits.
     """
 
     def __init__(
@@ -317,10 +320,17 @@ class LeaderlessUpToDateQuorumProtocol(Protocol):
         commit_rate: float = 1.0,
         snapshot_interval: float = 0.0,
         log_retention_ops: float = 0.0,
+        up_to_date_quorum: bool = True,
     ) -> None:
         self._commit_rate = commit_rate
         self._snapshot_interval = snapshot_interval
         self._log_retention_ops = log_retention_ops
+        self._up_to_date_quorum = up_to_date_quorum
+
+    @property
+    def up_to_date_quorum(self) -> bool:
+        """Whether commits require an up-to-date quorum."""
+        return self._up_to_date_quorum
 
     @property
     def commit_rate(self) -> float:
@@ -335,62 +345,13 @@ class LeaderlessUpToDateQuorumProtocol(Protocol):
         return self._log_retention_ops
 
     def can_commit(self, cluster: ClusterState) -> bool:
-        """Commit requires a majority of up-to-date nodes."""
-        return cluster.num_up_to_date() >= self.quorum_size(cluster)
+        """Commit requires a quorum of nodes.
 
-    def on_event(
-        self,
-        event: Event,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Event]:
-        """No-op: leaderless protocol has no leader tracking."""
-        return []
-
-    def on_simulation_start(
-        self,
-        cluster: ClusterState,
-        rng: np.random.Generator,
-    ) -> list[Event]:
-        """No-op: no initialization needed."""
-        return []
-
-
-class LeaderlessMajorityAvailableProtocol(Protocol):
-    """Leaderless protocol requiring a quorum of available nodes.
-
-    The system can commit when a majority of nodes are available and have data,
-    regardless of whether they are up-to-date. This models protocols where
-    any available node can serve writes and sync happens asynchronously.
-
-    Suitable for modeling eventually-consistent systems or protocols where
-    lagging replicas can still participate in commits.
-    """
-
-    def __init__(
-        self,
-        commit_rate: float = 1.0,
-        snapshot_interval: float = 0.0,
-        log_retention_ops: float = 0.0,
-    ) -> None:
-        self._commit_rate = commit_rate
-        self._snapshot_interval = snapshot_interval
-        self._log_retention_ops = log_retention_ops
-
-    @property
-    def commit_rate(self) -> float:
-        return self._commit_rate
-
-    @property
-    def snapshot_interval(self) -> float:
-        return self._snapshot_interval
-
-    @property
-    def log_retention_ops(self) -> float:
-        return self._log_retention_ops
-
-    def can_commit(self, cluster: ClusterState) -> bool:
-        """Commit requires a majority of available nodes (not necessarily up-to-date)."""
+        When ``up_to_date_quorum`` is True, only up-to-date nodes count.
+        When False, any available node with data counts.
+        """
+        if self._up_to_date_quorum:
+            return cluster.num_up_to_date() >= self.quorum_size(cluster)
         return cluster.num_available() >= self.quorum_size(cluster)
 
     def on_event(
@@ -409,6 +370,33 @@ class LeaderlessMajorityAvailableProtocol(Protocol):
     ) -> list[Event]:
         """No-op: no initialization needed."""
         return []
+
+
+# Backward-compatible aliases ------------------------------------------------
+
+#: Alias for ``LeaderlessProtocol`` with the default ``up_to_date_quorum=True``.
+LeaderlessUpToDateQuorumProtocol = LeaderlessProtocol
+
+
+class LeaderlessMajorityAvailableProtocol(LeaderlessProtocol):
+    """Convenience alias: ``LeaderlessProtocol(up_to_date_quorum=False)``.
+
+    Provided for backward compatibility.  New code should prefer
+    ``LeaderlessProtocol(up_to_date_quorum=False)`` directly.
+    """
+
+    def __init__(
+        self,
+        commit_rate: float = 1.0,
+        snapshot_interval: float = 0.0,
+        log_retention_ops: float = 0.0,
+    ) -> None:
+        super().__init__(
+            commit_rate=commit_rate,
+            snapshot_interval=snapshot_interval,
+            log_retention_ops=log_retention_ops,
+            up_to_date_quorum=False,
+        )
 
 
 class RaftLikeProtocol(Protocol):
