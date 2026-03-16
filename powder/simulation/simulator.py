@@ -594,14 +594,28 @@ class Simulator:
         if self.log_events:
             self.event_log.append(event)
 
+        # Increment event counters
+        self.metrics.record_event(event.event_type)
+
         # Apply event to cluster state via dispatch table
         handler = self._event_dispatch.get(event.event_type)
         if handler is not None:
             handler(event)
 
         # Let protocol react (e.g., detect leader failure, complete election)
+        # Track successful leader elections: detect when a LEADER_ELECTION_COMPLETE
+        # event results in a leader being picked (not stalled or epoch-mismatched).
+        had_leader_before = (
+            getattr(self.protocol, 'leader_id', None) is not None
+        )
         for new_event in self.protocol.on_event(event, self.cluster, self.rng):
             self.event_queue.push(new_event)
+        if (
+            event.event_type == EventType.LEADER_ELECTION_COMPLETE
+            and not had_leader_before
+            and getattr(self.protocol, 'leader_id', None) is not None
+        ):
+            self.metrics.record_leader_election()
 
         # Let strategy react
         actions = self.strategy.on_event(event, self.cluster, self.rng, self.protocol)
@@ -615,6 +629,9 @@ class Simulator:
         post_event_can_commit = self.protocol.can_commit(self.cluster)
         self._reschedule_active_syncs(can_commit=post_event_can_commit)
         self._retry_pending_syncs(can_commit=post_event_can_commit)
+
+        # Detect can-commit → cannot-commit transitions
+        self.metrics.record_unavailability_transition(post_event_can_commit, event.time)
 
         # Check for data-loss milestones AFTER the event is fully applied.
         self.metrics.update(self.cluster, event.time, self.protocol, can_commit=post_event_can_commit)

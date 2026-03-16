@@ -1,7 +1,8 @@
 """
 Metrics collection for the Monte Carlo RSM simulator.
 
-Tracks availability, cost, and data loss timing during simulation runs.
+Tracks availability, cost, data loss timing, and event counters
+during simulation runs.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ from typing import TYPE_CHECKING
 
 from .distributions import Seconds
 from .cluster import ClusterState
+from .events import EventType
 
 if TYPE_CHECKING:
     from .protocol import Protocol  # Used in record_elapsed type hints
@@ -26,6 +28,12 @@ class MetricsCollector:
         total_cost: Accumulated node costs in dollars.
         time_to_potential_data_loss: Time when quorum was first lost (or None).
         time_to_actual_data_loss: Time when data was definitely lost (or None).
+        total_transient_failures: Count of NODE_FAILURE events.
+        total_dataloss_failures: Count of NODE_DATA_LOSS events.
+        total_nodes_spawned: Count of NODE_SPAWN_COMPLETE events.
+        total_unavailability_incidents: Count of can-commit → cannot-commit transitions.
+        time_to_first_unavailability: Time when system first became unavailable (or None).
+        total_leader_elections: Count of leader election attempts.
     """
 
     time_available: Seconds = field(default_factory=lambda: Seconds(0))
@@ -35,10 +43,20 @@ class MetricsCollector:
     time_to_potential_data_loss: Seconds | None = None
     time_to_actual_data_loss: Seconds | None = None
 
+    # Event counters
+    total_transient_failures: int = 0
+    total_dataloss_failures: int = 0
+    total_nodes_spawned: int = 0
+    total_unavailability_incidents: int = 0
+    total_leader_elections: int = 0
+
+    time_to_first_unavailability: Seconds | None = None
+
     # Internal state for tracking
     _last_update_time: Seconds = field(default_factory=lambda: Seconds(0))
     _had_potential_loss: bool = False
     _had_actual_loss: bool = False
+    _was_available: bool = True  # Tracks can-commit state for transition detection
 
     def record_elapsed(
         self,
@@ -89,6 +107,42 @@ class MetricsCollector:
                 self.total_cost += node.config.cost_per_hour * hours_elapsed
 
         self._last_update_time = current_time
+
+    def record_event(self, event_type: EventType) -> None:
+        """Increment the appropriate counter for an event type.
+
+        Args:
+            event_type: The type of event that occurred.
+        """
+        if event_type == EventType.NODE_FAILURE:
+            self.total_transient_failures += 1
+        elif event_type == EventType.NODE_DATA_LOSS:
+            self.total_dataloss_failures += 1
+        elif event_type == EventType.NODE_SPAWN_COMPLETE:
+            self.total_nodes_spawned += 1
+
+    def record_unavailability_transition(
+        self, can_commit: bool, current_time: Seconds,
+    ) -> None:
+        """Track transitions from available to unavailable.
+
+        Increments ``total_unavailability_incidents`` each time the system
+        transitions from can-commit to cannot-commit.  Also records the
+        time of the very first such transition.
+
+        Args:
+            can_commit: Current can_commit state.
+            current_time: Current simulation wall-clock time.
+        """
+        if self._was_available and not can_commit:
+            self.total_unavailability_incidents += 1
+            if self.time_to_first_unavailability is None:
+                self.time_to_first_unavailability = current_time
+        self._was_available = can_commit
+
+    def record_leader_election(self) -> None:
+        """Increment the leader election counter."""
+        self.total_leader_elections += 1
 
     def update(
         self,
@@ -182,6 +236,12 @@ class MetricsCollector:
             total_cost=self.total_cost,
             time_to_potential_data_loss=self.time_to_potential_data_loss,
             time_to_actual_data_loss=self.time_to_actual_data_loss,
+            total_transient_failures=self.total_transient_failures,
+            total_dataloss_failures=self.total_dataloss_failures,
+            total_nodes_spawned=self.total_nodes_spawned,
+            total_unavailability_incidents=self.total_unavailability_incidents,
+            total_leader_elections=self.total_leader_elections,
+            time_to_first_unavailability=self.time_to_first_unavailability,
         )
 
     def __repr__(self) -> str:
@@ -207,6 +267,12 @@ class MetricsSnapshot:
     total_cost: float
     time_to_potential_data_loss: Seconds | None
     time_to_actual_data_loss: Seconds | None
+    total_transient_failures: int = 0
+    total_dataloss_failures: int = 0
+    total_nodes_spawned: int = 0
+    total_unavailability_incidents: int = 0
+    total_leader_elections: int = 0
+    time_to_first_unavailability: Seconds | None = None
 
     def availability_fraction(self) -> float:
         """Calculate fraction of time the system was available."""

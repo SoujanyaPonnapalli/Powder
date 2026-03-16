@@ -35,6 +35,11 @@ class ConvergenceMetric(Enum):
     DATA_LOSS_PROBABILITY = "data_loss_probability"
     COST = "cost"
     MEAN_TIME_TO_DATA_LOSS = "mean_time_to_data_loss"
+    TRANSIENT_FAILURES = "transient_failures"
+    DATALOSS_FAILURES = "dataloss_failures"
+    NODES_SPAWNED = "nodes_spawned"
+    UNAVAILABILITY_INCIDENTS = "unavailability_incidents"
+    LEADER_ELECTIONS = "leader_elections"
 
 
 @dataclass
@@ -261,6 +266,14 @@ class MonteCarloResults:
     end_reasons: list[str] = field(default_factory=list)
     simulation_results: list[SimulationResult] = field(default_factory=list)
 
+    # Event counter samples (one value per run)
+    transient_failure_samples: list[int] = field(default_factory=list)
+    dataloss_failure_samples: list[int] = field(default_factory=list)
+    nodes_spawned_samples: list[int] = field(default_factory=list)
+    unavailability_incident_samples: list[int] = field(default_factory=list)
+    leader_election_samples: list[int] = field(default_factory=list)
+    time_to_first_unavailability_samples: list[Seconds | None] = field(default_factory=list)
+
     def availability_mean(self) -> float:
         """Calculate mean availability across all runs."""
         if not self.availability_samples:
@@ -435,6 +448,19 @@ class MonteCarloResults:
                 lines.append(f"  Mean time to data loss: {mttl/86400:.1f} days")
 
         lines.append(f"  Mean cost: ${self.cost_mean():.2f}")
+
+        # Event counter summaries
+        def _counter_summary(name: str, samples: list[int]) -> str:
+            if not samples:
+                return f"  {name}: N/A"
+            arr = np.array(samples, dtype=float)
+            return f"  {name}: mean={float(np.mean(arr)):.2f} (std={float(np.std(arr, ddof=1)):.2f})" if len(arr) >= 2 else f"  {name}: mean={float(np.mean(arr)):.2f}"
+
+        lines.append(_counter_summary("Transient failures", self.transient_failure_samples))
+        lines.append(_counter_summary("Dataloss failures", self.dataloss_failure_samples))
+        lines.append(_counter_summary("Nodes spawned", self.nodes_spawned_samples))
+        lines.append(_counter_summary("Unavailability incidents", self.unavailability_incident_samples))
+        lines.append(_counter_summary("Leader elections", self.leader_election_samples))
 
         return "\n".join(lines)
 
@@ -830,6 +856,14 @@ class MonteCarloRunner:
         results.cost_samples.append(metrics.total_cost)
         results.end_reasons.append(sim_result.end_reason)
 
+        # Event counters
+        results.transient_failure_samples.append(metrics.total_transient_failures)
+        results.dataloss_failure_samples.append(metrics.total_dataloss_failures)
+        results.nodes_spawned_samples.append(metrics.total_nodes_spawned)
+        results.unavailability_incident_samples.append(metrics.total_unavailability_incidents)
+        results.leader_election_samples.append(metrics.total_leader_elections)
+        results.time_to_first_unavailability_samples.append(metrics.time_to_first_unavailability)
+
 
 def _get_metric_samples(
     results: MonteCarloResults, metric: ConvergenceMetric
@@ -856,6 +890,16 @@ def _get_metric_samples(
         # Only include runs where data loss actually occurred
         filtered = results.time_to_actual_loss_samples_filtered()
         return np.array(filtered) if filtered else np.array([])
+    elif metric == ConvergenceMetric.TRANSIENT_FAILURES:
+        return np.array(results.transient_failure_samples, dtype=float)
+    elif metric == ConvergenceMetric.DATALOSS_FAILURES:
+        return np.array(results.dataloss_failure_samples, dtype=float)
+    elif metric == ConvergenceMetric.NODES_SPAWNED:
+        return np.array(results.nodes_spawned_samples, dtype=float)
+    elif metric == ConvergenceMetric.UNAVAILABILITY_INCIDENTS:
+        return np.array(results.unavailability_incident_samples, dtype=float)
+    elif metric == ConvergenceMetric.LEADER_ELECTIONS:
+        return np.array(results.leader_election_samples, dtype=float)
     else:
         raise ValueError(f"Unknown convergence metric: {metric}")
 
