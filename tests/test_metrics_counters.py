@@ -380,7 +380,7 @@ class TestMonteCarloCounterAggregation:
             num_simulations=5,
             max_time=hours(4),
             stop_on_data_loss=False,
-            parallel_workers=1,
+
             seed=42,
         )
 
