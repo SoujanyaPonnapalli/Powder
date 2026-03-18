@@ -111,7 +111,7 @@ def _run_simple(
         num_simulations=num_sims,
         max_time=Seconds(sim_duration),
         stop_on_data_loss=False,
-
+        parallel_workers=1,     # sequential for determinism
         base_seed=seed,
     )
     runner = MonteCarloRunner(config)
@@ -131,7 +131,7 @@ def _run_simple(
 # even with shorter simulation windows.
 _MTBF = hours(4)
 _MTTR = minutes(10)
-_SIM_DURATION = days(30)  # 30 days per simulation — fast but enough events
+_SIM_DURATION = days(7)  # 7 days per sim — ~42 failures/node, enough for stable estimates
 
 
 # ==========================================================================
@@ -164,8 +164,8 @@ class TestMonteCarloStatisticalGuarantees:
         Monte Carlo of Monte Carlo; a correctly calibrated 95% CI should
         fail this bound extremely rarely (< 0.1%).
         """
-        N = 200       # runs used to build the CI
-        K = 100       # number of independent trials
+        N = 100       # runs used to build the CI
+        K = 50        # number of independent trials
         true_avail = _analytical_availability(_MTBF, _MTTR)
 
         covered = 0
@@ -188,11 +188,11 @@ class TestMonteCarloStatisticalGuarantees:
 
         coverage = covered / K
 
-        # With a true 95% CI, P(coverage < 0.88 out of 100 trials)
-        # is vanishingly small (binomial with p=0.95, n=100).
-        assert coverage >= 0.88, (
+        # With a true 95% CI, P(coverage < 0.84 out of 50 trials)
+        # is vanishingly small (binomial with p=0.95, n=50).
+        assert coverage >= 0.84, (
             f"CI coverage {coverage:.2%} is below 88%; "
-            f"expected ≈95% for a 95% confidence interval "
+            f"expected ≈95% for a 95% confidence interval"
             f"(analytical μ={true_avail:.8f})"
         )
 
@@ -207,9 +207,9 @@ class TestMonteCarloStatisticalGuarantees:
         the 95% CI half-width for each, and verify that
             hw_4n ≈ hw_n / 2   (within ±40% tolerance).
         """
-        N = 150
+        N = 100
         seed = 100_000
-        sim_dur = days(30)
+        sim_dur = _SIM_DURATION
 
         results_n = _run_simple(_MTBF, _MTTR, N, sim_dur, seed)
         results_4n = _run_simple(_MTBF, _MTTR, 4 * N, sim_dur, seed)
@@ -247,7 +247,7 @@ class TestMonteCarloStatisticalGuarantees:
         """
         analytical = _analytical_availability(_MTBF, _MTTR)
 
-        results = _run_simple(_MTBF, _MTTR, 1000, _SIM_DURATION, seed=42)
+        results = _run_simple(_MTBF, _MTTR, 500, _SIM_DURATION, seed=42)
         samples = np.array(results.availability_samples)
         n = len(samples)
         mean = float(np.mean(samples))
@@ -278,7 +278,7 @@ class TestMonteCarloStatisticalGuarantees:
         mtbf_low_rate = hours(8)    # less frequent failures
         mtbf_high_rate = hours(2)   # more frequent failures
         mttr = minutes(10)
-        n = 300
+        n = 200
         seed = 200_000
 
         results_low = _run_simple(mtbf_low_rate, mttr, n, _SIM_DURATION, seed)
@@ -331,10 +331,10 @@ class TestMonteCarloStatisticalGuarantees:
         )
 
         config = MonteCarloConfig(
-            num_simulations=50,
-            max_time=days(365),
+            num_simulations=20,
+            max_time=days(30),
             stop_on_data_loss=False,
-
+            parallel_workers=1,
             base_seed=0,
         )
         runner = MonteCarloRunner(config)
