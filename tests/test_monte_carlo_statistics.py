@@ -111,7 +111,6 @@ def _run_simple(
         num_simulations=num_sims,
         max_time=Seconds(sim_duration),
         stop_on_data_loss=False,
-        parallel_workers=1,     # sequential for determinism
         base_seed=seed,
     )
     runner = MonteCarloRunner(config)
@@ -334,7 +333,6 @@ class TestMonteCarloStatisticalGuarantees:
             num_simulations=20,
             max_time=days(30),
             stop_on_data_loss=False,
-            parallel_workers=1,
             base_seed=0,
         )
         runner = MonteCarloRunner(config)
