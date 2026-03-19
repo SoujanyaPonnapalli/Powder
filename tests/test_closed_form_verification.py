@@ -405,8 +405,8 @@ class TestClosedFormMultiRate:
         analytical = _analytical_mttf_3(a, b)
         results = _run_sims(
             a, b, num_nodes=3,
-            num_sims=300,
-            sim_duration=analytical * 5,
+            num_sims=800,
+            sim_duration=analytical * 10,
             seed=hash(label) % 2**31 + 2,
         )
         mttf_samples = [
@@ -427,8 +427,8 @@ class TestClosedFormMultiRate:
         analytical = _analytical_mttf_5(a, b)
         results = _run_sims(
             a, b, num_nodes=5,
-            num_sims=300,
-            sim_duration=analytical * 5,
+            num_sims=800,
+            sim_duration=analytical * 10,
             seed=hash(label) % 2**31 + 3,
         )
         mttf_samples = [
