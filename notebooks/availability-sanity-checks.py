@@ -38,10 +38,12 @@ from powder.simulation import (
     NodeState,
     RaftLikeProtocol,
     Seconds,
+    Simulator,
     days,
     hours,
     minutes,
 )
+from powder.simulation.events import EventType
 
 # %% [markdown]
 # ## 1. Define Good and Bad Machine Configs
@@ -78,7 +80,7 @@ bad_config = NodeConfig(
 # (N good, 0 bad) to (0 good, N bad).
 
 # %%
-CLUSTER_SIZES = [3, 5, 7]
+CLUSTER_SIZES = [3]
 
 def make_cluster(num_good: int, num_bad: int) -> ClusterState:
     """Create a cluster with the specified mix of good and bad nodes."""
@@ -110,21 +112,21 @@ def run_all_experiments():
         confidence_level=0.95,
         absolute_error=1e-8,
         metrics=[ConvergenceMetric.AVAILABILITY],
-        min_runs=100000,
-        max_runs=500000,
-        batch_size=50000,
+        min_runs=10000,
+        max_runs=100000,
+        batch_size=20000,
     )
 
     mc_config = MonteCarloConfig(
-        num_simulations=500000,  # upper bound, convergence may stop earlier
+        num_simulations=50000,  # upper bound, convergence may stop earlier
         max_time=SIM_DURATION,
         stop_on_data_loss=False,  # run the full year every time for consistent time windows
         base_seed=42,
     )
 
     protocols = {
-        "Raft": lambda: RaftLikeProtocol(election_time_dist=ELECTION_TIME, snapshot_interval=hours(24), log_retention_ops=hours(24) * 7),
-        "Leaderless": lambda: LeaderlessUpToDateQuorumProtocol(snapshot_interval=hours(24), log_retention_ops=hours(24) * 7),
+        # "Raft": lambda: RaftLikeProtocol(election_time_dist=ELECTION_TIME, snapshot_interval=hours(24), log_retention_ops=hours(24) * 7),
+        "Leaderless": lambda: LeaderlessUpToDateQuorumProtocol(snapshot_interval=hours(24), log_retention_ops=hours(24) * 7, up_to_date_quorum=False),
     }
 
     # Storage for results: (protocol_name, cluster_size, num_bad) -> dict
@@ -138,8 +140,12 @@ def run_all_experiments():
 
     for proto_name, proto_factory in protocols.items():
         print(f"=== {proto_name} Protocol ===")
-        print(f"{'Size':>4} | {'Good':>4} | {'Bad':>3} | {'Availability':>14} | {'95% CI':>24} | {'Runs':>5} | {'Time':>6}")
-        print("-" * 80)
+        print(
+            f"{'Size':>4} | {'Good':>4} | {'Bad':>3} | {'Availability':>14} | "
+            f"{'95% CI':>24} | {'Elections':>9} | {'Unavail':>10} | "
+            f"{'TransFail':>9} | {'DLFail':>6} | {'Runs':>5} | {'Time':>6}"
+        )
+        print("-" * 120)
 
         for N in CLUSTER_SIZES:
             for num_bad in range(N + 1):
@@ -177,6 +183,12 @@ def run_all_experiments():
                 ci_lo = avail_mean - ci_half
                 ci_hi = avail_mean + ci_half
 
+                # Event counter means
+                leader_elections_mean = float(np.mean(res.leader_election_samples)) if res.leader_election_samples else 0.0
+                unavail_incidents_mean = float(np.mean(res.unavailability_incident_samples)) if res.unavailability_incident_samples else 0.0
+                transient_failures_mean = float(np.mean(res.transient_failure_samples)) if res.transient_failure_samples else 0.0
+                dataloss_failures_mean = float(np.mean(res.dataloss_failure_samples)) if res.dataloss_failure_samples else 0.0
+
                 results_data[(proto_name, N, num_bad)] = {
                     "num_good": num_good,
                     "num_bad": num_bad,
@@ -189,12 +201,18 @@ def run_all_experiments():
                     "ci_half": ci_half,
                     "n_runs": n_runs,
                     "converged": conv_result.converged,
+                    "leader_elections_mean": leader_elections_mean,
+                    "unavail_incidents_mean": unavail_incidents_mean,
+                    "transient_failures_mean": transient_failures_mean,
+                    "dataloss_failures_mean": dataloss_failures_mean,
                 }
 
                 print(
                     f"{N:>4} | {num_good:>4} | {num_bad:>3} | "
                     f"{avail_mean*100:>13.6f}% | "
                     f"[{ci_lo*100:.6f}%, {ci_hi*100:.6f}%] | "
+                    f"{leader_elections_mean:>9.1f} | {unavail_incidents_mean:>10.4f} | "
+                    f"{transient_failures_mean:>9.1f} | {dataloss_failures_mean:>6.2f} | "
                     f"{n_runs:>5} | "
                     f"{elapsed:>5.1f}s"
                 )
@@ -207,6 +225,57 @@ def run_all_experiments():
 # %%
 if __name__ == "__main__":
     results_data = run_all_experiments()
+
+    # %% [markdown]
+    # ## 3b. Event Log Debug: 3-good/0-bad Leaderless (100 runs)
+
+    # %%
+    import copy
+
+    NUM_DEBUG_RUNS = 100
+    SIM_DURATION = days(365)
+    FAILURE_TIMEOUT = hours(1)
+
+    debug_cluster = make_cluster(num_good=3, num_bad=0)
+    debug_strategy = NodeReplacementStrategy(
+        failure_timeout=Seconds(FAILURE_TIMEOUT),
+        default_node_config=good_config,
+    )
+    debug_protocol = LeaderlessUpToDateQuorumProtocol(
+        snapshot_interval=hours(24),
+        log_retention_ops=hours(24) * 7,
+        up_to_date_quorum=False,
+    )
+
+    output_file = "event_logs_3g0b.txt"
+    print(f"\nRunning {NUM_DEBUG_RUNS} logged simulations for 3-good/0-bad leaderless...")
+
+    with open(output_file, "w") as f:
+        for run_idx in range(NUM_DEBUG_RUNS):
+            sim = Simulator(
+                initial_cluster=copy.deepcopy(debug_cluster),
+                strategy=copy.deepcopy(debug_strategy),
+                protocol=copy.deepcopy(debug_protocol),
+                seed=42 + run_idx,
+                log_events=True,
+            )
+            result = sim.run_until(end_time=SIM_DURATION)
+
+            f.write(f"{'='*80}\n")
+            f.write(f"RUN {run_idx} | availability={result.metrics.availability_fraction()*100:.6f}% "
+                    f"| dataloss_failures={result.metrics.total_dataloss_failures} "
+                    f"| transient_failures={result.metrics.total_transient_failures} "
+                    f"| unavail_incidents={result.metrics.total_unavailability_incidents}\n")
+            f.write(f"{'='*80}\n")
+
+            for event in result.event_log:
+                time_h = event.time / 3600.0
+                time_d = event.time / 86400.0
+                f.write(f"  t={time_h:>10.2f}h ({time_d:>7.2f}d)  {event.event_type.name:<28s}  target={event.target_id}\n")
+
+            f.write(f"\n")
+
+    print(f"Event logs written to {output_file}")
 
     # %% [markdown]
     # ## 4. Verify Monotonic Decrease
@@ -275,13 +344,26 @@ if __name__ == "__main__":
             n_runs = [results_data[(proto_name, N, b)]["n_runs"] for b in x_vals]
             error_y = [results_data[(proto_name, N, b)]["ci_half"] * 100 for b in x_vals]
 
+            leader_elec = [results_data[(proto_name, N, b)]["leader_elections_mean"] for b in x_vals]
+            unavail_inc = [results_data[(proto_name, N, b)]["unavail_incidents_mean"] for b in x_vals]
+            trans_fail = [results_data[(proto_name, N, b)]["transient_failures_mean"] for b in x_vals]
+            dl_fail = [results_data[(proto_name, N, b)]["dataloss_failures_mean"] for b in x_vals]
+
             hover_text = [
                 f"<b>{N}-node {proto_name}</b><br>"
                 f"Good: {N - b}, Bad: {b}<br>"
                 f"Availability: {y:.6f}%<br>"
                 f"95% CI: [{lo:.6f}%, {hi:.6f}%]<br>"
-                f"Runs: {nr}"
-                for b, y, lo, hi, nr in zip(x_vals, y_vals, ci_lo, ci_hi, n_runs)
+                f"Runs: {nr}<br>"
+                f"<br>"
+                f"Leader Elections: {le:.1f}<br>"
+                f"Quorum Unavailable: {ui:.4f}<br>"
+                f"Transient Failures: {tf:.1f}<br>"
+                f"Dataloss Failures: {dl:.2f}"
+                for b, y, lo, hi, nr, le, ui, tf, dl in zip(
+                    x_vals, y_vals, ci_lo, ci_hi, n_runs,
+                    leader_elec, unavail_inc, trans_fail, dl_fail,
+                )
             ]
 
             fig.add_trace(go.Scatter(
