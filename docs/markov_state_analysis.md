@@ -104,6 +104,7 @@ standby) are sequential stages of the same process: creating a replacement.
 We can merge them into a single **Replacing (R)** pipeline state.
 
 **What changes:**
+
 - Pipeline dimension: `{None, P, S}` → `{None, R}`
 - Every state that distinguished P from S merges into one.
 
@@ -115,10 +116,12 @@ We can merge them into a single **Replacing (R)** pipeline state.
 provisioning vs. syncing. The combined stage uses a single rate
 `μ_R = 1 / (mean_provision_time + mean_sync_time)`.
 
-| | N = 5 | N = 7 | Savings vs. full (N = 5) | Savings vs. full (N = 7) |
-|---|---|---|---|---|
-| **Homogeneous** | C(12, 7) = **792** | C(14, 7) = **3,432** | 5.5× (from 4,368) | 9.3× (from 31,824) |
-| **Heterogeneous** | 8^5 = **32,768** | 8^7 = **2,097,152** | 7.6× (from 248,832) | 17.1× (from 35,831,808) |
+
+|                   | N = 5              | N = 7                | Savings vs. full (N = 5) | Savings vs. full (N = 7) |
+| ----------------- | ------------------ | -------------------- | ------------------------ | ------------------------ |
+| **Homogeneous**   | C(12, 7) = **792** | C(14, 7) = **3,432** | 5.5× (from 4,368)        | 9.3× (from 31,824)       |
+| **Heterogeneous** | 8^5 = **32,768**   | 8^7 = **2,097,152**  | 7.6× (from 248,832)      | 17.1× (from 35,831,808)  |
+
 
 ---
 
@@ -131,6 +134,7 @@ the recovered node, an orphaned replacement does not affect its own
 availability or behavior. We can merge these into their base states.
 
 **What changes:**
+
 - `H_R` → `H` (healthy node with an orphaned replacement ≈ healthy node)
 - `L_R` → `L` (lagging node with an orphaned replacement ≈ lagging node)
 
@@ -143,10 +147,12 @@ physical nodes). The orphaned replacement still runs in reality, consuming
 resources and eventually promoting, but the model treats the system as if
 the replacement were never spawned once the original recovers.
 
-| | N = 5 | N = 7 | Savings vs. previous (N = 5) | Savings vs. previous (N = 7) |
-|---|---|---|---|---|
-| **Homogeneous** | C(10, 5) = **252** | C(12, 5) = **792** | 3.1× (from 792) | 4.3× (from 3,432) |
-| **Heterogeneous** | 6^5 = **7,776** | 6^7 = **279,936** | 4.2× (from 32,768) | 7.5× (from 2,097,152) |
+
+|                   | N = 5              | N = 7              | Savings vs. previous (N = 5) | Savings vs. previous (N = 7) |
+| ----------------- | ------------------ | ------------------ | ---------------------------- | ---------------------------- |
+| **Homogeneous**   | C(10, 5) = **252** | C(12, 5) = **792** | 3.1× (from 792)              | 4.3× (from 3,432)            |
+| **Heterogeneous** | 6^5 = **7,776**    | 6^7 = **279,936**  | 4.2× (from 32,768)           | 7.5× (from 2,097,152)        |
+
 
 ---
 
@@ -159,10 +165,11 @@ timeout-then-replace sequence as a single exponential rate. For failed nodes
 this rate competes with the direct recovery rate.
 
 **What changes:**
+
 - `Fw` and `Fe_R` → `F` (a single "failed" state with effective rate
-  `μ_f = μ_direct + μ_replacement` out to H)
+`μ_f = μ_direct + μ_replacement` out to H)
 - `Dw` and `De_R` → `D` (a single "data loss" state with rate
-  `μ_d = 1 / (mean_timeout + mean_replace)` out to H)
+`μ_d = 1 / (mean_timeout + mean_replace)` out to H)
 
 **Before:** `{H, Fw, Fe_R, L, Dw, De_R}` → **k = 6**
 
@@ -173,10 +180,12 @@ stages (timeout + provision + sync), which is closer to Erlang than
 exponential. A single exponential has higher variance (CV = 1), overweighting
 both very fast and very slow replacements.
 
-| | N = 5 | N = 7 | Savings vs. previous (N = 5) | Savings vs. previous (N = 7) |
-|---|---|---|---|---|
-| **Homogeneous** | C(8, 3) = **56** | C(10, 3) = **120** | 4.5× (from 252) | 6.6× (from 792) |
-| **Heterogeneous** | 4^5 = **1,024** | 4^7 = **16,384** | 7.6× (from 7,776) | 17.1× (from 279,936) |
+
+|                   | N = 5            | N = 7              | Savings vs. previous (N = 5) | Savings vs. previous (N = 7) |
+| ----------------- | ---------------- | ------------------ | ---------------------------- | ---------------------------- |
+| **Homogeneous**   | C(8, 3) = **56** | C(10, 3) = **120** | 4.5× (from 252)              | 6.6× (from 792)              |
+| **Heterogeneous** | 4^5 = **1,024**  | 4^7 = **16,384**   | 7.6× (from 7,776)            | 17.1× (from 279,936)         |
+
 
 ---
 
@@ -215,29 +224,34 @@ intervals.
 
 ### N = 5
 
-| Model | k (per-node) | Homogeneous | Heterogeneous |
-|---|---|---|---|
-| Full (pipeline + timer + availability) | 12 | 4,368 | 248,832 |
-| 1: Merge P and S → R | 8 | 792 | 32,768 |
-| 2: Remove orphaned replacements | 6 | 252 | 7,776 |
-| 3: Collapse pipeline into rate | 4 | 56 | 1,024 |
-| 4: Remove Lagging | 3 | 21 | 243 |
+
+| Model                                  | k (per-node) | Homogeneous | Heterogeneous |
+| -------------------------------------- | ------------ | ----------- | ------------- |
+| Full (pipeline + timer + availability) | 12           | 4,368       | 248,832       |
+| 1: Merge P and S → R                   | 8            | 792         | 32,768        |
+| 2: Remove orphaned replacements        | 6            | 252         | 7,776         |
+| 3: Collapse pipeline into rate         | 4            | 56          | 1,024         |
+| 4: Remove Lagging                      | 3            | 21          | 243           |
+
 
 ### N = 7
 
-| Model | k (per-node) | Homogeneous | Heterogeneous |
-|---|---|---|---|
-| Full (pipeline + timer + availability) | 12 | 31,824 | 35,831,808 |
-| 1: Merge P and S → R | 8 | 3,432 | 2,097,152 |
-| 2: Remove orphaned replacements | 6 | 792 | 279,936 |
-| 3: Collapse pipeline into rate | 4 | 120 | 16,384 |
-| 4: Remove Lagging | 3 | 36 | 2,187 |
+
+| Model                                  | k (per-node) | Homogeneous | Heterogeneous |
+| -------------------------------------- | ------------ | ----------- | ------------- |
+| Full (pipeline + timer + availability) | 12           | 31,824      | 35,831,808    |
+| 1: Merge P and S → R                   | 8            | 3,432       | 2,097,152     |
+| 2: Remove orphaned replacements        | 6            | 792         | 279,936       |
+| 3: Collapse pipeline into rate         | 4            | 120         | 16,384        |
+| 4: Remove Lagging                      | 3            | 36          | 2,187         |
+
 
 ### Total reduction (full → simplified)
 
-| | N = 5 Homogeneous | N = 5 Heterogeneous | N = 7 Homogeneous | N = 7 Heterogeneous |
-|---|---|---|---|---|
-| Full → Simplified | **208×** | **1,024×** | **884×** | **16,384×** |
+
+|                   | N = 5 Homogeneous | N = 5 Heterogeneous | N = 7 Homogeneous | N = 7 Heterogeneous |
+| ----------------- | ----------------- | ------------------- | ----------------- | ------------------- |
+| Full → Simplified | **208×**          | **1,024×**          | **884×**          | **16,384×**         |
 
 
 ---
