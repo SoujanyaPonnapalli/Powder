@@ -460,6 +460,15 @@ class RaftLikeProtocol(Protocol):
         return self._leader_id
 
     @property
+    def election_rate(self) -> float:
+        """Rate at which elections complete (1 / mean election time).
+
+        Used by Markov chain builders to model the election-in-progress
+        to has-leader transition.
+        """
+        return self.election_time_dist.approx_rate
+
+    @property
     def election_in_progress(self) -> bool:
         """Whether a leader election is currently in progress."""
         return self._election_in_progress

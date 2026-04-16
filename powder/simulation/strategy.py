@@ -118,6 +118,11 @@ class NoOpStrategy(ClusterStrategy):
     natural cluster degradation without intervention.
     """
 
+    @property
+    def replacement_rate(self) -> float:
+        """No replacement in NoOp strategy."""
+        return 0.0
+
     def on_event(
         self,
         event: Event,
@@ -175,9 +180,17 @@ class NodeReplacementStrategy(ClusterStrategy):
         self.default_node_config = default_node_config
         self._spawn_counter = 0
         self._pending_spawns: set[str] = set()
-        # Nodes currently being tracked for potential replacement
         self._timeout_pending: set[str] = set()
         self.safe_mode = safe_mode
+
+    @property
+    def replacement_rate(self) -> float:
+        """Rate at which the timeout-then-replace pipeline completes (1 / timeout).
+
+        Used by Markov chain builders to model the rate at which a failed
+        node triggers a replacement spawn.
+        """
+        return 1.0 / self.failure_timeout
 
     def on_event(
         self,

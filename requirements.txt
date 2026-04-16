@@ -1,7 +1,4 @@
 numpy
-sympy
-graphviz
-wolframclient
 plotly
 pyyaml
 scipy

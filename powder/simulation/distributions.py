@@ -56,6 +56,21 @@ class Distribution(ABC):
         """
         pass
 
+    @property
+    def approx_rate(self) -> float:
+        """Exponential rate approximation (1 / mean).
+
+        For Exponential distributions this is exact. For others it gives
+        the rate of the exponential distribution with matching mean,
+        which is the approximation used by Markov chain builders.
+
+        Returns inf when mean is 0 (instantaneous event).
+        """
+        m = self.mean
+        if m <= 0:
+            return float("inf")
+        return 1.0 / m
+
 
 class Exponential(Distribution):
     """Exponential distribution parameterized by rate.
