@@ -9,9 +9,6 @@ description = "Markov modeling utilities for distributed systems analysis"
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
-    "sympy",
-    "graphviz",
-    "wolframclient",
     "plotly",
     "pyyaml",
     "scipy",

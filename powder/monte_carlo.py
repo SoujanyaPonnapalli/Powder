@@ -273,6 +273,7 @@ class MonteCarloResults:
     unavailability_incident_samples: list[int] = field(default_factory=list)
     leader_election_samples: list[int] = field(default_factory=list)
     time_to_first_unavailability_samples: list[Seconds | None] = field(default_factory=list)
+    total_time_samples: list[Seconds] = field(default_factory=list)
 
     def availability_mean(self) -> float:
         """Calculate mean availability across all runs."""
@@ -863,6 +864,7 @@ class MonteCarloRunner:
         results.unavailability_incident_samples.append(metrics.total_unavailability_incidents)
         results.leader_election_samples.append(metrics.total_leader_elections)
         results.time_to_first_unavailability_samples.append(metrics.time_to_first_unavailability)
+        results.total_time_samples.append(metrics.total_time())
 
 
 def _get_metric_samples(

@@ -43,24 +43,6 @@ pip install -e .
 
 This makes the `powder` package importable from anywhere (useful for running tests or scripts outside of notebooks). The notebooks work without this step since they add the project root to `sys.path` automatically.
 
-### Wolfram kernel configuration
-
-The notebooks use Wolfram via `wolframclient`. Configure the kernel path in
-`config.yaml` at the project root (or set `WOLFRAM_KERNEL_PATH` in your environment).
-
-Example config snippet:
-
-```
-wolfram:
-  kernel_paths:
-    darwin: "/Applications/Wolfram.app/Contents/MacOS/WolframKernel"
-    linux: "/usr/local/Wolfram/Desktop/11.3/Executables/WolframKernel"
-    windows: "C:\\Program Files\\Wolfram Research\\Wolfram Desktop\\11.3\\WolframKernel.exe"
-```
-
-If you are new to the Wolfram Python client, see:
-https://reference.wolfram.com/language/WolframClientForPython/docpages/basic_usages.html
-
 ### Running notebooks
 
 From the repo root:
@@ -69,7 +51,7 @@ From the repo root:
 jupyter lab
 ```
 
-Open notebooks in `notebooks/` (e.g., `markov-calculator.ipynb`).
+Open notebooks in `notebooks/` (e.g., `monte-carlo-simulator.ipynb`).
 
 ### Notebook output hygiene (optional but recommended)
 

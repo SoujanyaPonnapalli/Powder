@@ -298,18 +298,17 @@ have different transition rates. For N = 7, 36 states suffice—8 of them
 
 ---
 
-## Comparison with existing models in `rsm_model_utils.py`
+## Comparison with prior state-space sizes
 
 
-| Model                          | N = 5  | N = 7    | Tracks replacement?   | Tracks data loss?      |
-| ------------------------------ | ------ | -------- | --------------------- | ---------------------- |
-| `get_cmm` (birth-death)        | 4      | 5        | No                    | No                     |
-| `get_dr_cmm` (durability)      | ~15–21 | ~28–36   | No                    | Via out-of-date counts |
-| `get_dr_good_bad_cmm` (2-type) | ~50–60 | ~100–130 | No                    | Via 2-type out-of-date |
-| **Simplified full model**      | **21** | **36**   | **Yes (via rate)**    | **Yes (D state)**      |
-| Full pipeline model            | 4,368  | 31,824   | Yes (explicit stages) | Yes                    |
+| Model                     | N = 5  | N = 7  | Tracks replacement?   | Tracks data loss? |
+| ------------------------- | ------ | ------ | --------------------- | ----------------- |
+| Birth-death (failures)    | 4      | 5      | No                    | No                |
+| Durability w/ out-of-date | ~15–21 | ~28–36 | No                    | Via OoD counts    |
+| **Simplified full model** | **21** | **36** | **Yes (via rate)**    | **Yes (D state)** |
+| Full pipeline model       | 4,368  | 31,824 | Yes (explicit stages) | Yes               |
 
 
-The simplified model achieves a comparable state count to `get_dr_cmm` while
-capturing the replacement strategy dynamics through the transition rates
+The simplified model keeps the state count comparable to a plain durability
+chain while capturing replacement-strategy dynamics through transition rates
 rather than explicit pipeline states.
