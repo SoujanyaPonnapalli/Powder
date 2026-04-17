@@ -1,0 +1,609 @@
+{
+  "config": {
+    "cluster_sizes": [
+      3,
+      5,
+      7
+    ],
+    "election_mean_s": 5.0,
+    "mc_num_sims": 80,
+    "mc_duration_s": 2592000,
+    "runtime_repeats": 5,
+    "strategy": "NodeReplacementStrategy",
+    "failure_timeout_s": 300
+  },
+  "profiles": [
+    {
+      "name": "Standard",
+      "description": "Reliable on-demand VM. MTBF ~30 days, 10 min recovery.",
+      "mean_time_between_failures_s": 2592000,
+      "mean_recovery_time_s": 600,
+      "cost_per_hour": 0.1
+    },
+    {
+      "name": "Spot",
+      "description": "Preemptible VM. MTBF ~2h (preemption), 1 min to respawn.",
+      "mean_time_between_failures_s": 7200,
+      "mean_recovery_time_s": 60,
+      "cost_per_hour": 0.03
+    },
+    {
+      "name": "Unreliable",
+      "description": "Flaky / budget VM. MTBF ~30 min, 5 min recovery.",
+      "mean_time_between_failures_s": 1800,
+      "mean_recovery_time_s": 300,
+      "cost_per_hour": 0.05
+    }
+  ],
+  "markov_runs": [
+    {
+      "num_nodes": 3,
+      "profile": "Standard",
+      "quality": "SIMPLIFIED",
+      "num_states": 7,
+      "availability": 0.9999980482830951,
+      "expected_cost_per_hour": 0.3000000000000001,
+      "median_build_ms": 0.30250000418163836,
+      "median_solve_ms": 0.1216669988934882,
+      "median_total_ms": 0.4347499998402782
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Standard",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 16,
+      "availability": 0.9999980482358157,
+      "expected_cost_per_hour": 0.3,
+      "median_build_ms": 0.24787499569356441,
+      "median_solve_ms": 0.10458299948368222,
+      "median_total_ms": 0.35245799517724663
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Standard",
+      "quality": "NO_ORPHANS",
+      "num_states": 29,
+      "availability": 0.9999980458500614,
+      "expected_cost_per_hour": 0.3,
+      "median_build_ms": 0.29870900470996276,
+      "median_solve_ms": 0.12337499356362969,
+      "median_total_ms": 0.42208399827359244
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Standard",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 98,
+      "availability": 0.9999980458501115,
+      "expected_cost_per_hour": 0.3,
+      "median_build_ms": 0.7321250013774261,
+      "median_solve_ms": 0.3872920060530305,
+      "median_total_ms": 1.1479579989099875
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Standard",
+      "quality": "FULL",
+      "num_states": 300,
+      "availability": 0.9999980458384614,
+      "expected_cost_per_hour": 0.3,
+      "median_build_ms": 2.1607919989037327,
+      "median_solve_ms": 1.5115419955691323,
+      "median_total_ms": 3.7614579996443354
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Spot",
+      "quality": "SIMPLIFIED",
+      "num_states": 7,
+      "availability": 0.9991514531910124,
+      "expected_cost_per_hour": 0.09000000000000001,
+      "median_build_ms": 0.2162079981644638,
+      "median_solve_ms": 0.09504199988441542,
+      "median_total_ms": 0.3112499980488792
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Spot",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 16,
+      "availability": 0.9991506929385912,
+      "expected_cost_per_hour": 0.09000000000000001,
+      "median_build_ms": 0.2617499994812533,
+      "median_solve_ms": 0.1098749999073334,
+      "median_total_ms": 0.37162499938858673
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Spot",
+      "quality": "NO_ORPHANS",
+      "num_states": 29,
+      "availability": 0.9991285087176937,
+      "expected_cost_per_hour": 0.09000000000000004,
+      "median_build_ms": 0.30470800265902653,
+      "median_solve_ms": 0.12920900189783424,
+      "median_total_ms": 0.4449170010047965
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Spot",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 98,
+      "availability": 0.9991286208226615,
+      "expected_cost_per_hour": 0.09,
+      "median_build_ms": 0.7195829966804013,
+      "median_solve_ms": 0.3522500046528876,
+      "median_total_ms": 1.0718330013332888
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Spot",
+      "quality": "FULL",
+      "num_states": 300,
+      "availability": 0.999128363753129,
+      "expected_cost_per_hour": 0.08999999999999996,
+      "median_build_ms": 2.092875001835637,
+      "median_solve_ms": 1.5219580018310808,
+      "median_total_ms": 3.616833004343789
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Unreliable",
+      "quality": "SIMPLIFIED",
+      "num_states": 7,
+      "availability": 0.9770002832433324,
+      "expected_cost_per_hour": 0.15,
+      "median_build_ms": 0.21183300123084337,
+      "median_solve_ms": 0.09395800589118153,
+      "median_total_ms": 0.3057080029975623
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Unreliable",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 16,
+      "availability": 0.9769404016234267,
+      "expected_cost_per_hour": 0.15000000000000005,
+      "median_build_ms": 0.24770799791440368,
+      "median_solve_ms": 0.1021249991026707,
+      "median_total_ms": 0.35079100052826107
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Unreliable",
+      "quality": "NO_ORPHANS",
+      "num_states": 29,
+      "availability": 0.9744586498420925,
+      "expected_cost_per_hour": 0.15000000000000002,
+      "median_build_ms": 0.3025420010089874,
+      "median_solve_ms": 0.1384999995934777,
+      "median_total_ms": 0.44195800001034513
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Unreliable",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 98,
+      "availability": 0.9745379049835421,
+      "expected_cost_per_hour": 0.14999999999999994,
+      "median_build_ms": 0.7022920035524294,
+      "median_solve_ms": 0.3284580016043037,
+      "median_total_ms": 1.028667000355199
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Unreliable",
+      "quality": "FULL",
+      "num_states": 300,
+      "availability": 0.9745228420981676,
+      "expected_cost_per_hour": 0.1499999999999999,
+      "median_build_ms": 2.110374996846076,
+      "median_solve_ms": 1.5919580037007108,
+      "median_total_ms": 3.7136250030016527
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Standard",
+      "quality": "SIMPLIFIED",
+      "num_states": 11,
+      "availability": 0.9999980709847907,
+      "expected_cost_per_hour": 0.5000000000000001,
+      "median_build_ms": 0.23016700288280845,
+      "median_solve_ms": 0.09804200090002269,
+      "median_total_ms": 0.32820900378283113
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Standard",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 36,
+      "availability": 0.9999980709847699,
+      "expected_cost_per_hour": 0.5000000000000001,
+      "median_build_ms": 0.40958300087368116,
+      "median_solve_ms": 0.17158399714389816,
+      "median_total_ms": 0.5764160014223307
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Standard",
+      "quality": "NO_ORPHANS",
+      "num_states": 90,
+      "availability": 0.9999980709837047,
+      "expected_cost_per_hour": 0.4999999999999999,
+      "median_build_ms": 0.6198339979164302,
+      "median_solve_ms": 0.31391700031235814,
+      "median_total_ms": 0.9362919954583049
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Standard",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 504,
+      "availability": 0.999998070983704,
+      "expected_cost_per_hour": 0.4999999999999998,
+      "median_build_ms": 3.653209001640789,
+      "median_solve_ms": 4.521625000052154,
+      "median_total_ms": 8.271250000689179
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Standard",
+      "quality": "FULL",
+      "num_states": 2772,
+      "availability": 0.9999980709836982,
+      "expected_cost_per_hour": 0.4999999999999997,
+      "median_build_ms": 26.391624996904284,
+      "median_solve_ms": 331.02929199958453,
+      "median_total_ms": 356.969583001046
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Spot",
+      "quality": "SIMPLIFIED",
+      "num_states": 11,
+      "availability": 0.9993023531413149,
+      "expected_cost_per_hour": 0.15,
+      "median_build_ms": 0.22904099751031026,
+      "median_solve_ms": 0.10254199878545478,
+      "median_total_ms": 0.33158299629576504
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Spot",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 36,
+      "availability": 0.999302325824684,
+      "expected_cost_per_hour": 0.15,
+      "median_build_ms": 0.33400000393157825,
+      "median_solve_ms": 0.23629199858987704,
+      "median_total_ms": 0.5635419947793707
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Spot",
+      "quality": "NO_ORPHANS",
+      "num_states": 90,
+      "availability": 0.9993015029475762,
+      "expected_cost_per_hour": 0.15000000000000008,
+      "median_build_ms": 0.6525420030811802,
+      "median_solve_ms": 0.32662499870639294,
+      "median_total_ms": 0.9791670017875731
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Spot",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 504,
+      "availability": 0.9993015072374992,
+      "expected_cost_per_hour": 0.15000000000000016,
+      "median_build_ms": 3.4951659981743433,
+      "median_solve_ms": 4.987042004358955,
+      "median_total_ms": 8.799542003544047
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Spot",
+      "quality": "FULL",
+      "num_states": 2772,
+      "availability": 0.9993014973899299,
+      "expected_cost_per_hour": 0.14999999999999974,
+      "median_build_ms": 25.224999997590203,
+      "median_solve_ms": 328.6478750014794,
+      "median_total_ms": 357.3063750009169
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Unreliable",
+      "quality": "SIMPLIFIED",
+      "num_states": 11,
+      "availability": 0.9921028720388938,
+      "expected_cost_per_hour": 0.25,
+      "median_build_ms": 0.2390000008745119,
+      "median_solve_ms": 0.10741600272012874,
+      "median_total_ms": 0.34641600359464064
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Unreliable",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 36,
+      "availability": 0.9920784480661428,
+      "expected_cost_per_hour": 0.2499999999999999,
+      "median_build_ms": 0.33666699891909957,
+      "median_solve_ms": 0.16391600365750492,
+      "median_total_ms": 0.5097920002299361
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Unreliable",
+      "quality": "NO_ORPHANS",
+      "num_states": 90,
+      "availability": 0.9910788455902815,
+      "expected_cost_per_hour": 0.25,
+      "median_build_ms": 0.6366250017890707,
+      "median_solve_ms": 0.3486250061541796,
+      "median_total_ms": 1.0559579968685284
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Unreliable",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 504,
+      "availability": 0.9911104338688008,
+      "expected_cost_per_hour": 0.24999999999999994,
+      "median_build_ms": 3.5290830055600964,
+      "median_solve_ms": 3.684791998239234,
+      "median_total_ms": 7.29091700486606
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Unreliable",
+      "quality": "FULL",
+      "num_states": 2772,
+      "availability": 0.991104433260915,
+      "expected_cost_per_hour": 0.2499999999999999,
+      "median_build_ms": 24.68645799672231,
+      "median_solve_ms": 335.87154099950567,
+      "median_total_ms": 361.1902499978896
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Standard",
+      "quality": "SIMPLIFIED",
+      "num_states": 15,
+      "availability": 0.9999980709913736,
+      "expected_cost_per_hour": 0.7000000000000002,
+      "median_build_ms": 0.628334004431963,
+      "median_solve_ms": 0.7920420030131936,
+      "median_total_ms": 1.3757920023635961
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Standard",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 64,
+      "availability": 0.9999980709913727,
+      "expected_cost_per_hour": 0.6999999999999997,
+      "median_build_ms": 0.9079160008695908,
+      "median_solve_ms": 2.513833998818882,
+      "median_total_ms": 3.4217499996884726
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Standard",
+      "quality": "NO_ORPHANS",
+      "num_states": 203,
+      "availability": 0.9999980709913728,
+      "expected_cost_per_hour": 0.7,
+      "median_build_ms": 1.6078749977168627,
+      "median_solve_ms": 0.9761249966686592,
+      "median_total_ms": 2.6813750009750947
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Standard",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 1716,
+      "availability": 0.999998070991373,
+      "expected_cost_per_hour": 0.7,
+      "median_build_ms": 14.253209003072698,
+      "median_solve_ms": 56.619334005517885,
+      "median_total_ms": 71.83583400183124
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Standard",
+      "quality": "FULL",
+      "num_states": 15444,
+      "availability": 0.9999980709913724,
+      "expected_cost_per_hour": 0.6999999999999997,
+      "median_build_ms": 183.63537499681115,
+      "median_solve_ms": 60234.19933400146,
+      "median_total_ms": 60417.83470899827
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Spot",
+      "quality": "SIMPLIFIED",
+      "num_states": 15,
+      "availability": 0.9993059452838517,
+      "expected_cost_per_hour": 0.21,
+      "median_build_ms": 0.2759159979177639,
+      "median_solve_ms": 0.11791699944296852,
+      "median_total_ms": 0.3938329973607324
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Spot",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 64,
+      "availability": 0.9993059443720204,
+      "expected_cost_per_hour": 0.21,
+      "median_build_ms": 0.654334005957935,
+      "median_solve_ms": 0.43687500146916136,
+      "median_total_ms": 1.3842499974998645
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Spot",
+      "quality": "NO_ORPHANS",
+      "num_states": 203,
+      "availability": 0.999305915904381,
+      "expected_cost_per_hour": 0.21,
+      "median_build_ms": 1.677250002103392,
+      "median_solve_ms": 0.8361660002265126,
+      "median_total_ms": 2.5134160023299046
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Spot",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 1716,
+      "availability": 0.9993059160575835,
+      "expected_cost_per_hour": 0.21000000000000005,
+      "median_build_ms": 13.936834002379328,
+      "median_solve_ms": 58.86320900026476,
+      "median_total_ms": 72.63383400277235
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Spot",
+      "quality": "FULL",
+      "num_states": 15444,
+      "availability": 0.999305915705826,
+      "expected_cost_per_hour": 0.20999999999999985,
+      "median_build_ms": 196.87245899694972,
+      "median_solve_ms": 84626.29508400278,
+      "median_total_ms": 84825.6972090021
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Unreliable",
+      "quality": "SIMPLIFIED",
+      "num_states": 15,
+      "availability": 0.9958430977832813,
+      "expected_cost_per_hour": 0.35,
+      "median_build_ms": 0.3772909985855222,
+      "median_solve_ms": 0.14124999870546162,
+      "median_total_ms": 0.5185409972909838
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Unreliable",
+      "quality": "COLLAPSED_PIPELINE",
+      "num_states": 64,
+      "availability": 0.995834346492047,
+      "expected_cost_per_hour": 0.3499999999999999,
+      "median_build_ms": 0.5972079961793497,
+      "median_solve_ms": 0.41283299651695415,
+      "median_total_ms": 0.9974999993573874
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Unreliable",
+      "quality": "NO_ORPHANS",
+      "num_states": 203,
+      "availability": 0.995465812709613,
+      "expected_cost_per_hour": 0.3499999999999999,
+      "median_build_ms": 5.4005409983801655,
+      "median_solve_ms": 0.924833002500236,
+      "median_total_ms": 6.995709001785144
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Unreliable",
+      "quality": "MERGED_PIPELINE",
+      "num_states": 1716,
+      "availability": 0.9954777556303471,
+      "expected_cost_per_hour": 0.34999999999999987,
+      "median_build_ms": 13.079208998533431,
+      "median_solve_ms": 53.07395800628001,
+      "median_total_ms": 68.16108299972257
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Unreliable",
+      "quality": "FULL",
+      "num_states": 15444,
+      "availability": 0.9954754871265888,
+      "expected_cost_per_hour": 0.3499999999999987,
+      "median_build_ms": 230.22400000627385,
+      "median_solve_ms": 95660.41104099713,
+      "median_total_ms": 95863.92383299972
+    }
+  ],
+  "monte_carlo_runs": [
+    {
+      "num_nodes": 3,
+      "profile": "Standard",
+      "availability_mean": 0.9999980309759458,
+      "availability_std": 2.8381589897024673e-06,
+      "num_sims": 80,
+      "wall_ms": 6251.33420900238
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Spot",
+      "availability_mean": 0.9991013494798164,
+      "availability_std": 9.389988317871121e-05,
+      "num_sims": 80,
+      "wall_ms": 1852.9655000020284
+    },
+    {
+      "num_nodes": 3,
+      "profile": "Unreliable",
+      "availability_mean": 0.9573539227594863,
+      "availability_std": 0.002197462802351519,
+      "num_sims": 80,
+      "wall_ms": 5048.143457999686
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Standard",
+      "availability_mean": 0.9999980226399957,
+      "availability_std": 2.3048708532781404e-06,
+      "num_sims": 80,
+      "wall_ms": 3786.072458002309
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Spot",
+      "availability_mean": 0.9993042984940501,
+      "availability_std": 5.4549468752263184e-05,
+      "num_sims": 80,
+      "wall_ms": 7290.312292003364
+    },
+    {
+      "num_nodes": 5,
+      "profile": "Unreliable",
+      "availability_mean": 0.984701031285472,
+      "availability_std": 0.0010622353734998247,
+      "num_sims": 80,
+      "wall_ms": 24371.116874994186
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Standard",
+      "availability_mean": 0.9999981386376622,
+      "availability_std": 2.329062107365577e-06,
+      "num_sims": 80,
+      "wall_ms": 1463.4783750007045
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Spot",
+      "availability_mean": 0.999306261968648,
+      "availability_std": 5.233779092638368e-05,
+      "num_sims": 80,
+      "wall_ms": 3839.032167001278
+    },
+    {
+      "num_nodes": 7,
+      "profile": "Unreliable",
+      "availability_mean": 0.9930301864931621,
+      "availability_std": 0.0005232705483641405,
+      "num_sims": 80,
+      "wall_ms": 23767.257708001125
+    }
+  ]
+}
