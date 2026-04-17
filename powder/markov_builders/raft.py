@@ -324,7 +324,11 @@ def _build_merged_pipeline(
             if lam_d > 0:
                 trans.append((_delta(s, (7, 1), (8, -1), (9, -1)), lam_d))
             if mu_R > 0:
-                trans.append((_delta(s, (0, 1), (9, -1)), mu_R))
+                # Orphaned replacement pipeline completes for the current leader:
+                # the leader's sub-state flips H*_R -> H*. The pending replacement
+                # is discarded (the node is already healthy and serving as leader),
+                # so no new slot joins the cluster.
+                trans.append((_delta(s, (9, -1)), mu_R))
 
         if nH > 0:
             trans.append((_delta(s, (0, -1), (2, 1)), nH * lam))
@@ -439,7 +443,11 @@ def _build_full(
                 if lam_d > 0:
                     trans.append((_delta(s, (11, 1), (12, -1), (13, -2)), lam_d))
                 if mu_sync > 0:
-                    trans.append((_delta(s, (0, 1), (13, -2)), mu_sync))
+                    # Leader's orphaned replacement finishes its sync phase:
+                    # the leader's sub-state flips H*_S -> H*. The pending
+                    # replacement is discarded (the leader is healthy); no new
+                    # slot joins the cluster.
+                    trans.append((_delta(s, (13, -2)), mu_sync))
 
         if nH > 0:
             trans.append((_delta(s, (0, -1), (3, 1)), nH * lam))
