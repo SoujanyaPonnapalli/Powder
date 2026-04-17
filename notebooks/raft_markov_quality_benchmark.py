@@ -2,11 +2,12 @@
 Benchmark: accuracy and runtime of Raft Markov models at each quality level.
 
 Sweeps cluster sizes N in {3, 5, 7}, all 5 QualityLevel settings, and three
-VM reliability/cost profiles loosely modeled on public cloud offerings:
+VM profiles that share the same transient-failure behaviour (MTBF 30d,
+20min recovery) but differ in how often they lose data and in price:
 
-  - Standard VM:   low failure rate, higher cost.
-  - Spot VM:       moderate preemption rate, cheap.
-  - Unreliable VM: high failure rate, very cheap.
+  - Standard:   MTTDL 3 years,  cost $0.10/hr.
+  - Spot:       MTTDL 1 day,    cost $0.03/hr.
+  - Unreliable: MTTDL 1 year,   cost $0.05/hr.
 
 For each (N, profile, quality):
   1. Build the Raft CTMC.
@@ -54,7 +55,7 @@ from powder.simulation import (
     RaftLikeProtocol,
     Seconds,
 )
-from powder.simulation.distributions import days, hours, minutes
+from powder.simulation.distributions import days, minutes
 from powder.markov_solver import (
     availability,
     expected_cost_per_second,
@@ -73,29 +74,33 @@ class VMProfile:
     description: str
     mean_time_between_failures_s: float
     mean_recovery_time_s: float
+    mean_time_between_data_loss_s: float
     cost_per_hour: float
 
 
 VM_PROFILES: list[VMProfile] = [
     VMProfile(
         name="Standard",
-        description="Reliable on-demand VM. MTBF ~30 days, 10 min recovery.",
+        description="Reliable on-demand VM. MTBF 30d, 20 min recovery, MTTDL 3y.",
         mean_time_between_failures_s=days(30),
-        mean_recovery_time_s=minutes(10),
+        mean_recovery_time_s=minutes(20),
+        mean_time_between_data_loss_s=days(365 * 3),
         cost_per_hour=0.10,
     ),
     VMProfile(
         name="Spot",
-        description="Preemptible VM. MTBF ~2h (preemption), 1 min to respawn.",
-        mean_time_between_failures_s=hours(2),
-        mean_recovery_time_s=minutes(1),
+        description="Preemptible VM. MTBF 30d, 20 min recovery, MTTDL 1d.",
+        mean_time_between_failures_s=days(30),
+        mean_recovery_time_s=minutes(20),
+        mean_time_between_data_loss_s=days(1),
         cost_per_hour=0.03,
     ),
     VMProfile(
         name="Unreliable",
-        description="Flaky / budget VM. MTBF ~30 min, 5 min recovery.",
-        mean_time_between_failures_s=minutes(30),
-        mean_recovery_time_s=minutes(5),
+        description="Flaky / budget VM. MTBF 30d, 20 min recovery, MTTDL 1y.",
+        mean_time_between_failures_s=days(30),
+        mean_recovery_time_s=minutes(20),
+        mean_time_between_data_loss_s=days(365),
         cost_per_hour=0.05,
     ),
 ]
@@ -105,8 +110,14 @@ CLUSTER_SIZES = (3, 5, 7)
 ELECTION_MEAN_S = 5.0
 FAILURE_TIMEOUT_S = minutes(5)
 MC_NUM_SIMS = 80
-MC_DURATION_S = days(30)
+MC_DURATION_S = days(365)
 RUNTIME_REPEATS = 5
+# Cap the state count we'll actually solve. At higher N and higher quality
+# levels the Raft CTMC can produce tens of thousands of states; the direct
+# sparse LU behind steady_state() is roughly O(n^3) for these high-dimensional
+# state graphs (see bench_markov_scaling.py), so anything past ~30k states
+# takes hours to finish. We emit a skip record instead of stalling.
+MAX_STATES_FOR_SOLVE = 30_000
 
 
 # ---------------------------------------------------------------------------
@@ -120,7 +131,7 @@ def node_config_for(profile: VMProfile) -> NodeConfig:
         cost_per_hour=profile.cost_per_hour,
         failure_dist=Exponential(rate=1.0 / profile.mean_time_between_failures_s),
         recovery_dist=Exponential(rate=1.0 / profile.mean_recovery_time_s),
-        data_loss_dist=Constant(float("inf")),
+        data_loss_dist=Exponential(rate=1.0 / profile.mean_time_between_data_loss_s),
         log_replay_rate_dist=Constant(1e6),
         snapshot_download_time_dist=Constant(1.0),
         spawn_dist=Exponential(rate=1.0 / 60.0),
@@ -163,11 +174,13 @@ class MarkovRun:
     profile: str
     quality: str
     num_states: int
-    availability: float
-    expected_cost_per_hour: float
+    availability: float | None
+    expected_cost_per_hour: float | None
     median_build_ms: float
-    median_solve_ms: float
-    median_total_ms: float
+    median_solve_ms: float | None
+    median_total_ms: float | None
+    skipped: bool = False
+    skip_reason: str | None = None
 
 
 def time_markov(
@@ -181,11 +194,38 @@ def time_markov(
     strat = replacement_strategy(cfg)
     configs = [cfg] * num_nodes
 
-    build_times: list[float] = []
+    t0 = time.perf_counter()
+    model = build_markov_model(configs, prot, strat, quality)
+    t1 = time.perf_counter()
+    first_build_ms = (t1 - t0) * 1000.0
+
+    if model.num_states > MAX_STATES_FOR_SOLVE:
+        return MarkovRun(
+            num_nodes=num_nodes,
+            profile=profile.name,
+            quality=quality.name,
+            num_states=model.num_states,
+            availability=None,
+            expected_cost_per_hour=None,
+            median_build_ms=first_build_ms,
+            median_solve_ms=None,
+            median_total_ms=None,
+            skipped=True,
+            skip_reason=(
+                f"{model.num_states} states exceeds MAX_STATES_FOR_SOLVE="
+                f"{MAX_STATES_FOR_SOLVE}"
+            ),
+        )
+
+    build_times: list[float] = [first_build_ms]
     solve_times: list[float] = []
-    model = None
-    pi = None
-    for _ in range(repeats):
+
+    t_s0 = time.perf_counter()
+    pi = steady_state(model)
+    t_s1 = time.perf_counter()
+    solve_times.append((t_s1 - t_s0) * 1000.0)
+
+    for _ in range(repeats - 1):
         t0 = time.perf_counter()
         model = build_markov_model(configs, prot, strat, quality)
         t1 = time.perf_counter()
@@ -194,7 +234,6 @@ def time_markov(
         build_times.append((t1 - t0) * 1000.0)
         solve_times.append((t2 - t1) * 1000.0)
 
-    assert model is not None and pi is not None
     avail = availability(model, pi)
     cost_per_hour = expected_cost_per_second(model, pi) * 3600.0
     return MarkovRun(
@@ -276,13 +315,35 @@ def main() -> dict:
                     f"[markov] N={N}  profile={profile.name:<10}  quality={quality.name}",
                     flush=True,
                 )
-                markov_runs.append(time_markov(N, profile, quality))
+                run = time_markov(N, profile, quality)
+                if run.skipped:
+                    print(
+                        f"          SKIPPED: {run.skip_reason}",
+                        flush=True,
+                    )
+                else:
+                    print(
+                        f"          states={run.num_states:>6}  "
+                        f"avail={run.availability:.6f}  "
+                        f"$/hr={run.expected_cost_per_hour:.4f}  "
+                        f"build={run.median_build_ms:.1f}ms  "
+                        f"solve={run.median_solve_ms:.1f}ms",
+                        flush=True,
+                    )
+                markov_runs.append(run)
 
     mc_runs: list[MonteCarloRun] = []
     for N in CLUSTER_SIZES:
         for profile in VM_PROFILES:
             print(f"[mc] N={N}  profile={profile.name}", flush=True)
-            mc_runs.append(time_monte_carlo(N, profile))
+            run = time_monte_carlo(N, profile)
+            print(
+                f"     avail={run.availability_mean:.6f} "
+                f"+/-{run.availability_std:.6f}  "
+                f"sims={run.num_sims}  wall={run.wall_ms/1000.0:.1f}s",
+                flush=True,
+            )
+            mc_runs.append(run)
 
     doc = {
         "config": {
@@ -293,6 +354,7 @@ def main() -> dict:
             "runtime_repeats": RUNTIME_REPEATS,
             "strategy": "NodeReplacementStrategy",
             "failure_timeout_s": FAILURE_TIMEOUT_S,
+            "max_states_for_solve": MAX_STATES_FOR_SOLVE,
         },
         "profiles": [asdict(p) for p in VM_PROFILES],
         "markov_runs": [asdict(r) for r in markov_runs],
