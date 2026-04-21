@@ -5,7 +5,12 @@ import pytest
 from scipy import sparse
 
 from powder.markov import MarkovModel
-from powder.markov_solver import build_q_from_triples, steady_state
+from powder.markov_solver import (
+    SteadyStateResidual,
+    build_q_from_triples,
+    compute_steady_state_residual,
+    steady_state,
+)
 from powder.results import markov_analyze
 from powder.scenario import QualityLevel, build_markov_model
 from powder.simulation import (
@@ -45,6 +50,70 @@ def test_steady_state_two_state_chain():
     pi = steady_state(model)
     assert pi[0] == pytest.approx(0.75)
     assert pi[1] == pytest.approx(0.25)
+
+
+# ---------------------------------------------------------------------------
+# Steady-state residual reporting
+# ---------------------------------------------------------------------------
+
+
+def _toy_two_state_model() -> MarkovModel:
+    Q = build_q_from_triples(2, [(0, 1, 1.0), (1, 0, 3.0)])
+    return MarkovModel(
+        Q=Q,
+        initial_distribution=np.array([1.0, 0.0]),
+        live_mask=np.array([True, False]),
+        state_costs=np.zeros(2),
+        state_names=["A", "B"],
+    )
+
+
+def test_steady_state_residual_small_for_well_conditioned_chain():
+    """Well-conditioned 2-state chain: residual should be at machine precision."""
+    model = _toy_two_state_model()
+    pi, residual = steady_state(model, return_residual=True)
+    assert isinstance(residual, SteadyStateResidual)
+    assert residual.balance < 1e-12
+    assert residual.normalization < 1e-12
+    assert residual.negativity < 1e-12
+    assert residual.worst < 1e-12
+    assert pi.sum() == pytest.approx(1.0)
+
+
+def test_steady_state_no_warning_below_threshold(caplog):
+    """Default threshold should not fire on well-conditioned chains."""
+    model = _toy_two_state_model()
+    with caplog.at_level("WARNING", logger="powder.markov_solver"):
+        steady_state(model)
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert warnings == []
+
+
+def test_steady_state_warns_when_residual_exceeds_threshold(caplog):
+    """Force the threshold below the achievable residual to exercise the warn path."""
+    model = _toy_two_state_model()
+    with caplog.at_level("WARNING", logger="powder.markov_solver"):
+        steady_state(model, residual_threshold=-1.0)
+    warnings = [
+        r for r in caplog.records
+        if r.levelname == "WARNING" and "Steady-state residual" in r.getMessage()
+    ]
+    assert len(warnings) == 1
+    msg = warnings[0].getMessage()
+    assert "balance=" in msg
+    assert "normalization=" in msg
+    assert "negativity=" in msg
+
+
+def test_steady_state_residual_independent_of_returned_pi():
+    """compute_steady_state_residual should reproduce the diagnostic struct."""
+    model = _toy_two_state_model()
+    pi = steady_state(model)
+    residual = compute_steady_state_residual(model, pi)
+    # After renormalization and clipping the balance may be *smaller* than the
+    # pre-clip residual but must still be near zero.
+    assert residual.balance < 1e-10
+    assert residual.normalization < 1e-12
 
 
 # ---------------------------------------------------------------------------
@@ -113,7 +182,11 @@ class TestAbsorbingStateProperties:
             counts = tuple(int(x) for x in name.split(":"))
             is_all_f = (
                 (isinstance(protocol, LeaderlessProtocol) and counts == (0, 3, 0))
-                or (isinstance(protocol, RaftLikeProtocol) and counts == (0, 3, 0, 0))
+                # Raft SIMPLIFIED state tuple: (H, F, D, has_leader, leader_class)
+                or (
+                    isinstance(protocol, RaftLikeProtocol)
+                    and counts == (0, 3, 0, 0, 0)
+                )
             )
             if is_all_f:
                 row = dense[sid].copy()
