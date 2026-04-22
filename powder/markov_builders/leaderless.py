@@ -45,8 +45,6 @@ from ..scenario import QualityLevel
 from ..simulation.node import NodeConfig
 from ..simulation.protocol import Protocol, LeaderlessProtocol
 from ..simulation.strategy import ClusterStrategy
-
-_logger = logging.getLogger(__name__)
 from .common import (
     RateClass,
     build_model_bfs,
@@ -57,6 +55,8 @@ from .common import (
     majority,
     total_per_node_state,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 Transition = tuple[tuple[int, ...], float]

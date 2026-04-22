@@ -517,25 +517,3 @@ def heterogeneous_cost_fn(
         return total
 
     return _cost
-
-
-# Retained for call sites that still supply the old signature; routes
-# through the heterogeneous implementation with a single class.
-def homogeneous_cost_fn(
-    cost_per_second: float,
-    total_nodes: int,
-    unbilled_indices: tuple[int, ...],
-) -> CostFn:
-    """Single-class wrapper around ``heterogeneous_cost_fn``.
-
-    Kept as a thin shim so any external caller constructing a cost
-    function directly keeps working. Builders inside this package use
-    ``heterogeneous_cost_fn`` directly.
-    """
-    unbilled = tuple(unbilled_indices)
-
-    def _cost(counts: tuple[int, ...]) -> float:
-        unbilled_count = sum(counts[i] for i in unbilled)
-        return (total_nodes - unbilled_count) * cost_per_second
-
-    return _cost

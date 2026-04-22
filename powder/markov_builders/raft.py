@@ -49,15 +49,17 @@ from ..scenario import QualityLevel
 from ..simulation.node import NodeConfig
 from ..simulation.protocol import Protocol, RaftLikeProtocol
 from ..simulation.strategy import ClusterStrategy
-
-_logger = logging.getLogger(__name__)
 from .common import (
     RateClass,
     build_model_bfs,
+    delta_in_class,
     group_configs_into_classes,
     heterogeneous_cost_fn,
     majority,
+    total_per_node_state,
 )
+
+_logger = logging.getLogger(__name__)
 
 
 Transition = tuple[tuple[int, ...], float]
@@ -105,31 +107,6 @@ def build_raft_model(
 
 
 # ---------------------------------------------------------------------------
-# Internal helpers that operate on a flat state with trailing leader fields
-# ---------------------------------------------------------------------------
-
-
-def _total_per_node_state(
-    s: tuple[int, ...], per_node_idx: int, C: int, k: int,
-) -> int:
-    return sum(s[c * k + per_node_idx] for c in range(C))
-
-
-def _delta_cls(
-    s: tuple[int, ...],
-    class_idx: int,
-    k: int,
-    *changes: tuple[int, int],
-) -> tuple[int, ...]:
-    """Apply per-node-state deltas to one class, leaving trailing flags alone."""
-    new = list(s)
-    off = class_idx * k
-    for idx, d in changes:
-        new[off + idx] += d
-    return tuple(new)
-
-
-# ---------------------------------------------------------------------------
 # SIMPLIFIED (k=3, trailing=2): {H, F, D} + (has_leader, leader_class)
 #   Per-class indices: 0=H, 1=F, 2=D
 # ---------------------------------------------------------------------------
@@ -149,7 +126,7 @@ def _build_simplified(
         trans: list[Transition] = []
         has_leader = s[HL]
         leader_class = s[LC]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
         all_down = total_H == 0
 
         if has_leader:
@@ -157,12 +134,12 @@ def _build_simplified(
             lam = lc_rates.failure_rate
             lam_d = lc_rates.data_loss_rate
             # Leader fails -> class `leader_class` F += 1, drop leader.
-            new = list(_delta_cls(s, leader_class, k, (1, 1)))
+            new = list(delta_in_class(s, leader_class, k, (1, 1)))
             new[HL] = 0
             new[LC] = 0
             trans.append((tuple(new), lam))
             if lam_d > 0:
-                new = list(_delta_cls(s, leader_class, k, (2, 1)))
+                new = list(delta_in_class(s, leader_class, k, (2, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 trans.append((tuple(new), lam_d))
@@ -178,24 +155,24 @@ def _build_simplified(
             mu_d_replace = rc.rates.collapsed_replace_rate
 
             if nH > 0:
-                trans.append((_delta_cls(s, c, k, (0, -1), (1, 1)), nH * lam))
+                trans.append((delta_in_class(s, c, k, (0, -1), (1, 1)), nH * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, -1), (2, 1)), nH * lam_d),
+                        (delta_in_class(s, c, k, (0, -1), (2, 1)), nH * lam_d),
                     )
             if nF > 0:
                 rate = nF * mu_f_direct
                 if not all_down and mu_f_replace > 0:
                     rate += nF * mu_f_replace
                 if rate > 0:
-                    trans.append((_delta_cls(s, c, k, (0, 1), (1, -1)), rate))
+                    trans.append((delta_in_class(s, c, k, (0, 1), (1, -1)), rate))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (2, 1)), nF * lam_d),
+                        (delta_in_class(s, c, k, (1, -1), (2, 1)), nF * lam_d),
                     )
             if nD > 0 and mu_d_replace > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (0, 1), (2, -1)), nD * mu_d_replace),
+                    (delta_in_class(s, c, k, (0, 1), (2, -1)), nD * mu_d_replace),
                 )
 
         if not has_leader and total_H >= q and mu_election > 0:
@@ -205,7 +182,7 @@ def _build_simplified(
                 nH_c = s[c * k]
                 if nH_c > 0:
                     rate = mu_election * nH_c / total_H
-                    new = list(_delta_cls(s, c, k, (0, -1)))
+                    new = list(delta_in_class(s, c, k, (0, -1)))
                     new[HL] = 1
                     new[LC] = c
                     trans.append((tuple(new), rate))
@@ -214,7 +191,7 @@ def _build_simplified(
 
     def liveness(s: tuple[int, ...]) -> bool:
         has_leader = s[HL]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
         return has_leader == 1 and total_H >= q
 
     initial = _initial_with_leader(classes, k, TRAILING)
@@ -260,8 +237,8 @@ def _build_collapsed_pipeline(
         trans: list[Transition] = []
         has_leader = s[HL]
         leader_class = s[LC]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
-        total_L = _total_per_node_state(s, 2, C, k)
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
+        total_L = total_per_node_state(s, 2, C, k)
         n_available = total_H + total_L
         all_down = n_available == 0
 
@@ -269,12 +246,12 @@ def _build_collapsed_pipeline(
             lc_rates = classes[leader_class].rates
             lam = lc_rates.failure_rate
             lam_d = lc_rates.data_loss_rate
-            new = list(_delta_cls(s, leader_class, k, (1, 1)))
+            new = list(delta_in_class(s, leader_class, k, (1, 1)))
             new[HL] = 0
             new[LC] = 0
             trans.append((tuple(new), lam))
             if lam_d > 0:
-                new = list(_delta_cls(s, leader_class, k, (3, 1)))
+                new = list(delta_in_class(s, leader_class, k, (3, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 trans.append((tuple(new), lam_d))
@@ -292,37 +269,37 @@ def _build_collapsed_pipeline(
             mu_replace = rc.rates.collapsed_replace_rate
 
             if nH > 0:
-                trans.append((_delta_cls(s, c, k, (0, -1), (1, 1)), nH * lam))
+                trans.append((delta_in_class(s, c, k, (0, -1), (1, 1)), nH * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, -1), (3, 1)), nH * lam_d),
+                        (delta_in_class(s, c, k, (0, -1), (3, 1)), nH * lam_d),
                     )
             if nF > 0:
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (2, 1)), nF * mu_rec),
+                        (delta_in_class(s, c, k, (1, -1), (2, 1)), nF * mu_rec),
                     )
                 if not all_down and mu_replace > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (1, -1)), nF * mu_replace),
+                        (delta_in_class(s, c, k, (0, 1), (1, -1)), nF * mu_replace),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (3, 1)), nF * lam_d),
+                        (delta_in_class(s, c, k, (1, -1), (3, 1)), nF * lam_d),
                     )
             if nL > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (2, -1)), nL * mu_sync),
+                        (delta_in_class(s, c, k, (0, 1), (2, -1)), nL * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (1, 1), (2, -1)), nL * lam))
+                trans.append((delta_in_class(s, c, k, (1, 1), (2, -1)), nL * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (3, 1)), nL * lam_d),
+                        (delta_in_class(s, c, k, (2, -1), (3, 1)), nL * lam_d),
                     )
             if nD > 0 and mu_replace > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (0, 1), (3, -1)), nD * mu_replace),
+                    (delta_in_class(s, c, k, (0, 1), (3, -1)), nD * mu_replace),
                 )
 
         if not has_leader and total_H >= q and mu_election > 0:
@@ -331,7 +308,7 @@ def _build_collapsed_pipeline(
                 nH_c = s[c * k]
                 if nH_c > 0:
                     rate = mu_election * nH_c / total_H
-                    new = list(_delta_cls(s, c, k, (0, -1)))
+                    new = list(delta_in_class(s, c, k, (0, -1)))
                     new[HL] = 1
                     new[LC] = c
                     trans.append((tuple(new), rate))
@@ -340,7 +317,7 @@ def _build_collapsed_pipeline(
 
     def liveness(s: tuple[int, ...]) -> bool:
         has_leader = s[HL]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
         return has_leader == 1 and total_H >= q
 
     initial = _initial_with_leader(classes, k, TRAILING)
@@ -371,8 +348,8 @@ def _build_no_orphans(
         trans: list[Transition] = []
         has_leader = s[HL]
         leader_class = s[LC]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
-        total_L = _total_per_node_state(s, 3, C, k)
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
+        total_L = total_per_node_state(s, 3, C, k)
         n_available = total_H + total_L
         all_down = n_available == 0
 
@@ -380,12 +357,12 @@ def _build_no_orphans(
             lc_rates = classes[leader_class].rates
             lam = lc_rates.failure_rate
             lam_d = lc_rates.data_loss_rate
-            new = list(_delta_cls(s, leader_class, k, (1, 1)))
+            new = list(delta_in_class(s, leader_class, k, (1, 1)))
             new[HL] = 0
             new[LC] = 0
             trans.append((tuple(new), lam))
             if lam_d > 0:
-                new = list(_delta_cls(s, leader_class, k, (4, 1)))
+                new = list(delta_in_class(s, leader_class, k, (4, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 trans.append((tuple(new), lam_d))
@@ -409,54 +386,54 @@ def _build_no_orphans(
             mu_R = rc.rates.replace_pipeline_rate
 
             if nH > 0:
-                trans.append((_delta_cls(s, c, k, (0, -1), (1, 1)), nH * lam))
+                trans.append((delta_in_class(s, c, k, (0, -1), (1, 1)), nH * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, -1), (4, 1)), nH * lam_d),
+                        (delta_in_class(s, c, k, (0, -1), (4, 1)), nH * lam_d),
                     )
             if nFw > 0:
                 if not all_down and mu_timeout > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (2, 1)), nFw * mu_timeout),
+                        (delta_in_class(s, c, k, (1, -1), (2, 1)), nFw * mu_timeout),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (3, 1)), nFw * mu_rec),
+                        (delta_in_class(s, c, k, (1, -1), (3, 1)), nFw * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (4, 1)), nFw * lam_d),
+                        (delta_in_class(s, c, k, (1, -1), (4, 1)), nFw * lam_d),
                     )
             if nFeR > 0:
                 if mu_R > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (2, -1)), nFeR * mu_R),
+                        (delta_in_class(s, c, k, (0, 1), (2, -1)), nFeR * mu_R),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (3, 1)), nFeR * mu_rec),
+                        (delta_in_class(s, c, k, (2, -1), (3, 1)), nFeR * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (5, 1)), nFeR * lam_d),
+                        (delta_in_class(s, c, k, (2, -1), (5, 1)), nFeR * lam_d),
                     )
             if nL > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (3, -1)), nL * mu_sync),
+                        (delta_in_class(s, c, k, (0, 1), (3, -1)), nL * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (1, 1), (3, -1)), nL * lam))
+                trans.append((delta_in_class(s, c, k, (1, 1), (3, -1)), nL * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (3, -1), (4, 1)), nL * lam_d),
+                        (delta_in_class(s, c, k, (3, -1), (4, 1)), nL * lam_d),
                     )
             if nDw > 0 and mu_timeout > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (4, -1), (5, 1)), nDw * mu_timeout),
+                    (delta_in_class(s, c, k, (4, -1), (5, 1)), nDw * mu_timeout),
                 )
             if nDeR > 0 and mu_R > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (0, 1), (5, -1)), nDeR * mu_R),
+                    (delta_in_class(s, c, k, (0, 1), (5, -1)), nDeR * mu_R),
                 )
 
         if not has_leader and total_H >= q and mu_election > 0:
@@ -465,7 +442,7 @@ def _build_no_orphans(
                 nH_c = s[c * k]
                 if nH_c > 0:
                     rate = mu_election * nH_c / total_H
-                    new = list(_delta_cls(s, c, k, (0, -1)))
+                    new = list(delta_in_class(s, c, k, (0, -1)))
                     new[HL] = 1
                     new[LC] = c
                     trans.append((tuple(new), rate))
@@ -474,7 +451,7 @@ def _build_no_orphans(
 
     def liveness(s: tuple[int, ...]) -> bool:
         has_leader = s[HL]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
         return has_leader == 1 and total_H >= q
 
     initial = _initial_with_leader(classes, k, TRAILING)
@@ -508,10 +485,10 @@ def _build_merged_pipeline(
         has_leader = s[HL]
         leader_class = s[LC]
         leader_orphan = s[LO]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
-        total_HR = _total_per_node_state(s, 1, C, k)
-        total_L = _total_per_node_state(s, 4, C, k)
-        total_LR = _total_per_node_state(s, 5, C, k)
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
+        total_HR = total_per_node_state(s, 1, C, k)
+        total_L = total_per_node_state(s, 4, C, k)
+        total_LR = total_per_node_state(s, 5, C, k)
         total_healthy = total_H + total_HR
         n_available = total_healthy + total_L + total_LR
         all_down = n_available == 0
@@ -520,13 +497,13 @@ def _build_merged_pipeline(
             lc_rates = classes[leader_class].rates
             lam = lc_rates.failure_rate
             lam_d = lc_rates.data_loss_rate
-            new = list(_delta_cls(s, leader_class, k, (2, 1)))
+            new = list(delta_in_class(s, leader_class, k, (2, 1)))
             new[HL] = 0
             new[LC] = 0
             new[LO] = 0
             trans.append((tuple(new), lam))
             if lam_d > 0:
-                new = list(_delta_cls(s, leader_class, k, (6, 1)))
+                new = list(delta_in_class(s, leader_class, k, (6, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 new[LO] = 0
@@ -538,13 +515,13 @@ def _build_merged_pipeline(
             lam_d = lc_rates.data_loss_rate
             mu_R = lc_rates.replace_pipeline_rate
             # Leader with orphan fails -> Fe_R += 1, drop leader and orphan.
-            new = list(_delta_cls(s, leader_class, k, (3, 1)))
+            new = list(delta_in_class(s, leader_class, k, (3, 1)))
             new[HL] = 0
             new[LC] = 0
             new[LO] = 0
             trans.append((tuple(new), lam))
             if lam_d > 0:
-                new = list(_delta_cls(s, leader_class, k, (7, 1)))
+                new = list(delta_in_class(s, leader_class, k, (7, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 new[LO] = 0
@@ -577,78 +554,78 @@ def _build_merged_pipeline(
             mu_R = rc.rates.replace_pipeline_rate
 
             if nH > 0:
-                trans.append((_delta_cls(s, c, k, (0, -1), (2, 1)), nH * lam))
+                trans.append((delta_in_class(s, c, k, (0, -1), (2, 1)), nH * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, -1), (6, 1)), nH * lam_d),
+                        (delta_in_class(s, c, k, (0, -1), (6, 1)), nH * lam_d),
                     )
             if nHR > 0:
-                trans.append((_delta_cls(s, c, k, (1, -1), (3, 1)), nHR * lam))
+                trans.append((delta_in_class(s, c, k, (1, -1), (3, 1)), nHR * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (7, 1)), nHR * lam_d),
+                        (delta_in_class(s, c, k, (1, -1), (7, 1)), nHR * lam_d),
                     )
                 if mu_R > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (1, -1)), nHR * mu_R),
+                        (delta_in_class(s, c, k, (0, 1), (1, -1)), nHR * mu_R),
                     )
             if nFw > 0:
                 if not all_down and mu_timeout > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (3, 1)), nFw * mu_timeout),
+                        (delta_in_class(s, c, k, (2, -1), (3, 1)), nFw * mu_timeout),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (4, 1)), nFw * mu_rec),
+                        (delta_in_class(s, c, k, (2, -1), (4, 1)), nFw * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (6, 1)), nFw * lam_d),
+                        (delta_in_class(s, c, k, (2, -1), (6, 1)), nFw * lam_d),
                     )
             if nFeR > 0:
                 if mu_R > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (3, -1)), nFeR * mu_R),
+                        (delta_in_class(s, c, k, (0, 1), (3, -1)), nFeR * mu_R),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (3, -1), (5, 1)), nFeR * mu_rec),
+                        (delta_in_class(s, c, k, (3, -1), (5, 1)), nFeR * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (3, -1), (7, 1)), nFeR * lam_d),
+                        (delta_in_class(s, c, k, (3, -1), (7, 1)), nFeR * lam_d),
                     )
             if nL > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (4, -1)), nL * mu_sync),
+                        (delta_in_class(s, c, k, (0, 1), (4, -1)), nL * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (2, 1), (4, -1)), nL * lam))
+                trans.append((delta_in_class(s, c, k, (2, 1), (4, -1)), nL * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (4, -1), (6, 1)), nL * lam_d),
+                        (delta_in_class(s, c, k, (4, -1), (6, 1)), nL * lam_d),
                     )
             if nLR > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, 1), (5, -1)), nLR * mu_sync),
+                        (delta_in_class(s, c, k, (1, 1), (5, -1)), nLR * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (3, 1), (5, -1)), nLR * lam))
+                trans.append((delta_in_class(s, c, k, (3, 1), (5, -1)), nLR * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (5, -1), (7, 1)), nLR * lam_d),
+                        (delta_in_class(s, c, k, (5, -1), (7, 1)), nLR * lam_d),
                     )
                 if mu_R > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (4, 1), (5, -1)), nLR * mu_R),
+                        (delta_in_class(s, c, k, (4, 1), (5, -1)), nLR * mu_R),
                     )
             if nDw > 0 and mu_timeout > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (6, -1), (7, 1)), nDw * mu_timeout),
+                    (delta_in_class(s, c, k, (6, -1), (7, 1)), nDw * mu_timeout),
                 )
             if nDeR > 0 and mu_R > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (0, 1), (7, -1)), nDeR * mu_R),
+                    (delta_in_class(s, c, k, (0, 1), (7, -1)), nDeR * mu_R),
                 )
 
         if not has_leader and total_healthy >= q and mu_election > 0:
@@ -665,14 +642,14 @@ def _build_merged_pipeline(
                 if nH_c > 0:
                     # Fraction of rate going to H is nH_c / contrib.
                     r_h = rate_total * nH_c / contrib
-                    new = list(_delta_cls(s, c, k, (0, -1)))
+                    new = list(delta_in_class(s, c, k, (0, -1)))
                     new[HL] = 1
                     new[LC] = c
                     new[LO] = 0
                     trans.append((tuple(new), r_h))
                 if nHR_c > 0:
                     r_hr = rate_total * nHR_c / contrib
-                    new = list(_delta_cls(s, c, k, (1, -1)))
+                    new = list(delta_in_class(s, c, k, (1, -1)))
                     new[HL] = 1
                     new[LC] = c
                     new[LO] = 1
@@ -682,8 +659,8 @@ def _build_merged_pipeline(
 
     def liveness(s: tuple[int, ...]) -> bool:
         has_leader = s[HL]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
-        total_HR = _total_per_node_state(s, 1, C, k)
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
+        total_HR = total_per_node_state(s, 1, C, k)
         return has_leader == 1 and (total_H + total_HR) >= q
 
     initial = _initial_with_leader(classes, k, TRAILING)
@@ -719,12 +696,12 @@ def _build_full(
         has_leader = s[HL]
         leader_class = s[LC]
         leader_pipe = s[LP]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
-        total_HP = _total_per_node_state(s, 1, C, k)
-        total_HS = _total_per_node_state(s, 2, C, k)
-        total_L = _total_per_node_state(s, 6, C, k)
-        total_LP = _total_per_node_state(s, 7, C, k)
-        total_LS = _total_per_node_state(s, 8, C, k)
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
+        total_HP = total_per_node_state(s, 1, C, k)
+        total_HS = total_per_node_state(s, 2, C, k)
+        total_L = total_per_node_state(s, 6, C, k)
+        total_LP = total_per_node_state(s, 7, C, k)
+        total_LS = total_per_node_state(s, 8, C, k)
         total_healthy = total_H + total_HP + total_HS
         n_available = total_healthy + total_L + total_LP + total_LS
         all_down = n_available == 0
@@ -738,25 +715,25 @@ def _build_full(
                 lc_rates.sync_rate if lc_rates.sync_rate != float("inf") else 1e12
             )
             if leader_pipe == 0:
-                new = list(_delta_cls(s, leader_class, k, (3, 1)))
+                new = list(delta_in_class(s, leader_class, k, (3, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 new[LP] = 0
                 trans.append((tuple(new), lam))
                 if lam_d > 0:
-                    new = list(_delta_cls(s, leader_class, k, (9, 1)))
+                    new = list(delta_in_class(s, leader_class, k, (9, 1)))
                     new[HL] = 0
                     new[LC] = 0
                     new[LP] = 0
                     trans.append((tuple(new), lam_d))
             elif leader_pipe == 1:
-                new = list(_delta_cls(s, leader_class, k, (4, 1)))
+                new = list(delta_in_class(s, leader_class, k, (4, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 new[LP] = 0
                 trans.append((tuple(new), lam))
                 if lam_d > 0:
-                    new = list(_delta_cls(s, leader_class, k, (10, 1)))
+                    new = list(delta_in_class(s, leader_class, k, (10, 1)))
                     new[HL] = 0
                     new[LC] = 0
                     new[LP] = 0
@@ -766,13 +743,13 @@ def _build_full(
                     new[LP] = 2
                     trans.append((tuple(new), mu_spawn))
             elif leader_pipe == 2:
-                new = list(_delta_cls(s, leader_class, k, (5, 1)))
+                new = list(delta_in_class(s, leader_class, k, (5, 1)))
                 new[HL] = 0
                 new[LC] = 0
                 new[LP] = 0
                 trans.append((tuple(new), lam))
                 if lam_d > 0:
-                    new = list(_delta_cls(s, leader_class, k, (11, 1)))
+                    new = list(delta_in_class(s, leader_class, k, (11, 1)))
                     new[HL] = 0
                     new[LC] = 0
                     new[LP] = 0
@@ -809,119 +786,119 @@ def _build_full(
             mu_timeout = rc.rates.timeout_rate
 
             if nH > 0:
-                trans.append((_delta_cls(s, c, k, (0, -1), (3, 1)), nH * lam))
+                trans.append((delta_in_class(s, c, k, (0, -1), (3, 1)), nH * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, -1), (9, 1)), nH * lam_d),
+                        (delta_in_class(s, c, k, (0, -1), (9, 1)), nH * lam_d),
                     )
             if nHP > 0:
-                trans.append((_delta_cls(s, c, k, (1, -1), (4, 1)), nHP * lam))
+                trans.append((delta_in_class(s, c, k, (1, -1), (4, 1)), nHP * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (10, 1)), nHP * lam_d),
+                        (delta_in_class(s, c, k, (1, -1), (10, 1)), nHP * lam_d),
                     )
                 if mu_spawn > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, -1), (2, 1)), nHP * mu_spawn),
+                        (delta_in_class(s, c, k, (1, -1), (2, 1)), nHP * mu_spawn),
                     )
             if nHS > 0:
-                trans.append((_delta_cls(s, c, k, (2, -1), (5, 1)), nHS * lam))
+                trans.append((delta_in_class(s, c, k, (2, -1), (5, 1)), nHS * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (2, -1), (11, 1)), nHS * lam_d),
+                        (delta_in_class(s, c, k, (2, -1), (11, 1)), nHS * lam_d),
                     )
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (2, -1)), nHS * mu_sync),
+                        (delta_in_class(s, c, k, (0, 1), (2, -1)), nHS * mu_sync),
                     )
             if nFw > 0:
                 if not all_down and mu_timeout > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (3, -1), (4, 1)), nFw * mu_timeout),
+                        (delta_in_class(s, c, k, (3, -1), (4, 1)), nFw * mu_timeout),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (3, -1), (6, 1)), nFw * mu_rec),
+                        (delta_in_class(s, c, k, (3, -1), (6, 1)), nFw * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (3, -1), (9, 1)), nFw * lam_d),
+                        (delta_in_class(s, c, k, (3, -1), (9, 1)), nFw * lam_d),
                     )
             if nFeP > 0:
                 if mu_spawn > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (4, -1), (5, 1)), nFeP * mu_spawn),
+                        (delta_in_class(s, c, k, (4, -1), (5, 1)), nFeP * mu_spawn),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (4, -1), (7, 1)), nFeP * mu_rec),
+                        (delta_in_class(s, c, k, (4, -1), (7, 1)), nFeP * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (4, -1), (10, 1)), nFeP * lam_d),
+                        (delta_in_class(s, c, k, (4, -1), (10, 1)), nFeP * lam_d),
                     )
             if nFeS > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (5, -1)), nFeS * mu_sync),
+                        (delta_in_class(s, c, k, (0, 1), (5, -1)), nFeS * mu_sync),
                     )
                 if mu_rec > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (5, -1), (8, 1)), nFeS * mu_rec),
+                        (delta_in_class(s, c, k, (5, -1), (8, 1)), nFeS * mu_rec),
                     )
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (5, -1), (11, 1)), nFeS * lam_d),
+                        (delta_in_class(s, c, k, (5, -1), (11, 1)), nFeS * lam_d),
                     )
             if nL > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (0, 1), (6, -1)), nL * mu_sync),
+                        (delta_in_class(s, c, k, (0, 1), (6, -1)), nL * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (3, 1), (6, -1)), nL * lam))
+                trans.append((delta_in_class(s, c, k, (3, 1), (6, -1)), nL * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (6, -1), (9, 1)), nL * lam_d),
+                        (delta_in_class(s, c, k, (6, -1), (9, 1)), nL * lam_d),
                     )
             if nLP > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, 1), (7, -1)), nLP * mu_sync),
+                        (delta_in_class(s, c, k, (1, 1), (7, -1)), nLP * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (4, 1), (7, -1)), nLP * lam))
+                trans.append((delta_in_class(s, c, k, (4, 1), (7, -1)), nLP * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (7, -1), (10, 1)), nLP * lam_d),
+                        (delta_in_class(s, c, k, (7, -1), (10, 1)), nLP * lam_d),
                     )
                 if mu_spawn > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (7, -1), (8, 1)), nLP * mu_spawn),
+                        (delta_in_class(s, c, k, (7, -1), (8, 1)), nLP * mu_spawn),
                     )
             if nLS > 0:
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (1, 1), (8, -1)), nLS * mu_sync),
+                        (delta_in_class(s, c, k, (1, 1), (8, -1)), nLS * mu_sync),
                     )
-                trans.append((_delta_cls(s, c, k, (5, 1), (8, -1)), nLS * lam))
+                trans.append((delta_in_class(s, c, k, (5, 1), (8, -1)), nLS * lam))
                 if lam_d > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (8, -1), (11, 1)), nLS * lam_d),
+                        (delta_in_class(s, c, k, (8, -1), (11, 1)), nLS * lam_d),
                     )
                 if mu_sync > 0:
                     trans.append(
-                        (_delta_cls(s, c, k, (6, 1), (8, -1)), nLS * mu_sync),
+                        (delta_in_class(s, c, k, (6, 1), (8, -1)), nLS * mu_sync),
                     )
             if nDw > 0 and mu_timeout > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (9, -1), (10, 1)), nDw * mu_timeout),
+                    (delta_in_class(s, c, k, (9, -1), (10, 1)), nDw * mu_timeout),
                 )
             if nDeP > 0 and mu_spawn > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (10, -1), (11, 1)), nDeP * mu_spawn),
+                    (delta_in_class(s, c, k, (10, -1), (11, 1)), nDeP * mu_spawn),
                 )
             if nDeS > 0 and mu_sync > 0:
                 trans.append(
-                    (_delta_cls(s, c, k, (0, 1), (11, -1)), nDeS * mu_sync),
+                    (delta_in_class(s, c, k, (0, 1), (11, -1)), nDeS * mu_sync),
                 )
 
         if not has_leader and total_healthy >= q and mu_election > 0:
@@ -937,21 +914,21 @@ def _build_full(
                 rate_total = mu_election * contrib / total_healthy
                 if nH_c > 0:
                     r = rate_total * nH_c / contrib
-                    new = list(_delta_cls(s, c, k, (0, -1)))
+                    new = list(delta_in_class(s, c, k, (0, -1)))
                     new[HL] = 1
                     new[LC] = c
                     new[LP] = 0
                     trans.append((tuple(new), r))
                 if nHP_c > 0:
                     r = rate_total * nHP_c / contrib
-                    new = list(_delta_cls(s, c, k, (1, -1)))
+                    new = list(delta_in_class(s, c, k, (1, -1)))
                     new[HL] = 1
                     new[LC] = c
                     new[LP] = 1
                     trans.append((tuple(new), r))
                 if nHS_c > 0:
                     r = rate_total * nHS_c / contrib
-                    new = list(_delta_cls(s, c, k, (2, -1)))
+                    new = list(delta_in_class(s, c, k, (2, -1)))
                     new[HL] = 1
                     new[LC] = c
                     new[LP] = 2
@@ -961,9 +938,9 @@ def _build_full(
 
     def liveness(s: tuple[int, ...]) -> bool:
         has_leader = s[HL]
-        total_H = _total_per_node_state(s, 0, C, k) + has_leader
-        total_HP = _total_per_node_state(s, 1, C, k)
-        total_HS = _total_per_node_state(s, 2, C, k)
+        total_H = total_per_node_state(s, 0, C, k) + has_leader
+        total_HP = total_per_node_state(s, 1, C, k)
+        total_HS = total_per_node_state(s, 2, C, k)
         return has_leader == 1 and (total_H + total_HP + total_HS) >= q
 
     initial = _initial_with_leader(classes, k, TRAILING)
