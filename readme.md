@@ -53,9 +53,15 @@ pip install -e ".[cuda12]"
 ```
 
 Then choose a solver backend with `POWDER_MARKOV_SOLVER=scipy|cupy|auto` or the
-`backend=` argument on Markov solver functions. `auto` falls back to SciPy when
-CuPy or CUDA is unavailable. This does not accelerate sparse solves on Apple
-GPUs; macOS laptop runs continue to use the SciPy CPU path.
+`backend=` argument on Markov solver functions. The SciPy backend uses sparse
+direct solves; the CuPy backend uses GPU GMRES and fails if it does not
+converge. `auto` falls back to SciPy when CuPy or CUDA is unavailable. This
+does not accelerate sparse solves on Apple GPUs; macOS laptop runs continue to
+use the SciPy CPU path.
+
+CuPy GMRES can be tuned with `POWDER_MARKOV_CUPY_GMRES_RTOL`,
+`POWDER_MARKOV_CUPY_GMRES_ATOL`, `POWDER_MARKOV_CUPY_GMRES_RESTART`, and
+`POWDER_MARKOV_CUPY_GMRES_MAXITER`.
 
 ### Running notebooks
 

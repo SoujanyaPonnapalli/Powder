@@ -29,6 +29,10 @@ _logger = logging.getLogger(__name__)
 # genuine numerical breakdowns.
 DEFAULT_RESIDUAL_THRESHOLD = 1e-8
 SOLVER_BACKEND_ENV = "POWDER_MARKOV_SOLVER"
+CUPY_GMRES_RTOL_ENV = "POWDER_MARKOV_CUPY_GMRES_RTOL"
+CUPY_GMRES_ATOL_ENV = "POWDER_MARKOV_CUPY_GMRES_ATOL"
+CUPY_GMRES_RESTART_ENV = "POWDER_MARKOV_CUPY_GMRES_RESTART"
+CUPY_GMRES_MAXITER_ENV = "POWDER_MARKOV_CUPY_GMRES_MAXITER"
 SparseSolverBackend = Literal["scipy", "cupy", "auto"]
 ResolvedSparseSolverBackend = Literal["scipy", "cupy"]
 
@@ -93,6 +97,64 @@ def resolve_sparse_solver_backend(
     return "cupy"
 
 
+def _float_from_env(name: str, default: float) -> float:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a float; got {value!r}") from exc
+
+
+def _optional_int_from_env(name: str) -> int | None:
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        return None
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer; got {value!r}") from exc
+    if parsed <= 0:
+        raise ValueError(f"{name} must be positive; got {parsed}")
+    return parsed
+
+
+def _cupy_gmres_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+) -> np.ndarray:
+    cp, cpsparse, cpsplinalg = _load_cupy_sparse_modules()
+    A_gpu = cpsparse.csr_matrix(A)
+    b_gpu = cp.asarray(b, dtype=A_gpu.dtype)
+    rtol = _float_from_env(CUPY_GMRES_RTOL_ENV, 1e-10)
+    atol = _float_from_env(CUPY_GMRES_ATOL_ENV, 0.0)
+    restart = _optional_int_from_env(CUPY_GMRES_RESTART_ENV)
+    maxiter = _optional_int_from_env(CUPY_GMRES_MAXITER_ENV)
+
+    try:
+        x_gpu, info = cpsplinalg.gmres(
+            A_gpu,
+            b_gpu,
+            rtol=rtol,
+            atol=atol,
+            restart=restart,
+            maxiter=maxiter,
+        )
+    except NotImplementedError as exc:  # pragma: no cover - depends on CUDA library build
+        raise SparseSolverUnavailable(
+            "CuPy GMRES sparse solver is not available in this CUDA installation"
+        ) from exc
+
+    if info != 0:
+        raise RuntimeError(
+            "CuPy GMRES sparse solve did not converge "
+            f"(info={info}, rtol={rtol:g}, atol={atol:g}, "
+            f"restart={restart}, maxiter={maxiter}, shape={A.shape}, nnz={A.nnz})"
+        )
+    return np.asarray(cp.asnumpy(x_gpu), dtype=np.float64)
+
+
 def _sparse_solve(
     A: sparse.spmatrix,
     b: np.ndarray,
@@ -103,16 +165,7 @@ def _sparse_solve(
     if selected == "scipy":
         return np.asarray(splinalg.spsolve(A, b), dtype=np.float64)
 
-    cp, cpsparse, cpsplinalg = _load_cupy_sparse_modules()
-    A_gpu = cpsparse.csr_matrix(A)
-    b_gpu = cp.asarray(b, dtype=A_gpu.dtype)
-    try:
-        x_gpu = cpsplinalg.spsolve(A_gpu, b_gpu)
-    except NotImplementedError as exc:  # pragma: no cover - depends on CUDA library build
-        raise SparseSolverUnavailable(
-            "CuPy sparse direct solver is not available in this CUDA installation"
-        ) from exc
-    return np.asarray(cp.asnumpy(x_gpu), dtype=np.float64)
+    return _cupy_gmres_solve(A, b)
 
 
 @dataclass(frozen=True)
@@ -167,8 +220,9 @@ def steady_state(
     """Compute the steady-state distribution pi with pi @ Q = 0, sum(pi)=1.
 
     Replaces the last row of Q^T with the normalization constraint and
-    solves the resulting linear system. Uses scipy's sparse direct solver.
-    After the solve, the residual ``pi @ Q`` is measured and a warning is
+    solves the resulting linear system. The SciPy backend uses a sparse
+    direct solver; the CuPy backend uses GMRES on the GPU. After the solve,
+    the residual ``pi @ Q`` is measured and a warning is
     logged if any component exceeds ``residual_threshold``. The returned
     vector is renormalized to ``sum(pi) == 1`` and clipped to be
     nonnegative.

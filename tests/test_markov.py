@@ -1,5 +1,7 @@
 """Tests for the Markov model primitives and absorbing-state properties."""
 
+from types import SimpleNamespace
+
 import numpy as np
 import pytest
 from scipy import sparse
@@ -91,6 +93,45 @@ def test_explicit_cupy_backend_reports_unavailable(monkeypatch):
     monkeypatch.setattr(markov_solver_module, "_load_cupy_sparse_modules", unavailable)
     with pytest.raises(SparseSolverUnavailable):
         resolve_sparse_solver_backend("cupy")
+
+
+def _fake_cupy_modules(*, info: int = 0):
+    def gmres(A, b, **_kwargs):
+        if info != 0:
+            return np.zeros_like(b), info
+        return np.linalg.solve(A.toarray(), b), 0
+
+    cp = SimpleNamespace(
+        asarray=lambda value, dtype=None: np.asarray(value, dtype=dtype),
+        asnumpy=lambda value: np.asarray(value),
+    )
+    cpsparse = SimpleNamespace(csr_matrix=lambda value: value.tocsr())
+    cpsplinalg = SimpleNamespace(gmres=gmres)
+    return cp, cpsparse, cpsplinalg
+
+
+def test_cupy_backend_uses_gmres(monkeypatch):
+    monkeypatch.setattr(
+        markov_solver_module,
+        "_load_cupy_sparse_modules",
+        lambda: _fake_cupy_modules(),
+    )
+    A = sparse.csr_matrix(np.array([[3.0, 1.0], [1.0, 2.0]]))
+    b = np.array([1.0, 0.0])
+    x = markov_solver_module._sparse_solve(A, b, backend="cupy")
+    assert np.allclose(A @ x, b)
+
+
+def test_cupy_backend_reports_gmres_nonconvergence(monkeypatch):
+    monkeypatch.setattr(
+        markov_solver_module,
+        "_load_cupy_sparse_modules",
+        lambda: _fake_cupy_modules(info=7),
+    )
+    A = sparse.eye(2, format="csr")
+    b = np.ones(2)
+    with pytest.raises(RuntimeError, match="GMRES sparse solve did not converge"):
+        markov_solver_module._sparse_solve(A, b, backend="cupy")
 
 
 def test_steady_state_cupy_backend_matches_scipy_when_available():
