@@ -4,11 +4,15 @@ import numpy as np
 import pytest
 from scipy import sparse
 
+import powder.markov_solver as markov_solver_module
 from powder.markov import MarkovModel
 from powder.markov_solver import (
+    SparseSolverUnavailable,
     SteadyStateResidual,
     build_q_from_triples,
     compute_steady_state_residual,
+    mean_first_passage,
+    resolve_sparse_solver_backend,
     steady_state,
 )
 from powder.results import markov_analyze
@@ -50,6 +54,55 @@ def test_steady_state_two_state_chain():
     pi = steady_state(model)
     assert pi[0] == pytest.approx(0.75)
     assert pi[1] == pytest.approx(0.25)
+
+
+def test_steady_state_explicit_scipy_backend():
+    model = _toy_two_state_model()
+    pi = steady_state(model, backend="scipy")
+    assert pi[0] == pytest.approx(0.75)
+    assert pi[1] == pytest.approx(0.25)
+
+
+def test_mean_first_passage_explicit_scipy_backend():
+    model = _toy_two_state_model()
+    mfp = mean_first_passage(model, [1], backend="scipy")
+    assert mfp[0] == pytest.approx(1.0)
+    assert mfp[1] == pytest.approx(0.0)
+
+
+def test_auto_backend_falls_back_to_scipy_when_cupy_unavailable(monkeypatch):
+    def unavailable():
+        raise SparseSolverUnavailable("no CUDA in test")
+
+    monkeypatch.delenv("POWDER_MARKOV_SOLVER", raising=False)
+    monkeypatch.setattr(markov_solver_module, "_load_cupy_sparse_modules", unavailable)
+    assert resolve_sparse_solver_backend("auto") == "scipy"
+
+    model = _toy_two_state_model()
+    pi = steady_state(model, backend="auto")
+    assert pi[0] == pytest.approx(0.75)
+    assert pi[1] == pytest.approx(0.25)
+
+
+def test_explicit_cupy_backend_reports_unavailable(monkeypatch):
+    def unavailable():
+        raise SparseSolverUnavailable("no CUDA in test")
+
+    monkeypatch.setattr(markov_solver_module, "_load_cupy_sparse_modules", unavailable)
+    with pytest.raises(SparseSolverUnavailable):
+        resolve_sparse_solver_backend("cupy")
+
+
+def test_steady_state_cupy_backend_matches_scipy_when_available():
+    try:
+        resolve_sparse_solver_backend("cupy")
+    except SparseSolverUnavailable as exc:
+        pytest.skip(f"CuPy/CUDA unavailable: {exc}")
+
+    model = _toy_two_state_model()
+    pi_cpu = steady_state(model, backend="scipy")
+    pi_gpu = steady_state(model, backend="cupy")
+    assert np.allclose(pi_gpu, pi_cpu, rtol=1e-10, atol=1e-12)
 
 
 # ---------------------------------------------------------------------------

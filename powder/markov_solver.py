@@ -10,7 +10,9 @@ is straightforward to port to GPU sparse kernels later.
 from __future__ import annotations
 
 import logging
+import os
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from scipy import sparse
@@ -26,6 +28,91 @@ _logger = logging.getLogger(__name__)
 # chains (e.g. very stiff failure/recovery rate ratios) while still flagging
 # genuine numerical breakdowns.
 DEFAULT_RESIDUAL_THRESHOLD = 1e-8
+SOLVER_BACKEND_ENV = "POWDER_MARKOV_SOLVER"
+SparseSolverBackend = Literal["scipy", "cupy", "auto"]
+ResolvedSparseSolverBackend = Literal["scipy", "cupy"]
+
+
+class SparseSolverUnavailable(RuntimeError):
+    """Raised when a requested sparse solver backend is unavailable."""
+
+
+def _validate_solver_backend(value: str) -> SparseSolverBackend:
+    if value not in {"scipy", "cupy", "auto"}:
+        raise ValueError(
+            f"Invalid sparse solver backend {value!r}; expected 'scipy', 'cupy', or 'auto'"
+        )
+    return value  # type: ignore[return-value]
+
+
+def _requested_solver_backend(backend: SparseSolverBackend) -> SparseSolverBackend:
+    backend = _validate_solver_backend(backend)
+    if backend != "auto":
+        return backend
+
+    env_backend = os.environ.get(SOLVER_BACKEND_ENV)
+    if env_backend:
+        return _validate_solver_backend(env_backend.strip().lower())
+    return backend
+
+
+def _load_cupy_sparse_modules():
+    try:
+        import cupy as cp
+        from cupyx.scipy import sparse as cpsparse
+        from cupyx.scipy.sparse import linalg as cpsplinalg
+    except Exception as exc:  # pragma: no cover - depends on optional CUDA install
+        raise SparseSolverUnavailable("CuPy sparse solver backend is not installed") from exc
+
+    try:
+        if cp.cuda.runtime.getDeviceCount() < 1:
+            raise SparseSolverUnavailable("CuPy sparse solver backend found no CUDA devices")
+    except SparseSolverUnavailable:
+        raise
+    except Exception as exc:  # pragma: no cover - depends on local CUDA driver state
+        raise SparseSolverUnavailable("CuPy sparse solver backend cannot access CUDA") from exc
+
+    return cp, cpsparse, cpsplinalg
+
+
+def resolve_sparse_solver_backend(
+    backend: SparseSolverBackend = "auto",
+) -> ResolvedSparseSolverBackend:
+    """Return the concrete sparse solver backend selected for this process."""
+    requested = _requested_solver_backend(backend)
+    if requested == "scipy":
+        return "scipy"
+    if requested == "cupy":
+        _load_cupy_sparse_modules()
+        return "cupy"
+
+    try:
+        _load_cupy_sparse_modules()
+    except SparseSolverUnavailable:
+        return "scipy"
+    return "cupy"
+
+
+def _sparse_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+    *,
+    backend: SparseSolverBackend = "auto",
+) -> np.ndarray:
+    selected = resolve_sparse_solver_backend(backend)
+    if selected == "scipy":
+        return np.asarray(splinalg.spsolve(A, b), dtype=np.float64)
+
+    cp, cpsparse, cpsplinalg = _load_cupy_sparse_modules()
+    A_gpu = cpsparse.csr_matrix(A)
+    b_gpu = cp.asarray(b, dtype=A_gpu.dtype)
+    try:
+        x_gpu = cpsplinalg.spsolve(A_gpu, b_gpu)
+    except NotImplementedError as exc:  # pragma: no cover - depends on CUDA library build
+        raise SparseSolverUnavailable(
+            "CuPy sparse direct solver is not available in this CUDA installation"
+        ) from exc
+    return np.asarray(cp.asnumpy(x_gpu), dtype=np.float64)
 
 
 @dataclass(frozen=True)
@@ -73,6 +160,7 @@ def compute_steady_state_residual(
 def steady_state(
     model: MarkovModel,
     *,
+    backend: SparseSolverBackend = "auto",
     residual_threshold: float = DEFAULT_RESIDUAL_THRESHOLD,
     return_residual: bool = False,
 ) -> np.ndarray | tuple[np.ndarray, SteadyStateResidual]:
@@ -87,6 +175,9 @@ def steady_state(
 
     Args:
         model: The :class:`MarkovModel` to solve.
+        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"cupy"`` for
+            CUDA, or ``"auto"`` to use ``POWDER_MARKOV_SOLVER`` and otherwise
+            fall back to SciPy when CUDA is unavailable.
         residual_threshold: If any residual component (balance,
             normalization, negativity) is strictly greater than this
             value, a warning is logged via the module logger. Pass
@@ -105,12 +196,13 @@ def steady_state(
     b = np.zeros(n, dtype=np.float64)
     b[-1] = 1.0
     try:
-        pi_raw = splinalg.spsolve(QT.tocsr(), b)
+        pi_raw = _sparse_solve(QT.tocsr(), b, backend=backend)
+    except SparseSolverUnavailable:
+        raise
     except RuntimeError as exc:
         raise RuntimeError(
             "Steady-state solve failed (likely absorbing state or reducible chain)"
         ) from exc
-    pi_raw = np.asarray(pi_raw, dtype=np.float64)
 
     residual = compute_steady_state_residual(model, pi_raw)
     if residual.worst > residual_threshold:
@@ -137,6 +229,8 @@ def steady_state(
 def mean_first_passage(
     model: MarkovModel,
     absorbing_state_ids: np.ndarray | list[int],
+    *,
+    backend: SparseSolverBackend = "auto",
 ) -> np.ndarray:
     """Mean first passage times to any state in absorbing_state_ids.
 
@@ -145,6 +239,13 @@ def mean_first_passage(
     truncated system Q_trunc @ t = -1 for the transient sub-matrix.
 
     Entries for absorbing states are 0.
+
+    Args:
+        model: The :class:`MarkovModel` to solve.
+        absorbing_state_ids: Target state IDs with zero first-passage time.
+        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"cupy"`` for
+            CUDA, or ``"auto"`` to use ``POWDER_MARKOV_SOLVER`` and otherwise
+            fall back to SciPy when CUDA is unavailable.
     """
     n = model.num_states
     absorbing = np.zeros(n, dtype=bool)
@@ -158,7 +259,7 @@ def mean_first_passage(
     transient_ids = np.flatnonzero(transient)
     Q_trunc = model.Q[transient_ids][:, transient_ids].tocsc()
     rhs = -np.ones(transient_ids.size, dtype=np.float64)
-    t_transient = splinalg.spsolve(Q_trunc, rhs)
+    t_transient = _sparse_solve(Q_trunc, rhs, backend=backend)
     result[transient_ids] = t_transient
     return result
 

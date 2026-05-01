@@ -6,13 +6,18 @@ exponent. Includes a heterogeneous sweep that varies the number of
 rate classes C in {1, 2, N//2, N} for each quality level.
 """
 
+import argparse
 import gc
 import time
 import tracemalloc
 
 import numpy as np
 
-from powder.markov_solver import steady_state
+from powder.markov_solver import (
+    SparseSolverBackend,
+    resolve_sparse_solver_backend,
+    steady_state,
+)
 from powder.scenario import QualityLevel, build_markov_model
 from powder.simulation import (
     Constant,
@@ -62,65 +67,89 @@ def _configs_with_classes(n: int, c: int) -> list[NodeConfig]:
     return out
 
 
-def bench(configs: list[NodeConfig], q: QualityLevel, reps: int = 2):
+def bench(
+    configs: list[NodeConfig],
+    q: QualityLevel,
+    *,
+    backend: SparseSolverBackend,
+    reps: int = 2,
+):
     t_builds, t_solves = [], []
+    residuals = []
     states = nnz = 0
     for _ in range(reps):
         gc.collect()
         t0 = time.perf_counter()
         model = build_markov_model(configs, PROTO, STRATEGY, q)
         t1 = time.perf_counter()
-        steady_state(model)
+        _, residual = steady_state(model, backend=backend, return_residual=True)
         t2 = time.perf_counter()
         t_builds.append(t1 - t0)
         t_solves.append(t2 - t1)
+        residuals.append(residual.worst)
         states, nnz = model.num_states, model.Q.nnz
 
     gc.collect()
     tracemalloc.start()
     model = build_markov_model(configs, PROTO, STRATEGY, q)
-    steady_state(model)
+    steady_state(model, backend=backend)
     _, peak = tracemalloc.get_traced_memory()
     tracemalloc.stop()
-    return states, nnz, min(t_builds), min(t_solves), peak
+    return states, nnz, min(t_builds), min(t_solves), peak, max(residuals)
 
 
 def _print_row(
-    quality_name: str, n: int, classes: int, states: int, nnz: int,
-    tb: float, ts: float, mem: float, scale: str,
+    quality_name: str,
+    solver_name: str,
+    n: int,
+    classes: int,
+    states: int,
+    nnz: int,
+    tb: float,
+    ts: float,
+    mem: float,
+    residual: float,
+    scale: str,
 ) -> None:
     print(
-        f"{quality_name:<22} {n:>3} {classes:>3} {states:>8} {nnz:>10} "
-        f"{tb*1000:>10.2f} {ts*1000:>10.2f} {mem/1e6:>9.2f} {scale:>12}",
+        f"{quality_name:<22} {solver_name:<6} {n:>3} {classes:>3} "
+        f"{states:>8} {nnz:>10} {tb*1000:>10.2f} {ts*1000:>10.2f} "
+        f"{mem/1e6:>9.2f} {residual:>10.2e} {scale:>12}",
         flush=True,
     )
 
 
 def _print_header() -> None:
     print(
-        f"{'Quality':<22} {'N':>3} {'C':>3} {'states':>8} {'nnz':>10} "
-        f"{'build ms':>10} {'solve ms':>10} {'peak MB':>9} {'scale':>12}",
+        f"{'Quality':<22} {'solver':<6} {'N':>3} {'C':>3} {'states':>8} "
+        f"{'nnz':>10} {'build ms':>10} {'solve ms':>10} {'peak MB':>9} "
+        f"{'residual':>10} {'scale':>12}",
         flush=True,
     )
 
 
-def run_homogeneous() -> None:
+def run_homogeneous(backend: SparseSolverBackend) -> None:
+    selected_backend = resolve_sparse_solver_backend(backend)
     print("=== Homogeneous sweep (C = 1) ===", flush=True)
     _print_header()
     for q in QualityLevel:
         prev_s = prev_t = None
         for n in range(3, 20):
             try:
-                s, z, tb, ts, mem = bench([CFG] * n, q)
+                s, z, tb, ts, mem, residual = bench(
+                    [CFG] * n, q, backend=backend,
+                )
             except MemoryError:
-                print(f"{q.name:<22} {n:>3}   1 OOM", flush=True)
+                print(f"{q.name:<22} {selected_backend:<6} {n:>3}   1 OOM", flush=True)
                 break
             if prev_s and ts > 1e-5 and prev_t > 1e-5:
                 exp = np.log(ts / prev_t) / np.log(s / prev_s)
                 scale = f"O(n^{exp:.2f})"
             else:
                 scale = "-"
-            _print_row(q.name, n, 1, s, z, tb, ts, mem, scale)
+            _print_row(
+                q.name, selected_backend, n, 1, s, z, tb, ts, mem, residual, scale,
+            )
             prev_s, prev_t = s, ts
             if ts + tb > PER_CONFIG_BUDGET_S:
                 break
@@ -137,7 +166,8 @@ def _class_schedule(n: int) -> list[int]:
     return out
 
 
-def run_heterogeneous() -> None:
+def run_heterogeneous(backend: SparseSolverBackend) -> None:
+    selected_backend = resolve_sparse_solver_backend(backend)
     print("=== Heterogeneous sweep (C in {1, 2, N/2, N}) ===", flush=True)
     _print_header()
     for q in QualityLevel:
@@ -145,11 +175,18 @@ def run_heterogeneous() -> None:
             for c in _class_schedule(n):
                 cfgs = _configs_with_classes(n, c)
                 try:
-                    s, z, tb, ts, mem = bench(cfgs, q)
+                    s, z, tb, ts, mem, residual = bench(
+                        cfgs, q, backend=backend,
+                    )
                 except MemoryError:
-                    print(f"{q.name:<22} {n:>3} {c:>3} OOM", flush=True)
+                    print(
+                        f"{q.name:<22} {selected_backend:<6} {n:>3} {c:>3} OOM",
+                        flush=True,
+                    )
                     continue
-                _print_row(q.name, n, c, s, z, tb, ts, mem, "-")
+                _print_row(
+                    q.name, selected_backend, n, c, s, z, tb, ts, mem, residual, "-",
+                )
                 if ts + tb > PER_CONFIG_BUDGET_S:
                     break
             print(flush=True)
@@ -157,9 +194,21 @@ def run_heterogeneous() -> None:
 
 
 def main() -> None:
-    run_homogeneous()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--solver",
+        choices=("scipy", "cupy", "auto"),
+        default="auto",
+        help="Sparse linear solver backend for steady-state solves.",
+    )
+    args = parser.parse_args()
+    backend: SparseSolverBackend = args.solver
+    selected_backend = resolve_sparse_solver_backend(backend)
+    print(f"Requested solver: {backend}; selected solver: {selected_backend}", flush=True)
+
+    run_homogeneous(backend)
     print(flush=True)
-    run_heterogeneous()
+    run_heterogeneous(backend)
 
 
 if __name__ == "__main__":

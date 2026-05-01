@@ -14,6 +14,8 @@ import numpy as np
 
 from .markov import MarkovModel
 from .markov_solver import (
+    SparseSolverBackend,
+    SparseSolverUnavailable,
     availability,
     expected_cost_per_second,
     mean_first_passage,
@@ -65,6 +67,8 @@ def markov_analyze(
     protocol: Protocol,
     strategy: ClusterStrategy,
     quality: QualityLevel = QualityLevel.SIMPLIFIED,
+    *,
+    backend: SparseSolverBackend = "auto",
 ) -> ClusterAnalysisResult:
     """One-call Markov analysis using MC's own configuration objects.
 
@@ -76,18 +80,20 @@ def markov_analyze(
         protocol: The consensus protocol.
         strategy: The cluster management strategy.
         quality: State-space fidelity level.
+        backend: Sparse solver backend for steady-state and first-passage solves.
 
     Returns:
         A ClusterAnalysisResult with Markov-derived metrics.
     """
     model = build_markov_model(node_configs, protocol, strategy, quality)
-    return analyze_model(model, quality=quality)
+    return analyze_model(model, quality=quality, backend=backend)
 
 
 def analyze_model(
     model: MarkovModel,
     *,
     quality: QualityLevel | None = None,
+    backend: SparseSolverBackend = "auto",
 ) -> ClusterAnalysisResult:
     """Compute availability, MTTF, and expected cost for a prebuilt model.
 
@@ -96,7 +102,9 @@ def analyze_model(
     re-running BFS state enumeration.
     """
     try:
-        pi = steady_state(model)
+        pi = steady_state(model, backend=backend)
+    except SparseSolverUnavailable:
+        raise
     except RuntimeError:
         pi = None
 
@@ -116,10 +124,12 @@ def analyze_model(
     dead_ids = np.flatnonzero(~model.live_mask)
     if dead_ids.size > 0 and dead_ids.size < model.num_states:
         try:
-            mfp = mean_first_passage(model, dead_ids.tolist())
+            mfp = mean_first_passage(model, dead_ids.tolist(), backend=backend)
             initial = model.initial_state_id
             value = float(mfp[initial])
             mttf = value if value > 0 else None
+        except SparseSolverUnavailable:
+            raise
         except RuntimeError:
             pass
 

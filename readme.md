@@ -43,6 +43,20 @@ pip install -e .
 
 This makes the `powder` package importable from anywhere (useful for running tests or scripts outside of notebooks). The notebooks work without this step since they add the project root to `sys.path` automatically.
 
+### Optional CUDA sparse solver
+
+Markov steady-state and first-passage solves use SciPy by default. On a machine
+with an NVIDIA CUDA GPU, install the optional CuPy backend:
+
+```
+pip install -e ".[cuda12]"
+```
+
+Then choose a solver backend with `POWDER_MARKOV_SOLVER=scipy|cupy|auto` or the
+`backend=` argument on Markov solver functions. `auto` falls back to SciPy when
+CuPy or CUDA is unavailable. This does not accelerate sparse solves on Apple
+GPUs; macOS laptop runs continue to use the SciPy CPU path.
+
 ### Running notebooks
 
 From the repo root:
