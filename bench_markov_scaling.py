@@ -197,7 +197,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--solver",
-        choices=("scipy", "cupy", "auto"),
+        choices=("scipy", "cupy", "pardiso", "auto"),
         default="auto",
         help="Sparse linear solver backend for steady-state solves.",
     )

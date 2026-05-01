@@ -95,6 +95,34 @@ def test_explicit_cupy_backend_reports_unavailable(monkeypatch):
         resolve_sparse_solver_backend("cupy")
 
 
+def test_explicit_pardiso_backend_reports_unavailable(monkeypatch):
+    def unavailable():
+        raise SparseSolverUnavailable("no Pardiso in test")
+
+    monkeypatch.setattr(markov_solver_module, "_load_pardiso_spsolve", unavailable)
+    with pytest.raises(SparseSolverUnavailable):
+        resolve_sparse_solver_backend("pardiso")
+
+
+def test_pardiso_backend_uses_loaded_spsolve(monkeypatch):
+    calls = []
+
+    def fake_spsolve(A, b):
+        calls.append(A.getformat())
+        return np.linalg.solve(A.toarray(), b)
+
+    monkeypatch.setattr(
+        markov_solver_module,
+        "_load_pardiso_spsolve",
+        lambda: fake_spsolve,
+    )
+    A = sparse.csc_matrix(np.array([[4.0, 1.0], [2.0, 3.0]]))
+    b = np.array([1.0, 2.0])
+    x = markov_solver_module._sparse_solve(A, b, backend="pardiso")
+    assert np.allclose(A @ x, b)
+    assert calls == ["csr"]
+
+
 def _fake_cupy_modules(*, info: int = 0):
     def gmres(A, b, **_kwargs):
         if info != 0:

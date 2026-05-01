@@ -33,8 +33,8 @@ CUPY_GMRES_RTOL_ENV = "POWDER_MARKOV_CUPY_GMRES_RTOL"
 CUPY_GMRES_ATOL_ENV = "POWDER_MARKOV_CUPY_GMRES_ATOL"
 CUPY_GMRES_RESTART_ENV = "POWDER_MARKOV_CUPY_GMRES_RESTART"
 CUPY_GMRES_MAXITER_ENV = "POWDER_MARKOV_CUPY_GMRES_MAXITER"
-SparseSolverBackend = Literal["scipy", "cupy", "auto"]
-ResolvedSparseSolverBackend = Literal["scipy", "cupy"]
+SparseSolverBackend = Literal["scipy", "cupy", "pardiso", "auto"]
+ResolvedSparseSolverBackend = Literal["scipy", "cupy", "pardiso"]
 
 
 class SparseSolverUnavailable(RuntimeError):
@@ -42,9 +42,10 @@ class SparseSolverUnavailable(RuntimeError):
 
 
 def _validate_solver_backend(value: str) -> SparseSolverBackend:
-    if value not in {"scipy", "cupy", "auto"}:
+    if value not in {"scipy", "cupy", "pardiso", "auto"}:
         raise ValueError(
-            f"Invalid sparse solver backend {value!r}; expected 'scipy', 'cupy', or 'auto'"
+            f"Invalid sparse solver backend {value!r}; "
+            "expected 'scipy', 'cupy', 'pardiso', or 'auto'"
         )
     return value  # type: ignore[return-value]
 
@@ -79,6 +80,16 @@ def _load_cupy_sparse_modules():
     return cp, cpsparse, cpsplinalg
 
 
+def _load_pardiso_spsolve():
+    try:
+        from pypardiso import spsolve
+    except Exception as exc:  # pragma: no cover - depends on optional MKL install
+        raise SparseSolverUnavailable(
+            "Pardiso sparse solver backend is not installed"
+        ) from exc
+    return spsolve
+
+
 def resolve_sparse_solver_backend(
     backend: SparseSolverBackend = "auto",
 ) -> ResolvedSparseSolverBackend:
@@ -89,6 +100,9 @@ def resolve_sparse_solver_backend(
     if requested == "cupy":
         _load_cupy_sparse_modules()
         return "cupy"
+    if requested == "pardiso":
+        _load_pardiso_spsolve()
+        return "pardiso"
 
     try:
         _load_cupy_sparse_modules()
@@ -155,6 +169,14 @@ def _cupy_gmres_solve(
     return np.asarray(cp.asnumpy(x_gpu), dtype=np.float64)
 
 
+def _pardiso_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+) -> np.ndarray:
+    spsolve = _load_pardiso_spsolve()
+    return np.asarray(spsolve(A.tocsr(), b), dtype=np.float64)
+
+
 def _sparse_solve(
     A: sparse.spmatrix,
     b: np.ndarray,
@@ -164,6 +186,8 @@ def _sparse_solve(
     selected = resolve_sparse_solver_backend(backend)
     if selected == "scipy":
         return np.asarray(splinalg.spsolve(A, b), dtype=np.float64)
+    if selected == "pardiso":
+        return _pardiso_solve(A, b)
 
     return _cupy_gmres_solve(A, b)
 
@@ -221,17 +245,19 @@ def steady_state(
 
     Replaces the last row of Q^T with the normalization constraint and
     solves the resulting linear system. The SciPy backend uses a sparse
-    direct solver; the CuPy backend uses GMRES on the GPU. After the solve,
-    the residual ``pi @ Q`` is measured and a warning is
+    direct solver, the Pardiso backend uses MKL Pardiso, and the CuPy backend
+    uses GMRES on the GPU. After the solve, the residual ``pi @ Q`` is measured
+    and a warning is
     logged if any component exceeds ``residual_threshold``. The returned
     vector is renormalized to ``sum(pi) == 1`` and clipped to be
     nonnegative.
 
     Args:
         model: The :class:`MarkovModel` to solve.
-        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"cupy"`` for
-            CUDA, or ``"auto"`` to use ``POWDER_MARKOV_SOLVER`` and otherwise
-            fall back to SciPy when CUDA is unavailable.
+        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"pardiso"`` for
+            multithreaded MKL Pardiso, ``"cupy"`` for CUDA, or ``"auto"`` to
+            use ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when
+            CUDA is unavailable.
         residual_threshold: If any residual component (balance,
             normalization, negativity) is strictly greater than this
             value, a warning is logged via the module logger. Pass
@@ -297,9 +323,10 @@ def mean_first_passage(
     Args:
         model: The :class:`MarkovModel` to solve.
         absorbing_state_ids: Target state IDs with zero first-passage time.
-        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"cupy"`` for
-            CUDA, or ``"auto"`` to use ``POWDER_MARKOV_SOLVER`` and otherwise
-            fall back to SciPy when CUDA is unavailable.
+        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"pardiso"`` for
+            multithreaded MKL Pardiso, ``"cupy"`` for CUDA, or ``"auto"`` to
+            use ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when
+            CUDA is unavailable.
     """
     n = model.num_states
     absorbing = np.zeros(n, dtype=bool)
