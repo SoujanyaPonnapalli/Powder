@@ -5,13 +5,13 @@ classes. Each class is generated from a deterministic point in [0, 1] and
 mapped through these annualized fault-rate / price curves:
 
     T(x) = 15(1-x)^2 + 4 + 20x^6
-    D(x) = 0.0005 + 0.05x^15
-    P(x) = 1000 - (10T(x) + 5000D(x))
+    D(x) = 0.5 + 0.5x^15
+    P(x) = 1000 - (10T(x) + 500D(x))
 
 SIMPLIFIED is run for every scenario. FULL is used as the accuracy reference
 when its estimated state space is small enough to build safely; otherwise the
 row reports a skipped reference. Every matrix solve runs in a subprocess with
-a 10-second wall-clock budget so one large sparse solve cannot hang the run.
+a 60-second wall-clock budget so one large sparse solve cannot hang the run.
 
 Output:
     notebooks/markov_simplified_bathtub_analysis.csv
@@ -63,7 +63,7 @@ SPAWN_MEAN_S = 60.0
 FAILURE_TIMEOUT_S = 5.0 * 60.0
 ELECTION_MEAN_S = 5.0
 
-SOLVE_TIMEOUT_S = 10.0
+SOLVE_TIMEOUT_S = 60.0
 MAX_FULL_STATE_ESTIMATE = 1_000_000
 OUTPUT_CSV = Path(__file__).resolve().with_suffix(".csv")
 
@@ -134,13 +134,13 @@ def _transient_failures_per_year(x: float) -> float:
 
 
 def _dataloss_failures_per_year(x: float) -> float:
-    return 0.0005 + 0.05 * x**15
+    return 0.5 + 0.5 * x**15
 
 
 def _cost_per_year(x: float) -> float:
     t = _transient_failures_per_year(x)
     d = _dataloss_failures_per_year(x)
-    return 1000.0 - (10.0 * t + 5000.0 * d)
+    return 1000.0 - (10.0 * t + 500.0 * d)
 
 
 def _machine_classes(num_classes: int) -> tuple[MachineClass, ...]:
