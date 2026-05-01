@@ -52,12 +52,13 @@ with an NVIDIA CUDA GPU, install the optional CuPy backend:
 pip install -e ".[cuda12]"
 ```
 
-Then choose a solver backend with `POWDER_MARKOV_SOLVER=scipy|cupy|pardiso|auto`
-or the `backend=` argument on Markov solver functions. The SciPy backend uses
-sparse direct solves; the CuPy backend uses GPU GMRES and fails if it does not
-converge. `auto` falls back to SciPy when CuPy or CUDA is unavailable. This does
-not accelerate sparse solves on Apple GPUs; macOS laptop runs continue to use
-the SciPy CPU path.
+Then choose a solver backend with
+`POWDER_MARKOV_SOLVER=scipy|cupy|cudss|pardiso|auto` or the `backend=` argument
+on Markov solver functions. The SciPy backend uses sparse direct solves; the
+CuPy backend uses GPU GMRES and fails if it does not converge; the cuDSS backend
+uses NVIDIA's CUDA direct sparse solver. `auto` falls back to SciPy when CuPy or
+CUDA is unavailable. This does not accelerate sparse solves on Apple GPUs; macOS
+laptop runs continue to use the SciPy CPU path.
 
 CuPy GMRES can be tuned with `POWDER_MARKOV_CUPY_GMRES_RTOL`,
 `POWDER_MARKOV_CUPY_GMRES_ATOL`, `POWDER_MARKOV_CUPY_GMRES_RESTART`, and
@@ -73,6 +74,14 @@ pip install -e ".[mkl]"
 Then run with `POWDER_MARKOV_SOLVER=pardiso` or `--solver pardiso`. Control CPU
 threading with environment variables such as `MKL_NUM_THREADS` and
 `OMP_NUM_THREADS`.
+
+For NVIDIA cuDSS, install the optional nvmath backend:
+
+```
+pip install -e ".[cudss]"
+```
+
+Then run with `POWDER_MARKOV_SOLVER=cudss` or `--solver cudss`.
 
 ### Running notebooks
 

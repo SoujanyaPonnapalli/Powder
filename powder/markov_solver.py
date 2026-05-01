@@ -33,8 +33,8 @@ CUPY_GMRES_RTOL_ENV = "POWDER_MARKOV_CUPY_GMRES_RTOL"
 CUPY_GMRES_ATOL_ENV = "POWDER_MARKOV_CUPY_GMRES_ATOL"
 CUPY_GMRES_RESTART_ENV = "POWDER_MARKOV_CUPY_GMRES_RESTART"
 CUPY_GMRES_MAXITER_ENV = "POWDER_MARKOV_CUPY_GMRES_MAXITER"
-SparseSolverBackend = Literal["scipy", "cupy", "pardiso", "auto"]
-ResolvedSparseSolverBackend = Literal["scipy", "cupy", "pardiso"]
+SparseSolverBackend = Literal["scipy", "cupy", "cudss", "pardiso", "auto"]
+ResolvedSparseSolverBackend = Literal["scipy", "cupy", "cudss", "pardiso"]
 
 
 class SparseSolverUnavailable(RuntimeError):
@@ -42,10 +42,10 @@ class SparseSolverUnavailable(RuntimeError):
 
 
 def _validate_solver_backend(value: str) -> SparseSolverBackend:
-    if value not in {"scipy", "cupy", "pardiso", "auto"}:
+    if value not in {"scipy", "cupy", "cudss", "pardiso", "auto"}:
         raise ValueError(
             f"Invalid sparse solver backend {value!r}; "
-            "expected 'scipy', 'cupy', 'pardiso', or 'auto'"
+            "expected 'scipy', 'cupy', 'cudss', 'pardiso', or 'auto'"
         )
     return value  # type: ignore[return-value]
 
@@ -90,6 +90,22 @@ def _load_pardiso_spsolve():
     return spsolve
 
 
+def _load_cudss_direct_solver():
+    try:
+        import nvmath
+    except Exception as exc:  # pragma: no cover - depends on optional CUDA install
+        raise SparseSolverUnavailable(
+            "cuDSS sparse solver backend is not installed"
+        ) from exc
+
+    try:
+        return nvmath.sparse.advanced.direct_solver
+    except AttributeError as exc:  # pragma: no cover - depends on nvmath version
+        raise SparseSolverUnavailable(
+            "cuDSS direct solver API is not available in this nvmath installation"
+        ) from exc
+
+
 def resolve_sparse_solver_backend(
     backend: SparseSolverBackend = "auto",
 ) -> ResolvedSparseSolverBackend:
@@ -100,6 +116,9 @@ def resolve_sparse_solver_backend(
     if requested == "cupy":
         _load_cupy_sparse_modules()
         return "cupy"
+    if requested == "cudss":
+        _load_cudss_direct_solver()
+        return "cudss"
     if requested == "pardiso":
         _load_pardiso_spsolve()
         return "pardiso"
@@ -177,6 +196,16 @@ def _pardiso_solve(
     return np.asarray(spsolve(A.tocsr(), b), dtype=np.float64)
 
 
+def _cudss_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+) -> np.ndarray:
+    direct_solver = _load_cudss_direct_solver()
+    rhs = np.asarray(b, dtype=np.float64)
+    result = direct_solver(A.tocsr(), rhs)
+    return np.asarray(result, dtype=np.float64)
+
+
 def _sparse_solve(
     A: sparse.spmatrix,
     b: np.ndarray,
@@ -188,6 +217,8 @@ def _sparse_solve(
         return np.asarray(splinalg.spsolve(A, b), dtype=np.float64)
     if selected == "pardiso":
         return _pardiso_solve(A, b)
+    if selected == "cudss":
+        return _cudss_solve(A, b)
 
     return _cupy_gmres_solve(A, b)
 
@@ -245,9 +276,9 @@ def steady_state(
 
     Replaces the last row of Q^T with the normalization constraint and
     solves the resulting linear system. The SciPy backend uses a sparse
-    direct solver, the Pardiso backend uses MKL Pardiso, and the CuPy backend
-    uses GMRES on the GPU. After the solve, the residual ``pi @ Q`` is measured
-    and a warning is
+    direct solver, the Pardiso backend uses MKL Pardiso, the cuDSS backend uses
+    NVIDIA's CUDA direct sparse solver, and the CuPy backend uses GMRES on the
+    GPU. After the solve, the residual ``pi @ Q`` is measured and a warning is
     logged if any component exceeds ``residual_threshold``. The returned
     vector is renormalized to ``sum(pi) == 1`` and clipped to be
     nonnegative.
@@ -255,9 +286,10 @@ def steady_state(
     Args:
         model: The :class:`MarkovModel` to solve.
         backend: Sparse solver backend: ``"scipy"`` for CPU, ``"pardiso"`` for
-            multithreaded MKL Pardiso, ``"cupy"`` for CUDA, or ``"auto"`` to
-            use ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when
-            CUDA is unavailable.
+            multithreaded MKL Pardiso, ``"cudss"`` for NVIDIA cuDSS,
+            ``"cupy"`` for CUDA GMRES, or ``"auto"`` to use
+            ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when CUDA
+            is unavailable.
         residual_threshold: If any residual component (balance,
             normalization, negativity) is strictly greater than this
             value, a warning is logged via the module logger. Pass
@@ -324,9 +356,10 @@ def mean_first_passage(
         model: The :class:`MarkovModel` to solve.
         absorbing_state_ids: Target state IDs with zero first-passage time.
         backend: Sparse solver backend: ``"scipy"`` for CPU, ``"pardiso"`` for
-            multithreaded MKL Pardiso, ``"cupy"`` for CUDA, or ``"auto"`` to
-            use ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when
-            CUDA is unavailable.
+            multithreaded MKL Pardiso, ``"cudss"`` for NVIDIA cuDSS,
+            ``"cupy"`` for CUDA GMRES, or ``"auto"`` to use
+            ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when CUDA
+            is unavailable.
     """
     n = model.num_states
     absorbing = np.zeros(n, dtype=bool)
