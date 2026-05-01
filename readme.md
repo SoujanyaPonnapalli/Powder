@@ -82,6 +82,9 @@ pip install -e ".[cudss]"
 ```
 
 Then run with `POWDER_MARKOV_SOLVER=cudss` or `--solver cudss`.
+If cuDSS warns that no multithreading interface library was specified, set
+`POWDER_MARKOV_CUDSS_MULTITHREADING_LIB` to a supported OpenMP runtime such as
+`libiomp5.so`.
 
 ### Running notebooks
 

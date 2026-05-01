@@ -135,20 +135,33 @@ def test_explicit_cudss_backend_reports_unavailable(monkeypatch):
 def test_cudss_backend_uses_loaded_direct_solver(monkeypatch):
     calls = []
 
-    def fake_direct_solver(A, b):
+    class FakeDirectSolverOptions:
+        def __init__(self, *, multithreading_lib):
+            self.multithreading_lib = multithreading_lib
+
+    fake_nvmath = SimpleNamespace(
+        sparse=SimpleNamespace(
+            advanced=SimpleNamespace(DirectSolverOptions=FakeDirectSolverOptions),
+        ),
+    )
+
+    def fake_direct_solver(A, b, *, options=None):
         calls.append(A.getformat())
+        if options is not None:
+            calls.append(options.multithreading_lib)
         return np.linalg.solve(A.toarray(), b)
 
     monkeypatch.setattr(
         markov_solver_module,
         "_load_cudss_direct_solver",
-        lambda: fake_direct_solver,
+        lambda: (fake_nvmath, fake_direct_solver),
     )
+    monkeypatch.setenv("POWDER_MARKOV_CUDSS_MULTITHREADING_LIB", "/tmp/libiomp5.so")
     A = sparse.csc_matrix(np.array([[5.0, 1.0], [1.0, 4.0]]))
     b = np.array([2.0, 3.0])
     x = markov_solver_module._sparse_solve(A, b, backend="cudss")
     assert np.allclose(A @ x, b)
-    assert calls == ["csr"]
+    assert calls == ["csr", "/tmp/libiomp5.so"]
 
 
 def _fake_cupy_modules(*, info: int = 0):

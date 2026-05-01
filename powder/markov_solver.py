@@ -33,6 +33,7 @@ CUPY_GMRES_RTOL_ENV = "POWDER_MARKOV_CUPY_GMRES_RTOL"
 CUPY_GMRES_ATOL_ENV = "POWDER_MARKOV_CUPY_GMRES_ATOL"
 CUPY_GMRES_RESTART_ENV = "POWDER_MARKOV_CUPY_GMRES_RESTART"
 CUPY_GMRES_MAXITER_ENV = "POWDER_MARKOV_CUPY_GMRES_MAXITER"
+CUDSS_MULTITHREADING_LIB_ENV = "POWDER_MARKOV_CUDSS_MULTITHREADING_LIB"
 SparseSolverBackend = Literal["scipy", "cupy", "cudss", "pardiso", "auto"]
 ResolvedSparseSolverBackend = Literal["scipy", "cupy", "cudss", "pardiso"]
 
@@ -99,7 +100,7 @@ def _load_cudss_direct_solver():
         ) from exc
 
     try:
-        return nvmath.sparse.advanced.direct_solver
+        return nvmath, nvmath.sparse.advanced.direct_solver
     except AttributeError as exc:  # pragma: no cover - depends on nvmath version
         raise SparseSolverUnavailable(
             "cuDSS direct solver API is not available in this nvmath installation"
@@ -200,9 +201,15 @@ def _cudss_solve(
     A: sparse.spmatrix,
     b: np.ndarray,
 ) -> np.ndarray:
-    direct_solver = _load_cudss_direct_solver()
+    nvmath, direct_solver = _load_cudss_direct_solver()
     rhs = np.asarray(b, dtype=np.float64)
-    result = direct_solver(A.tocsr(), rhs)
+    options = None
+    multithreading_lib = os.environ.get(CUDSS_MULTITHREADING_LIB_ENV)
+    if multithreading_lib:
+        options = nvmath.sparse.advanced.DirectSolverOptions(
+            multithreading_lib=multithreading_lib,
+        )
+    result = direct_solver(A.tocsr(), rhs, options=options)
     return np.asarray(result, dtype=np.float64)
 
 
