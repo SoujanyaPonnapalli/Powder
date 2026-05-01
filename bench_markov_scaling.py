@@ -72,7 +72,7 @@ def bench(
     q: QualityLevel,
     *,
     backend: SparseSolverBackend,
-    reps: int = 2,
+    reps: int = 1,
 ):
     t_builds, t_solves = [], []
     residuals = []
