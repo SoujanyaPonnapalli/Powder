@@ -15,9 +15,10 @@ Heterogeneity:
     tuples; the trailing part holds leader fields. ``leader_class``
     records which rate class the current leader belongs to, so leader
     failure / data-loss / orphan-completion transitions use the
-    correct rates. Election fires at rate ``mu_election`` split across
-    classes in proportion to their healthy counts so the total
-    no-leader exit rate stays ``mu_election`` at ``C = 1``.
+    correct rates. Election fires as one cluster-level clock at rate
+    ``mu_election``. That rate is split across eligible leader outcomes
+    in proportion to their healthy counts, so the total no-leader exit
+    rate stays ``mu_election`` regardless of how many nodes are eligible.
     When every config collapses to a single class the state space
     matches the original homogeneous builder exactly (``leader_class``
     is always 0).
