@@ -50,6 +50,15 @@ def build_markov_model(
     protocol parameters (election time for Raft), and strategy parameters
     (replacement timeout) to build the appropriate state space.
 
+    Heterogeneous clusters are supported transparently: the builders
+    partition ``node_configs`` into rate classes based on the effective
+    rates consumed at the chosen ``quality`` level (composite rates such
+    as ``collapsed_replace_rate`` are compared with floating-point
+    tolerance). A uniform ``[cfg] * N`` input collapses to a single
+    class and reproduces the original homogeneous state space;
+    all-distinct configs approach the ``k^N`` per-slot upper bound.
+    See ``docs/hetero_markov_modeling.md``.
+
     Args:
         node_configs: One NodeConfig per node in the cluster.
         protocol: The consensus protocol (LeaderlessProtocol or RaftLikeProtocol).

@@ -16,6 +16,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+cuda12 = [
+    "cupy-cuda12x",
+]
+cudss = [
+    "nvmath-python[cu12]",
+]
+mkl = [
+    "pypardiso",
+]
 dev = [
     "pytest",
     "jupyterlab",

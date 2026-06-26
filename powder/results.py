@@ -14,10 +14,14 @@ import numpy as np
 
 from .markov import MarkovModel
 from .markov_solver import (
+    SparseSolverBackend,
+    SparseSolverUnavailable,
     availability,
     expected_cost_per_second,
     mean_first_passage,
+    mixing_time,
     steady_state,
+    time_averaged_distribution,
 )
 from .scenario import QualityLevel, build_markov_model
 from .simulation.node import NodeConfig
@@ -42,9 +46,15 @@ class ClusterAnalysisResult:
             first unavailability, in seconds.
         mean_time_to_data_loss: Mean time from the initial state to first
             data loss (absorbing state), in seconds.
+        mixing_time_to_steady_state: Time from the initial distribution to
+            within the requested total variation distance of steady state, in
+            seconds (Markov only, optional).
         expected_cost_per_hour: Steady-state expected $ spent per hour.
         steady_state_distribution: Mapping from state name to steady-state
             probability (Markov only).
+        time_averaged_distribution: Mapping from state name to finite-horizon
+            average probability over ``[0, time_average_seconds)`` (Markov only,
+            optional).
         method: Which backend produced this result.
         quality_level: QualityLevel used (Markov only).
         num_states: Number of states in the Markov chain (Markov only).
@@ -53,8 +63,10 @@ class ClusterAnalysisResult:
     availability: float
     mean_time_to_unavailability: float | None = None
     mean_time_to_data_loss: float | None = None
+    mixing_time_to_steady_state: float | None = None
     expected_cost_per_hour: float | None = None
     steady_state_distribution: dict[str, float] | None = None
+    time_averaged_distribution: dict[str, float] | None = None
     method: Literal["markov", "monte_carlo"] = "markov"
     quality_level: QualityLevel | None = None
     num_states: int | None = None
@@ -65,6 +77,10 @@ def markov_analyze(
     protocol: Protocol,
     strategy: ClusterStrategy,
     quality: QualityLevel = QualityLevel.SIMPLIFIED,
+    *,
+    backend: SparseSolverBackend = "auto",
+    mixing_time_epsilon: float | None = None,
+    time_average_seconds: float | None = None,
 ) -> ClusterAnalysisResult:
     """One-call Markov analysis using MC's own configuration objects.
 
@@ -76,18 +92,34 @@ def markov_analyze(
         protocol: The consensus protocol.
         strategy: The cluster management strategy.
         quality: State-space fidelity level.
+        backend: Sparse solver backend for steady-state and first-passage solves.
+        mixing_time_epsilon: When provided, also compute the time in seconds
+            for the model's initial distribution to get within this total
+            variation distance of steady state.
+        time_average_seconds: When provided, also compute the average state
+            probabilities over ``[0, time_average_seconds)`` from the model's
+            initial distribution.
 
     Returns:
         A ClusterAnalysisResult with Markov-derived metrics.
     """
     model = build_markov_model(node_configs, protocol, strategy, quality)
-    return analyze_model(model, quality=quality)
+    return analyze_model(
+        model,
+        quality=quality,
+        backend=backend,
+        mixing_time_epsilon=mixing_time_epsilon,
+        time_average_seconds=time_average_seconds,
+    )
 
 
 def analyze_model(
     model: MarkovModel,
     *,
     quality: QualityLevel | None = None,
+    backend: SparseSolverBackend = "auto",
+    mixing_time_epsilon: float | None = None,
+    time_average_seconds: float | None = None,
 ) -> ClusterAnalysisResult:
     """Compute availability, MTTF, and expected cost for a prebuilt model.
 
@@ -96,7 +128,9 @@ def analyze_model(
     re-running BFS state enumeration.
     """
     try:
-        pi = steady_state(model)
+        pi = steady_state(model, backend=backend)
+    except SparseSolverUnavailable:
+        raise
     except RuntimeError:
         pi = None
 
@@ -116,18 +150,43 @@ def analyze_model(
     dead_ids = np.flatnonzero(~model.live_mask)
     if dead_ids.size > 0 and dead_ids.size < model.num_states:
         try:
-            mfp = mean_first_passage(model, dead_ids.tolist())
+            mfp = mean_first_passage(model, dead_ids.tolist(), backend=backend)
             initial = model.initial_state_id
             value = float(mfp[initial])
             mttf = value if value > 0 else None
+        except SparseSolverUnavailable:
+            raise
         except RuntimeError:
             pass
+
+    mixing_seconds: float | None = None
+    if mixing_time_epsilon is not None and pi is not None:
+        try:
+            mixing_seconds = mixing_time(
+                model,
+                epsilon=mixing_time_epsilon,
+                pi=pi,
+                backend=backend,
+            )
+        except SparseSolverUnavailable:
+            raise
+        except RuntimeError:
+            pass
+
+    avg_dist: dict[str, float] | None = None
+    if time_average_seconds is not None:
+        avg = time_averaged_distribution(model, time_average_seconds)
+        avg_dist = {
+            name: float(prob) for name, prob in zip(model.state_names, avg)
+        }
 
     return ClusterAnalysisResult(
         availability=avail,
         mean_time_to_unavailability=mttf,
+        mixing_time_to_steady_state=mixing_seconds,
         expected_cost_per_hour=cost_per_hour,
         steady_state_distribution=ss_dist,
+        time_averaged_distribution=avg_dist,
         method="markov",
         quality_level=quality,
         num_states=model.num_states,
@@ -172,8 +231,10 @@ def monte_carlo_analyze(results: "MonteCarloResults") -> ClusterAnalysisResult:
         availability=availability,
         mean_time_to_unavailability=mttf,
         mean_time_to_data_loss=mttdl,
+        mixing_time_to_steady_state=None,
         expected_cost_per_hour=cost_per_hour,
         steady_state_distribution=None,
+        time_averaged_distribution=None,
         method="monte_carlo",
         quality_level=None,
         num_states=None,

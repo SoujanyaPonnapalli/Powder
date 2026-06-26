@@ -9,18 +9,300 @@ is straightforward to port to GPU sparse kernels later.
 
 from __future__ import annotations
 
+import logging
+import os
+from dataclasses import dataclass
+from typing import Literal
+
 import numpy as np
 from scipy import sparse
 from scipy.sparse import linalg as splinalg
 
 from .markov import MarkovModel
 
+_logger = logging.getLogger(__name__)
 
-def steady_state(model: MarkovModel) -> np.ndarray:
+# Default residual threshold above which `steady_state` logs a warning.
+# The sparse LU used by scipy is usually accurate to ~1e-12 for well-
+# conditioned generators; 1e-8 leaves a generous margin for ill-conditioned
+# chains (e.g. very stiff failure/recovery rate ratios) while still flagging
+# genuine numerical breakdowns.
+DEFAULT_RESIDUAL_THRESHOLD = 1e-8
+SOLVER_BACKEND_ENV = "POWDER_MARKOV_SOLVER"
+CUPY_GMRES_RTOL_ENV = "POWDER_MARKOV_CUPY_GMRES_RTOL"
+CUPY_GMRES_ATOL_ENV = "POWDER_MARKOV_CUPY_GMRES_ATOL"
+CUPY_GMRES_RESTART_ENV = "POWDER_MARKOV_CUPY_GMRES_RESTART"
+CUPY_GMRES_MAXITER_ENV = "POWDER_MARKOV_CUPY_GMRES_MAXITER"
+CUDSS_MULTITHREADING_LIB_ENV = "POWDER_MARKOV_CUDSS_MULTITHREADING_LIB"
+SparseSolverBackend = Literal["scipy", "cupy", "cudss", "pardiso", "auto"]
+ResolvedSparseSolverBackend = Literal["scipy", "cupy", "cudss", "pardiso"]
+
+
+class SparseSolverUnavailable(RuntimeError):
+    """Raised when a requested sparse solver backend is unavailable."""
+
+
+def _validate_solver_backend(value: str) -> SparseSolverBackend:
+    if value not in {"scipy", "cupy", "cudss", "pardiso", "auto"}:
+        raise ValueError(
+            f"Invalid sparse solver backend {value!r}; "
+            "expected 'scipy', 'cupy', 'cudss', 'pardiso', or 'auto'"
+        )
+    return value  # type: ignore[return-value]
+
+
+def _requested_solver_backend(backend: SparseSolverBackend) -> SparseSolverBackend:
+    backend = _validate_solver_backend(backend)
+    if backend != "auto":
+        return backend
+
+    env_backend = os.environ.get(SOLVER_BACKEND_ENV)
+    if env_backend:
+        return _validate_solver_backend(env_backend.strip().lower())
+    return backend
+
+
+def _load_cupy_sparse_modules():
+    try:
+        import cupy as cp
+        from cupyx.scipy import sparse as cpsparse
+        from cupyx.scipy.sparse import linalg as cpsplinalg
+    except Exception as exc:  # pragma: no cover - depends on optional CUDA install
+        raise SparseSolverUnavailable("CuPy sparse solver backend is not installed") from exc
+
+    try:
+        if cp.cuda.runtime.getDeviceCount() < 1:
+            raise SparseSolverUnavailable("CuPy sparse solver backend found no CUDA devices")
+    except SparseSolverUnavailable:
+        raise
+    except Exception as exc:  # pragma: no cover - depends on local CUDA driver state
+        raise SparseSolverUnavailable("CuPy sparse solver backend cannot access CUDA") from exc
+
+    return cp, cpsparse, cpsplinalg
+
+
+def _load_pardiso_spsolve():
+    try:
+        from pypardiso import spsolve
+    except Exception as exc:  # pragma: no cover - depends on optional MKL install
+        raise SparseSolverUnavailable(
+            "Pardiso sparse solver backend is not installed"
+        ) from exc
+    return spsolve
+
+
+def _load_cudss_direct_solver():
+    try:
+        import nvmath
+    except Exception as exc:  # pragma: no cover - depends on optional CUDA install
+        raise SparseSolverUnavailable(
+            "cuDSS sparse solver backend is not installed"
+        ) from exc
+
+    try:
+        return nvmath, nvmath.sparse.advanced.direct_solver
+    except AttributeError as exc:  # pragma: no cover - depends on nvmath version
+        raise SparseSolverUnavailable(
+            "cuDSS direct solver API is not available in this nvmath installation"
+        ) from exc
+
+
+def resolve_sparse_solver_backend(
+    backend: SparseSolverBackend = "auto",
+) -> ResolvedSparseSolverBackend:
+    """Return the concrete sparse solver backend selected for this process."""
+    requested = _requested_solver_backend(backend)
+    if requested == "scipy":
+        return "scipy"
+    if requested == "cupy":
+        _load_cupy_sparse_modules()
+        return "cupy"
+    if requested == "cudss":
+        _load_cudss_direct_solver()
+        return "cudss"
+    if requested == "pardiso":
+        _load_pardiso_spsolve()
+        return "pardiso"
+
+    try:
+        _load_cupy_sparse_modules()
+    except SparseSolverUnavailable:
+        return "scipy"
+    return "cupy"
+
+
+def _float_from_env(name: str, default: float) -> float:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be a float; got {value!r}") from exc
+
+
+def _optional_int_from_env(name: str) -> int | None:
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        return None
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer; got {value!r}") from exc
+    if parsed <= 0:
+        raise ValueError(f"{name} must be positive; got {parsed}")
+    return parsed
+
+
+def _cupy_gmres_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+) -> np.ndarray:
+    cp, cpsparse, cpsplinalg = _load_cupy_sparse_modules()
+    A_gpu = cpsparse.csr_matrix(A)
+    b_gpu = cp.asarray(b, dtype=A_gpu.dtype)
+    rtol = _float_from_env(CUPY_GMRES_RTOL_ENV, 1e-10)
+    atol = _float_from_env(CUPY_GMRES_ATOL_ENV, 0.0)
+    restart = _optional_int_from_env(CUPY_GMRES_RESTART_ENV)
+    maxiter = _optional_int_from_env(CUPY_GMRES_MAXITER_ENV)
+
+    try:
+        x_gpu, info = cpsplinalg.gmres(
+            A_gpu,
+            b_gpu,
+            rtol=rtol,
+            atol=atol,
+            restart=restart,
+            maxiter=maxiter,
+        )
+    except NotImplementedError as exc:  # pragma: no cover - depends on CUDA library build
+        raise SparseSolverUnavailable(
+            "CuPy GMRES sparse solver is not available in this CUDA installation"
+        ) from exc
+
+    if info != 0:
+        raise RuntimeError(
+            "CuPy GMRES sparse solve did not converge "
+            f"(info={info}, rtol={rtol:g}, atol={atol:g}, "
+            f"restart={restart}, maxiter={maxiter}, shape={A.shape}, nnz={A.nnz})"
+        )
+    return np.asarray(cp.asnumpy(x_gpu), dtype=np.float64)
+
+
+def _pardiso_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+) -> np.ndarray:
+    spsolve = _load_pardiso_spsolve()
+    return np.asarray(spsolve(A.tocsr(), b), dtype=np.float64)
+
+
+def _cudss_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+) -> np.ndarray:
+    nvmath, direct_solver = _load_cudss_direct_solver()
+    rhs = np.asarray(b, dtype=np.float64)
+    options = None
+    multithreading_lib = os.environ.get(CUDSS_MULTITHREADING_LIB_ENV)
+    if multithreading_lib:
+        options = nvmath.sparse.advanced.DirectSolverOptions(
+            multithreading_lib=multithreading_lib,
+        )
+    result = direct_solver(A.tocsr(), rhs, options=options)
+    return np.asarray(result, dtype=np.float64)
+
+
+def _sparse_solve(
+    A: sparse.spmatrix,
+    b: np.ndarray,
+    *,
+    backend: SparseSolverBackend = "auto",
+) -> np.ndarray:
+    selected = resolve_sparse_solver_backend(backend)
+    if selected == "scipy":
+        return np.asarray(splinalg.spsolve(A, b), dtype=np.float64)
+    if selected == "pardiso":
+        return _pardiso_solve(A, b)
+    if selected == "cudss":
+        return _cudss_solve(A, b)
+
+    return _cupy_gmres_solve(A, b)
+
+
+@dataclass(frozen=True)
+class SteadyStateResidual:
+    """Residual diagnostics for a steady-state solve.
+
+    Attributes:
+        balance: ``||pi @ Q||_inf`` — how close the solution is to the
+            global-balance equation ``pi Q = 0``. Should be at machine
+            precision for a well-conditioned chain.
+        normalization: ``|sum(pi) - 1|`` — the solution is renormalized
+            before being returned from :func:`steady_state`, so this
+            measures the raw LU solve before renormalization.
+        negativity: ``-min(pi, 0)`` — magnitude of the most-negative
+            entry. Physical steady states are nonnegative; small
+            negative values (<= balance) are round-off and are clipped
+            to zero.
+    """
+
+    balance: float
+    normalization: float
+    negativity: float
+
+    @property
+    def worst(self) -> float:
+        """Max of the three residual components, for single-threshold checks."""
+        return max(self.balance, self.normalization, self.negativity)
+
+
+def compute_steady_state_residual(
+    model: MarkovModel, pi: np.ndarray,
+) -> SteadyStateResidual:
+    """Compute balance / normalization / negativity residuals for ``pi``."""
+    pi = np.asarray(pi, dtype=np.float64)
+    balance = float(np.abs(pi @ model.Q).max()) if pi.size else 0.0
+    normalization = float(abs(pi.sum() - 1.0))
+    negativity = float(-pi.min()) if pi.size else 0.0
+    return SteadyStateResidual(
+        balance=balance,
+        normalization=normalization,
+        negativity=max(negativity, 0.0),
+    )
+
+
+def steady_state(
+    model: MarkovModel,
+    *,
+    backend: SparseSolverBackend = "auto",
+    residual_threshold: float = DEFAULT_RESIDUAL_THRESHOLD,
+    return_residual: bool = False,
+) -> np.ndarray | tuple[np.ndarray, SteadyStateResidual]:
     """Compute the steady-state distribution pi with pi @ Q = 0, sum(pi)=1.
 
     Replaces the last row of Q^T with the normalization constraint and
-    solves the resulting linear system. Uses scipy's sparse direct solver.
+    solves the resulting linear system. The SciPy backend uses a sparse
+    direct solver, the Pardiso backend uses MKL Pardiso, the cuDSS backend uses
+    NVIDIA's CUDA direct sparse solver, and the CuPy backend uses GMRES on the
+    GPU. After the solve, the residual ``pi @ Q`` is measured and a warning is
+    logged if any component exceeds ``residual_threshold``. The returned
+    vector is renormalized to ``sum(pi) == 1`` and clipped to be
+    nonnegative.
+
+    Args:
+        model: The :class:`MarkovModel` to solve.
+        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"pardiso"`` for
+            multithreaded MKL Pardiso, ``"cudss"`` for NVIDIA cuDSS,
+            ``"cupy"`` for CUDA GMRES, or ``"auto"`` to use
+            ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when CUDA
+            is unavailable.
+        residual_threshold: If any residual component (balance,
+            normalization, negativity) is strictly greater than this
+            value, a warning is logged via the module logger. Pass
+            ``float('inf')`` to disable.
+        return_residual: If true, returns ``(pi, residual)`` instead of
+            just ``pi`` so callers can assert on the diagnostics.
 
     Raises:
         RuntimeError: If the chain has absorbing states and no unique
@@ -33,17 +315,41 @@ def steady_state(model: MarkovModel) -> np.ndarray:
     b = np.zeros(n, dtype=np.float64)
     b[-1] = 1.0
     try:
-        pi = splinalg.spsolve(QT.tocsr(), b)
+        pi_raw = _sparse_solve(QT.tocsr(), b, backend=backend)
+    except SparseSolverUnavailable:
+        raise
     except RuntimeError as exc:
         raise RuntimeError(
             "Steady-state solve failed (likely absorbing state or reducible chain)"
         ) from exc
-    return np.asarray(pi, dtype=np.float64)
+
+    residual = compute_steady_state_residual(model, pi_raw)
+    if residual.worst > residual_threshold:
+        _logger.warning(
+            "Steady-state residual exceeded threshold %g: "
+            "balance=%.3e, normalization=%.3e, negativity=%.3e (num_states=%d)",
+            residual_threshold,
+            residual.balance,
+            residual.normalization,
+            residual.negativity,
+            n,
+        )
+
+    pi = np.clip(pi_raw, 0.0, None)
+    total = pi.sum()
+    if total > 0:
+        pi = pi / total
+
+    if return_residual:
+        return pi, residual
+    return pi
 
 
 def mean_first_passage(
     model: MarkovModel,
     absorbing_state_ids: np.ndarray | list[int],
+    *,
+    backend: SparseSolverBackend = "auto",
 ) -> np.ndarray:
     """Mean first passage times to any state in absorbing_state_ids.
 
@@ -52,6 +358,15 @@ def mean_first_passage(
     truncated system Q_trunc @ t = -1 for the transient sub-matrix.
 
     Entries for absorbing states are 0.
+
+    Args:
+        model: The :class:`MarkovModel` to solve.
+        absorbing_state_ids: Target state IDs with zero first-passage time.
+        backend: Sparse solver backend: ``"scipy"`` for CPU, ``"pardiso"`` for
+            multithreaded MKL Pardiso, ``"cudss"`` for NVIDIA cuDSS,
+            ``"cupy"`` for CUDA GMRES, or ``"auto"`` to use
+            ``POWDER_MARKOV_SOLVER`` and otherwise fall back to SciPy when CUDA
+            is unavailable.
     """
     n = model.num_states
     absorbing = np.zeros(n, dtype=bool)
@@ -65,9 +380,260 @@ def mean_first_passage(
     transient_ids = np.flatnonzero(transient)
     Q_trunc = model.Q[transient_ids][:, transient_ids].tocsc()
     rhs = -np.ones(transient_ids.size, dtype=np.float64)
-    t_transient = splinalg.spsolve(Q_trunc, rhs)
+    t_transient = _sparse_solve(Q_trunc, rhs, backend=backend)
     result[transient_ids] = t_transient
     return result
+
+
+def transient_distribution(
+    model: MarkovModel,
+    time: float,
+    *,
+    initial_distribution: np.ndarray | None = None,
+) -> np.ndarray:
+    """Distribution at elapsed ``time`` for a CTMC.
+
+    Computes ``p(time) = p(0) exp(time * Q)`` from the model's initial
+    distribution by default. For the Powder builders this is the all-machines
+    up-to-date starting state.
+
+    Args:
+        model: The :class:`MarkovModel` to evolve.
+        time: Elapsed time in seconds. Must be nonnegative.
+        initial_distribution: Optional custom starting distribution. When
+            omitted, ``model.initial_distribution`` is used.
+    """
+    if time < 0:
+        raise ValueError(f"time must be nonnegative; got {time!r}")
+
+    if initial_distribution is None:
+        initial_distribution = model.initial_distribution
+    p0 = _normalized_distribution(
+        initial_distribution,
+        model.num_states,
+        name="initial_distribution",
+    )
+    if time == 0:
+        return p0
+
+    p = splinalg.expm_multiply(model.Q.T * float(time), p0)
+    return _normalize_probability_result(np.asarray(p, dtype=np.float64))
+
+
+def time_averaged_distribution(
+    model: MarkovModel,
+    time: float,
+    *,
+    initial_distribution: np.ndarray | None = None,
+) -> np.ndarray:
+    """Average state distribution over the interval ``[0, time)``.
+
+    Computes ``(1 / time) * integral_0^time p(0) exp(sQ) ds``. This is the
+    finite-horizon analogue of the steady-state distribution: instead of asking
+    where the chain lives on average over ``[0, infinity)``, it asks where it
+    lives on average from the all-machines-up-to-date start through elapsed
+    time ``time``.
+
+    The implementation uses a sparse augmented matrix exponential rather than
+    ``Q^-1 (exp(time * Q) - I)``, because CTMC generator matrices are singular.
+
+    Args:
+        model: The :class:`MarkovModel` to evolve.
+        time: Interval length in seconds. Must be nonnegative. At ``time == 0``,
+            returns the limiting value ``p(0)``.
+        initial_distribution: Optional custom starting distribution. When
+            omitted, ``model.initial_distribution`` is used.
+    """
+    if time < 0:
+        raise ValueError(f"time must be nonnegative; got {time!r}")
+
+    if initial_distribution is None:
+        initial_distribution = model.initial_distribution
+    p0 = _normalized_distribution(
+        initial_distribution,
+        model.num_states,
+        name="initial_distribution",
+    )
+    if time == 0:
+        return p0
+
+    n = model.num_states
+    zero = sparse.csr_matrix((n, n), dtype=np.float64)
+    identity = sparse.eye(n, format="csr", dtype=np.float64)
+    augmented = sparse.bmat(
+        [
+            [model.Q.T.tocsr(), zero],
+            [identity, zero],
+        ],
+        format="csr",
+    )
+    initial = np.concatenate([p0, np.zeros(n, dtype=np.float64)])
+    evolved = splinalg.expm_multiply(augmented * float(time), initial)
+    integral = np.asarray(evolved[n:], dtype=np.float64)
+    return _normalize_probability_result(integral / float(time))
+
+
+def total_variation_distance(p: np.ndarray, q: np.ndarray) -> float:
+    """Return the total variation distance between two distributions."""
+    p = np.asarray(p, dtype=np.float64)
+    q = np.asarray(q, dtype=np.float64)
+    if p.shape != q.shape:
+        raise ValueError(f"distribution shapes differ: {p.shape} != {q.shape}")
+    return float(0.5 * np.abs(p - q).sum())
+
+
+def mixing_time(
+    model: MarkovModel,
+    *,
+    epsilon: float = 0.01,
+    initial_distribution: np.ndarray | None = None,
+    pi: np.ndarray | None = None,
+    backend: SparseSolverBackend = "auto",
+    initial_step: float | None = None,
+    max_time: float | None = None,
+    max_expand_steps: int = 80,
+    bisection_steps: int = 60,
+) -> float:
+    """Time until the chain is within ``epsilon`` of steady state.
+
+    The distance is total variation distance between ``p(0) exp(tQ)`` and the
+    stationary distribution ``pi``. By default ``p(0)`` is the model's initial
+    distribution, which the Markov builders place on the all-machines
+    up-to-date state.
+
+    Args:
+        model: The :class:`MarkovModel` to analyze.
+        epsilon: Total variation threshold. Common values are 0.1, 0.05, and
+            0.01.
+        initial_distribution: Optional custom starting distribution.
+        pi: Optional precomputed steady-state distribution.
+        backend: Sparse solver backend used if ``pi`` must be computed.
+        initial_step: Optional first upper-bound time in seconds for the
+            exponential search.
+        max_time: Optional search cap in seconds. If provided and the chain has
+            not mixed by then, a ``RuntimeError`` is raised.
+        max_expand_steps: Maximum number of upper-bound doublings.
+        bisection_steps: Number of bisection iterations after finding an upper
+            bound.
+
+    Raises:
+        RuntimeError: If no mixed upper bound can be found.
+    """
+    if epsilon < 0:
+        raise ValueError(f"epsilon must be nonnegative; got {epsilon!r}")
+    if initial_step is not None and initial_step <= 0:
+        raise ValueError(f"initial_step must be positive; got {initial_step!r}")
+    if max_time is not None and max_time < 0:
+        raise ValueError(f"max_time must be nonnegative; got {max_time!r}")
+    if max_expand_steps < 0:
+        raise ValueError(
+            f"max_expand_steps must be nonnegative; got {max_expand_steps!r}"
+        )
+    if bisection_steps < 0:
+        raise ValueError(
+            f"bisection_steps must be nonnegative; got {bisection_steps!r}"
+        )
+
+    if initial_distribution is None:
+        initial_distribution = model.initial_distribution
+    p0 = _normalized_distribution(
+        initial_distribution,
+        model.num_states,
+        name="initial_distribution",
+    )
+    if pi is None:
+        pi = steady_state(model, backend=backend)
+    else:
+        pi = _normalized_distribution(pi, model.num_states, name="pi")
+
+    if total_variation_distance(p0, pi) <= epsilon:
+        return 0.0
+    if max_time == 0:
+        raise RuntimeError(
+            f"Chain is not within epsilon={epsilon:g} at max_time=0"
+        )
+
+    low = 0.0
+    high = (
+        float(initial_step)
+        if initial_step is not None
+        else _default_mixing_time_initial_step(model)
+    )
+    if max_time is not None:
+        high = min(high, float(max_time))
+
+    for _ in range(max_expand_steps + 1):
+        distance = total_variation_distance(
+            transient_distribution(model, high, initial_distribution=p0),
+            pi,
+        )
+        if distance <= epsilon:
+            break
+        low = high
+        if max_time is not None and high >= max_time:
+            raise RuntimeError(
+                f"Chain did not mix within epsilon={epsilon:g} by max_time={max_time:g}; "
+                f"distance={distance:g}"
+            )
+        high *= 2.0
+        if max_time is not None:
+            high = min(high, float(max_time))
+    else:
+        raise RuntimeError(
+            f"Could not find a mixing-time upper bound after {max_expand_steps} "
+            f"expansions; last_time={high:g}"
+        )
+
+    for _ in range(bisection_steps):
+        mid = 0.5 * (low + high)
+        distance = total_variation_distance(
+            transient_distribution(model, mid, initial_distribution=p0),
+            pi,
+        )
+        if distance <= epsilon:
+            high = mid
+        else:
+            low = mid
+
+    return float(high)
+
+
+def _normalized_distribution(
+    values: np.ndarray,
+    expected_size: int,
+    *,
+    name: str,
+) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float64)
+    if values.shape != (expected_size,):
+        raise ValueError(
+            f"{name} must have shape ({expected_size},); got {values.shape}"
+        )
+    if np.any(values < 0):
+        raise ValueError(f"{name} must be nonnegative")
+    total = float(values.sum())
+    if total <= 0:
+        raise ValueError(f"{name} must have positive total mass")
+    return values / total
+
+
+def _normalize_probability_result(values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float64)
+    values = np.where(np.abs(values) < 1e-15, 0.0, values)
+    if np.any(values < 0):
+        values = np.clip(values, 0.0, None)
+    total = float(values.sum())
+    if total > 0:
+        values = values / total
+    return values
+
+
+def _default_mixing_time_initial_step(model: MarkovModel) -> float:
+    exit_rates = -np.asarray(model.Q.diagonal(), dtype=np.float64)
+    positive = exit_rates[exit_rates > 0]
+    if positive.size == 0:
+        return 1.0
+    return float(1.0 / positive.max())
 
 
 def availability(model: MarkovModel, pi: np.ndarray | None = None) -> float:

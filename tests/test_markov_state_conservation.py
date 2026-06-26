@@ -51,22 +51,25 @@ def _leaderless_count(state: tuple[int, ...]) -> int:
 def _raft_count(state: tuple[int, ...], quality: QualityLevel) -> int:
     """Sum non-leader slot counts plus the leader flag.
 
-    The trailing bits are boolean/phase annotations on the leader, never
-    additional slots:
+    The trailing entries are boolean/phase annotations on the leader,
+    never additional slots:
 
         SIMPLIFIED / COLLAPSED_PIPELINE / NO_ORPHANS:
-            state = (..., has_leader)
+            state = (..., has_leader, leader_class)
         MERGED_PIPELINE:
-            state = (..., has_leader, leader_orphan)
+            state = (..., has_leader, leader_class, leader_orphan)
         FULL:
-            state = (..., has_leader, leader_pipe)
+            state = (..., has_leader, leader_class, leader_pipe)
+
+    ``leader_class`` records which rate class the current leader
+    belongs to and is ignored here; only ``has_leader`` counts a slot.
     """
     trailing_flags = {
-        QualityLevel.SIMPLIFIED: 1,
-        QualityLevel.COLLAPSED_PIPELINE: 1,
-        QualityLevel.NO_ORPHANS: 1,
-        QualityLevel.MERGED_PIPELINE: 2,
-        QualityLevel.FULL: 2,
+        QualityLevel.SIMPLIFIED: 2,
+        QualityLevel.COLLAPSED_PIPELINE: 2,
+        QualityLevel.NO_ORPHANS: 2,
+        QualityLevel.MERGED_PIPELINE: 3,
+        QualityLevel.FULL: 3,
     }[quality]
     body = state[:-trailing_flags]
     has_leader = state[-trailing_flags]
