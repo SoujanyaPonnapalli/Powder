@@ -385,6 +385,257 @@ def mean_first_passage(
     return result
 
 
+def transient_distribution(
+    model: MarkovModel,
+    time: float,
+    *,
+    initial_distribution: np.ndarray | None = None,
+) -> np.ndarray:
+    """Distribution at elapsed ``time`` for a CTMC.
+
+    Computes ``p(time) = p(0) exp(time * Q)`` from the model's initial
+    distribution by default. For the Powder builders this is the all-machines
+    up-to-date starting state.
+
+    Args:
+        model: The :class:`MarkovModel` to evolve.
+        time: Elapsed time in seconds. Must be nonnegative.
+        initial_distribution: Optional custom starting distribution. When
+            omitted, ``model.initial_distribution`` is used.
+    """
+    if time < 0:
+        raise ValueError(f"time must be nonnegative; got {time!r}")
+
+    if initial_distribution is None:
+        initial_distribution = model.initial_distribution
+    p0 = _normalized_distribution(
+        initial_distribution,
+        model.num_states,
+        name="initial_distribution",
+    )
+    if time == 0:
+        return p0
+
+    p = splinalg.expm_multiply(model.Q.T * float(time), p0)
+    return _normalize_probability_result(np.asarray(p, dtype=np.float64))
+
+
+def time_averaged_distribution(
+    model: MarkovModel,
+    time: float,
+    *,
+    initial_distribution: np.ndarray | None = None,
+) -> np.ndarray:
+    """Average state distribution over the interval ``[0, time)``.
+
+    Computes ``(1 / time) * integral_0^time p(0) exp(sQ) ds``. This is the
+    finite-horizon analogue of the steady-state distribution: instead of asking
+    where the chain lives on average over ``[0, infinity)``, it asks where it
+    lives on average from the all-machines-up-to-date start through elapsed
+    time ``time``.
+
+    The implementation uses a sparse augmented matrix exponential rather than
+    ``Q^-1 (exp(time * Q) - I)``, because CTMC generator matrices are singular.
+
+    Args:
+        model: The :class:`MarkovModel` to evolve.
+        time: Interval length in seconds. Must be nonnegative. At ``time == 0``,
+            returns the limiting value ``p(0)``.
+        initial_distribution: Optional custom starting distribution. When
+            omitted, ``model.initial_distribution`` is used.
+    """
+    if time < 0:
+        raise ValueError(f"time must be nonnegative; got {time!r}")
+
+    if initial_distribution is None:
+        initial_distribution = model.initial_distribution
+    p0 = _normalized_distribution(
+        initial_distribution,
+        model.num_states,
+        name="initial_distribution",
+    )
+    if time == 0:
+        return p0
+
+    n = model.num_states
+    zero = sparse.csr_matrix((n, n), dtype=np.float64)
+    identity = sparse.eye(n, format="csr", dtype=np.float64)
+    augmented = sparse.bmat(
+        [
+            [model.Q.T.tocsr(), zero],
+            [identity, zero],
+        ],
+        format="csr",
+    )
+    initial = np.concatenate([p0, np.zeros(n, dtype=np.float64)])
+    evolved = splinalg.expm_multiply(augmented * float(time), initial)
+    integral = np.asarray(evolved[n:], dtype=np.float64)
+    return _normalize_probability_result(integral / float(time))
+
+
+def total_variation_distance(p: np.ndarray, q: np.ndarray) -> float:
+    """Return the total variation distance between two distributions."""
+    p = np.asarray(p, dtype=np.float64)
+    q = np.asarray(q, dtype=np.float64)
+    if p.shape != q.shape:
+        raise ValueError(f"distribution shapes differ: {p.shape} != {q.shape}")
+    return float(0.5 * np.abs(p - q).sum())
+
+
+def mixing_time(
+    model: MarkovModel,
+    *,
+    epsilon: float = 0.01,
+    initial_distribution: np.ndarray | None = None,
+    pi: np.ndarray | None = None,
+    backend: SparseSolverBackend = "auto",
+    initial_step: float | None = None,
+    max_time: float | None = None,
+    max_expand_steps: int = 80,
+    bisection_steps: int = 60,
+) -> float:
+    """Time until the chain is within ``epsilon`` of steady state.
+
+    The distance is total variation distance between ``p(0) exp(tQ)`` and the
+    stationary distribution ``pi``. By default ``p(0)`` is the model's initial
+    distribution, which the Markov builders place on the all-machines
+    up-to-date state.
+
+    Args:
+        model: The :class:`MarkovModel` to analyze.
+        epsilon: Total variation threshold. Common values are 0.1, 0.05, and
+            0.01.
+        initial_distribution: Optional custom starting distribution.
+        pi: Optional precomputed steady-state distribution.
+        backend: Sparse solver backend used if ``pi`` must be computed.
+        initial_step: Optional first upper-bound time in seconds for the
+            exponential search.
+        max_time: Optional search cap in seconds. If provided and the chain has
+            not mixed by then, a ``RuntimeError`` is raised.
+        max_expand_steps: Maximum number of upper-bound doublings.
+        bisection_steps: Number of bisection iterations after finding an upper
+            bound.
+
+    Raises:
+        RuntimeError: If no mixed upper bound can be found.
+    """
+    if epsilon < 0:
+        raise ValueError(f"epsilon must be nonnegative; got {epsilon!r}")
+    if initial_step is not None and initial_step <= 0:
+        raise ValueError(f"initial_step must be positive; got {initial_step!r}")
+    if max_time is not None and max_time < 0:
+        raise ValueError(f"max_time must be nonnegative; got {max_time!r}")
+    if max_expand_steps < 0:
+        raise ValueError(
+            f"max_expand_steps must be nonnegative; got {max_expand_steps!r}"
+        )
+    if bisection_steps < 0:
+        raise ValueError(
+            f"bisection_steps must be nonnegative; got {bisection_steps!r}"
+        )
+
+    if initial_distribution is None:
+        initial_distribution = model.initial_distribution
+    p0 = _normalized_distribution(
+        initial_distribution,
+        model.num_states,
+        name="initial_distribution",
+    )
+    if pi is None:
+        pi = steady_state(model, backend=backend)
+    else:
+        pi = _normalized_distribution(pi, model.num_states, name="pi")
+
+    if total_variation_distance(p0, pi) <= epsilon:
+        return 0.0
+    if max_time == 0:
+        raise RuntimeError(
+            f"Chain is not within epsilon={epsilon:g} at max_time=0"
+        )
+
+    low = 0.0
+    high = (
+        float(initial_step)
+        if initial_step is not None
+        else _default_mixing_time_initial_step(model)
+    )
+    if max_time is not None:
+        high = min(high, float(max_time))
+
+    for _ in range(max_expand_steps + 1):
+        distance = total_variation_distance(
+            transient_distribution(model, high, initial_distribution=p0),
+            pi,
+        )
+        if distance <= epsilon:
+            break
+        low = high
+        if max_time is not None and high >= max_time:
+            raise RuntimeError(
+                f"Chain did not mix within epsilon={epsilon:g} by max_time={max_time:g}; "
+                f"distance={distance:g}"
+            )
+        high *= 2.0
+        if max_time is not None:
+            high = min(high, float(max_time))
+    else:
+        raise RuntimeError(
+            f"Could not find a mixing-time upper bound after {max_expand_steps} "
+            f"expansions; last_time={high:g}"
+        )
+
+    for _ in range(bisection_steps):
+        mid = 0.5 * (low + high)
+        distance = total_variation_distance(
+            transient_distribution(model, mid, initial_distribution=p0),
+            pi,
+        )
+        if distance <= epsilon:
+            high = mid
+        else:
+            low = mid
+
+    return float(high)
+
+
+def _normalized_distribution(
+    values: np.ndarray,
+    expected_size: int,
+    *,
+    name: str,
+) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float64)
+    if values.shape != (expected_size,):
+        raise ValueError(
+            f"{name} must have shape ({expected_size},); got {values.shape}"
+        )
+    if np.any(values < 0):
+        raise ValueError(f"{name} must be nonnegative")
+    total = float(values.sum())
+    if total <= 0:
+        raise ValueError(f"{name} must have positive total mass")
+    return values / total
+
+
+def _normalize_probability_result(values: np.ndarray) -> np.ndarray:
+    values = np.asarray(values, dtype=np.float64)
+    values = np.where(np.abs(values) < 1e-15, 0.0, values)
+    if np.any(values < 0):
+        values = np.clip(values, 0.0, None)
+    total = float(values.sum())
+    if total > 0:
+        values = values / total
+    return values
+
+
+def _default_mixing_time_initial_step(model: MarkovModel) -> float:
+    exit_rates = -np.asarray(model.Q.diagonal(), dtype=np.float64)
+    positive = exit_rates[exit_rates > 0]
+    if positive.size == 0:
+        return 1.0
+    return float(1.0 / positive.max())
+
+
 def availability(model: MarkovModel, pi: np.ndarray | None = None) -> float:
     """Steady-state fraction of time the system is live.
 

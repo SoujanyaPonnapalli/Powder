@@ -14,8 +14,12 @@ from powder.markov_solver import (
     build_q_from_triples,
     compute_steady_state_residual,
     mean_first_passage,
+    mixing_time,
     resolve_sparse_solver_backend,
     steady_state,
+    time_averaged_distribution,
+    total_variation_distance,
+    transient_distribution,
 )
 from powder.results import markov_analyze
 from powder.scenario import QualityLevel, build_markov_model
@@ -70,6 +74,51 @@ def test_mean_first_passage_explicit_scipy_backend():
     mfp = mean_first_passage(model, [1], backend="scipy")
     assert mfp[0] == pytest.approx(1.0)
     assert mfp[1] == pytest.approx(0.0)
+
+
+def test_transient_distribution_two_state_chain():
+    model = _toy_two_state_model()
+    p = transient_distribution(model, 0.5)
+    expected_a = 0.75 + 0.25 * np.exp(-4.0 * 0.5)
+    expected_b = 0.25 - 0.25 * np.exp(-4.0 * 0.5)
+    assert p[0] == pytest.approx(expected_a)
+    assert p[1] == pytest.approx(expected_b)
+    assert p.sum() == pytest.approx(1.0)
+
+
+def test_time_averaged_distribution_two_state_chain():
+    model = _toy_two_state_model()
+    horizon = 0.5
+    p = time_averaged_distribution(model, horizon)
+    transient_mass = (1.0 - np.exp(-4.0 * horizon)) / (4.0 * horizon)
+    expected_a = 0.75 + 0.25 * transient_mass
+    expected_b = 0.25 - 0.25 * transient_mass
+    assert p[0] == pytest.approx(expected_a)
+    assert p[1] == pytest.approx(expected_b)
+    assert p.sum() == pytest.approx(1.0)
+
+
+def test_time_averaged_distribution_zero_time_limit_is_initial_distribution():
+    model = _toy_two_state_model()
+    p = time_averaged_distribution(model, 0.0)
+    assert np.allclose(p, model.initial_distribution)
+
+
+def test_mixing_time_two_state_chain_closed_form():
+    model = _toy_two_state_model()
+    pi = steady_state(model)
+    epsilon = 0.01
+    expected = np.log(0.25 / epsilon) / 4.0
+    actual = mixing_time(model, epsilon=epsilon, pi=pi)
+    assert actual == pytest.approx(expected, rel=1e-10, abs=1e-10)
+
+    mixed = transient_distribution(model, actual)
+    assert total_variation_distance(mixed, pi) == pytest.approx(epsilon, rel=1e-10)
+
+
+def test_mixing_time_zero_when_initial_distribution_already_close():
+    model = _toy_two_state_model()
+    assert mixing_time(model, epsilon=0.25) == pytest.approx(0.0)
 
 
 def test_auto_backend_falls_back_to_scipy_when_cupy_unavailable(monkeypatch):
@@ -368,6 +417,32 @@ class TestAbsorbingStateProperties:
         assert result.availability > 0.99, (
             f"Expected high availability, got {result.availability}"
         )
+
+    def test_markov_analyze_can_compute_mixing_time(self):
+        cfg = _dataloss_config()
+        strategy = NodeReplacementStrategy(failure_timeout=Seconds(hours(1)))
+        result = markov_analyze(
+            [cfg] * 3,
+            LeaderlessProtocol(),
+            strategy,
+            QualityLevel.SIMPLIFIED,
+            mixing_time_epsilon=0.01,
+        )
+        assert result.mixing_time_to_steady_state is not None
+        assert result.mixing_time_to_steady_state > 0.0
+
+    def test_markov_analyze_can_compute_time_averaged_distribution(self):
+        cfg = _dataloss_config()
+        strategy = NodeReplacementStrategy(failure_timeout=Seconds(hours(1)))
+        result = markov_analyze(
+            [cfg] * 3,
+            LeaderlessProtocol(),
+            strategy,
+            QualityLevel.SIMPLIFIED,
+            time_average_seconds=hours(1),
+        )
+        assert result.time_averaged_distribution is not None
+        assert sum(result.time_averaged_distribution.values()) == pytest.approx(1.0)
 
 
 # ---------------------------------------------------------------------------
