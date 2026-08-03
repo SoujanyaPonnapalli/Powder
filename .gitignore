@@ -112,4 +112,6 @@ target/
 # Benchmark outputs and standalone canvas renderings -- regenerate locally.
 notebooks/raft_markov_quality_benchmark.json
 notebooks/raft_markov_quality_benchmark.html
+
+outputs
 notebooks/*.html
