@@ -182,6 +182,9 @@ class PlacementSolution:
     total_cost_per_hour: float
     budget_per_hour: float | None
     selected: tuple[SelectedCandidate, ...]
+    solver_runtime_seconds: float | None = None
+    mip_gap: float | None = None
+    best_bound: float | None = None
 
     @cached_property
     def total_rsms(self) -> int:
@@ -479,6 +482,189 @@ def solve_candidate_ilp(
         total_cost_per_hour=float(total_cost),
         budget_per_hour=config.budget_per_hour,
         selected=selected,
+    )
+
+
+def solve_candidate_ilp_gurobi(
+    candidates: Sequence[PlacementCandidate],
+    machines: Sequence[Machine],
+    config: PlacementSolverConfig = PlacementSolverConfig(),
+    *,
+    output_flag: bool = False,
+    threads: int | None = 1,
+    seed: int = 0,
+    mip_gap: float = 1e-6,
+) -> PlacementSolution:
+    """Solve the physical-machine candidate ILP with Gurobi.
+
+    The model chooses an integer count for each candidate, places exactly
+    ``config.num_rsms`` RSMs, enforces every physical machine's capacity and
+    the optional hourly budget, and maximizes either summed or product
+    availability. Product availability is optimized in log space.
+
+    Solver diagnostics are returned on both successful and unsuccessful runs.
+    A result can therefore distinguish infeasibility from other no-solution
+    states without parsing Gurobi's console output.
+    """
+
+    if not candidates:
+        raise ValueError("candidates must not be empty")
+    if config.num_rsms <= 0:
+        raise ValueError("num_rsms must be positive")
+    if config.objective == "min_cost":
+        raise ValueError(
+            "solve_candidate_ilp_gurobi supports availability objectives; "
+            "use sum_availability or product_availability"
+        )
+
+    try:
+        import gurobipy as gp
+    except ImportError as exc:  # pragma: no cover - depends on optional package
+        raise ImportError(
+            "solve_candidate_ilp_gurobi requires gurobipy. Install Powder's "
+            "gurobi optional dependency before solving."
+        ) from exc
+
+    machine_ids = [machine.machine_id for machine in machines]
+    capacities = {machine.machine_id: machine.capacity for machine in machines}
+    machine_index = {machine_id: index for index, machine_id in enumerate(machine_ids)}
+    unknown = sorted(
+        {machine_id for candidate in candidates for machine_id in candidate.machine_ids
+         if machine_id not in machine_index}
+    )
+    if unknown:
+        raise ValueError(f"candidates reference unknown machines: {unknown[:5]}")
+
+    model = gp.Model("powder_candidate_placement")
+    model.Params.OutputFlag = int(output_flag)
+    model.Params.Seed = int(seed)
+    if mip_gap < 0:
+        raise ValueError("mip_gap must be nonnegative")
+    model.Params.MIPGap = float(mip_gap)
+    if threads is not None:
+        if threads <= 0:
+            raise ValueError("threads must be positive when provided")
+        model.Params.Threads = int(threads)
+
+    selection = model.addVars(
+        len(candidates),
+        vtype=gp.GRB.INTEGER,
+        lb=0.0,
+        ub=float(config.num_rsms),
+        name="candidate_count",
+    )
+    model.addConstr(
+        gp.quicksum(selection[index] for index in range(len(candidates)))
+        == config.num_rsms,
+        name="rsm_count",
+    )
+
+    candidates_by_machine: list[list[int]] = [[] for _ in machines]
+    for candidate_index, candidate in enumerate(candidates):
+        if len(set(candidate.machine_ids)) != len(candidate.machine_ids):
+            raise ValueError(
+                f"candidate {candidate.candidate_id!r} repeats a physical machine"
+            )
+        for machine_id in candidate.machine_ids:
+            candidates_by_machine[machine_index[machine_id]].append(candidate_index)
+    for machine_index_value, candidate_indexes in enumerate(candidates_by_machine):
+        if not candidate_indexes:
+            continue
+        machine_id = machine_ids[machine_index_value]
+        model.addConstr(
+            gp.quicksum(selection[index] for index in candidate_indexes)
+            <= capacities[machine_id],
+            name=f"machine_capacity[{machine_index_value}]",
+        )
+
+    if config.budget_per_hour is not None:
+        model.addConstr(
+            gp.quicksum(
+                candidate.cost_per_hour * selection[index]
+                for index, candidate in enumerate(candidates)
+            )
+            <= config.budget_per_hour,
+            name="hourly_budget",
+        )
+
+    objective_coefficients = [
+        _objective_value(candidate, config.objective) for candidate in candidates
+    ]
+    # Candidate log availabilities are commonly 1e-8--1e-4 in magnitude.
+    # Scaling avoids treating meaningful product-availability differences as
+    # numerical noise while leaving the mathematical objective unchanged.
+    objective_scale = 1e9 if config.objective == "product_availability" else 1.0
+    model.setObjective(
+        gp.quicksum(
+            objective_scale * coefficient * selection[index]
+            for index, coefficient in enumerate(objective_coefficients)
+        ),
+        gp.GRB.MAXIMIZE,
+    )
+    model.optimize()
+
+    status_names = {
+        gp.GRB.LOADED: "loaded",
+        gp.GRB.OPTIMAL: "optimal",
+        gp.GRB.INFEASIBLE: "infeasible",
+        gp.GRB.INF_OR_UNBD: "infeasible_or_unbounded",
+        gp.GRB.UNBOUNDED: "unbounded",
+        gp.GRB.CUTOFF: "cutoff",
+        gp.GRB.ITERATION_LIMIT: "iteration_limit",
+        gp.GRB.NODE_LIMIT: "node_limit",
+        gp.GRB.TIME_LIMIT: "time_limit",
+        gp.GRB.SOLUTION_LIMIT: "solution_limit",
+        gp.GRB.INTERRUPTED: "interrupted",
+        gp.GRB.NUMERIC: "numeric",
+        gp.GRB.SUBOPTIMAL: "suboptimal",
+        gp.GRB.INPROGRESS: "in_progress",
+        gp.GRB.USER_OBJ_LIMIT: "user_objective_limit",
+        gp.GRB.WORK_LIMIT: "work_limit",
+        gp.GRB.MEM_LIMIT: "memory_limit",
+    }
+    status = status_names.get(model.Status, f"gurobi_status_{model.Status}")
+    has_solution = model.SolCount > 0
+    mip_gap = float(model.MIPGap) if has_solution else None
+    best_bound = float(model.ObjBound) / objective_scale if has_solution else None
+    message = (
+        f"Gurobi status={status}; solutions={model.SolCount}; "
+        f"runtime={model.Runtime:.6f}s"
+    )
+    if not has_solution:
+        return PlacementSolution(
+            status=status,
+            message=message,
+            objective=config.objective,
+            objective_value=float("nan"),
+            total_cost_per_hour=float("nan"),
+            budget_per_hour=config.budget_per_hour,
+            selected=(),
+            solver_runtime_seconds=float(model.Runtime),
+            mip_gap=mip_gap,
+            best_bound=best_bound,
+        )
+
+    selected = tuple(
+        SelectedCandidate(candidate, int(round(selection[index].X)))
+        for index, candidate in enumerate(candidates)
+        if selection[index].X > 0.5
+    )
+    objective_value = sum(
+        _objective_value(item.candidate, config.objective) * item.count
+        for item in selected
+    )
+    total_cost = sum(item.candidate.cost_per_hour * item.count for item in selected)
+    return PlacementSolution(
+        status=status,
+        message=message,
+        objective=config.objective,
+        objective_value=float(objective_value),
+        total_cost_per_hour=float(total_cost),
+        budget_per_hour=config.budget_per_hour,
+        selected=selected,
+        solver_runtime_seconds=float(model.Runtime),
+        mip_gap=mip_gap,
+        best_bound=best_bound,
     )
 
 

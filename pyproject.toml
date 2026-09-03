@@ -25,6 +25,9 @@ cudss = [
 mkl = [
     "pypardiso",
 ]
+gurobi = [
+    "gurobipy>=12,<14",
+]
 dev = [
     "pytest",
     "jupyterlab",

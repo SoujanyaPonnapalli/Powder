@@ -20,6 +20,7 @@ from powder.placement_optimizer import (
     rescore_type_count_solution,
     solve_blind_type_count_placement,
     solve_candidate_ilp,
+    solve_candidate_ilp_gurobi,
     solve_type_count_ilp,
 )
 from powder.simulation import Constant, NodeConfig, days
@@ -159,6 +160,68 @@ def test_candidate_ilp_reports_infeasible_problem():
 
     assert solution.selected == ()
     assert solution.status != "0"
+
+
+def test_gurobi_candidate_ilp_maximizes_product_availability():
+    pytest.importorskip("gurobipy")
+    machines = [
+        Machine(f"m{i}", _node_config("region"), capacity=1)
+        for i in range(9)
+    ]
+    candidates = [
+        PlacementCandidate("best", ("m0", "m1", "m2"), 0.999, 8.0),
+        PlacementCandidate("second", ("m3", "m4", "m5"), 0.99, 7.0),
+        PlacementCandidate("cheap", ("m6", "m7", "m8"), 0.90, 2.0),
+    ]
+
+    solution = solve_candidate_ilp_gurobi(
+        candidates,
+        machines,
+        PlacementSolverConfig(
+            num_rsms=2,
+            objective="product_availability",
+            budget_per_hour=15.0,
+        ),
+        threads=1,
+    )
+
+    assert solution.status == "optimal"
+    assert solution.total_rsms == 2
+    assert {item.candidate.candidate_id for item in solution.selected} == {
+        "best",
+        "second",
+    }
+    assert solution.total_cost_per_hour == pytest.approx(15.0)
+    assert solution.solver_runtime_seconds is not None
+    assert solution.mip_gap == pytest.approx(0.0)
+
+
+def test_gurobi_candidate_ilp_reports_budget_infeasibility():
+    pytest.importorskip("gurobipy")
+    machines = [
+        Machine(f"m{i}", _node_config("region"), capacity=1)
+        for i in range(6)
+    ]
+    candidates = [
+        PlacementCandidate("a", ("m0", "m1", "m2"), 0.99, 5.0),
+        PlacementCandidate("b", ("m3", "m4", "m5"), 0.98, 5.0),
+    ]
+
+    solution = solve_candidate_ilp_gurobi(
+        candidates,
+        machines,
+        PlacementSolverConfig(
+            num_rsms=2,
+            objective="product_availability",
+            budget_per_hour=9.0,
+        ),
+        threads=1,
+    )
+
+    assert solution.status == "infeasible"
+    assert solution.selected == ()
+    assert solution.total_rsms == 0
+    assert "solutions=0" in solution.message
 
 
 def _machine_types() -> list[MachineType]:
@@ -458,4 +521,3 @@ def test_solve_blind_type_count_placement_rescores_after_blind_search():
     assert solution.selected[0].candidate.metadata["blind_strategy"] == "cheap"
     assert solution.selected[0].candidate.metadata["prescore_cost_per_hour"] == 3.0
     assert solution.selected[0].candidate.metadata["oracle"] == "test"
-
