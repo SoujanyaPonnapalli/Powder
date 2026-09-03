@@ -26,7 +26,8 @@ class QualityLevel(IntEnum):
     Levels (leaderless per-node states / Raft adds leader dimension):
         SIMPLIFIED:         k=3  (H, F, D)
         COLLAPSED_PIPELINE: k=4  (H, F, L, D)
-        NO_ORPHANS:         k=6  (H, Fw, Fe_R, L, Dw, De_R)
+        NO_ORPHANS:         k=6  (H, Fw, Fe_R, L, Dw, De_R); recommended
+                            balanced model for Raft placement analysis
         MERGED_PIPELINE:    k=8  (H, H_R, Fw, Fe_R, L, L_R, Dw, De_R)
         FULL:               k=12 (all pipeline + timer + availability states)
     """

@@ -48,7 +48,7 @@ leader statuses:
 | Status         | Condition                     | Can commit?                                      |
 | -------------- | ----------------------------- | ------------------------------------------------ |
 | **Has leader** | One H node is leader, n_H ≥ 1 | Yes, if n_H ≥ majority                           |
-| **No leader**  | No node is leader             | No (electing if n_H ≥ majority, stuck otherwise) |
+| **No leader**  | No node is leader             | No (electing if an available majority can vote and at least one H candidate exists) |
 
 
 ### Key Raft transitions
@@ -58,7 +58,7 @@ leader statuses:
 | ------------------ | -------------------------------- | ------------------------------------------ |
 | Leader fails       | λ (single node)                  | has_leader → no_leader; n_H -= 1, n_F += 1 |
 | Follower fails     | (n_H - 1) × λ                    | n_H -= 1, n_F += 1; leader unchanged       |
-| Election completes | μ_election (when n_H ≥ majority) | no_leader → has_leader                     |
+| Election completes | μ_election (available majority and n_H ≥ 1) | no_leader → has_leader                     |
 
 
 ---
@@ -155,6 +155,16 @@ Pipeline `{None, P, S}` → `{None, R}`. Leader types follow the same merge.
 `H_R` → `H` and `L_R` → `L`. For the leader: `H★_R` → `H★`.
 
 **k_nl = 6, k_l = 1** (single leader state: {H★})
+
+This is the recommended **balanced** Raft model when transient recovery and
+replacement take hours but node failures are separated by days or weeks. It
+retains the timeout-versus-recovery race and the lagging state, while merging
+provisioning with syncing and dropping orphan pipelines.
+
+Lagging nodes count as available voters but not as up-to-date replicas. Thus a
+no-leader state may complete an election when an available majority exists and
+at least one up-to-date candidate is available; the resulting state remains
+unavailable until an up-to-date majority exists.
 
 
 |                   | N = 5      | N = 7       | Raft overhead |
@@ -297,7 +307,7 @@ transitions involving the leader are:
 | (n_H, n_F, n_D, has_leader) | (n_H-1, n_F+1, n_D, no_leader)  | λ              | Leader fails                         |
 | (n_H, n_F, n_D, has_leader) | (n_H-1, n_F+1, n_D, has_leader) | (n_H - 1) × λ  | Follower fails                       |
 | (n_H, n_F, n_D, no_leader)  | (n_H, n_F, n_D, has_leader)     | μ_election     | n_H ≥ majority                       |
-| (n_H, n_F, n_D, has_leader) | (n_H-1, n_F, n_D+1, has_leader) | 0              | Leader can't lose data (it has data) |
+| (n_H, n_F, n_D, has_leader) | (n_H-1, n_F, n_D+1, no_leader)  | λ_data-loss    | Leader loses its local data          |
 | (n_H, n_F, n_D, has_leader) | (n_H, n_F-1, n_D, has_leader)   | n_F × μ_direct | Follower recovers                    |
 
 

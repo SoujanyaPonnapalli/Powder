@@ -437,7 +437,14 @@ def _build_no_orphans(
                     (delta_in_class(s, c, k, (0, 1), (5, -1)), nDeR * mu_R),
                 )
 
-        if not has_leader and total_H >= q and mu_election > 0:
+        # NO_ORPHANS is the balanced Raft model: keep lagging separate so it
+        # can vote in an election without being counted in the commit quorum.
+        if (
+            not has_leader
+            and n_available >= q
+            and total_H > 0
+            and mu_election > 0
+        ):
             for rc in classes:
                 c = rc.class_idx
                 nH_c = s[c * k]

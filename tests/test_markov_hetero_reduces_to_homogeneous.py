@@ -77,7 +77,7 @@ _GOLDEN_RAFT = {
         0.9992474634560282, 42069.056579303164, 2.9996233349693524, 30,
     ),
     QualityLevel.NO_ORPHANS: (
-        0.9991970031141639, 42020.12703586393, 2.9996578287693074, 76,
+        0.9992044437252245, 42020.12703586393, 2.9996578287693074, 76,
     ),
     QualityLevel.MERGED_PIPELINE: (
         0.9991972974205018, 42020.39033052767, 2.999657979505005, 192,
@@ -106,7 +106,7 @@ def test_leaderless_homogeneous_matches_golden(quality: QualityLevel):
 
 @pytest.mark.parametrize("quality", list(QualityLevel), ids=lambda q: q.name)
 def test_raft_homogeneous_matches_golden(quality: QualityLevel):
-    """Uniform input at C=1 must reproduce pre-change Raft metrics.
+    """Uniform input at C=1 must reproduce the pinned Raft metrics.
 
     Mean-time-to-unavailability is held to a looser tolerance because
     the election transitions now decompose ``mu_election`` as

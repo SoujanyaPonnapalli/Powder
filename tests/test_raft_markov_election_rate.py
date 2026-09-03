@@ -27,12 +27,20 @@ _K_BY_QUALITY = {
     QualityLevel.FULL: 12,
 }
 
-_ELIGIBLE_OFFSETS_BY_QUALITY = {
+_UP_TO_DATE_OFFSETS_BY_QUALITY = {
     QualityLevel.SIMPLIFIED: (0,),
     QualityLevel.COLLAPSED_PIPELINE: (0,),
     QualityLevel.NO_ORPHANS: (0,),
     QualityLevel.MERGED_PIPELINE: (0, 1),
     QualityLevel.FULL: (0, 1, 2),
+}
+
+_AVAILABLE_OFFSETS_BY_QUALITY = {
+    QualityLevel.SIMPLIFIED: (0,),
+    QualityLevel.COLLAPSED_PIPELINE: (0, 2),
+    QualityLevel.NO_ORPHANS: (0, 3),
+    QualityLevel.MERGED_PIPELINE: (0, 1, 4, 5),
+    QualityLevel.FULL: (0, 1, 2, 6, 7, 8),
 }
 
 
@@ -77,28 +85,53 @@ def test_raft_no_leader_election_exit_rate_is_single_cluster_clock(
     k = _K_BY_QUALITY[quality]
     has_leader_idx = class_count * k
     quorum = len(configs) // 2 + 1
-    live_state_ids = model.live_state_ids
-
     checked_states = 0
+    checked_lagging_majorities = 0
     for state_id in range(model.num_states):
         state = _state_tuple(model, state_id)
         has_leader = state[has_leader_idx]
         if has_leader:
             continue
 
-        eligible = 0
+        up_to_date = 0
+        available = 0
         for class_idx in range(class_count):
             offset = class_idx * k
-            eligible += sum(
+            up_to_date += sum(
                 state[offset + eligible_offset]
-                for eligible_offset in _ELIGIBLE_OFFSETS_BY_QUALITY[quality]
+                for eligible_offset in _UP_TO_DATE_OFFSETS_BY_QUALITY[quality]
+            )
+            available += sum(
+                state[offset + available_offset]
+                for available_offset in _AVAILABLE_OFFSETS_BY_QUALITY[quality]
             )
 
-        if eligible < quorum:
-            continue
+        election_targets = [
+            dst
+            for dst in model.Q[state_id].indices
+            if dst != state_id and _state_tuple(model, dst)[has_leader_idx] == 1
+        ]
+        election_exit_rate = float(model.Q[state_id, election_targets].sum())
 
-        checked_states += 1
-        election_exit_rate = model.Q[state_id, live_state_ids].sum()
-        assert election_exit_rate == pytest.approx(mu_election)
+        election_possible = (
+            available >= quorum and up_to_date > 0
+            if quality == QualityLevel.NO_ORPHANS
+            else up_to_date >= quorum
+        )
+        if election_possible:
+            checked_states += 1
+            if up_to_date < quorum:
+                checked_lagging_majorities += 1
+            assert election_exit_rate == pytest.approx(mu_election)
+            # Election and commit eligibility are intentionally different:
+            # lagging voters can elect, but cannot form an up-to-date quorum.
+            assert all(
+                bool(model.live_mask[dst]) == (up_to_date >= quorum)
+                for dst in election_targets
+            )
+        else:
+            assert election_exit_rate == 0.0
 
     assert checked_states > 0
+    if quality == QualityLevel.NO_ORPHANS:
+        assert checked_lagging_majorities > 0

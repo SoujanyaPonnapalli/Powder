@@ -115,9 +115,14 @@ two cross-class couplings exist:
 
 1. `all_down` predicates sum the healthy-like per-node states across
   all classes before deciding whether replacement timers fire.
-2. Raft elections fire at total rate `mu_election` split across
-  classes in proportion to the class's contribution to the healthy
-   pool (`nH_c / total_H`, or the merged-pipeline / full equivalent).
+2. In the recommended Raft `NO_ORPHANS` model, elections fire when an
+  available majority can vote and at least one up-to-date candidate exists.
+  The total rate `mu_election` is split across classes in proportion to the
+  class's contribution to the up-to-date candidate pool (`nH_c / total_H`).
+  Lagging nodes count toward the available voting majority, but not toward
+  the candidate pool or the up-to-date commit quorum. The other quality
+  levels retain their historical up-to-date-majority election approximation
+  so benchmark baselines remain stable.
    The sum of the per-class election rates out of a no-leader state
    stays exactly `mu_election`, so the `C = 1` collapse is preserved.
 
