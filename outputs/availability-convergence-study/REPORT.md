@@ -1,3 +1,5 @@
+> **Full-week accounting correction:** Some historical Monte Carlo runs below stopped early at data loss, so their availability averages do not cover a complete week. The [new full-week study](../availability-weekly-windows-study/REPORT.md) compares fresh exponential controls with independent weekly failure windows and reports the effect of this correction separately. Historical results below are retained for provenance.
+
 # Availability Estimation: Quality, Runtime, and Monte Carlo Convergence
 
 Date: 2026-09-08
