@@ -1,0 +1,211 @@
+{
+  "source": "validation.json",
+  "confidence": 0.99,
+  "method": "Two-sided empirical Bernstein; fixed sample, IID, bounded [0,1]",
+  "reference": "https://arxiv.org/abs/0907.3740",
+  "results": [
+    {
+      "profile": "Standard",
+      "nodes": 3,
+      "runs": 100000,
+      "mean": 0.9999979103396512,
+      "nominal_t_ci99": [
+        0.9999977981801436,
+        0.9999980224991589
+      ],
+      "bounded_ci99": {
+        "radius": 0.00013995296485908596,
+        "ci": [
+          0.9998579573747921,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 0,
+      "tail_probability": 0.0,
+      "tail_probability_exact_ci99": [
+        0.0,
+        5.2981770082003075e-05
+      ],
+      "mean_downtime": 2.0896603487585708e-06,
+      "tail_contribution_to_mean_downtime": 0.0,
+      "other_contribution_to_mean_downtime": 2.0896603487585708e-06,
+      "fraction_of_observed_downtime_in_tail": 0.0
+    },
+    {
+      "profile": "Standard",
+      "nodes": 5,
+      "runs": 100000,
+      "mean": 0.9999980005575883,
+      "nominal_t_ci99": [
+        0.999997953792551,
+        0.9999980473226255
+      ],
+      "bounded_ci99": {
+        "radius": 0.00013986508342148178,
+        "ci": [
+          0.9998581354741668,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 0,
+      "tail_probability": 0.0,
+      "tail_probability_exact_ci99": [
+        0.0,
+        5.2981770082003075e-05
+      ],
+      "mean_downtime": 1.999442411748653e-06,
+      "tail_contribution_to_mean_downtime": 0.0,
+      "other_contribution_to_mean_downtime": 1.999442411748653e-06,
+      "fraction_of_observed_downtime_in_tail": 0.0
+    },
+    {
+      "profile": "Standard",
+      "nodes": 7,
+      "runs": 100000,
+      "mean": 0.9999980081779356,
+      "nominal_t_ci99": [
+        0.9999979612409314,
+        0.9999980551149398
+      ],
+      "bounded_ci99": {
+        "radius": 0.00013986531452207964,
+        "ci": [
+          0.9998581428634136,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 0,
+      "tail_probability": 0.0,
+      "tail_probability_exact_ci99": [
+        0.0,
+        5.2981770082003075e-05
+      ],
+      "mean_downtime": 1.991822064395521e-06,
+      "tail_contribution_to_mean_downtime": 0.0,
+      "other_contribution_to_mean_downtime": 1.991822064395521e-06,
+      "fraction_of_observed_downtime_in_tail": 0.0
+    },
+    {
+      "profile": "Unreliable",
+      "nodes": 3,
+      "runs": 100000,
+      "mean": 0.9999881354703934,
+      "nominal_t_ci99": [
+        0.9999635178063704,
+        1.0000127531344165
+      ],
+      "bounded_ci99": {
+        "radius": 0.0001728850912598497,
+        "ci": [
+          0.9998152503791335,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 1,
+      "tail_probability": 1e-05,
+      "tail_probability_exact_ci99": [
+        5.0124957369145935e-08,
+        7.429890621410854e-05
+      ],
+      "mean_downtime": 1.1864529606553376e-05,
+      "tail_contribution_to_mean_downtime": 9.556763868202178e-06,
+      "other_contribution_to_mean_downtime": 2.307765738351198e-06,
+      "fraction_of_observed_downtime_in_tail": 0.8054903300105127
+    },
+    {
+      "profile": "Unreliable",
+      "nodes": 5,
+      "runs": 100000,
+      "mean": 0.9999979223391108,
+      "nominal_t_ci99": [
+        0.9999978746231558,
+        0.9999979700550657
+      ],
+      "bounded_ci99": {
+        "radius": 0.00013986636132792428,
+        "ci": [
+          0.9998580559777829,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 0,
+      "tail_probability": 0.0,
+      "tail_probability_exact_ci99": [
+        0.0,
+        5.2981770082003075e-05
+      ],
+      "mean_downtime": 2.0776608892214554e-06,
+      "tail_contribution_to_mean_downtime": 0.0,
+      "other_contribution_to_mean_downtime": 2.0776608892214554e-06,
+      "fraction_of_observed_downtime_in_tail": 0.0
+    },
+    {
+      "profile": "Unreliable",
+      "nodes": 7,
+      "runs": 100000,
+      "mean": 0.9999978926741449,
+      "nominal_t_ci99": [
+        0.9999978444484598,
+        0.9999979408998299
+      ],
+      "bounded_ci99": {
+        "radius": 0.00013986704633703656,
+        "ci": [
+          0.9998580256278078,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 0,
+      "tail_probability": 0.0,
+      "tail_probability_exact_ci99": [
+        0.0,
+        5.2981770082003075e-05
+      ],
+      "mean_downtime": 2.107325855149611e-06,
+      "tail_contribution_to_mean_downtime": 0.0,
+      "other_contribution_to_mean_downtime": 2.107325855149611e-06,
+      "fraction_of_observed_downtime_in_tail": 0.0
+    },
+    {
+      "profile": "Spot",
+      "nodes": 7,
+      "runs": 100000,
+      "mean": 0.9999226622671261,
+      "nominal_t_ci99": [
+        0.999899764442381,
+        0.9999455600918712
+      ],
+      "bounded_ci99": {
+        "radius": 0.00017057385688164353,
+        "ci": [
+          0.9997520884102444,
+          1
+        ],
+        "precision_5e_6_certified": false
+      },
+      "tail_definition": "weekly availability < 0.99",
+      "tail_count": 5,
+      "tail_probability": 5e-05,
+      "tail_probability_exact_ci99": [
+        1.0779439898625753e-05,
+        0.0001414911208880859
+      ],
+      "mean_downtime": 7.733773287388335e-05,
+      "tail_contribution_to_mean_downtime": 1.762142364852105e-05,
+      "other_contribution_to_mean_downtime": 5.97163092253623e-05,
+      "fraction_of_observed_downtime_in_tail": 0.22785027429310298
+    }
+  ]
+}

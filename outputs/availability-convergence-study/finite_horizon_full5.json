@@ -1,0 +1,69 @@
+{
+  "metadata": {
+    "timestamp_utc": "2026-09-08T22:18:53.810664+00:00",
+    "git_revision_before_run": "0598972223241598298bba7322ed65e7ada83f77",
+    "python": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+    "numpy": "2.4.1",
+    "scipy": "1.17.0",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "thread_limits": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "BLIS_NUM_THREADS": "1"
+    },
+    "method": "Dense augmented (n+1)-state matrix exponential, normalized average distribution",
+    "source_sha256": "c5714844959c8e81ee0f6ea697b2ed54a5dae914310b253841071387b6bfc406",
+    "arguments": {
+      "profiles": [
+        "Standard"
+      ],
+      "nodes": [
+        5
+      ],
+      "qualities": [
+        "FULL"
+      ],
+      "max_states": 10000,
+      "repeats": 1,
+      "verify": false,
+      "output": "outputs/availability-convergence-study/finite_horizon_full5.json"
+    }
+  },
+  "results": [
+    {
+      "profile": "Standard",
+      "nodes": 5,
+      "quality": "FULL",
+      "states": 8463,
+      "horizon_seconds": 604800,
+      "initial_availability": 1.0,
+      "build_seconds": 0.1158843329976662,
+      "mc_mean": 0.9999980005575883,
+      "mc_ci99": [
+        0.999997953792551,
+        0.9999980473226255
+      ],
+      "mc_runs": 100000,
+      "mc_source": "validation.json",
+      "skipped": false,
+      "weekly_availability": 0.9999980181433481,
+      "steady_availability": 0.9999980181269524,
+      "weekly_minus_steady": 1.639566260536185e-11,
+      "weekly_minus_mc": 1.7585759848337545e-08,
+      "inside_nominal_mc_ci99": true,
+      "dense_solve_seconds": 147.66948987499927,
+      "dense_total_seconds": 147.78537420799694,
+      "steady_solve_seconds": 13.008136500000546,
+      "repeats": 1,
+      "diagnostics": {
+        "raw_average_mass_error": -6.716049938404467e-11,
+        "raw_terminal_mass_error": -1.343241073925583e-10,
+        "minimum_raw_probability": 4.4158665181674724e-51,
+        "integral_identity_residual_inf": 1.342190114475908e-10
+      }
+    }
+  ]
+}

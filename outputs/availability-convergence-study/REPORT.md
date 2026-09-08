@@ -2,6 +2,9 @@
 
 Date: 2026-09-08
 
+For a concise reading, see [the simplified report](SUMMARY.md). The final
+sections add one-week Markov calculations and a concrete plan for skewed data.
+
 ## Executive summary
 
 This study compares Powder's discrete-event Monte Carlo simulator with its
@@ -34,6 +37,11 @@ The main conclusions are:
 5. A highly optimized Rust simulation port is estimated to be 20–50 times
    faster than the Python simulator. This is an engineering extrapolation,
    not a measured Rust result.
+6. One-week Markov averages barely differ from steady state for Standard;
+   matching the horizon does not reconcile recovery-policy differences.
+   Conservative bounded confidence intervals do not certify five-decimal
+   accuracy from the saved 100,000-run MC samples. Importance sampling is the
+   recommended next efficiency improvement, after validating recovery semantics.
 
 ## Scope and interpretation
 
@@ -277,8 +285,9 @@ Carlo complexity:
 - a system that is normally perfect but occasionally unavailable for an
   entire week can have the same mean and much larger variance.
 
-Spot hardware resembles the second case. Rare, long outages inflate the second
-moment of downtime and dominate the arithmetic mean.
+Spot hardware has elements of the second case. Rare, long outages inflate the
+second moment of downtime and can materially affect its mean; the fresh N=7
+pilot attributes 22.8% of observed mean downtime to its five severe weeks.
 
 ### Absolute versus relative precision
 
@@ -539,3 +548,166 @@ Verification completed: 700,000 fresh validation simulations; exact replay of
 the original three 10,000-run weekly pilots (all saved statistics agree except
 runtime); deterministic replay of the Unreliable N=3 tail; 14 Markov solves and
 the N=7 FULL build; source parsing and sample-planning/rounding-boundary checks.
+
+<!-- GENERATED: finite horizon and skew audit -->
+
+## Handling skew: protect inference, then improve sampling
+
+The target is **mean weekly downtime**, `D = 1 - availability`. Transforming
+to downtime improves interpretation; it does not itself reduce variance.
+Keep prolonged outages in the estimate. Dropping them, winsorizing, or reporting
+only a median answers a different question. Ordinary resampling of a pilot
+cannot reveal a failure path absent from that pilot.
+
+The study now adds a conservative fixed-sample, two-sided **empirical Bernstein
+interval** for IID samples in `[0,1]`. With unbiased sample variance `s²` and
+`delta = 0.01`, its radius is:
+
+```text
+sqrt(2 * s² * log(4/delta) / n) + 7 * log(4/delta) / (3*(n-1))
+```
+
+This applies [Maurer and Pontil, Theorem 4](https://arxiv.org/abs/0907.3740) to
+both tails. Intersect the resulting interval with `[0,1]`. The guarantee is per
+scenario at a fixed, predeclared sample count; it is not simultaneous across
+scenarios and does not justify repeatedly stopping at the first passing check.
+It protects inference without requiring normality, but is deliberately wide.
+
+| Profile | Nodes | Nominal t half-width | Bounded 99% radius | Tail observations (<99% weekly availability) |
+|---|---:|---:|---:|---:|
+| Standard | 3 | 1.122e-07 | 1.400e-04 | 0 / 100,000 |
+| Standard | 5 | 4.677e-08 | 1.399e-04 | 0 / 100,000 |
+| Standard | 7 | 4.694e-08 | 1.399e-04 | 0 / 100,000 |
+| Unreliable | 3 | 2.462e-05 | 1.729e-04 | 1 / 100,000 |
+| Unreliable | 5 | 4.772e-08 | 1.399e-04 | 0 / 100,000 |
+| Unreliable | 7 | 4.823e-08 | 1.399e-04 | 0 / 100,000 |
+| Spot | 7 | 2.290e-05 | 1.706e-04 | 5 / 100,000 |
+
+None of these saved 100,000-run samples passes the bounded-radius requirement
+`<= 5e-6`. This does not show that their means are wrong; it shows the difference
+between a useful empirical estimate and a distribution-free accuracy claim.
+The added range term prevents zero observed events from implying zero risk.
+These diagnostics are in [skew_diagnostics.json](skew_diagnostics.json); the
+production Monte Carlo convergence rule has not been changed.
+
+For Unreliable N=3, the single severe week accounts for **80.5% of observed mean
+downtime**. For Spot N=7, the five severe weeks account for **22.8%**. Their
+two-sided exact 99% binomial intervals for severe-week probability are roughly
+`[5.01e-8, 7.43e-5]` and `[1.08e-5, 1.41e-4]`, respectively. Even observing zero
+severe weeks in 100,000 runs leaves an upper endpoint about `5.30e-5`. Tail
+frequency and tail severity both need to be estimated.
+
+### Recommended next implementation
+
+1. Retain the arithmetic mean, tail counts, conditional outage duration, and
+   both nominal and bounded intervals. Use a predeclared production sample size
+   or a confidence sequence designed for sequential stopping.
+2. Validate intended recovery semantics. The recorded quorum outage persists
+   because safe-mode promotion requires an existing committing quorum. If the
+   deployed system uses an operator restore or disaster-recovery procedure,
+   model that procedure and its recovery delay/data-loss consequences explicitly.
+   Changing this policy changes the system being estimated.
+3. Implement **importance sampling of dangerous failure paths**, with exact
+   path likelihood weights. Increase the frequency of overlapping failures in
+   the proposal, and weight downtime back to the original probability law.
+   Include survival/censoring terms and all active-node exposure, including
+   replacement nodes. Simply increasing failure rates and averaging is biased.
+4. Tune the proposal on a pilot, then freeze it for an independent validation
+   run. Check likelihood normalization, weight concentration, contribution of
+   tail paths, and agreement with tractable analytic models and ordinary MC in
+   an easier regime. Report measured variance reduction before promising speedup.
+
+This follows the [importance-sampling approach described by Art Owen](https://artowen.su.domains/mc/Ch-var-is.pdf).
+Stratification is another option: for a predeclared dangerous event `C`,
+`E[D] = P(C) E[D|C] + (1-P(C)) E[D|not C]`. It helps only when we can estimate
+the stratum weights and sample the conditional paths correctly. Multilevel
+splitting can target intermediate states close to quorum loss. These samplers
+are recommendations; they have not yet been implemented or benchmarked here.
+
+## One-week finite-horizon Markov comparison
+
+All calculations start healthy with a selected leader and average availability
+over **604,800 seconds**. They integrate the whole first week; they are not the
+probability of being available at the end of the week.
+
+| Profile | Nodes | MC weekly mean | Markov weekly SIMPLIFIED | Markov weekly NO_ORPHANS | NO_ORPHANS weekly − steady |
+|---|---:|---:|---:|---:|---:|
+| Standard | 3 | 0.999997910 | 0.999997981 | 0.999997979 | 4.083e-11 |
+| Standard | 5 | 0.999998001 | 0.999998018 | 0.999998018 | 1.640e-11 |
+| Standard | 7 | 0.999998008 | 0.999998018 | 0.999998018 | 1.638e-11 |
+| Unreliable | 3 | 0.999988135 | 0.999997870 | 0.999997868 | 4.549e-11 |
+| Unreliable | 5 | 0.999997922 | 0.999997912 | 0.999997912 | 1.727e-11 |
+| Unreliable | 7 | 0.999997893 | 0.999997912 | 0.999997912 | 1.726e-11 |
+| Spot | 3 | 0.959883510 | 0.999885782 | 0.999885688 | 4.198e-08 |
+| Spot | 5 | 0.998499191 | 0.999939434 | 0.999939432 | 1.209e-09 |
+| Spot | 7 | 0.999922662 | 0.999940193 | 0.999940193 | 5.064e-10 |
+
+MC values use the previous 100,000-run validation except Spot N=3/5, which use
+the recorded 5,000-run pilots. Their uncertainty remains as documented above.
+For Standard, the largest weekly-versus-stationary shift among computed quality
+levels is only **4.224e-11**. Matching the horizon therefore does not
+resolve the much larger Markov/MC differences seen for Spot. The models still
+differ in safe-mode recovery, timeout, and synchronization semantics. Inclusion
+inside a wide nominal MC interval is not proof of model equivalence.
+
+### One-core runtime (Standard)
+
+| Nodes | Quality | States | One-week build + solve | Steady-state build + solve |
+|---:|---|---:|---:|---:|
+| 3 | SIMPLIFIED | 16 | 2.92 ms | 3.09 ms |
+| 3 | NO_ORPHANS | 76 | 1.29 ms | 1.26 ms |
+| 3 | FULL | 598 | 52.22 ms | 13.75 ms |
+| 5 | SIMPLIFIED | 36 | 0.89 ms | 0.96 ms |
+| 5 | NO_ORPHANS | 377 | 16.61 ms | 5.89 ms |
+| 5 | FULL | 8,463 | 147.79 s | 13.12 s |
+| 7 | SIMPLIFIED | 64 | 1.28 ms | 1.33 ms |
+| 7 | NO_ORPHANS | 1,253 | 456.27 ms | 32.70 ms |
+| 7 | FULL | 68,952 | Not computed: dense memory limit | Not rerun |
+
+The weekly figures use the **study's dense augmented matrix exponential**.
+They include model construction and matrix assembly/normalization, exclude
+interpreter startup, and do not include the independent validation checks.
+Small-model solve times are medians of three repeats; construction and
+steady-state solves are single measurements. The expensive N=5 FULL case was
+measured once; the first model build can include initialization overhead.
+These timings are not timings of the unchanged production
+`time_averaged_distribution` implementation.
+
+The existing sparse augmented-exponential routine was also measured for all
+nine SIMPLIFIED cases: about **2.08–2.34 seconds per weekly solve**, compared
+with milliseconds including build for the study's dense SIMPLIFIED method.
+It agrees with the dense average distributions to
+**5.11e-15** maximum absolute state-probability difference.
+Independent stiff BDF integration checked SIMPLIFIED and NO_ORPHANS for all
+profiles/sizes; the largest availability difference was **0.00e+00**.
+Detailed timings, probability-mass errors, and integral residuals are saved in
+[finite_horizon.json](finite_horizon.json), with the larger Standard N=5 FULL
+run in [finite_horizon_full5.json](finite_horizon_full5.json). All quality rows,
+including explicit skips, are in [finite_horizon.md](finite_horizon.md).
+
+The dense method uses the upper-right column of
+`exp([[T*Q.T, p0], [0, 0]])`, which is the exact time-average integral in exact
+arithmetic. It handles singular generators and absorbing states without a
+stationary-tail approximation. Floating-point residuals and independent
+checks measure numerical agreement, not modeling accuracy. Tests also check a
+two-state closed form, zero horizon, and an absorbing-outage model.
+
+There are **37 computed scenario/quality combinations**. The routine
+sweep caps dense models at 2,000 states; Standard N=5 FULL was added separately.
+N=7 FULL alone needs about **35.4 GiB for one dense matrix**, before exponential
+work arrays, exceeding this host's 32 GB RAM. N=7 MERGED_PIPELINE and the other
+two N=5 FULL profiles were also omitted from this bounded study. They are marked
+uncomputed, not assigned extrapolated finite-horizon results.
+
+### Reproduce the new evidence and reports
+
+```sh
+.venv/bin/python -m notebooks.availability_skew_diagnostics
+.venv/bin/python -m notebooks.availability_finite_horizon --verify
+.venv/bin/python -m notebooks.availability_finite_horizon --profiles Standard --nodes 5 --qualities FULL --max-states 10000 --repeats 1 --output outputs/availability-convergence-study/finite_horizon_full5.json
+.venv/bin/python -m notebooks.availability_study_reports
+.venv/bin/python -m pytest -q tests/test_availability_study_methods.py
+```
+
+The reports are [SUMMARY.md](SUMMARY.md) for a concise reading and this full
+report for assumptions, historical measurements, and reproducibility details.
