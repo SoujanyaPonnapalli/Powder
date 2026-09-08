@@ -1,0 +1,195 @@
+{
+  "profile": "Unreliable",
+  "nodes": 3,
+  "seed": 23070693,
+  "horizon_days": 7,
+  "availability": 0.044323613179782305,
+  "metrics": {
+    "time_available": 26806.92125113234,
+    "time_unavailable": 577993.0787488676,
+    "total_cost": 39.892854309579064,
+    "time_to_potential_data_loss": 26806.92125113234,
+    "time_to_actual_data_loss": null,
+    "total_transient_failures": 1,
+    "total_dataloss_failures": 2,
+    "total_nodes_spawned": 4,
+    "total_unavailability_incidents": 1,
+    "total_leader_elections": 0,
+    "time_to_first_unavailability": 26806.92125113234
+  },
+  "end_reason": "time_limit",
+  "end_time": 604800,
+  "can_commit_at_end": false,
+  "final_commit_index": 26806.92125113234,
+  "synced_standbys_at_end": [
+    "replacement_1",
+    "replacement_2",
+    "replacement_4",
+    "replacement_3"
+  ],
+  "final_nodes": [
+    {
+      "node_id": "node0",
+      "available": true,
+      "has_data": true,
+      "applied_index": 26806.92125113234,
+      "sync": null
+    },
+    {
+      "node_id": "node1",
+      "available": false,
+      "has_data": false,
+      "applied_index": 26806.92125113234,
+      "sync": null
+    },
+    {
+      "node_id": "node2",
+      "available": false,
+      "has_data": false,
+      "applied_index": 26558.56238240239,
+      "sync": null
+    }
+  ],
+  "events": [
+    {
+      "time": 26558.56238240239,
+      "type": "NODE_DATA_LOSS",
+      "target": "node2",
+      "metadata": {}
+    },
+    {
+      "time": 26806.92125113234,
+      "type": "NODE_DATA_LOSS",
+      "target": "node1",
+      "metadata": {}
+    },
+    {
+      "time": 26858.56238240239,
+      "type": "NODE_REPLACEMENT_TIMEOUT",
+      "target": "node2",
+      "metadata": {}
+    },
+    {
+      "time": 26929.057992850347,
+      "type": "NODE_SPAWN_COMPLETE",
+      "target": "replacement_1",
+      "metadata": {
+        "node_id": "replacement_1",
+        "standby": true
+      }
+    },
+    {
+      "time": 26929.084799771597,
+      "type": "NODE_SYNC_COMPLETE",
+      "target": "replacement_1",
+      "metadata": {}
+    },
+    {
+      "time": 27106.92125113234,
+      "type": "NODE_REPLACEMENT_TIMEOUT",
+      "target": "node1",
+      "metadata": {}
+    },
+    {
+      "time": 27136.981339420865,
+      "type": "NODE_SPAWN_COMPLETE",
+      "target": "replacement_2",
+      "metadata": {
+        "node_id": "replacement_2",
+        "standby": true
+      }
+    },
+    {
+      "time": 27137.008146342116,
+      "type": "NODE_SYNC_COMPLETE",
+      "target": "replacement_2",
+      "metadata": {}
+    },
+    {
+      "time": 73732.27635157843,
+      "type": "NODE_FAILURE",
+      "target": "node0",
+      "metadata": {}
+    },
+    {
+      "time": 73742.56706377768,
+      "type": "LEADER_ELECTION_COMPLETE",
+      "target": "protocol",
+      "metadata": {
+        "epoch": 1
+      }
+    },
+    {
+      "time": 75113.06301925809,
+      "type": "NODE_RECOVERY",
+      "target": "node0",
+      "metadata": {}
+    },
+    {
+      "time": 75120.10970704735,
+      "type": "LEADER_ELECTION_COMPLETE",
+      "target": "protocol",
+      "metadata": {
+        "epoch": 2
+      }
+    },
+    {
+      "time": 75413.06301925809,
+      "type": "NODE_REPLACEMENT_TIMEOUT",
+      "target": "node1",
+      "metadata": {}
+    },
+    {
+      "time": 75413.06301925809,
+      "type": "NODE_REPLACEMENT_TIMEOUT",
+      "target": "node2",
+      "metadata": {}
+    },
+    {
+      "time": 75475.61935086554,
+      "type": "NODE_SPAWN_COMPLETE",
+      "target": "replacement_4",
+      "metadata": {
+        "node_id": "replacement_4",
+        "standby": true
+      }
+    },
+    {
+      "time": 75475.64615778679,
+      "type": "NODE_SYNC_COMPLETE",
+      "target": "replacement_4",
+      "metadata": {}
+    },
+    {
+      "time": 75481.73220569265,
+      "type": "LEADER_ELECTION_COMPLETE",
+      "target": "protocol",
+      "metadata": {
+        "epoch": 3
+      }
+    },
+    {
+      "time": 75538.3146607054,
+      "type": "NODE_SPAWN_COMPLETE",
+      "target": "replacement_3",
+      "metadata": {
+        "node_id": "replacement_3",
+        "standby": true
+      }
+    },
+    {
+      "time": 75538.34146762664,
+      "type": "NODE_SYNC_COMPLETE",
+      "target": "replacement_3",
+      "metadata": {}
+    },
+    {
+      "time": 75550.23723675775,
+      "type": "LEADER_ELECTION_COMPLETE",
+      "target": "protocol",
+      "metadata": {
+        "epoch": 4
+      }
+    }
+  ]
+}

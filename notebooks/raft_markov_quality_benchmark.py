@@ -16,17 +16,17 @@ For each (N, profile, quality):
 
 Accuracy is reported two ways:
   - Deviation from QualityLevel.FULL for the same (N, profile).
-    FULL is analytically exact for these exponential-rate scenarios, so it
-    serves as the reference within the Markov family.
+    FULL serves as the reference within the Markov family. It still
+    approximates the simulator's timeout, sync, and recovery semantics.
   - Deviation from a Monte Carlo run, which acts as a ground-truth sanity
-    check that our Markov math matches simulation.
+    check against simulation; steady-state and finite-horizon means can differ.
 
 The cluster strategy is NodeReplacementStrategy with a 5-minute failure
 timeout: once a node stays unreachable past the timeout, a fresh VM is
 provisioned and rejoins the quorum. This is the regime where the five
-quality levels actually diverge -- SIMPLIFIED collapses the entire
-spawn + sync pipeline to an instantaneous transition, while FULL models
-each phase separately and even tracks orphaned pipelines after a
+quality levels actually diverge -- SIMPLIFIED collapses the timeout +
+spawn + sync pipeline to one exponential transition with matching mean, while
+FULL models each phase separately and even tracks orphaned pipelines after a
 replacement is elected leader mid-flight.
 
 Output: writes `notebooks/raft_markov_quality_benchmark.json`, which the
