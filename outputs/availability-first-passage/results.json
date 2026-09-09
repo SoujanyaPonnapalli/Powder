@@ -1,0 +1,256 @@
+{
+  "method": "Homogeneous exponential NO_ORPHANS Raft count projection; high-precision dense first-passage solve. MTTDL is a conditional extrapolation of saved MC loss incidence, not a Markov MTTDL.",
+  "source_sha256": {
+    "notebooks/availability_first_passage.py": "b76655ee2c293195042178f08a2fc655fe9dc160c92851eb7f4a5f88f4fac9ab",
+    "outputs/availability-weekly-windows-study/mc.json": "d8b55d8c768466e8ca03680f0a7a0c7b66688adb219c30da3e45e8ea403bd586",
+    "outputs/availability-weekly-windows-study/tail_control.json": "59a2e67dedee7954244f7e75d6f76349c385e28898e0bde442b81aafcf0c8792"
+  },
+  "results": [
+    {
+      "profile": "Spot",
+      "nodes": 3,
+      "quorum": 2,
+      "raft_states": 76,
+      "aggregate_states": 55,
+      "lumping_max_rate_error": 0.0,
+      "up_to_date_quorum_first_passage": {
+        "mean_seconds": 3314987.4326526853,
+        "mean_days": 38.36791010014682,
+        "transient_states": 6,
+        "decimal_precision": 50,
+        "residual": "2.2157219446664301906505047312685784775377982136071e-48",
+        "solve_seconds": 0.0006683749961666763
+      },
+      "precision_check_80_digits": {
+        "mean_seconds": 3314987.4326526853,
+        "mean_days": 38.36791010014682,
+        "transient_states": 6,
+        "decimal_precision": 80,
+        "residual": "5.4503163366501805069882127845065998269860500346845184033902034839809105984313657e-78",
+        "solve_seconds": 0.000636707991361618
+      },
+      "physical_quorum_first_passage": {
+        "mean_seconds": 3315057.9091907307,
+        "mean_days": 38.36872580081864,
+        "transient_states": 16,
+        "decimal_precision": 50,
+        "residual": "2.7414547631415650742463482543572749631007474399237e-47",
+        "solve_seconds": 0.006298124993918464
+      },
+      "data_loss": {
+        "runs": 10000,
+        "losses": 1420,
+        "weekly_loss_probability": 0.142,
+        "constant_hazard_mttdl_days": 45.706471364565964,
+        "constant_hazard_mttdl_ci99_days": [
+          42.6971339133282,
+          48.99629892845512
+        ]
+      },
+      "total_seconds": 0.017105749997426756
+    },
+    {
+      "profile": "Spot",
+      "nodes": 5,
+      "quorum": 3,
+      "raft_states": 377,
+      "aggregate_states": 251,
+      "lumping_max_rate_error": 0.0,
+      "up_to_date_quorum_first_passage": {
+        "mean_seconds": 155682390.01665694,
+        "mean_days": 1801.8795140816776,
+        "transient_states": 21,
+        "decimal_precision": 50,
+        "residual": "1.2168028619165729898619406320353836401494065316366e-45",
+        "solve_seconds": 0.013895208001486026
+      },
+      "precision_check_80_digits": {
+        "mean_seconds": 155682390.01665694,
+        "mean_days": 1801.8795140816776,
+        "transient_states": 21,
+        "decimal_precision": 80,
+        "residual": "7.8731242679634193544080020729694755953379533595804488085490749824112643193820359e-76",
+        "solve_seconds": 0.013743667004746385
+      },
+      "physical_quorum_first_passage": {
+        "mean_seconds": 155689017.16119465,
+        "mean_days": 1801.9562171434566,
+        "transient_states": 66,
+        "decimal_precision": 50,
+        "residual": "3.4630638161605166079652471329776349496345471847958e-45",
+        "solve_seconds": 0.3190405420027673
+      },
+      "data_loss": {
+        "runs": 10000,
+        "losses": 28,
+        "weekly_loss_probability": 0.0028,
+        "constant_hazard_mttdl_days": 2496.498364375937,
+        "constant_hazard_mttdl_ci99_days": [
+          1562.4582996676056,
+          4303.134461050722
+        ]
+      },
+      "total_seconds": 0.3729977089969907
+    },
+    {
+      "profile": "Spot",
+      "nodes": 7,
+      "quorum": 4,
+      "raft_states": 1253,
+      "aggregate_states": 791,
+      "lumping_max_rate_error": 0.0,
+      "up_to_date_quorum_first_passage": {
+        "mean_seconds": 7840616733.463959,
+        "mean_days": 90747.87885953656,
+        "transient_states": 56,
+        "decimal_precision": 50,
+        "residual": "7.7912972925543407990731520955138571410705674953666e-44",
+        "solve_seconds": 0.2080347499868367
+      },
+      "precision_check_80_digits": {
+        "mean_seconds": 7840616733.463959,
+        "mean_days": 90747.87885953656,
+        "transient_states": 56,
+        "decimal_precision": 80,
+        "residual": "6.0389802300065999118184324282121371897541451805215446701476366795425797480288537e-74",
+        "solve_seconds": 0.21009633300127462
+      },
+      "physical_quorum_first_passage": {
+        "mean_seconds": 7841117641.067798,
+        "mean_days": 90753.67640124766,
+        "transient_states": 196,
+        "decimal_precision": 50,
+        "residual": "6.0623836916032065622503789520616729366888282402124e-43",
+        "solve_seconds": 7.583392083004583
+      },
+      "data_loss": {
+        "runs": 100000,
+        "losses": 6,
+        "weekly_loss_probability": 6e-05,
+        "constant_hazard_mttdl_days": 116663.16663166562,
+        "constant_hazard_mttdl_ci99_days": [
+          44699.45947285563,
+          455447.4051142118
+        ]
+      },
+      "total_seconds": 8.09662599999865
+    },
+    {
+      "profile": "Unreliable",
+      "nodes": 3,
+      "quorum": 2,
+      "raft_states": 76,
+      "aggregate_states": 55,
+      "lumping_max_rate_error": 0.0,
+      "up_to_date_quorum_first_passage": {
+        "mean_seconds": 3272640661.1856484,
+        "mean_days": 37877.78543038945,
+        "transient_states": 6,
+        "decimal_precision": 50,
+        "residual": "1.2127608398455005623862822987361104541040743093948e-44",
+        "solve_seconds": 0.0006137080054031685
+      },
+      "precision_check_80_digits": {
+        "mean_seconds": 3272640661.1856484,
+        "mean_days": 37877.78543038945,
+        "transient_states": 6,
+        "decimal_precision": 80,
+        "residual": "9.3174053861860010361437567179934681993942180689649343429097285168510800872448929e-76",
+        "solve_seconds": 0.0006115419964771718
+      },
+      "physical_quorum_first_passage": {
+        "mean_seconds": 3275111259.069943,
+        "mean_days": 37906.38031330953,
+        "transient_states": 16,
+        "decimal_precision": 50,
+        "residual": "2.5540989015788158300138420080024203136372779467426e-44",
+        "solve_seconds": 0.006332749995635822
+      },
+      "data_loss": {
+        "runs": 10000,
+        "losses": 0,
+        "weekly_loss_probability": 0.0,
+        "constant_hazard_mttdl_one_sided99_lower_days": 15200.306866613813
+      },
+      "total_seconds": 0.012928500000271015
+    },
+    {
+      "profile": "Unreliable",
+      "nodes": 5,
+      "quorum": 3,
+      "raft_states": 377,
+      "aggregate_states": 251,
+      "lumping_max_rate_error": 0.0,
+      "up_to_date_quorum_first_passage": {
+        "mean_seconds": 5363893392136.707,
+        "mean_days": 62082099.4460267,
+        "transient_states": 21,
+        "decimal_precision": 50,
+        "residual": "2.1965385546905028764644540888896161117175843661135e-41",
+        "solve_seconds": 0.013075458991806954
+      },
+      "precision_check_80_digits": {
+        "mean_seconds": 5363893392136.707,
+        "mean_days": 62082099.4460267,
+        "transient_states": 21,
+        "decimal_precision": 80,
+        "residual": "3.440598994709262470404474644709158551451658510221214623847045252583916942248009e-71",
+        "solve_seconds": 0.013319124991539866
+      },
+      "physical_quorum_first_passage": {
+        "mean_seconds": 5371995591923.027,
+        "mean_days": 62175874.90651652,
+        "transient_states": 66,
+        "decimal_precision": 50,
+        "residual": "1.5920307234905220894576819305072362312304377218893e-40",
+        "solve_seconds": 0.31241120799677446
+      },
+      "data_loss": {
+        "runs": 10000,
+        "losses": 0,
+        "weekly_loss_probability": 0.0,
+        "constant_hazard_mttdl_one_sided99_lower_days": 15200.306866613813
+      },
+      "total_seconds": 0.3629120420082472
+    },
+    {
+      "profile": "Unreliable",
+      "nodes": 7,
+      "quorum": 4,
+      "raft_states": 1253,
+      "aggregate_states": 791,
+      "lumping_max_rate_error": 2.6469779601696886e-23,
+      "up_to_date_quorum_first_passage": {
+        "mean_seconds": 9419759583820696.0,
+        "mean_days": 109024995183.10991,
+        "transient_states": 56,
+        "decimal_precision": 50,
+        "residual": "3.1497973360630875706275597878811034780706432120326e-37",
+        "solve_seconds": 0.20800379100546706
+      },
+      "precision_check_80_digits": {
+        "mean_seconds": 9419759583820696.0,
+        "mean_days": 109024995183.10991,
+        "transient_states": 56,
+        "decimal_precision": 80,
+        "residual": "9.5234413083290939120647888937364098616153453343397172768606614540065767528993586e-68",
+        "solve_seconds": 0.2087172090105014
+      },
+      "physical_quorum_first_passage": {
+        "mean_seconds": 9441110986031174.0,
+        "mean_days": 109272117893.87932,
+        "transient_states": 196,
+        "decimal_precision": 50,
+        "residual": "7.1493999311106905379335193936650530043982312707467e-37",
+        "solve_seconds": 7.506478709008661
+      },
+      "data_loss": {
+        "runs": 10000,
+        "losses": 0,
+        "weekly_loss_probability": 0.0,
+        "constant_hazard_mttdl_one_sided99_lower_days": 15200.306866613813
+      },
+      "total_seconds": 8.013513540994609
+    }
+  ]
+}
