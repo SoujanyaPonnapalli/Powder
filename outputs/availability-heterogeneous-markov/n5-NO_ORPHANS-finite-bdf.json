@@ -1,0 +1,20 @@
+{
+  "nodes": 5,
+  "quality": "NO_ORPHANS",
+  "operation": "finite",
+  "method": "Sparse BDF integration; rtol=1e-10, atol=1e-14",
+  "mix": {
+    "Standard": 2,
+    "Unreliable": 2,
+    "Spot": 1
+  },
+  "status": "timeout",
+  "memory_limit_gib": 1.5,
+  "wall_limit_seconds": 120,
+  "initial_leader_class": "Standard",
+  "source_sha256": "7b3853ba5425e9f9aa1b5e3cbffd64d972c7fadeb6bb2384b5f8616d84a878b3",
+  "build_seconds": 0.061062958993716165,
+  "states": 4598,
+  "nonzeros": 49705,
+  "reason": "120s worker wall limit"
+}

@@ -1,0 +1,48 @@
+{
+  "nodes": 7,
+  "quality": "SIMPLIFIED",
+  "mix": {
+    "Standard": 3,
+    "Unreliable": 2,
+    "Spot": 2
+  },
+  "operation": "finite",
+  "state_upper_bound": 936,
+  "status": "complete",
+  "memory_limit_gib": 1.5,
+  "wall_limit_seconds": 120,
+  "initial_leader_class": "Standard",
+  "horizon_seconds": 604800,
+  "build_seconds": 0.012082375003956258,
+  "states": 936,
+  "nonzeros": 9362,
+  "dense_matrix_gib": 0.0065413787961006165,
+  "initial_availability": 1.0,
+  "generator_row_sum_error": 5.551115123125783e-17,
+  "method": "Dense augmented matrix exponential",
+  "availability": 0.9999973821144345,
+  "solve_seconds": 0.1492359999974724,
+  "solve_samples_seconds": [
+    0.1616058750078082,
+    0.1492359999974724,
+    0.14518262499768753
+  ],
+  "total_seconds": 0.16131837500142865,
+  "repeats": 3,
+  "diagnostics": {
+    "raw_average_mass_error": -2.6590951662797124e-12,
+    "raw_terminal_mass_error": -5.282552173468957e-12,
+    "minimum_raw_probability": 1.1140573983423788e-34,
+    "integral_identity_residual_inf": 4.910141737646256e-12
+  },
+  "peak_resident_gib": 0.178985595703125,
+  "independent_bdf_availability": 0.9999973821144336,
+  "independent_bdf_diagnostics": {
+    "bdf_seconds": 1.627949332993012,
+    "bdf_steps": 402,
+    "bdf_mass_error": 1.1102230246251565e-15,
+    "bdf_rtol": 1e-10,
+    "bdf_atol": 1e-14
+  },
+  "independent_difference": -8.881784197001252e-16
+}

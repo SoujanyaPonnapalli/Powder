@@ -1,0 +1,39 @@
+{
+  "nodes": 5,
+  "quality": "NO_ORPHANS",
+  "mix": {
+    "Standard": 2,
+    "Unreliable": 2,
+    "Spot": 1
+  },
+  "operation": "finite",
+  "state_upper_bound": 4599,
+  "status": "complete",
+  "memory_limit_gib": 3.0,
+  "wall_limit_seconds": 120,
+  "initial_leader_class": "Standard",
+  "horizon_seconds": 604800,
+  "build_seconds": 0.06377724999038037,
+  "states": 4598,
+  "nonzeros": 49705,
+  "dense_matrix_gib": 0.1575857475399971,
+  "initial_availability": 1.0,
+  "generator_row_sum_error": 9.228728892196614e-16,
+  "method": "Dense augmented matrix exponential",
+  "availability": 0.9999976017318539,
+  "solve_seconds": 24.57266074999643,
+  "solve_samples_seconds": [
+    24.57266074999643
+  ],
+  "total_seconds": 24.63643799998681,
+  "repeats": 1,
+  "diagnostics": {
+    "raw_average_mass_error": -1.0786282977903738e-10,
+    "raw_terminal_mass_error": -2.1251589377158098e-10,
+    "minimum_raw_probability": 1.6026491551504346e-35,
+    "integral_identity_residual_inf": 2.0712218051777143e-10
+  },
+  "peak_resident_gib": 1.685821533203125,
+  "source_sha256": "636109d792522e3b31f34502363742b5e174c6aba2d8792bc2b376f217b4871c",
+  "independent_validation": "Separate BDF attempt timed out; dense probability diagnostics retained"
+}

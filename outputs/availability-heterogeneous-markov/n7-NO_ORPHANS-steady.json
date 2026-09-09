@@ -1,0 +1,23 @@
+{
+  "nodes": 7,
+  "quality": "NO_ORPHANS",
+  "mix": {
+    "Standard": 3,
+    "Unreliable": 2,
+    "Spot": 2
+  },
+  "operation": "steady",
+  "state_upper_bound": 48069,
+  "status": "memory_limit",
+  "memory_limit_gib": 1.5,
+  "wall_limit_seconds": 120,
+  "initial_leader_class": "Standard",
+  "horizon_seconds": 604800,
+  "build_seconds": 0.7999454999953741,
+  "states": 48068,
+  "nonzeros": 658749,
+  "dense_matrix_gib": 17.215525813400745,
+  "initial_availability": 1.0,
+  "generator_row_sum_error": 1.8707882446591696e-15,
+  "peak_resident_gib": 1.500152587890625
+}

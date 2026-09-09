@@ -1,0 +1,24 @@
+{
+  "nodes": 5,
+  "quality": "FULL",
+  "mix": {
+    "Standard": 2,
+    "Unreliable": 2,
+    "Spot": 1
+  },
+  "operation": "finite",
+  "state_upper_bound": 158652,
+  "status": "state_limit",
+  "memory_limit_gib": 1.5,
+  "wall_limit_seconds": 120,
+  "initial_leader_class": "Standard",
+  "horizon_seconds": 604800,
+  "build_seconds": 3.714762834002613,
+  "states": 158652,
+  "nonzeros": 2136474,
+  "dense_matrix_gib": 187.53688342124224,
+  "initial_availability": 1.0,
+  "generator_row_sum_error": 1.9180039489429904e-15,
+  "reason": "Finite solve cap: 60000 states",
+  "peak_resident_gib": 0.5745086669921875
+}

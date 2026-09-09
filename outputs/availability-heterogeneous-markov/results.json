@@ -1,0 +1,627 @@
+{
+  "metadata": {
+    "timestamp_utc": "2026-09-09T21:50:23.106866+00:00",
+    "git_revision": "4d90df27be3fcdefedd8de7a586077499c7f87ce",
+    "source_sha256": "83044d6427152e459d832ec72381cb6b3ced17121a5a87c6cee08f691cfe9f30",
+    "python": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+    "numpy": "2.4.1",
+    "scipy": "1.17.0",
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "threads": {
+      "OPENBLAS_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "BLIS_NUM_THREADS": "1"
+    },
+    "description": "Three machine classes, constant exponential rates, initial Standard leader, healthy start",
+    "comparison": "Total runtimes include independently measured build plus solve; startup/warmup/verification excluded"
+  },
+  "results": [
+    {
+      "nodes": 3,
+      "quality": "SIMPLIFIED",
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "operation": "finite",
+      "state_upper_bound": 54,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.0009286249987781048,
+      "states": 54,
+      "nonzeros": 348,
+      "dense_matrix_gib": 2.253800630569458e-05,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 2.7755575615628914e-17,
+      "method": "Dense augmented matrix exponential",
+      "availability": 0.9999962051079345,
+      "solve_seconds": 0.00020887500431854278,
+      "solve_samples_seconds": [
+        0.0003294999914942309,
+        0.00020887500431854278,
+        0.00019595799676608294
+      ],
+      "total_seconds": 0.0011375000030966476,
+      "repeats": 3,
+      "diagnostics": {
+        "raw_average_mass_error": -2.0295987113172487e-12,
+        "raw_terminal_mass_error": -3.952616012270482e-12,
+        "minimum_raw_probability": 6.6499240662896936e-15,
+        "integral_identity_residual_inf": 3.961608818769946e-12
+      },
+      "peak_resident_gib": 0.0966644287109375,
+      "independent_bdf_availability": 0.9999962051079343,
+      "independent_bdf_diagnostics": {
+        "bdf_seconds": 0.036116832998231985,
+        "bdf_steps": 495,
+        "bdf_mass_error": -7.771561172376096e-16,
+        "bdf_rtol": 1e-10,
+        "bdf_atol": 1e-14
+      },
+      "independent_difference": -2.220446049250313e-16
+    },
+    {
+      "nodes": 3,
+      "quality": "SIMPLIFIED",
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "operation": "steady",
+      "state_upper_bound": 54,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.0008313330035889521,
+      "states": 54,
+      "nonzeros": 348,
+      "dense_matrix_gib": 2.253800630569458e-05,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 2.7755575615628914e-17,
+      "method": "Sparse stationary solve (SciPy)",
+      "availability": 0.9999960117341129,
+      "solve_seconds": 0.00035074999323114753,
+      "solve_samples_seconds": [
+        0.0003095410065725446,
+        0.00035074999323114753,
+        0.00039812500472180545
+      ],
+      "total_seconds": 0.0011820829968200997,
+      "repeats": 3,
+      "diagnostics": {
+        "mass_error": -1.1102230246251565e-16,
+        "minimum_probability": 6.657196670339804e-15,
+        "stationary_residual_inf": 8.914392065425606e-19
+      },
+      "peak_resident_gib": 0.095794677734375
+    },
+    {
+      "nodes": 3,
+      "quality": "NO_ORPHANS",
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "operation": "finite",
+      "state_upper_bound": 324,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.0037559170013992116,
+      "states": 323,
+      "nonzeros": 2414,
+      "dense_matrix_gib": 0.0007821321487426758,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 4.970728677062728e-16,
+      "method": "Dense augmented matrix exponential",
+      "availability": 0.9999961728086005,
+      "solve_seconds": 0.009158500004559755,
+      "solve_samples_seconds": [
+        0.010372541000833735,
+        0.009158500004559755,
+        0.008835083994199522
+      ],
+      "total_seconds": 0.012914417005958967,
+      "repeats": 3,
+      "diagnostics": {
+        "raw_average_mass_error": -5.928424418044642e-11,
+        "raw_terminal_mass_error": -1.1871104099725471e-10,
+        "minimum_raw_probability": 2.393114486851396e-21,
+        "integral_identity_residual_inf": 1.089220103001054e-10
+      },
+      "peak_resident_gib": 0.106048583984375,
+      "independent_bdf_availability": 0.9999961728086001,
+      "independent_bdf_diagnostics": {
+        "bdf_seconds": 0.22653304199047852,
+        "bdf_steps": 480,
+        "bdf_mass_error": 4.440892098500626e-16,
+        "bdf_rtol": 1e-10,
+        "bdf_atol": 1e-14
+      },
+      "independent_difference": -4.440892098500626e-16
+    },
+    {
+      "nodes": 3,
+      "quality": "NO_ORPHANS",
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "operation": "steady",
+      "state_upper_bound": 324,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.003748750008526258,
+      "states": 323,
+      "nonzeros": 2414,
+      "dense_matrix_gib": 0.0007821321487426758,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 4.970728677062728e-16,
+      "method": "Sparse stationary solve (SciPy)",
+      "availability": 0.9999959800448129,
+      "solve_seconds": 0.002205625001806766,
+      "solve_samples_seconds": [
+        0.002205625001806766,
+        0.0023156669922173023,
+        0.0021060830040369183
+      ],
+      "total_seconds": 0.005954375010333024,
+      "repeats": 3,
+      "diagnostics": {
+        "mass_error": -1.1102230246251565e-16,
+        "minimum_probability": 0.0,
+        "stationary_residual_inf": 8.866217631251049e-19
+      },
+      "peak_resident_gib": 0.0971527099609375
+    },
+    {
+      "nodes": 3,
+      "quality": "FULL",
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "operation": "finite",
+      "state_upper_bound": 3024,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.05357291600375902,
+      "states": 3024,
+      "nonzeros": 27027,
+      "dense_matrix_gib": 0.0681774690747261,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 1.1310952184277867e-15,
+      "method": "Dense augmented matrix exponential",
+      "availability": 0.9999961723978769,
+      "solve_seconds": 6.986243458013632,
+      "solve_samples_seconds": [
+        6.986243458013632
+      ],
+      "total_seconds": 7.039816374017391,
+      "repeats": 1,
+      "diagnostics": {
+        "raw_average_mass_error": -1.7815182662417328e-10,
+        "raw_terminal_mass_error": -3.534571524355101e-10,
+        "minimum_raw_probability": 5.178738502662664e-32,
+        "integral_identity_residual_inf": 3.307929485885097e-10
+      },
+      "peak_resident_gib": 0.8678436279296875,
+      "independent_bdf_availability": 0.9999961723978757,
+      "independent_bdf_diagnostics": {
+        "bdf_seconds": 43.720015792001504,
+        "bdf_steps": 408,
+        "bdf_mass_error": -1.1102230246251565e-15,
+        "bdf_rtol": 1e-10,
+        "bdf_atol": 1e-14
+      },
+      "independent_difference": -1.1102230246251565e-15
+    },
+    {
+      "nodes": 3,
+      "quality": "FULL",
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "operation": "steady",
+      "state_upper_bound": 3024,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.05075149999174755,
+      "states": 3024,
+      "nonzeros": 27027,
+      "dense_matrix_gib": 0.0681774690747261,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 1.1310952184277867e-15,
+      "method": "Sparse stationary solve (SciPy)",
+      "availability": 0.9999959796415161,
+      "solve_seconds": 0.5329043749952689,
+      "solve_samples_seconds": [
+        0.5329043749952689
+      ],
+      "total_seconds": 0.5836558749870164,
+      "repeats": 1,
+      "diagnostics": {
+        "mass_error": 0.0,
+        "minimum_probability": 0.0,
+        "stationary_residual_inf": 2.468806017958528e-19
+      },
+      "peak_resident_gib": 0.1761932373046875
+    },
+    {
+      "nodes": 5,
+      "quality": "SIMPLIFIED",
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "operation": "finite",
+      "state_upper_bound": 252,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.0031852500105742365,
+      "states": 252,
+      "nonzeros": 2129,
+      "dense_matrix_gib": 0.0004769042134284973,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 3.209238430557093e-17,
+      "method": "Dense augmented matrix exponential",
+      "availability": 0.9999976019803325,
+      "solve_seconds": 0.004038582992507145,
+      "solve_samples_seconds": [
+        0.0044430420093704015,
+        0.004038582992507145,
+        0.003968624994740821
+      ],
+      "total_seconds": 0.007223833003081381,
+      "repeats": 3,
+      "diagnostics": {
+        "raw_average_mass_error": 2.476463478728874e-12,
+        "raw_terminal_mass_error": 4.795941421775751e-12,
+        "minimum_raw_probability": 2.495622099698001e-25,
+        "integral_identity_residual_inf": 5.0812687391044165e-12
+      },
+      "peak_resident_gib": 0.100830078125,
+      "independent_bdf_availability": 0.9999976019803323,
+      "independent_bdf_diagnostics": {
+        "bdf_seconds": 0.14993879199028015,
+        "bdf_steps": 448,
+        "bdf_mass_error": 8.881784197001252e-16,
+        "bdf_rtol": 1e-10,
+        "bdf_atol": 1e-14
+      },
+      "independent_difference": -2.220446049250313e-16
+    },
+    {
+      "nodes": 5,
+      "quality": "SIMPLIFIED",
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "operation": "steady",
+      "state_upper_bound": 252,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.0031667089933762327,
+      "states": 252,
+      "nonzeros": 2129,
+      "dense_matrix_gib": 0.0004769042134284973,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 3.209238430557093e-17,
+      "method": "Sparse stationary solve (SciPy)",
+      "availability": 0.9999974817793833,
+      "solve_seconds": 0.0011667090002447367,
+      "solve_samples_seconds": [
+        0.0012740829988615587,
+        0.0011664580088108778,
+        0.0011667090002447367
+      ],
+      "total_seconds": 0.004333417993620969,
+      "repeats": 3,
+      "diagnostics": {
+        "mass_error": 0.0,
+        "minimum_probability": 5.270289284167421e-25,
+        "stationary_residual_inf": 6.957738587818711e-21
+      },
+      "peak_resident_gib": 0.0959625244140625
+    },
+    {
+      "nodes": 5,
+      "quality": "NO_ORPHANS",
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "operation": "finite",
+      "state_upper_bound": 4599,
+      "status": "memory_limit",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.060238500009290874,
+      "states": 4598,
+      "nonzeros": 49705,
+      "dense_matrix_gib": 0.1575857475399971,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 9.228728892196614e-16,
+      "peak_resident_gib": 1.5055694580078125
+    },
+    {
+      "nodes": 5,
+      "quality": "NO_ORPHANS",
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "operation": "steady",
+      "state_upper_bound": 4599,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.06255562498699874,
+      "states": 4598,
+      "nonzeros": 49705,
+      "dense_matrix_gib": 0.1575857475399971,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 9.228728892196614e-16,
+      "method": "Sparse stationary solve (SciPy)",
+      "availability": 0.9999974817049988,
+      "solve_seconds": 2.388907417000155,
+      "solve_samples_seconds": [
+        2.388907417000155
+      ],
+      "total_seconds": 2.4514630419871537,
+      "repeats": 1,
+      "diagnostics": {
+        "mass_error": 0.0,
+        "minimum_probability": 0.0,
+        "stationary_residual_inf": 3.374387606524914e-19
+      },
+      "peak_resident_gib": 0.2652130126953125
+    },
+    {
+      "nodes": 5,
+      "quality": "FULL",
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "operation": "finite",
+      "state_upper_bound": 158652,
+      "status": "state_limit",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 3.714762834002613,
+      "states": 158652,
+      "nonzeros": 2136474,
+      "dense_matrix_gib": 187.53688342124224,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 1.9180039489429904e-15,
+      "reason": "Finite solve cap: 60000 states",
+      "peak_resident_gib": 0.5745086669921875
+    },
+    {
+      "nodes": 5,
+      "quality": "FULL",
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "operation": "steady",
+      "state_upper_bound": 158652,
+      "status": "memory_limit",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 3.650850292004179,
+      "states": 158652,
+      "nonzeros": 2136474,
+      "dense_matrix_gib": 187.53688342124224,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 1.9180039489429904e-15,
+      "peak_resident_gib": 1.7405548095703125
+    },
+    {
+      "nodes": 7,
+      "quality": "SIMPLIFIED",
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "operation": "finite",
+      "state_upper_bound": 936,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.012082375003956258,
+      "states": 936,
+      "nonzeros": 9362,
+      "dense_matrix_gib": 0.0065413787961006165,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 5.551115123125783e-17,
+      "method": "Dense augmented matrix exponential",
+      "availability": 0.9999973821144345,
+      "solve_seconds": 0.1492359999974724,
+      "solve_samples_seconds": [
+        0.1616058750078082,
+        0.1492359999974724,
+        0.14518262499768753
+      ],
+      "total_seconds": 0.16131837500142865,
+      "repeats": 3,
+      "diagnostics": {
+        "raw_average_mass_error": -2.6590951662797124e-12,
+        "raw_terminal_mass_error": -5.282552173468957e-12,
+        "minimum_raw_probability": 1.1140573983423788e-34,
+        "integral_identity_residual_inf": 4.910141737646256e-12
+      },
+      "peak_resident_gib": 0.178985595703125,
+      "independent_bdf_availability": 0.9999973821144336,
+      "independent_bdf_diagnostics": {
+        "bdf_seconds": 1.627949332993012,
+        "bdf_steps": 402,
+        "bdf_mass_error": 1.1102230246251565e-15,
+        "bdf_rtol": 1e-10,
+        "bdf_atol": 1e-14
+      },
+      "independent_difference": -8.881784197001252e-16
+    },
+    {
+      "nodes": 7,
+      "quality": "SIMPLIFIED",
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "operation": "steady",
+      "state_upper_bound": 936,
+      "status": "complete",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.011667290993500501,
+      "states": 936,
+      "nonzeros": 9362,
+      "dense_matrix_gib": 0.0065413787961006165,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 5.551115123125783e-17,
+      "method": "Sparse stationary solve (SciPy)",
+      "availability": 0.9999972094402859,
+      "solve_seconds": 0.016164125001523644,
+      "solve_samples_seconds": [
+        0.016534750000573695,
+        0.016164125001523644,
+        0.016068999990238808
+      ],
+      "total_seconds": 0.027831415995024145,
+      "repeats": 3,
+      "diagnostics": {
+        "mass_error": 0.0,
+        "minimum_probability": 2.662217421522783e-33,
+        "stationary_residual_inf": 2.953629919609729e-20
+      },
+      "peak_resident_gib": 0.1004638671875
+    },
+    {
+      "nodes": 7,
+      "quality": "NO_ORPHANS",
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "operation": "finite",
+      "state_upper_bound": 48069,
+      "status": "memory_limit",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.7375961250072578,
+      "states": 48068,
+      "nonzeros": 658749,
+      "dense_matrix_gib": 17.215525813400745,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 1.8707882446591696e-15,
+      "peak_resident_gib": 1.500213623046875
+    },
+    {
+      "nodes": 7,
+      "quality": "NO_ORPHANS",
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "operation": "steady",
+      "state_upper_bound": 48069,
+      "status": "memory_limit",
+      "memory_limit_gib": 1.5,
+      "wall_limit_seconds": 120,
+      "initial_leader_class": "Standard",
+      "horizon_seconds": 604800,
+      "build_seconds": 0.7999454999953741,
+      "states": 48068,
+      "nonzeros": 658749,
+      "dense_matrix_gib": 17.215525813400745,
+      "initial_availability": 1.0,
+      "generator_row_sum_error": 1.8707882446591696e-15,
+      "peak_resident_gib": 1.500152587890625
+    },
+    {
+      "nodes": 7,
+      "quality": "FULL",
+      "operation": "finite",
+      "state_upper_bound": 5682456,
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "status": "build_limit",
+      "reason": "Preflight upper bound exceeds 200000-state build budget"
+    },
+    {
+      "nodes": 7,
+      "quality": "FULL",
+      "operation": "steady",
+      "state_upper_bound": 5682456,
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "status": "build_limit",
+      "reason": "Preflight upper bound exceeds 200000-state build budget"
+    }
+  ]
+}

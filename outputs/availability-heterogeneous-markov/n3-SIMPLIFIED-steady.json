@@ -1,0 +1,38 @@
+{
+  "nodes": 3,
+  "quality": "SIMPLIFIED",
+  "mix": {
+    "Standard": 1,
+    "Unreliable": 1,
+    "Spot": 1
+  },
+  "operation": "steady",
+  "state_upper_bound": 54,
+  "status": "complete",
+  "memory_limit_gib": 1.5,
+  "wall_limit_seconds": 120,
+  "initial_leader_class": "Standard",
+  "horizon_seconds": 604800,
+  "build_seconds": 0.0008313330035889521,
+  "states": 54,
+  "nonzeros": 348,
+  "dense_matrix_gib": 2.253800630569458e-05,
+  "initial_availability": 1.0,
+  "generator_row_sum_error": 2.7755575615628914e-17,
+  "method": "Sparse stationary solve (SciPy)",
+  "availability": 0.9999960117341129,
+  "solve_seconds": 0.00035074999323114753,
+  "solve_samples_seconds": [
+    0.0003095410065725446,
+    0.00035074999323114753,
+    0.00039812500472180545
+  ],
+  "total_seconds": 0.0011820829968200997,
+  "repeats": 3,
+  "diagnostics": {
+    "mass_error": -1.1102230246251565e-16,
+    "minimum_probability": 6.657196670339804e-15,
+    "stationary_residual_inf": 8.914392065425606e-19
+  },
+  "peak_resident_gib": 0.095794677734375
+}
