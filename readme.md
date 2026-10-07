@@ -86,6 +86,27 @@ If cuDSS warns that no multithreading interface library was specified, set
 `POWDER_MARKOV_CUDSS_MULTITHREADING_LIB` to a supported OpenMP runtime such as
 `libiomp5.so`.
 
+### Monte Carlo engine (Rust)
+
+Monte Carlo simulation runs in Rust, under `rust/`. Build it once:
+
+```
+cargo build --release --manifest-path rust/Cargo.toml
+```
+
+`powder.mc_backend` drives that binary from the usual Python objects, so
+`MonteCarloRunner` and friends work as before; the test suite and the
+notebook studies need the binary present. It can also be driven directly
+for sweeps, which is much faster for large runs:
+
+```
+powder-mc --config scenario.json
+cat jobs.ndjson | powder-mc --stream -j 8
+```
+
+See `rust/README.md` for the job schema, the threading model and
+benchmarks.
+
 ### Running notebooks
 
 From the repo root:

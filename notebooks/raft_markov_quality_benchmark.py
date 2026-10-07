@@ -42,7 +42,7 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from powder.monte_carlo import MonteCarloConfig, MonteCarloRunner
+from powder.mc_backend import MonteCarloConfig, MonteCarloRunner
 from powder.scenario import QualityLevel, build_markov_model
 from powder.simulation import (
     ClusterState,

@@ -20,7 +20,7 @@ import numpy as np
 import plotly.graph_objects as go
 from scipy import stats as scipy_stats
 
-from powder.monte_carlo import (
+from powder.mc_backend import (
     ConvergenceCriteria,
     ConvergenceMetric,
     MonteCarloConfig,

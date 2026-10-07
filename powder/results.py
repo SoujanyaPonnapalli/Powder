@@ -29,7 +29,7 @@ from .simulation.protocol import Protocol
 from .simulation.strategy import ClusterStrategy
 
 if TYPE_CHECKING:
-    from .monte_carlo import MonteCarloResults
+    from .mc_backend import MonteCarloResults
 
 
 @dataclass

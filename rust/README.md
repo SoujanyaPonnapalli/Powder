@@ -1,11 +1,15 @@
 # powder-mc
 
-A Rust port of the Powder Monte Carlo simulator — `powder/simulation/` and
-`powder/monte_carlo.py`. Same model, same metrics, driven by JSON instead of
-Python objects.
+The Powder Monte Carlo engine. Same model and metrics as the Python
+implementation it replaced, driven by JSON instead of Python objects.
 
-The Markov/CTMC backend, the placement optimizer, and the `notebooks/` study
-drivers are **not** ported; they remain Python.
+Python still owns the scenario vocabulary — `powder/simulation/` holds
+`NodeConfig`, `Distribution`, `Protocol` and `ClusterStrategy`, which the
+Markov/CTMC backend and the placement optimizer are also built on.
+`powder/mc_backend.py` drives this binary from those objects, so existing
+Python callers did not change. The notebook studies that subclass the
+Python `Simulator` (weekly-window hazard clocks, convergence tail tracing)
+still use it directly.
 
 ## Building
 
@@ -139,8 +143,8 @@ engine directly (no process startup, no JSON):
 
 Roughly 3.6 M events/second on the 5-node leaderless workload.
 
-End to end against the Python engine, on identical scenarios with full
-per-run output (`migration/bench.py --sims 2000`, 16,000 simulations):
+End to end against the Python engine it replaced, on identical scenarios
+with full per-run output (16,000 simulations):
 
 | engine | wall | sims/s | events/s | vs Python, 1 process |
 | --- | ---: | ---: | ---: | ---: |
@@ -279,7 +283,11 @@ whose failure mode is a silently wrong answer.
 ## Deliberate deviations from the Python engine
 
 The port targets **statistical**, not bitwise, agreement. These differences
-are intentional; `migration/` demonstrates they do not change behaviour.
+are intentional. They were validated by a temporary migration harness that
+ran both engines side by side -- deterministic scenarios agreeing to 1e-9
+with exact integer counters, randomised ones by Welch t-test and two-sample
+KS -- which was removed once the Python engine was retired. See commit
+history for `migration/` if you need to re-run it.
 
 * **RNG.** PCG64 via `rand_pcg`, with `rand_distr`'s samplers. Same
   distribution families, different stream from NumPy's `default_rng`.
@@ -292,9 +300,10 @@ are intentional; `migration/` demonstrates they do not change behaviour.
   final tiebreaker, instead of relying on dict insertion order and Python's
   stable sort. Raft's leader election still orders candidates by node ID
   *string*, matching Python.
-* **Seeding.** `powder/monte_carlo.py:573` uses `if self.config.base_seed`,
-  so `base_seed=0` silently means "no seed" there while `_run_batch` treats
-  it as a real seed. The port uses the `is not None` reading throughout.
+* **Seeding.** The Python runner used `if self.config.base_seed`, so
+  `base_seed=0` silently meant "no seed" in one code path while another
+  treated it as a real seed. The port uses the `is not None` reading
+  throughout.
 * **`Weibull.mean`** uses `statrs`' gamma rather than CPython's Lanczos
   `math.gamma`. They agree to about 1e-15 relative.
 * **Aggregates** (`mean`, `std`, `percentile`) are plain left-to-right
@@ -313,7 +322,7 @@ are intentional; `migration/` demonstrates they do not change behaviour.
 | `src/sim/strategy.rs` | `powder/simulation/strategy.py` |
 | `src/sim/metrics.rs` | `powder/simulation/metrics.py` |
 | `src/sim/simulator.rs` | `powder/simulation/simulator.py` |
-| `src/monte_carlo.rs` | `powder/monte_carlo.py` |
+| `src/monte_carlo.rs` | the former `powder/monte_carlo.py` |
 | `src/sim/ids.rs` | (new) identifier interning |
 | `src/stats.rs` | the NumPy/SciPy calls the runner makes |
 | `src/config.rs`, `src/job.rs`, `src/pool.rs` | (new) JSON I/O and the worker pool |
@@ -330,7 +339,10 @@ options rather than a `dict`.
 `tests/` mirrors the Python MC suite file for file, keeping the original
 test names:
 
-| Rust | Python |
+These mirror the Python Monte Carlo tests that were removed when the
+engine moved, keeping the original test names:
+
+| Rust | former Python test |
 | --- | --- |
 | `tests/simulation.rs` | `tests/test_simulation.py` (engine sections) |
 | `tests/monte_carlo_statistics.rs` | `tests/test_monte_carlo_statistics.py` + the convergence sections of `test_simulation.py` |

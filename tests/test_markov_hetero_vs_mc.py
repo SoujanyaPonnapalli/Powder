@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 from scipy import stats as scipy_stats
 
-from powder.monte_carlo import MonteCarloConfig, MonteCarloResults, MonteCarloRunner
+from powder.mc_backend import MonteCarloConfig, MonteCarloResults, MonteCarloRunner
 from powder.results import markov_analyze
 from powder.scenario import QualityLevel
 from powder.simulation import (

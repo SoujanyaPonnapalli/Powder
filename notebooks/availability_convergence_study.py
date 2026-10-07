@@ -43,7 +43,7 @@ from notebooks.raft_markov_quality_benchmark import (
     VM_PROFILES, make_cluster, node_config_for, raft_protocol, replacement_strategy,
 )
 from powder.markov_solver import availability, steady_state
-from powder.monte_carlo import MonteCarloConfig, MonteCarloRunner
+from powder.mc_backend import MonteCarloConfig, MonteCarloRunner
 from powder.scenario import QualityLevel, build_markov_model
 from powder.simulation import Seconds
 from powder.simulation.distributions import days

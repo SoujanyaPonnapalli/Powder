@@ -21,7 +21,7 @@ from notebooks.availability_convergence_study import (
 from notebooks.availability_finite_horizon import dense_time_average, bdf_time_average
 from notebooks.availability_weekly_windows import run_fixed_week
 from notebooks.availability_skew_diagnostics import empirical_bernstein
-from powder.monte_carlo import MonteCarloResults, ConvergenceCriteria, _check_convergence
+from powder.mc_backend import MonteCarloResults, ConvergenceCriteria, _check_convergence
 from powder.scenario import QualityLevel, build_markov_model
 from powder.simulation.simulator import Simulator
 

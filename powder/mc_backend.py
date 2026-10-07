@@ -1,30 +1,39 @@
 """
-Monte Carlo simulation runner for RSM deployments.
+Monte Carlo runner for RSM deployments, backed by the Rust engine.
 
-Runs multiple simulations in parallel and aggregates results to compute
-statistics on availability, data loss timing, and cost.
+Simulation happens in ``rust/`` (see ``rust/README.md``); this module
+builds the jobs, runs the binary and aggregates what comes back.  The
+statistics -- confidence intervals, convergence criteria, the adaptive
+batching -- are unchanged from when the engine was in Python, because
+none of that is simulation.
+
+Scenarios are still described with the objects in ``powder.simulation``,
+which the Markov backend and the placement optimizer also build on;
+``powder.mc_jobs`` translates them into the engine's JSON.
 
 Supports both fixed-count runs and adaptive convergence-based runs that
 automatically determine the required sample size for high-confidence results.
+
+The binary is found via ``POWDER_MC_BINARY``, then
+``rust/target/release/``, then ``PATH``, and is built on first use if
+cargo is available.  See :func:`powder.mc_jobs.binary_path`.
 """
 
-import copy
+import json
 import math
-import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import subprocess
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 from scipy import stats as scipy_stats
 
+from .mc_jobs import build_job, ensure_binary
 from .simulation.cluster import ClusterState
 from .simulation.distributions import Seconds
-from .simulation.metrics import MetricsSnapshot
-from .simulation.network import NetworkConfig, NetworkState
+from .simulation.network import NetworkConfig
 from .simulation.protocol import Protocol
-from .simulation.simulator import SimulationResult, Simulator
 from .simulation.strategy import ClusterStrategy
 
 
@@ -227,15 +236,18 @@ class MonteCarloConfig:
             stop_on_data_loss is True, each run continues indefinitely
             until data loss occurs (useful for MTTDL estimation).
         stop_on_data_loss: Whether to stop each run when data loss occurs.
-        parallel_workers: Number of parallel worker processes (defaults to CPU count,
-            1 = sequential).
+        parallel_workers: Accepted for backward compatibility and ignored.
+            The engine runs an experiment on one thread; parallelism is
+            across independent experiments. To use several cores, run
+            experiments concurrently, or drive the binary in ``--stream``
+            mode, which has a worker pool.
         base_seed: Base seed for reproducibility (each run gets base_seed + run_index).
     """
 
     num_simulations: int
     max_time: Seconds | None = None
     stop_on_data_loss: bool = True
-    parallel_workers: int = os.cpu_count() or 1
+    parallel_workers: int = 1
     base_seed: int | None = None
 
     def __post_init__(self) -> None:
@@ -256,7 +268,6 @@ class MonteCarloResults:
         time_to_actual_loss_samples: Time to actual data loss for each run.
         cost_samples: Total cost for each run.
         end_reasons: Reason each simulation ended.
-        simulation_results: Full results for each run (if requested).
     """
 
     availability_samples: list[float] = field(default_factory=list)
@@ -264,7 +275,6 @@ class MonteCarloResults:
     time_to_actual_loss_samples: list[Seconds | None] = field(default_factory=list)
     cost_samples: list[float] = field(default_factory=list)
     end_reasons: list[str] = field(default_factory=list)
-    simulation_results: list[SimulationResult] = field(default_factory=list)
 
     # Event counter samples (one value per run)
     transient_failure_samples: list[int] = field(default_factory=list)
@@ -472,43 +482,65 @@ class MonteCarloResults:
         )
 
 
-def _run_single_simulation(
+def _run_simulations(
     cluster: ClusterState,
     strategy: ClusterStrategy,
     protocol: Protocol,
     network_config: NetworkConfig | None,
     max_time: Seconds | None,
     stop_on_data_loss: bool,
-    seed: int,
-) -> SimulationResult:
-    """Run a single simulation.
+    num_simulations: int,
+    base_seed: int | None,
+) -> list[dict[str, Any]]:
+    """Run a block of simulations through the Rust engine.
 
-    This is a module-level function to support multiprocessing.
-    All mutable arguments are deep-copied so each run has independent state.
+    One subprocess call covers the whole block: the engine runs every
+    simulation on a single thread, seeding run ``i`` with
+    ``base_seed + i`` exactly as the Python engine did.
+
+    Returns one record per run, in order, carrying the metrics snapshot
+    fields plus ``end_reason`` and ``end_time``.
     """
-    run_cluster = copy.deepcopy(cluster)
-    run_strategy = copy.deepcopy(strategy)
-    run_protocol = copy.deepcopy(protocol)
+    if num_simulations <= 0:
+        return []
 
-    simulator = Simulator(
-        initial_cluster=run_cluster,
-        strategy=run_strategy,
-        protocol=run_protocol,
+    job = build_job(
+        cluster,
+        strategy,
+        protocol,
+        num_simulations=num_simulations,
+        max_time=max_time,
+        stop_on_data_loss=stop_on_data_loss,
+        base_seed=base_seed,
         network_config=network_config,
-        seed=seed,
-        log_events=False,
     )
 
-    if stop_on_data_loss:
-        return simulator.run_until_data_loss(max_time=max_time)
-    else:
-        return simulator.run_until(end_time=max_time)
+    binary = ensure_binary()
+    completed = subprocess.run(
+        [str(binary), "--config", "-"],
+        input=json.dumps(job),
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"the Monte Carlo engine exited {completed.returncode}:\n"
+            f"{completed.stderr.strip()}"
+        )
+
+    result: dict[str, Any] = json.loads(completed.stdout)
+    if result.get("error"):
+        raise RuntimeError(f"the Monte Carlo engine rejected the job: {result['error']}")
+    return result["runs"]
 
 
 class MonteCarloRunner:
     """Runs multiple simulations and aggregates results.
 
-    Supports parallel execution for faster results on multi-core systems.
+    Simulation is delegated to the Rust engine, which runs an experiment
+    on one thread.  To use more than one core, run independent
+    experiments concurrently -- or drive the binary directly in
+    ``--stream`` mode, which has a worker pool.  See ``rust/README.md``.
     """
 
     def __init__(self, config: MonteCarloConfig):
@@ -530,131 +562,32 @@ class MonteCarloRunner:
         """Run Monte Carlo simulations.
 
         Args:
-            cluster: Initial cluster state (deep-copied for each run).
-            strategy: Cluster strategy (deep-copied for each run).
-            protocol: Protocol instance (deep-copied for each run).
+            cluster: Initial cluster state; every run starts from it.
+            strategy: Cluster strategy; every run gets a fresh instance.
+            protocol: Protocol instance; every run gets a fresh instance.
             network_config: Optional network configuration (shared across runs).
-            progress_callback: Optional callback(completed, total) for progress updates.
+            progress_callback: Optional callback(completed, total). The
+                engine runs the whole block in one call, so this fires
+                once, at the end.
 
         Returns:
             Aggregated MonteCarloResults.
         """
         results = MonteCarloResults()
+        self._run_batch(
+            cluster=cluster,
+            strategy=strategy,
+            protocol=protocol,
+            network_config=network_config,
+            results=results,
+            num_runs=self.config.num_simulations,
+            start_index=0,
+        )
 
-        if self.config.parallel_workers > 1:
-            self._run_parallel(
-                cluster,
-                strategy,
-                protocol,
-                network_config,
-                results,
-                progress_callback,
-            )
-        else:
-            self._run_sequential(
-                cluster,
-                strategy,
-                protocol,
-                network_config,
-                results,
-                progress_callback,
-            )
+        if progress_callback:
+            progress_callback(self.config.num_simulations, self.config.num_simulations)
 
         return results
-
-    def _run_sequential(
-        self,
-        cluster: ClusterState,
-        strategy: ClusterStrategy,
-        protocol: Protocol,
-        network_config: NetworkConfig | None,
-        results: MonteCarloResults,
-        progress_callback: Callable[[int, int], None] | None,
-    ) -> None:
-        """Run simulations sequentially."""
-        for i in range(self.config.num_simulations):
-            seed = (self.config.base_seed + i) if self.config.base_seed else None
-
-            sim_result = _run_single_simulation(
-                cluster=cluster,
-                strategy=strategy,
-                protocol=protocol,
-                network_config=network_config,
-                max_time=self.config.max_time,
-                stop_on_data_loss=self.config.stop_on_data_loss,
-                seed=seed,
-            )
-
-            self._collect_result(sim_result, results)
-
-            if progress_callback:
-                progress_callback(i + 1, self.config.num_simulations)
-
-    def _run_parallel(
-        self,
-        cluster: ClusterState,
-        strategy: ClusterStrategy,
-        protocol: Protocol,
-        network_config: NetworkConfig | None,
-        results: MonteCarloResults,
-        progress_callback: Callable[[int, int], None] | None,
-    ) -> None:
-        """Run simulations in parallel using ProcessPoolExecutor.
-
-        All objects are plain dataclasses and always picklable, so they
-        are sent directly to worker processes.  Each worker deep-copies
-        the objects to ensure independent state.
-
-        Uses chunked dispatch: submits at most ``parallel_workers`` futures
-        regardless of ``num_simulations``.  Submitting one future per
-        simulation creates O(N) IPC round-trips; for short simulations the
-        overhead dominates and parallel becomes *slower* than sequential.
-        Chunking keeps the round-trip count at O(workers), which is small.
-        """
-        completed = 0
-        num_runs = self.config.num_simulations
-        num_workers = self.config.parallel_workers
-
-        # One chunk per worker (at most).  Each chunk runs its simulations
-        # sequentially inside the worker, returning a list of results.
-        chunk_count = min(num_runs, num_workers)
-        base_chunk_size = num_runs // chunk_count
-        remainder = num_runs % chunk_count
-
-        with ProcessPoolExecutor(max_workers=num_workers) as executor:
-            futures = []
-            current_idx = 0
-
-            for i in range(chunk_count):
-                size = base_chunk_size + (1 if i < remainder else 0)
-                if size == 0:
-                    continue
-
-                seed = (
-                    (self.config.base_seed + current_idx)
-                    if self.config.base_seed is not None
-                    else None
-                )
-                future = executor.submit(
-                    _run_simulation_chunk,
-                    cluster=cluster,
-                    strategy=strategy,
-                    protocol=protocol,
-                    network_config=network_config,
-                    max_time=self.config.max_time,
-                    stop_on_data_loss=self.config.stop_on_data_loss,
-                    start_seed=seed,
-                    num_simulations=size,
-                )
-                futures.append(future)
-                current_idx += size
-
-            for future in as_completed(futures):
-                for res in future.result():
-                    self._collect_result(res, results)
-                    completed += 1
-                    if progress_callback:
-                        progress_callback(completed, self.config.num_simulations)
 
     def run_until_converged(
         self,
@@ -689,10 +622,6 @@ class MonteCarloRunner:
         results = MonteCarloResults()
         run_count = 0
 
-        executor = None
-        if self.config.parallel_workers > 1:
-            executor = ProcessPoolExecutor(max_workers=self.config.parallel_workers)
-
         # Phase 1: Run minimum batch
         initial_batch = convergence.min_runs
         self._run_batch(
@@ -703,7 +632,6 @@ class MonteCarloRunner:
             results=results,
             num_runs=initial_batch,
             start_index=run_count,
-            executor=executor,
         )
         run_count += initial_batch
 
@@ -731,7 +659,6 @@ class MonteCarloRunner:
                 results=results,
                 num_runs=batch,
                 start_index=run_count,
-                executor=executor,
             )
             run_count += batch
 
@@ -743,9 +670,6 @@ class MonteCarloRunner:
                     (s.estimated_runs_needed for s in statuses), default=run_count
                 )
                 progress_callback(run_count, estimated_total, all_converged)
-
-        if executor:
-            executor.shutdown()
 
         return ConvergenceResult(
             results=results,
@@ -763,108 +687,65 @@ class MonteCarloRunner:
         results: MonteCarloResults,
         num_runs: int,
         start_index: int,
-        executor: ProcessPoolExecutor | None = None,
     ) -> None:
-        """Run a batch of simulations and collect results.
+        """Run a batch of simulations and collect the results.
+
+        Seeds continue from ``start_index``, so successive batches of a
+        convergence run never reuse a seed.
 
         Args:
-            cluster: Initial cluster state (deep-copied for each run).
-            strategy: Cluster strategy (deep-copied for each run).
-            protocol: Protocol instance.
+            cluster: Initial cluster state; every run starts from it.
+            strategy: Cluster strategy; every run gets a fresh instance.
+            protocol: Protocol instance; every run gets a fresh instance.
             network_config: Optional network configuration.
             results: Results object to append to.
             num_runs: Number of runs in this batch.
             start_index: Starting index for seed computation.
         """
-        if self.config.parallel_workers > 1:
-            # Use provided executor or create a temporary one (though reuse is preferred)
-            local_executor = None
-            if executor is None:
-                local_executor = ProcessPoolExecutor(max_workers=self.config.parallel_workers)
-                executor = local_executor
-
-            try:
-                futures = []
-                # One chunk per worker (at most): keeps IPC round-trips at
-                # O(workers) instead of O(num_runs).  For short simulations
-                # the serialization overhead of one-future-per-sim dominates,
-                # making parallel slower than sequential.
-                chunk_count = min(num_runs, self.config.parallel_workers)
-
-                base_chunk_size = num_runs // chunk_count
-                remainder = num_runs % chunk_count
-
-                current_idx = 0
-                for i in range(chunk_count):
-                    size = base_chunk_size + (1 if i < remainder else 0)
-                    if size == 0:
-                        continue
-
-                    seed = (
-                        (self.config.base_seed + start_index + current_idx)
-                        if self.config.base_seed is not None
-                        else None
-                    )
-
-                    future = executor.submit(
-                        _run_simulation_chunk,
-                        cluster=cluster,
-                        strategy=strategy,
-                        protocol=protocol,
-                        network_config=network_config,
-                        max_time=self.config.max_time,
-                        stop_on_data_loss=self.config.stop_on_data_loss,
-                        start_seed=seed,
-                        num_simulations=size,
-                    )
-                    futures.append(future)
-                    current_idx += size
-
-                for future in as_completed(futures):
-                    chunk_results = future.result()
-                    for sim_result in chunk_results:
-                        self._collect_result(sim_result, results)
-            finally:
-                if local_executor:
-                    local_executor.shutdown()
-        else:
-            for i in range(num_runs):
-                seed = (
-                    (self.config.base_seed + start_index + i)
-                    if self.config.base_seed is not None
-                    else None
-                )
-                sim_result = _run_single_simulation(
-                    cluster=cluster,
-                    strategy=strategy,
-                    protocol=protocol,
-                    network_config=network_config,
-                    max_time=self.config.max_time,
-                    stop_on_data_loss=self.config.stop_on_data_loss,
-                    seed=seed,
-                )
-                self._collect_result(sim_result, results)
+        base_seed = (
+            self.config.base_seed + start_index
+            if self.config.base_seed is not None
+            else None
+        )
+        runs = _run_simulations(
+            cluster=cluster,
+            strategy=strategy,
+            protocol=protocol,
+            network_config=network_config,
+            max_time=self.config.max_time,
+            stop_on_data_loss=self.config.stop_on_data_loss,
+            num_simulations=num_runs,
+            base_seed=base_seed,
+        )
+        for run in runs:
+            self._collect_result(run, results)
 
     def _collect_result(
-        self, sim_result: SimulationResult, results: MonteCarloResults
+        self, run: dict[str, Any], results: MonteCarloResults
     ) -> None:
-        """Extract metrics from a simulation result and add to aggregated results."""
-        metrics = sim_result.metrics
-
-        results.availability_samples.append(metrics.availability_fraction())
-        results.time_to_potential_loss_samples.append(metrics.time_to_potential_data_loss)
-        results.time_to_actual_loss_samples.append(metrics.time_to_actual_data_loss)
-        results.cost_samples.append(metrics.total_cost)
-        results.end_reasons.append(sim_result.end_reason)
+        """Append one engine run record to the aggregated results."""
+        results.availability_samples.append(run["availability"])
+        results.time_to_potential_loss_samples.append(
+            run["time_to_potential_data_loss"]
+        )
+        results.time_to_actual_loss_samples.append(run["time_to_actual_data_loss"])
+        results.cost_samples.append(run["total_cost"])
+        results.end_reasons.append(run["end_reason"])
 
         # Event counters
-        results.transient_failure_samples.append(metrics.total_transient_failures)
-        results.dataloss_failure_samples.append(metrics.total_dataloss_failures)
-        results.nodes_spawned_samples.append(metrics.total_nodes_spawned)
-        results.unavailability_incident_samples.append(metrics.total_unavailability_incidents)
-        results.leader_election_samples.append(metrics.total_leader_elections)
-        results.time_to_first_unavailability_samples.append(metrics.time_to_first_unavailability)
-        results.total_time_samples.append(metrics.total_time())
+        results.transient_failure_samples.append(run["total_transient_failures"])
+        results.dataloss_failure_samples.append(run["total_dataloss_failures"])
+        results.nodes_spawned_samples.append(run["total_nodes_spawned"])
+        results.unavailability_incident_samples.append(
+            run["total_unavailability_incidents"]
+        )
+        results.leader_election_samples.append(run["total_leader_elections"])
+        results.time_to_first_unavailability_samples.append(
+            run["time_to_first_unavailability"]
+        )
+        results.total_time_samples.append(
+            run["time_available"] + run["time_unavailable"]
+        )
 
 
 def _get_metric_samples(
@@ -1082,7 +963,7 @@ def run_monte_carlo(
     max_time: Seconds | None = None,
     network_config: NetworkConfig | None = None,
     stop_on_data_loss: bool = True,
-    parallel_workers: int = os.cpu_count() or 1,
+    parallel_workers: int = 1,
     seed: int | None = None,
 ) -> MonteCarloResults:
     """Convenience function to run Monte Carlo simulations.
@@ -1097,7 +978,8 @@ def run_monte_carlo(
             (useful for MTTDL estimation).
         network_config: Optional network configuration.
         stop_on_data_loss: Whether to stop on data loss.
-        parallel_workers: Number of parallel workers (defaults to CPU count).
+        parallel_workers: Accepted for compatibility and ignored; see
+            MonteCarloConfig.
         seed: Base random seed.
 
     Returns:
@@ -1131,7 +1013,7 @@ def run_monte_carlo_converged(
     metrics: list[ConvergenceMetric] | None = None,
     network_config: NetworkConfig | None = None,
     stop_on_data_loss: bool = True,
-    parallel_workers: int = os.cpu_count() or 1,
+    parallel_workers: int = 1,
     seed: int | None = None,
     min_runs: int = 30,
     max_runs: int = 10_000,
@@ -1166,7 +1048,8 @@ def run_monte_carlo_converged(
         metrics: Which metrics to converge on (default: [AVAILABILITY]).
         network_config: Optional network configuration.
         stop_on_data_loss: Whether to stop on data loss.
-        parallel_workers: Number of parallel workers (defaults to CPU count).
+        parallel_workers: Accepted for compatibility and ignored; see
+            MonteCarloConfig.
         seed: Base random seed.
         min_runs: Minimum runs before checking convergence (default 30).
         max_runs: Maximum runs safety cap (default 10000).
@@ -1206,32 +1089,3 @@ def run_monte_carlo_converged(
         network_config=network_config,
         progress_callback=progress_callback,
     )
-def _run_simulation_chunk(
-    cluster: ClusterState,
-    strategy: ClusterStrategy,
-    protocol: Protocol,
-    network_config: NetworkConfig | None,
-    max_time: float | None,
-    stop_on_data_loss: bool,
-    start_seed: int | None,
-    num_simulations: int,
-) -> list[SimulationResult]:
-    """Run a chunk of simulations sequentially in a worker process.
-
-    Returns:
-        List of SimulationResult objects.
-    """
-    results = []
-    for i in range(num_simulations):
-        seed = (start_seed + i) if start_seed is not None else None
-        res = _run_single_simulation(
-            cluster=cluster,
-            strategy=strategy,
-            protocol=protocol,
-            network_config=network_config,
-            max_time=max_time,
-            stop_on_data_loss=stop_on_data_loss,
-            seed=seed,
-        )
-        results.append(res)
-    return results
