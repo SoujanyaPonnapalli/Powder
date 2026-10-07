@@ -1,0 +1,29 @@
+[package]
+name = "powder-mc"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance single-threaded Monte Carlo simulator for RSM deployments"
+
+[lib]
+name = "powder_mc"
+path = "src/lib.rs"
+
+[[bin]]
+name = "powder-mc"
+path = "src/bin/powder-mc.rs"
+
+[features]
+default = []
+# Swap the system allocator for mimalloc, which keeps a per-thread heap
+# with a lock-free fast path.  Off by default because it pulls in a C
+# toolchain; worth turning on only if a profile shows allocator pressure.
+mimalloc = ["dep:mimalloc"]
+
+[dependencies]
+mimalloc = { version = "0.1", optional = true, default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.10"
+rand_pcg = "0.10"
+rand_distr = "0.6"
+statrs = "0.18"
