@@ -14,6 +14,8 @@ use crate::sim::distributions::Seconds;
 use crate::sim::protocol::Protocol;
 use crate::sim::simulator::Simulator;
 use crate::sim::strategy::ClusterStrategy;
+use crate::config::StrategySpec;
+use crate::stratified::{run_stratified, StratifiedRecord, StratifiedScenario};
 
 /// One processed event, as emitted when event logging is on.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -166,6 +168,9 @@ pub struct JobResult {
     /// Convergence outcome, for `converged` jobs.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub convergence: Option<ConvergenceRecord>,
+    /// Outcome of a `stratified` job.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stratified: Option<StratifiedRecord>,
     /// Wall-clock seconds the job took.
     pub elapsed_seconds: f64,
 }
@@ -179,6 +184,7 @@ impl JobResult {
             runs: None,
             summary: None,
             convergence: None,
+            stratified: None,
             elapsed_seconds,
         }
     }
@@ -314,6 +320,36 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
         network_config: resolved.network_config.clone(),
     };
 
+    if resolved.mode == JobMode::Stratified {
+        let spec = resolved
+            .stratified
+            .as_ref()
+            .expect("resolve() rejects stratified jobs without settings");
+        let scenario = StratifiedScenario {
+            template: resolved.build_cluster(),
+            strategy: &strategy,
+            protocol: &protocol,
+            network_config: resolved.network_config.clone(),
+            replacement: resolved.strategy_default_config.clone(),
+            spawns: !matches!(resolved.strategy, StrategySpec::Noop),
+            horizon: resolved.run.max_time.expect("checked in resolve()"),
+            base_seed: resolved.run.base_seed.expect("checked in resolve()"),
+        };
+        let elapsed = || started.elapsed().as_secs_f64();
+        return match run_stratified(&scenario, spec) {
+            Ok(record) => JobResult {
+                job_id: resolved.job_id.clone(),
+                error: None,
+                runs: None,
+                summary: None,
+                convergence: None,
+                stratified: Some(record),
+                elapsed_seconds: elapsed(),
+            },
+            Err(message) => JobResult::failed(resolved.job_id.clone(), message, elapsed()),
+        };
+    }
+
     let (runs, summary, convergence) = match resolved.mode {
         JobMode::Single => {
             let record = run_single(resolved);
@@ -349,6 +385,7 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
                 Some(record),
             )
         }
+        JobMode::Stratified => unreachable!("handled above"),
     };
 
     JobResult {
@@ -357,6 +394,7 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
         runs,
         summary,
         convergence,
+        stratified: None,
         elapsed_seconds: started.elapsed().as_secs_f64(),
     }
 }

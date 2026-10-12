@@ -15,6 +15,7 @@ use crate::sim::distributions::{Distribution, Seconds};
 use crate::sim::network::NetworkConfig;
 use crate::sim::node::{NodeConfig, NodeConfigRef, NodeState};
 use crate::sim::protocol::{LeaderlessProtocol, Protocol, RaftLikeProtocol};
+use crate::stratified::StratifiedSpec;
 use crate::sim::strategy::{
     AdaptiveReplacementStrategy, ClusterStrategy, Delay, NoOpStrategy, NodeReplacementStrategy,
 };
@@ -485,6 +486,9 @@ pub enum JobMode {
     MonteCarlo,
     /// Adaptive runs until the convergence criteria are met.
     Converged,
+    /// Stratified (or naive, for comparison) runs until the `stratified`
+    /// block's tolerance is met.
+    Stratified,
 }
 
 /// One unit of work: a complete scenario plus what to do with it.
@@ -513,6 +517,9 @@ pub struct Job {
     /// Convergence criteria; required when `mode` is `converged`.
     #[serde(default)]
     pub convergence: Option<ConvergenceSpec>,
+    /// Stratified-sampling settings; required when `mode` is `stratified`.
+    #[serde(default)]
+    pub stratified: Option<StratifiedSpec>,
 }
 
 /// A job with every spec resolved into engine objects.
@@ -539,6 +546,8 @@ pub struct ResolvedJob {
     pub run: MonteCarloConfig,
     /// Engine convergence criteria.
     pub convergence: Option<ConvergenceCriteria>,
+    /// Stratified-sampling settings.
+    pub stratified: Option<StratifiedSpec>,
 }
 
 impl ResolvedJob {
@@ -702,6 +711,24 @@ impl Job {
             (None, _) => None,
         };
 
+        let stratified = match (&self.stratified, self.mode) {
+            (Some(spec), JobMode::Stratified) => {
+                spec.validate().map_err(ConfigError)?;
+                if run.max_time.is_none() || run.base_seed.is_none() {
+                    return Err(ConfigError(
+                        "mode \"stratified\" requires run.max_time and run.base_seed".to_string(),
+                    ));
+                }
+                Some(spec.clone())
+            }
+            (None, JobMode::Stratified) => {
+                return Err(ConfigError(
+                    "mode \"stratified\" requires a \"stratified\" block".to_string(),
+                ))
+            }
+            (_, _) => None,
+        };
+
         Ok(ResolvedJob {
             job_id: self.job_id.clone(),
             mode: self.mode,
@@ -712,6 +739,7 @@ impl Job {
             network_config,
             run,
             convergence,
+            stratified,
         })
     }
 }

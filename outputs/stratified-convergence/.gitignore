@@ -1,0 +1,2 @@
+# Raw per-job records (~200 MB); regenerate with the study's mc phase.
+mc.jsonl

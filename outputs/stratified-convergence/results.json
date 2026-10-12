@@ -1,0 +1,3746 @@
+{
+  "generated": "2026-10-12T18:23:56.964858+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+  "confidence": 0.99,
+  "threshold": 0.9999,
+  "max_runs": 50000000,
+  "markov": [
+    {
+      "nodes": 3,
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "horizon": "1d",
+      "horizon_seconds": 86400,
+      "quality": "NO_ORPHANS",
+      "states": 323,
+      "availability": 0.9999966407676142,
+      "kept": true,
+      "tolerance": 1.6796161929066855e-06,
+      "build_seconds": 0.008385749999433756,
+      "solve_seconds": 0.019933750038035214
+    },
+    {
+      "nodes": 3,
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "horizon": "30d",
+      "horizon_seconds": 2592000,
+      "quality": "NO_ORPHANS",
+      "states": 323,
+      "availability": 0.9999960487921787,
+      "kept": true,
+      "tolerance": 1.9756039106311185e-06,
+      "build_seconds": 0.008385749999433756,
+      "solve_seconds": 0.008881332993041724
+    },
+    {
+      "nodes": 3,
+      "mix": {
+        "Standard": 1,
+        "Unreliable": 1,
+        "Spot": 1
+      },
+      "horizon": "365d",
+      "horizon_seconds": 31536000,
+      "quality": "NO_ORPHANS",
+      "states": 323,
+      "availability": 0.9999959865239607,
+      "kept": true,
+      "tolerance": 2.0067380196442386e-06,
+      "build_seconds": 0.008385749999433756,
+      "solve_seconds": 0.009509875031653792
+    },
+    {
+      "nodes": 5,
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "horizon": "1d",
+      "horizon_seconds": 86400,
+      "quality": "NO_ORPHANS",
+      "states": 4598,
+      "availability": 0.9999978378304356,
+      "kept": true,
+      "tolerance": 1.081084782195152e-06,
+      "build_seconds": 0.06424908299231902,
+      "solve_seconds": 24.906730375019833
+    },
+    {
+      "nodes": 5,
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "horizon": "30d",
+      "horizon_seconds": 2592000,
+      "quality": "NO_ORPHANS",
+      "states": 4598,
+      "availability": 0.999997532535802,
+      "kept": true,
+      "tolerance": 1.2337320989819212e-06,
+      "build_seconds": 0.06424908299231902,
+      "solve_seconds": 33.72840250004083
+    },
+    {
+      "nodes": 5,
+      "mix": {
+        "Standard": 2,
+        "Unreliable": 2,
+        "Spot": 1
+      },
+      "horizon": "365d",
+      "horizon_seconds": 31536000,
+      "quality": "NO_ORPHANS",
+      "states": 4598,
+      "availability": 0.9999974869563208,
+      "kept": true,
+      "tolerance": 1.2565218395765854e-06,
+      "build_seconds": 0.06424908299231902,
+      "solve_seconds": 32.29645145795075
+    },
+    {
+      "nodes": 7,
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "horizon": "1d",
+      "horizon_seconds": 86400,
+      "quality": "SIMPLIFIED",
+      "states": 936,
+      "availability": 0.9999977671851369,
+      "kept": true,
+      "tolerance": 1.1164074315561656e-06,
+      "build_seconds": 0.012694250035565346,
+      "solve_seconds": 0.14687375002540648
+    },
+    {
+      "nodes": 7,
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "horizon": "30d",
+      "horizon_seconds": 2592000,
+      "quality": "SIMPLIFIED",
+      "states": 936,
+      "availability": 0.9999972710966712,
+      "kept": true,
+      "tolerance": 1.364451664376265e-06,
+      "build_seconds": 0.012694250035565346,
+      "solve_seconds": 0.16346058301860467
+    },
+    {
+      "nodes": 7,
+      "mix": {
+        "Standard": 3,
+        "Unreliable": 2,
+        "Spot": 2
+      },
+      "horizon": "365d",
+      "horizon_seconds": 31536000,
+      "quality": "SIMPLIFIED",
+      "states": 936,
+      "availability": 0.9999972156185765,
+      "kept": true,
+      "tolerance": 1.3921907117686594e-06,
+      "build_seconds": 0.012694250035565346,
+      "solve_seconds": 0.19064899999648333
+    }
+  ],
+  "cells": [
+    {
+      "nodes": 3,
+      "horizon": "1d",
+      "metric": "availability",
+      "markov_availability": 0.9999966407676142,
+      "tolerance": 1.6796161929066855e-06,
+      "arms": {
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 10050992,
+          "runs": [
+            9137265,
+            10050992,
+            10050992,
+            10050992,
+            10050992
+          ],
+          "seconds_median": 10.281152917,
+          "estimate_median": 0.9999966915753521,
+          "estimates": [
+            0.9999967014200765,
+            0.9999967148300808,
+            0.9999966262082776,
+            0.999996657446099,
+            0.9999966915753521
+          ],
+          "half_widths": [
+            1.658079677675682e-06,
+            1.6100611070969015e-06,
+            1.6335073632107232e-06,
+            1.6009988940584923e-06,
+            1.56400152145936e-06
+          ],
+          "variance_terms": [
+            1.2807201419436456e-07,
+            2.1914513241819022e-07,
+            2.4259138853201203e-07,
+            2.1008291937978116e-07,
+            1.730855467806489e-07
+          ],
+          "range_terms": [
+            1.5300076634813173e-06,
+            1.3909159746787112e-06,
+            1.3909159746787112e-06,
+            1.3909159746787112e-06,
+            1.3909159746787112e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 7551558,
+          "runs": [
+            6865068,
+            6865068,
+            8306714,
+            7551558,
+            8306714
+          ],
+          "seconds_median": 11.667280083,
+          "estimate_median": 0.9999965967488218,
+          "estimates": [
+            0.9999966104124463,
+            0.9999966391799061,
+            0.9999965840615574,
+            0.9999965967488218,
+            0.9999964942040868
+          ],
+          "half_widths": [
+            1.6680528487704665e-06,
+            1.6187492165780033e-06,
+            1.5714843665166274e-06,
+            1.5675254928907864e-06,
+            1.6084439460064585e-06
+          ],
+          "variance_terms": [
+            1.3711833211907855e-07,
+            8.781469992661539e-08,
+            2.917818555125567e-07,
+            1.681889545617013e-07,
+            3.2874143500238803e-07
+          ],
+          "range_terms": [
+            1.447541684733671e-06,
+            1.447541684733671e-06,
+            1.1963096790863537e-06,
+            1.3159437064113682e-06,
+            1.1963096790863537e-06
+          ],
+          "num_strata": 186,
+          "exact_mass": 0.2891992825798866,
+          "pruned_mass": 1.667856638354337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 0.23333333333333336,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.004566210045662101,
+              "peak_held": 4,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 6865068,
+          "runs": [
+            6865068,
+            7551558,
+            6865068,
+            6865068,
+            7551558
+          ],
+          "seconds_median": 8.689127333,
+          "estimate_median": 0.9999966234046734,
+          "estimates": [
+            0.9999966234046734,
+            0.9999966375037508,
+            0.999996683773121,
+            0.999996620029791,
+            0.9999965727661364
+          ],
+          "half_widths": [
+            1.6749370797710109e-06,
+            1.5457847767944567e-06,
+            1.6190901902045183e-06,
+            1.6159740853252066e-06,
+            1.6684377472426985e-06
+          ],
+          "variance_terms": [
+            1.4400256311962305e-07,
+            1.464482384653716e-07,
+            8.815567355313035e-08,
+            8.50395686738188e-08,
+            2.6910120891361327e-07
+          ],
+          "range_terms": [
+            1.447541684733671e-06,
+            1.3159437064113682e-06,
+            1.447541684733671e-06,
+            1.447541684733671e-06,
+            1.3159437064113682e-06
+          ],
+          "num_strata": 186,
+          "exact_mass": 0.2891992825798866,
+          "pruned_mass": 1.667856638354337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 0.23333333333333336,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.004566210045662101,
+              "peak_held": 4,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 3815726,
+          "runs": [
+            3468889,
+            3468889,
+            3815726,
+            4197271,
+            4197271
+          ],
+          "seconds_median": 6.136031708,
+          "estimate_median": 0.999996607304248,
+          "estimates": [
+            0.9999966660166655,
+            0.9999966630108262,
+            0.999996607304248,
+            0.9999964517217746,
+            0.9999965263386766
+          ],
+          "half_widths": [
+            1.6323060457051761e-06,
+            1.6295950962187488e-06,
+            1.6457077429996993e-06,
+            1.6626176393147144e-06,
+            1.5919892534068143e-06
+          ],
+          "variance_terms": [
+            8.994134147574446e-08,
+            8.723039198931717e-08,
+            2.3600091038405584e-07,
+            3.7350468618225545e-07,
+            3.0287630027435524e-07
+          ],
+          "range_terms": [
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.3263499263492693e-06,
+            1.2057560468660848e-06,
+            1.2057560468660848e-06
+          ],
+          "num_strata": 581,
+          "exact_mass": 0.6380871842127913,
+          "pruned_mass": 1.667138125327483e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 6,
+              "mean": 0.20000000000000004,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 4,
+              "mean": 0.003652968036529681,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_neyman": {
+          "replicates": 5,
+          "all_converged": false,
+          "runs_median": 50118612,
+          "runs": [
+            50138213,
+            50013550,
+            50118612,
+            50037521,
+            50219917
+          ],
+          "seconds_median": 101.300137459,
+          "estimate_median": 0.9999965928348233,
+          "estimates": [
+            0.9999965983948197,
+            0.9999965929690949,
+            0.9999965881673667,
+            0.9999965870053643,
+            0.9999965928348233
+          ],
+          "half_widths": [
+            9.903919136115708e-06,
+            9.857255172204178e-06,
+            9.805978457615361e-06,
+            9.926309320519895e-06,
+            9.608274935619959e-06
+          ],
+          "variance_terms": [
+            1.4569906758386167e-08,
+            1.4159730358250908e-08,
+            1.4114131840280482e-08,
+            1.4886978265410987e-08,
+            1.4188259098344157e-08
+          ],
+          "range_terms": [
+            9.805992323090948e-06,
+            9.759738535579554e-06,
+            9.708507419508706e-06,
+            9.82806543598811e-06,
+            9.510729770255241e-06
+          ],
+          "num_strata": 581,
+          "exact_mass": 0.6380871842127913,
+          "pruned_mass": 1.667138125327483e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 6,
+              "mean": 0.20000000000000004,
+              "peak_held": 5,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 4,
+              "mean": 0.003652968036529681,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 2
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 136003312,
+          "strata_with_variance": 169,
+          "strata_sampled": 185,
+          "variance_total": 4.512475887599509e-08,
+          "variance_within": 4.502036948829436e-08,
+          "naive_runs": 106127.74770817168,
+          "proportional_runs": 83330.43419657431,
+          "neyman_runs": 2861.790391048643,
+          "observed_anything": true,
+          "naive_runs_from_naive_samples": 78168.69499032333
+        },
+        "leader": {
+          "stratum_runs_pooled": 304362749,
+          "strata_with_variance": 485,
+          "strata_sampled": 576,
+          "variance_total": 5.185734468225348e-08,
+          "variance_within": 5.161013395613006e-08,
+          "naive_runs": 121961.94130095576,
+          "proportional_runs": 48636.91653550989,
+          "neyman_runs": 2223.674439390843,
+          "observed_anything": true
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 136003312,
+        "strata_with_variance": 169,
+        "strata_sampled": 185,
+        "variance_total": 4.512475887599509e-08,
+        "variance_within": 4.502036948829436e-08,
+        "naive_runs": 106127.74770817168,
+        "proportional_runs": 83330.43419657431,
+        "neyman_runs": 2861.790391048643,
+        "observed_anything": true,
+        "naive_runs_from_naive_samples": 78168.69499032333
+      }
+    },
+    {
+      "nodes": 3,
+      "horizon": "1d",
+      "metric": "data_loss_probability",
+      "markov_availability": 0.9999966407676142,
+      "tolerance": 1.6796161929066855e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 6240987,
+          "runs": [
+            6240987,
+            6240987,
+            6240987,
+            6240987,
+            6240987
+          ],
+          "seconds_median": 8.033005833,
+          "estimate_median": 8.339283191771685e-08,
+          "estimates": [
+            8.339283191771685e-08,
+            8.339283191771685e-08,
+            8.339283191771685e-08,
+            8.339283191771685e-08,
+            8.339283191771685e-08
+          ],
+          "half_widths": [
+            1.675693074874629e-06,
+            1.675693074874629e-06,
+            1.675693074874629e-06,
+            1.675693074874629e-06,
+            1.675693074874629e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.5923002429569122e-06,
+            1.5923002429569122e-06,
+            1.5923002429569122e-06,
+            1.5923002429569122e-06,
+            1.5923002429569122e-06
+          ],
+          "num_strata": 186,
+          "exact_mass": 0.2891992825798866,
+          "pruned_mass": 1.667856638354337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 0.23333333333333336,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.004566210045662101,
+              "peak_held": 4,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 9137265,
+          "runs": [
+            9137265,
+            9137265,
+            9137265,
+            9137265,
+            9137265
+          ],
+          "seconds_median": 9.399504667,
+          "estimate_median": 0.0,
+          "estimates": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "half_widths": [
+            1.5300076634813173e-06,
+            1.5300076634813173e-06,
+            1.5300076634813173e-06,
+            1.5300076634813173e-06,
+            1.5300076634813173e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.5300076634813173e-06,
+            1.5300076634813173e-06,
+            1.5300076634813173e-06,
+            1.5300076634813173e-06,
+            1.5300076634813173e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 6240987,
+          "runs": [
+            6240987,
+            6240987,
+            6240987,
+            6240987,
+            6240987
+          ],
+          "seconds_median": 8.763554875,
+          "estimate_median": 8.339283191771685e-08,
+          "estimates": [
+            8.339283191771685e-08,
+            8.339283191771685e-08,
+            8.339283191771685e-08,
+            8.339283191771685e-08,
+            8.339283191771685e-08
+          ],
+          "half_widths": [
+            1.675693074874629e-06,
+            1.675693074874629e-06,
+            1.675693074874629e-06,
+            1.675693074874629e-06,
+            1.675693074874629e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.5923002429569122e-06,
+            1.5923002429569122e-06,
+            1.5923002429569122e-06,
+            1.5923002429569122e-06,
+            1.5923002429569122e-06
+          ],
+          "num_strata": 186,
+          "exact_mass": 0.2891992825798866,
+          "pruned_mass": 1.667856638354337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 0.23333333333333336,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.004566210045662101,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_neyman": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 3468889,
+          "runs": [
+            3468889,
+            3468889,
+            3468889,
+            3468889,
+            3468889
+          ],
+          "seconds_median": 5.271606458,
+          "estimate_median": 8.335690626637415e-08,
+          "estimates": [
+            8.335690626637415e-08,
+            8.335690626637415e-08,
+            8.335690626637415e-08,
+            8.335690626637415e-08,
+            8.335690626637415e-08
+          ],
+          "half_widths": [
+            1.5423647042294317e-06,
+            1.5423647042294317e-06,
+            1.5423647042294317e-06,
+            1.5423647042294317e-06,
+            1.5423647042294317e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.4590077979630576e-06
+          ],
+          "num_strata": 581,
+          "exact_mass": 0.6380871842127913,
+          "pruned_mass": 1.667138125327483e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 6,
+              "mean": 0.20000000000000004,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 4,
+              "mean": 0.003652968036529681,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 3468889,
+          "runs": [
+            3468889,
+            3468889,
+            3468889,
+            3468889,
+            3468889
+          ],
+          "seconds_median": 5.497745292,
+          "estimate_median": 8.335690626637415e-08,
+          "estimates": [
+            8.335690626637415e-08,
+            8.335690626637415e-08,
+            8.335690626637415e-08,
+            8.335690626637415e-08,
+            8.335690626637415e-08
+          ],
+          "half_widths": [
+            1.5423647042294317e-06,
+            1.5423647042294317e-06,
+            1.5423647042294317e-06,
+            1.5423647042294317e-06,
+            1.5423647042294317e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.4590077979630576e-06,
+            1.4590077979630576e-06
+          ],
+          "num_strata": 581,
+          "exact_mass": 0.6380871842127913,
+          "pruned_mass": 1.667138125327483e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 6,
+              "mean": 0.20000000000000004,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0027397260273972603,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 4,
+              "mean": 0.003652968036529681,
+              "peak_held": 4,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 136003312,
+          "strata_with_variance": 0,
+          "strata_sampled": 185,
+          "variance_total": 6.954363255368286e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.01635578621184221,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false,
+          "naive_runs_from_naive_samples": 0.0
+        },
+        "leader": {
+          "stratum_runs_pooled": 304362749,
+          "strata_with_variance": 10,
+          "strata_sampled": 576,
+          "variance_total": 8.958759536619921e-10,
+          "variance_within": 8.958538595189725e-10,
+          "naive_runs": 2106.987373590945,
+          "proportional_runs": 844.2444545963709,
+          "neyman_runs": 0.22774309110411436,
+          "observed_anything": true
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 136003312,
+        "strata_with_variance": 0,
+        "strata_sampled": 185,
+        "variance_total": 6.954363255368286e-15,
+        "variance_within": 0.0,
+        "naive_runs": 0.01635578621184221,
+        "proportional_runs": 0.0,
+        "neyman_runs": 0.0,
+        "observed_anything": false,
+        "naive_runs_from_naive_samples": 0.0
+      }
+    },
+    {
+      "nodes": 5,
+      "horizon": "1d",
+      "metric": "availability",
+      "markov_availability": 0.9999978378304356,
+      "tolerance": 1.081084782195152e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 10900413,
+          "runs": [
+            10900413,
+            10900413,
+            10900413,
+            10900413,
+            10900413
+          ],
+          "seconds_median": 19.807263209,
+          "estimate_median": 0.999997966244135,
+          "estimates": [
+            0.9999979667178603,
+            0.999997966244135,
+            0.9999979715640028,
+            0.9999979636839371,
+            0.9999979622576858
+          ],
+          "half_widths": [
+            1.0265093016686453e-06,
+            1.0265257643315119e-06,
+            1.026440302065142e-06,
+            1.0265722597959839e-06,
+            1.0265532227156242e-06
+          ],
+          "variance_terms": [
+            1.3434932935506141e-08,
+            1.3451395598372905e-08,
+            1.3365933332002864e-08,
+            1.3497891062844795e-08,
+            1.3478853982485236e-08
+          ],
+          "range_terms": [
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07
+          ],
+          "num_strata": 269,
+          "exact_mass": 0.25171644209607574,
+          "pruned_mass": 1.0668405203695386e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 0.36666666666666664,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.007305936073059362,
+              "peak_held": 6,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13377873,
+          "runs": [
+            13377873,
+            13377873,
+            13377873,
+            13377873,
+            13377873
+          ],
+          "seconds_median": 19.721861416,
+          "estimate_median": 0.9999980120703748,
+          "estimates": [
+            0.999998008502165,
+            0.9999980214370119,
+            0.9999980120703748,
+            0.9999980109972316,
+            0.9999980123409762
+          ],
+          "half_widths": [
+            1.0594528253095866e-06,
+            1.059347539467534e-06,
+            1.0594668825718723e-06,
+            1.0594060881256815e-06,
+            1.0594295583975658e-06
+          ],
+          "variance_terms": [
+            1.443729942834361e-08,
+            1.4332013586291053e-08,
+            1.445135669062924e-08,
+            1.4390562244438504e-08,
+            1.4414032516322758e-08
+          ],
+          "range_terms": [
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 10900413,
+          "runs": [
+            10900413,
+            10900413,
+            10900413,
+            10900413,
+            10900413
+          ],
+          "seconds_median": 19.686990458,
+          "estimate_median": 0.999997968747251,
+          "estimates": [
+            0.9999979680601785,
+            0.999997968747251,
+            0.999997968927153,
+            0.999997970439867,
+            0.9999979678010995
+          ],
+          "half_widths": [
+            1.0265307827106961e-06,
+            1.026524886738608e-06,
+            1.0264917909680118e-06,
+            1.0265815227452708e-06,
+            1.0265101231561603e-06
+          ],
+          "variance_terms": [
+            1.3456413977557051e-08,
+            1.3450518005468861e-08,
+            1.3417422234872751e-08,
+            1.3507154012131639e-08,
+            1.3435754423021151e-08
+          ],
+          "range_terms": [
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07
+          ],
+          "num_strata": 269,
+          "exact_mass": 0.25171644209607574,
+          "pruned_mass": 1.0668405203695386e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 0.36666666666666664,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.007305936073059362,
+              "peak_held": 6,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 2626002,
+          "runs": [
+            2626002,
+            2626002,
+            2626002,
+            2626002,
+            2626002
+          ],
+          "seconds_median": 5.876343792,
+          "estimate_median": 0.9999979635000444,
+          "estimates": [
+            0.999997967979977,
+            0.9999979675208167,
+            0.9999979612191534,
+            0.9999979635000444,
+            0.999997962613344
+          ],
+          "half_widths": [
+            1.032874736124077e-06,
+            1.0327673555928885e-06,
+            1.0328643299276925e-06,
+            1.0328238174510465e-06,
+            1.0327847611518308e-06
+          ],
+          "variance_terms": [
+            9.955092913588986e-09,
+            9.847712382400502e-09,
+            9.944686717204588e-09,
+            9.904174240558637e-09,
+            9.865117941342904e-09
+          ],
+          "range_terms": [
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07
+          ],
+          "num_strata": 865,
+          "exact_mass": 0.8180770197559007,
+          "pruned_mass": 1.0750597490005731e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 10,
+              "mean": 0.3333333333333333,
+              "peak_held": 7,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 7,
+              "mean": 0.006392694063926943,
+              "peak_held": 6,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_neyman": {
+          "replicates": 5,
+          "all_converged": false,
+          "runs_median": 50000784,
+          "runs": [
+            50326864,
+            50000766,
+            50626664,
+            50000769,
+            50000784
+          ],
+          "seconds_median": 139.060240417,
+          "estimate_median": 0.9999979638937605,
+          "estimates": [
+            0.9999979638176938,
+            0.9999979636701074,
+            0.9999979638937605,
+            0.9999979642323805,
+            0.9999979644151314
+          ],
+          "half_widths": [
+            6.713515993184103e-06,
+            6.5222745815443155e-06,
+            6.552589385504511e-06,
+            6.527914976805735e-06,
+            6.522203226572183e-06
+          ],
+          "variance_terms": [
+            1.0115101242755813e-09,
+            9.768041279090536e-10,
+            9.820453073266655e-10,
+            9.780399786187237e-10,
+            9.767679492924755e-10
+          ],
+          "range_terms": [
+            6.658751495609798e-06,
+            6.467544789966377e-06,
+            6.4978543527471556e-06,
+            6.4731839493770875e-06,
+            6.467473471172862e-06
+          ],
+          "num_strata": 865,
+          "exact_mass": 0.8180770197559007,
+          "pruned_mass": 1.0750597490005731e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 10,
+              "mean": 0.3333333333333333,
+              "peak_held": 7,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 7,
+              "mean": 0.006392694063926943,
+              "peak_held": 6,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 218008260,
+          "strata_with_variance": 236,
+          "strata_sampled": 268,
+          "variance_total": 2.3032263033040168e-10,
+          "variance_within": 2.197937115095414e-10,
+          "naive_runs": 1307.5287972638164,
+          "proportional_runs": 1033.1103528090061,
+          "neyman_runs": 418.2063458933645,
+          "observed_anything": true,
+          "naive_runs_from_naive_samples": 1315.1404707987647
+        },
+        "leader": {
+          "stratum_runs_pooled": 290339877,
+          "strata_with_variance": 568,
+          "strata_sampled": 850,
+          "variance_total": 2.3074704927737408e-10,
+          "variance_within": 1.1786979799024925e-10,
+          "naive_runs": 1309.9382000848711,
+          "proportional_runs": 134.80392741147824,
+          "neyman_runs": 27.978416446117514,
+          "observed_anything": true
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 218008260,
+        "strata_with_variance": 236,
+        "strata_sampled": 268,
+        "variance_total": 2.3032263033040168e-10,
+        "variance_within": 2.197937115095414e-10,
+        "naive_runs": 1307.5287972638164,
+        "proportional_runs": 1033.1103528090061,
+        "neyman_runs": 418.2063458933645,
+        "observed_anything": true,
+        "naive_runs_from_naive_samples": 1315.1404707987647
+      }
+    },
+    {
+      "nodes": 5,
+      "horizon": "1d",
+      "metric": "data_loss_probability",
+      "markov_availability": 0.9999978378304356,
+      "tolerance": 1.081084782195152e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 10900413,
+          "runs": [
+            10900413,
+            10900413,
+            10900413,
+            10900413,
+            10900413
+          ],
+          "seconds_median": 20.662753667,
+          "estimate_median": 5.334202601847693e-08,
+          "estimates": [
+            5.334202601847693e-08,
+            5.334202601847693e-08,
+            5.334202601847693e-08,
+            5.334202601847693e-08,
+            5.334202601847693e-08
+          ],
+          "half_widths": [
+            1.013074368733139e-06,
+            1.013074368733139e-06,
+            1.013074368733139e-06,
+            1.013074368733139e-06,
+            1.013074368733139e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07
+          ],
+          "num_strata": 269,
+          "exact_mass": 0.25171644209607574,
+          "pruned_mass": 1.0668405203695386e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 0.36666666666666664,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.007305936073059362,
+              "peak_held": 6,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13377873,
+          "runs": [
+            13377873,
+            13377873,
+            13377873,
+            13377873,
+            13377873
+          ],
+          "seconds_median": 17.753786334,
+          "estimate_median": 0.0,
+          "estimates": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "half_widths": [
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 10900413,
+          "runs": [
+            10900413,
+            10900413,
+            10900413,
+            10900413,
+            10900413
+          ],
+          "seconds_median": 19.211725875,
+          "estimate_median": 5.334202601847693e-08,
+          "estimates": [
+            5.334202601847693e-08,
+            5.334202601847693e-08,
+            5.334202601847693e-08,
+            5.334202601847693e-08,
+            5.334202601847693e-08
+          ],
+          "half_widths": [
+            1.013074368733139e-06,
+            1.013074368733139e-06,
+            1.013074368733139e-06,
+            1.013074368733139e-06,
+            1.013074368733139e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07,
+            9.597323427146621e-07
+          ],
+          "num_strata": 269,
+          "exact_mass": 0.25171644209607574,
+          "pruned_mass": 1.0668405203695386e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 0.36666666666666664,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.007305936073059362,
+              "peak_held": 6,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_neyman": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 2626002,
+          "runs": [
+            2626002,
+            2626002,
+            2626002,
+            2626002,
+            2626002
+          ],
+          "seconds_median": 6.061798583,
+          "estimate_median": 5.3752987450028655e-08,
+          "estimates": [
+            5.3752987450028655e-08,
+            5.3752987450028655e-08,
+            5.3752987450028655e-08,
+            5.3752987450028655e-08,
+            5.3752987450028655e-08
+          ],
+          "half_widths": [
+            1.0229196432104879e-06,
+            1.0229196432104879e-06,
+            1.0229196432104879e-06,
+            1.0229196432104879e-06,
+            1.0229196432104879e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07
+          ],
+          "num_strata": 865,
+          "exact_mass": 0.8180770197559007,
+          "pruned_mass": 1.0750597490005731e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 10,
+              "mean": 0.3333333333333333,
+              "peak_held": 7,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 7,
+              "mean": 0.006392694063926943,
+              "peak_held": 6,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 2626002,
+          "runs": [
+            2626002,
+            2626002,
+            2626002,
+            2626002,
+            2626002
+          ],
+          "seconds_median": 6.014349708,
+          "estimate_median": 5.3752987450028655e-08,
+          "estimates": [
+            5.3752987450028655e-08,
+            5.3752987450028655e-08,
+            5.3752987450028655e-08,
+            5.3752987450028655e-08,
+            5.3752987450028655e-08
+          ],
+          "half_widths": [
+            1.0229196432104879e-06,
+            1.0229196432104879e-06,
+            1.0229196432104879e-06,
+            1.0229196432104879e-06,
+            1.0229196432104879e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07,
+            9.691666557604592e-07
+          ],
+          "num_strata": 865,
+          "exact_mass": 0.8180770197559007,
+          "pruned_mass": 1.0750597490005731e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 10,
+              "mean": 0.3333333333333333,
+              "peak_held": 7,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 7,
+              "mean": 0.006392694063926943,
+              "peak_held": 6,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 0.9999999999999998,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 218008260,
+          "strata_with_variance": 0,
+          "strata_sampled": 268,
+          "variance_total": 2.8453714362000823e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.016153015821356885,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false,
+          "naive_runs_from_naive_samples": 0.0
+        },
+        "leader": {
+          "stratum_runs_pooled": 290339877,
+          "strata_with_variance": 0,
+          "strata_sampled": 850,
+          "variance_total": 2.8893833491769347e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.016402869010152754,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 218008260,
+        "strata_with_variance": 0,
+        "strata_sampled": 268,
+        "variance_total": 2.8453714362000823e-15,
+        "variance_within": 0.0,
+        "naive_runs": 0.016153015821356885,
+        "proportional_runs": 0.0,
+        "neyman_runs": 0.0,
+        "observed_anything": false,
+        "naive_runs_from_naive_samples": 0.0
+      }
+    },
+    {
+      "nodes": 7,
+      "horizon": "1d",
+      "metric": "availability",
+      "markov_availability": 0.9999977671851369,
+      "tolerance": 1.1164074315561656e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13075806,
+          "runs": [
+            13075806,
+            13075806,
+            13075806,
+            13075806,
+            13075806
+          ],
+          "seconds_median": 35.157097833,
+          "estimate_median": 0.9999979656023413,
+          "estimates": [
+            0.9999979623811837,
+            0.9999979656023413,
+            0.9999979670404209,
+            0.9999979686508194,
+            0.9999979633821815
+          ],
+          "half_widths": [
+            1.0515058452247305e-06,
+            1.0514869184091544e-06,
+            1.0514593098714373e-06,
+            1.051457454405217e-06,
+            1.0515075208033288e-06
+          ],
+          "variance_terms": [
+            1.3677297225113856e-08,
+            1.365837040953778e-08,
+            1.3630761871820698e-08,
+            1.3628906405600497e-08,
+            1.3678972803712242e-08
+          ],
+          "range_terms": [
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07
+          ],
+          "num_strata": 430,
+          "exact_mass": 0.08082046109368493,
+          "pruned_mass": 1.1005996047863675e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 15,
+              "mean": 0.5,
+              "peak_held": 9,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 11,
+              "mean": 0.010045662100456624,
+              "peak_held": 8,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13377873,
+          "runs": [
+            13377873,
+            13377873,
+            13377873,
+            13377873,
+            13377873
+          ],
+          "seconds_median": 33.243317917,
+          "estimate_median": 0.9999980170952252,
+          "estimates": [
+            0.9999980170952252,
+            0.9999980130011683,
+            0.9999980203889626,
+            0.9999980087613237,
+            0.9999980216346718
+          ],
+          "half_widths": [
+            1.0593603899456314e-06,
+            1.0593674354119101e-06,
+            1.0593503028757676e-06,
+            1.0593938291474567e-06,
+            1.0593271509034957e-06
+          ],
+          "variance_terms": [
+            1.4344864064388483e-08,
+            1.4351909530667052e-08,
+            1.433477699452463e-08,
+            1.437830326621374e-08,
+            1.4311625022252789e-08
+          ],
+          "range_terms": [
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13075806,
+          "runs": [
+            13075806,
+            13075806,
+            13075806,
+            13075806,
+            13075806
+          ],
+          "seconds_median": 36.306793875,
+          "estimate_median": 0.9999979624560291,
+          "estimates": [
+            0.9999979605319357,
+            0.9999979705713599,
+            0.9999979530395878,
+            0.9999979624560291,
+            0.9999979637367887
+          ],
+          "half_widths": [
+            1.051501415580254e-06,
+            1.0514560433113288e-06,
+            1.0515510140201316e-06,
+            1.051475450863626e-06,
+            1.0514918247362512e-06
+          ],
+          "variance_terms": [
+            1.3672867580637308e-08,
+            1.3627495311712284e-08,
+            1.3722466020515174e-08,
+            1.3646902864009408e-08,
+            1.3663276736634619e-08
+          ],
+          "range_terms": [
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07
+          ],
+          "num_strata": 430,
+          "exact_mass": 0.08082046109368493,
+          "pruned_mass": 1.1005996047863675e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 15,
+              "mean": 0.5,
+              "peak_held": 9,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 11,
+              "mean": 0.010045662100456624,
+              "peak_held": 8,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 3538933,
+          "runs": [
+            3538933,
+            3538933,
+            3538933,
+            3538933,
+            3538933
+          ],
+          "seconds_median": 13.003142083,
+          "estimate_median": 0.9999979619134072,
+          "estimates": [
+            0.9999979608098076,
+            0.9999979607061406,
+            0.9999979682926076,
+            0.9999979619134072,
+            0.9999979661129594
+          ],
+          "half_widths": [
+            1.1100690827014733e-06,
+            1.1100687565735981e-06,
+            1.1100457941751798e-06,
+            1.110058412035057e-06,
+            1.1100380756528607e-06
+          ],
+          "variance_terms": [
+            1.0219696688423299e-08,
+            1.0219370560548075e-08,
+            1.0196408162129748e-08,
+            1.020902602200699e-08,
+            1.0188689639810563e-08
+          ],
+          "range_terms": [
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06
+          ],
+          "num_strata": 1423,
+          "exact_mass": 0.7359308534425437,
+          "pruned_mass": 1.1151064749359563e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 14,
+              "mean": 0.46666666666666673,
+              "peak_held": 9,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 10,
+              "mean": 0.009132420091324202,
+              "peak_held": 8,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_neyman": {
+          "replicates": 5,
+          "all_converged": false,
+          "runs_median": 50001473,
+          "runs": [
+            50001473,
+            50001472,
+            50001490,
+            50001500,
+            50001467
+          ],
+          "seconds_median": 183.594630417,
+          "estimate_median": 0.9999979625396733,
+          "estimates": [
+            0.9999979625396733,
+            0.9999979626215448,
+            0.9999979628322025,
+            0.9999979623491465,
+            0.9999979624042171
+          ],
+          "half_widths": [
+            8.067144610746149e-06,
+            8.067144779672408e-06,
+            8.06722949898151e-06,
+            8.067144777238664e-06,
+            8.067144743710149e-06
+          ],
+          "variance_terms": [
+            9.75816538037737e-10,
+            9.759854642956026e-10,
+            9.755175149818115e-10,
+            9.759830305510911e-10,
+            9.759495020362562e-10
+          ],
+          "range_terms": [
+            8.010413470461314e-06,
+            8.010413470461314e-06,
+            8.01049865771973e-06,
+            8.010413470461314e-06,
+            8.010413470461314e-06
+          ],
+          "num_strata": 1423,
+          "exact_mass": 0.7359308534425437,
+          "pruned_mass": 1.1151064749359563e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 14,
+              "mean": 0.46666666666666673,
+              "peak_held": 9,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 10,
+              "mean": 0.009132420091324202,
+              "peak_held": 8,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 261516120,
+          "strata_with_variance": 388,
+          "strata_sampled": 429,
+          "variance_total": 2.2932417935424284e-10,
+          "variance_within": 2.2159884128950312e-10,
+          "naive_runs": 1220.783271955514,
+          "proportional_runs": 1199.6711828099421,
+          "neyman_runs": 503.2229792082017,
+          "observed_anything": true,
+          "naive_runs_from_naive_samples": 1222.8474514948684
+        },
+        "leader": {
+          "stratum_runs_pooled": 303077397,
+          "strata_with_variance": 926,
+          "strata_sampled": 1388,
+          "variance_total": 2.2939473134733872e-10,
+          "variance_within": 1.16606501063426e-10,
+          "naive_runs": 1221.15884810809,
+          "proportional_runs": 181.60528492523216,
+          "neyman_runs": 23.53951790890811,
+          "observed_anything": true
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 261516120,
+        "strata_with_variance": 388,
+        "strata_sampled": 429,
+        "variance_total": 2.2932417935424284e-10,
+        "variance_within": 2.2159884128950312e-10,
+        "naive_runs": 1220.783271955514,
+        "proportional_runs": 1199.6711828099421,
+        "neyman_runs": 503.2229792082017,
+        "observed_anything": true,
+        "naive_runs_from_naive_samples": 1222.8474514948684
+      }
+    },
+    {
+      "nodes": 7,
+      "horizon": "1d",
+      "metric": "data_loss_probability",
+      "markov_availability": 0.9999977671851369,
+      "tolerance": 1.1164074315561656e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13075806,
+          "runs": [
+            13075806,
+            13075806,
+            13075806,
+            13075806,
+            13075806
+          ],
+          "seconds_median": 37.747481084,
+          "estimate_median": 5.502998023931838e-08,
+          "estimates": [
+            5.502998023931838e-08,
+            5.502998023931838e-08,
+            5.502998023931838e-08,
+            5.502998023931838e-08,
+            5.502998023931838e-08
+          ],
+          "half_widths": [
+            1.0378285479996166e-06,
+            1.0378285479996166e-06,
+            1.0378285479996166e-06,
+            1.0378285479996166e-06,
+            1.0378285479996166e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07
+          ],
+          "num_strata": 430,
+          "exact_mass": 0.08082046109368493,
+          "pruned_mass": 1.1005996047863675e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 15,
+              "mean": 0.5,
+              "peak_held": 9,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 11,
+              "mean": 0.010045662100456624,
+              "peak_held": 8,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13377873,
+          "runs": [
+            13377873,
+            13377873,
+            13377873,
+            13377873,
+            13377873
+          ],
+          "seconds_median": 31.417064292,
+          "estimate_median": 0.0,
+          "estimates": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "half_widths": [
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06,
+            1.045015525881243e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13075806,
+          "runs": [
+            13075806,
+            13075806,
+            13075806,
+            13075806,
+            13075806
+          ],
+          "seconds_median": 34.838422667,
+          "estimate_median": 5.502998023931838e-08,
+          "estimates": [
+            5.502998023931838e-08,
+            5.502998023931838e-08,
+            5.502998023931838e-08,
+            5.502998023931838e-08,
+            5.502998023931838e-08
+          ],
+          "half_widths": [
+            1.0378285479996166e-06,
+            1.0378285479996166e-06,
+            1.0378285479996166e-06,
+            1.0378285479996166e-06,
+            1.0378285479996166e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07,
+            9.827985677602982e-07
+          ],
+          "num_strata": 430,
+          "exact_mass": 0.08082046109368493,
+          "pruned_mass": 1.1005996047863675e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 15,
+              "mean": 0.5,
+              "peak_held": 9,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 11,
+              "mean": 0.010045662100456624,
+              "peak_held": 8,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_neyman": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 3538933,
+          "runs": [
+            3538933,
+            3538933,
+            3538933,
+            3538933,
+            3538933
+          ],
+          "seconds_median": 13.060081209,
+          "estimate_median": 5.5755323746797814e-08,
+          "estimates": [
+            5.5755323746797814e-08,
+            5.5755323746797814e-08,
+            5.5755323746797814e-08,
+            5.5755323746797814e-08,
+            5.5755323746797814e-08
+          ],
+          "half_widths": [
+            1.09984938601305e-06,
+            1.09984938601305e-06,
+            1.09984938601305e-06,
+            1.09984938601305e-06,
+            1.09984938601305e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06
+          ],
+          "num_strata": 1423,
+          "exact_mass": 0.7359308534425437,
+          "pruned_mass": 1.1151064749359563e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 14,
+              "mean": 0.46666666666666673,
+              "peak_held": 9,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 10,
+              "mean": 0.009132420091324202,
+              "peak_held": 8,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        },
+        "leader_proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 3538933,
+          "runs": [
+            3538933,
+            3538933,
+            3538933,
+            3538933,
+            3538933
+          ],
+          "seconds_median": 12.743401333,
+          "estimate_median": 5.5755323746797814e-08,
+          "estimates": [
+            5.5755323746797814e-08,
+            5.5755323746797814e-08,
+            5.5755323746797814e-08,
+            5.5755323746797814e-08,
+            5.5755323746797814e-08
+          ],
+          "half_widths": [
+            1.09984938601305e-06,
+            1.09984938601305e-06,
+            1.09984938601305e-06,
+            1.09984938601305e-06,
+            1.09984938601305e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06,
+            1.0440940622662523e-06
+          ],
+          "num_strata": 1423,
+          "exact_mass": 0.7359308534425437,
+          "pruned_mass": 1.1151064749359563e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 1,
+              "mean": 0.03333333333333333,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 1,
+              "mean": 0.0009132420091324203,
+              "peak_held": 1,
+              "native_nodes": 0,
+              "leader": true
+            },
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 14,
+              "mean": 0.46666666666666673,
+              "peak_held": 9,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 10,
+              "mean": 0.009132420091324202,
+              "peak_held": 8,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.005479452054794521,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 2,
+              "mean": 1.9999999999999996,
+              "peak_held": 2,
+              "native_nodes": 0,
+              "leader": false
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 261516120,
+          "strata_with_variance": 0,
+          "strata_sampled": 429,
+          "variance_total": 3.0282983918453336e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.016120829603161378,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false,
+          "naive_runs_from_naive_samples": 0.0
+        },
+        "leader": {
+          "stratum_runs_pooled": 303077397,
+          "strata_with_variance": 0,
+          "strata_sampled": 1388,
+          "variance_total": 3.108655779461984e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.016548603747417297,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 261516120,
+        "strata_with_variance": 0,
+        "strata_sampled": 429,
+        "variance_total": 3.0282983918453336e-15,
+        "variance_within": 0.0,
+        "naive_runs": 0.016120829603161378,
+        "proportional_runs": 0.0,
+        "neyman_runs": 0.0,
+        "observed_anything": false,
+        "naive_runs_from_naive_samples": 0.0
+      }
+    },
+    {
+      "nodes": 3,
+      "horizon": "30d",
+      "metric": "availability",
+      "markov_availability": 0.9999960487921787,
+      "tolerance": 1.9756039106311185e-06,
+      "arms": {
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 14715661,
+          "runs": [
+            14715661,
+            14715661,
+            14715661,
+            14715661,
+            16187228
+          ],
+          "seconds_median": 71.004272875,
+          "estimate_median": 0.9999957393830806,
+          "estimates": [
+            0.9999958709871694,
+            0.9999956010299152,
+            0.9999957393830806,
+            0.9999959699632301,
+            0.999995422679272
+          ],
+          "half_widths": [
+            1.8741814898501628e-06,
+            1.9500657929335224e-06,
+            1.966289478647663e-06,
+            1.8693742729186755e-06,
+            1.9339348401001735e-06
+          ],
+          "variance_terms": [
+            9.241674270590983e-07,
+            1.0000517301424578e-06,
+            1.0162754158565985e-06,
+            9.193602101276111e-07,
+            1.0702857454620395e-06
+          ],
+          "range_terms": [
+            9.500140627910645e-07,
+            9.500140627910645e-07,
+            9.500140627910645e-07,
+            9.500140627910645e-07,
+            8.636490946381338e-07
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13502941,
+          "runs": [
+            12747537,
+            13358647,
+            13596495,
+            13502941,
+            13785242
+          ],
+          "seconds_median": 86.284707583,
+          "estimate_median": 0.999997457448057,
+          "estimates": [
+            0.9999974964034537,
+            0.9999974416654166,
+            0.9999974441859906,
+            0.999997457448057,
+            0.9999974835694201
+          ],
+          "half_widths": [
+            1.6858744015974604e-06,
+            1.708766173280619e-06,
+            1.7003077108661685e-06,
+            1.7027576198138275e-06,
+            1.6860708675046145e-06
+          ],
+          "variance_terms": [
+            7.14883852136738e-08,
+            9.43801568968323e-08,
+            8.59216944823818e-08,
+            8.837160343004078e-08,
+            7.16848511208279e-08
+          ],
+          "range_terms": [
+            1.5156145471580198e-06,
+            1.5156145471580198e-06,
+            1.5156145471580198e-06,
+            1.5156145471580198e-06,
+            1.5156145471580198e-06
+          ],
+          "num_strata": 16690,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.975429384515337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 7.000000000000001,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.13698630136986303,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0821917808219178,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 16382867,
+          "runs": [
+            14894720,
+            14894720,
+            16382867,
+            16382867,
+            18019901
+          ],
+          "seconds_median": 94.934492208,
+          "estimate_median": 0.9999955994740926,
+          "estimates": [
+            0.9999957900999553,
+            0.9999958060308379,
+            0.9999955994740926,
+            0.9999950800401541,
+            0.9999949628434416
+          ],
+          "half_widths": [
+            1.9561975347011516e-06,
+            1.9539465307998584e-06,
+            1.9061968360397818e-06,
+            1.974627603822342e-06,
+            1.8931741212693247e-06
+          ],
+          "variance_terms": [
+            9.169938545435357e-07,
+            9.147428506422421e-07,
+            9.525742938474591e-07,
+            1.0210050616300194e-06,
+            1.0173374456616036e-06
+          ],
+          "range_terms": [
+            9.404322109318492e-07,
+            9.404322109318492e-07,
+            8.548510729665557e-07,
+            8.548510729665557e-07,
+            7.770652063819542e-07
+          ],
+          "num_strata": 16690,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.975429384515337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 7.000000000000001,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.13698630136986303,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0821917808219178,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 224063717,
+          "strata_with_variance": 16511,
+          "strata_sampled": 16690,
+          "variance_total": 1.0955306073548474e-06,
+          "variance_within": 1.0953364989079301e-06,
+          "naive_runs": 1862339.7817044738,
+          "proportional_runs": 2063149.1698779901,
+          "neyman_runs": 202991.4619795395,
+          "observed_anything": true,
+          "naive_runs_from_naive_samples": 2095108.3139137763
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 224063717,
+        "strata_with_variance": 16511,
+        "strata_sampled": 16690,
+        "variance_total": 1.0955306073548474e-06,
+        "variance_within": 1.0953364989079301e-06,
+        "naive_runs": 1862339.7817044738,
+        "proportional_runs": 2063149.1698779901,
+        "neyman_runs": 202991.4619795395,
+        "observed_anything": true,
+        "naive_runs_from_naive_samples": 2095108.3139137763
+      }
+    },
+    {
+      "nodes": 3,
+      "horizon": "30d",
+      "metric": "data_loss_probability",
+      "markov_availability": 0.9999960487921787,
+      "tolerance": 1.9756039106311185e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 7649778,
+          "runs": [
+            7649778,
+            7649778,
+            7649778,
+            7649778,
+            7649778
+          ],
+          "seconds_median": 44.216433417,
+          "estimate_median": 9.877146922576685e-08,
+          "estimates": [
+            9.877146922576685e-08,
+            9.877146922576685e-08,
+            9.877146922576685e-08,
+            9.877146922576685e-08,
+            9.877146922576685e-08
+          ],
+          "half_widths": [
+            1.933361814280417e-06,
+            1.933361814280417e-06,
+            1.933361814280417e-06,
+            1.933361814280417e-06,
+            1.933361814280417e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.8345903450546504e-06,
+            1.8345903450546504e-06,
+            1.8345903450546504e-06,
+            1.8345903450546504e-06,
+            1.8345903450546504e-06
+          ],
+          "num_strata": 16690,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.975429384515337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 7.000000000000001,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.13698630136986303,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0821917808219178,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 7551458,
+          "runs": [
+            7551458,
+            7551458,
+            7551458,
+            7551458,
+            7551458
+          ],
+          "seconds_median": 34.661455833,
+          "estimate_median": 0.0,
+          "estimates": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "half_widths": [
+            1.8513094815016436e-06,
+            1.8513094815016436e-06,
+            1.8513094815016436e-06,
+            1.8513094815016436e-06,
+            1.8513094815016436e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.8513094815016436e-06,
+            1.8513094815016436e-06,
+            1.8513094815016436e-06,
+            1.8513094815016436e-06,
+            1.8513094815016436e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 7649778,
+          "runs": [
+            7649778,
+            7649778,
+            7649778,
+            7649778,
+            7649778
+          ],
+          "seconds_median": 45.457050416,
+          "estimate_median": 9.877146922576685e-08,
+          "estimates": [
+            9.877146922576685e-08,
+            9.877146922576685e-08,
+            9.877146922576685e-08,
+            9.877146922576685e-08,
+            9.877146922576685e-08
+          ],
+          "half_widths": [
+            1.933361814280417e-06,
+            1.933361814280417e-06,
+            1.933361814280417e-06,
+            1.933361814280417e-06,
+            1.933361814280417e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.8345903450546504e-06,
+            1.8345903450546504e-06,
+            1.8345903450546504e-06,
+            1.8345903450546504e-06,
+            1.8345903450546504e-06
+          ],
+          "num_strata": 16690,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.975429384515337e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 7,
+              "mean": 7.000000000000001,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 5,
+              "mean": 0.13698630136986303,
+              "peak_held": 5,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 1,
+              "mean": 0.0821917808219178,
+              "peak_held": 1,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 224063717,
+          "strata_with_variance": 0,
+          "strata_sampled": 16690,
+          "variance_total": 9.755801205826555e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.01658430770079468,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false,
+          "naive_runs_from_naive_samples": 0.0
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 224063717,
+        "strata_with_variance": 0,
+        "strata_sampled": 16690,
+        "variance_total": 9.755801205826555e-15,
+        "variance_within": 0.0,
+        "naive_runs": 0.01658430770079468,
+        "proportional_runs": 0.0,
+        "neyman_runs": 0.0,
+        "observed_anything": false,
+        "naive_runs_from_naive_samples": 0.0
+      }
+    },
+    {
+      "nodes": 5,
+      "horizon": "30d",
+      "metric": "availability",
+      "markov_availability": 0.999997532535802,
+      "tolerance": 1.2337320989819212e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13034593,
+          "runs": [
+            13034593,
+            13034593,
+            13034593,
+            13034593,
+            13034593
+          ],
+          "seconds_median": 125.767055917,
+          "estimate_median": 0.9999979450466617,
+          "estimates": [
+            0.9999979447493608,
+            0.9999979448176881,
+            0.9999979453484581,
+            0.9999979450466617,
+            0.9999979451785361
+          ],
+          "half_widths": [
+            1.1414400961875447e-06,
+            1.141440989735191e-06,
+            1.1414397101019373e-06,
+            1.1414413236492093e-06,
+            1.1414407950714308e-06
+          ],
+          "variance_terms": [
+            2.6084352660984053e-09,
+            2.60932881374476e-09,
+            2.608049180490865e-09,
+            2.6096627277629494e-09,
+            2.60913414998446e-09
+          ],
+          "range_terms": [
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06
+          ],
+          "num_strata": 31277,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.2337110599780488e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 11.0,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.21917808219178087,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.1643835616438356,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        },
+        "naive": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 12161702,
+          "runs": [
+            12161702,
+            12161702,
+            12161702,
+            12161702,
+            12161702
+          ],
+          "seconds_median": 96.618394041,
+          "estimate_median": 0.9999980065694534,
+          "estimates": [
+            0.9999980071056596,
+            0.9999980058911107,
+            0.9999980069004708,
+            0.9999980065694534,
+            0.9999980060100697
+          ],
+          "half_widths": [
+            1.1522792835668328e-06,
+            1.1522798958312222e-06,
+            1.1522789654079652e-06,
+            1.1522778918368481e-06,
+            1.1522794229972624e-06
+          ],
+          "variance_terms": [
+            2.7621277633844254e-09,
+            2.762740027773735e-09,
+            2.761809604516694e-09,
+            2.760736033399731e-09,
+            2.7622671938139068e-09
+          ],
+          "range_terms": [
+            1.1495171558034485e-06,
+            1.1495171558034485e-06,
+            1.1495171558034485e-06,
+            1.1495171558034485e-06,
+            1.1495171558034485e-06
+          ],
+          "num_strata": 1,
+          "exact_mass": 0.0,
+          "pruned_mass": 0.0,
+          "axes": [],
+          "native_nodes": 0
+        },
+        "proportional": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13034593,
+          "runs": [
+            13034593,
+            13034593,
+            13034593,
+            13034593,
+            13034593
+          ],
+          "seconds_median": 123.110464875,
+          "estimate_median": 0.999997945239095,
+          "estimates": [
+            0.999997944373504,
+            0.9999979448530181,
+            0.9999979455757706,
+            0.999997945239095,
+            0.9999979453900656
+          ],
+          "half_widths": [
+            1.1414403042769593e-06,
+            1.1414409837842603e-06,
+            1.1414404727398007e-06,
+            1.1414396632401243e-06,
+            1.1414404646587776e-06
+          ],
+          "variance_terms": [
+            2.6086433555128705e-09,
+            2.609322862813917e-09,
+            2.6088118183543056e-09,
+            2.608002318677952e-09,
+            2.608803737331166e-09
+          ],
+          "range_terms": [
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06
+          ],
+          "num_strata": 31277,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.2337110599780488e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 11.0,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.21917808219178087,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.1643835616438356,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 195518895,
+          "strata_with_variance": 31107,
+          "strata_sampled": 31277,
+          "variance_total": 7.741710764651166e-12,
+          "variance_within": 7.382491013858377e-12,
+          "naive_runs": 33.746549381695644,
+          "proportional_runs": 35.65720631468619,
+          "neyman_runs": 34.82199475069263,
+          "observed_anything": true,
+          "naive_runs_from_naive_samples": 33.74823537704468
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 195518895,
+        "strata_with_variance": 31107,
+        "strata_sampled": 31277,
+        "variance_total": 7.741710764651166e-12,
+        "variance_within": 7.382491013858377e-12,
+        "naive_runs": 33.746549381695644,
+        "proportional_runs": 35.65720631468619,
+        "neyman_runs": 34.82199475069263,
+        "observed_anything": true,
+        "naive_runs_from_naive_samples": 33.74823537704468
+      }
+    },
+    {
+      "nodes": 5,
+      "horizon": "30d",
+      "metric": "data_loss_probability",
+      "markov_availability": 0.999997532535802,
+      "tolerance": 1.2337320989819212e-06,
+      "arms": {
+        "bernstein": {
+          "replicates": 5,
+          "all_converged": true,
+          "runs_median": 13034593,
+          "runs": [
+            13034593,
+            13034593,
+            13034593,
+            13034593,
+            13034593
+          ],
+          "seconds_median": 124.034052166,
+          "estimate_median": 6.168555299890244e-08,
+          "estimates": [
+            6.168555299890244e-08,
+            6.168555299890244e-08,
+            6.168555299890244e-08,
+            6.168555299890244e-08,
+            6.168555299890244e-08
+          ],
+          "half_widths": [
+            1.1388316609214464e-06,
+            1.1388316609214464e-06,
+            1.1388316609214464e-06,
+            1.1388316609214464e-06,
+            1.1388316609214464e-06
+          ],
+          "variance_terms": [
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          "range_terms": [
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06,
+            1.077146107922544e-06
+          ],
+          "num_strata": 31277,
+          "exact_mass": -0.0,
+          "pruned_mass": 1.2337110599780488e-07,
+          "axes": [
+            {
+              "kind": "transient",
+              "rate": 3.858024691358025e-07,
+              "slots": 11,
+              "mean": 11.0,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.0569930661254864e-08,
+              "slots": 8,
+              "mean": 0.21917808219178087,
+              "peak_held": 7,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 3.1709791983764586e-08,
+              "slots": 2,
+              "mean": 0.1643835616438356,
+              "peak_held": 2,
+              "native_nodes": 0
+            },
+            {
+              "kind": "permanent",
+              "rate": 1.1574074074074072e-05,
+              "slots": 1,
+              "mean": 29.999999999999993,
+              "peak_held": 1,
+              "native_nodes": 0
+            }
+          ],
+          "native_nodes": 0
+        }
+      },
+      "known_variance_by_family": {
+        "count": {
+          "stratum_runs_pooled": 195518895,
+          "strata_with_variance": 0,
+          "strata_sampled": 31277,
+          "variance_total": 3.805106979340081e-15,
+          "variance_within": 0.0,
+          "naive_runs": 0.016586673732019847,
+          "proportional_runs": 0.0,
+          "neyman_runs": 0.0,
+          "observed_anything": false
+        }
+      },
+      "known_variance": {
+        "stratum_runs_pooled": 195518895,
+        "strata_with_variance": 0,
+        "strata_sampled": 31277,
+        "variance_total": 3.805106979340081e-15,
+        "variance_within": 0.0,
+        "naive_runs": 0.016586673732019847,
+        "proportional_runs": 0.0,
+        "neyman_runs": 0.0,
+        "observed_anything": false
+      }
+    }
+  ]
+}

@@ -22,6 +22,7 @@ use super::metrics::{MetricsCollector, MetricsSnapshot};
 use super::network::NetworkConfig;
 use super::node::{NodeState, SyncPhase, SyncState};
 use super::protocol::Protocol;
+use super::schedule::{FailureKind, ForcedSchedule};
 use super::strategy::{Action, ClusterStrategy};
 use super::util::snapshot_boundary;
 
@@ -86,6 +87,10 @@ pub struct Simulator {
     pub metrics: MetricsCollector,
     /// Processed events, when logging is enabled.
     pub event_log: Vec<Event>,
+    /// Pre-drawn transient and permanent failures.  When set, nodes get no
+    /// failure or data-loss clocks of their own; see
+    /// [`schedule`](super::schedule) for why that is the same process.
+    pub forced: Option<ForcedSchedule>,
 
     initialized: bool,
     /// Reused buffers, so a steady-state event costs no allocation.
@@ -125,6 +130,7 @@ impl Simulator {
             event_queue: EventQueue::new(),
             metrics: MetricsCollector::new(),
             event_log: Vec::new(),
+            forced: None,
             initialized: false,
             scratch_sync: Vec::new(),
             scratch_resched: Vec::new(),
@@ -230,25 +236,40 @@ impl Simulator {
     }
 
     /// Schedule the first transient failure and data loss for a node.
+    ///
+    /// Under a forced schedule a node takes a slot instead, and only falls
+    /// back to its own clock when every slot is held.
     fn schedule_node_events(&mut self, node_index: usize) {
         let node = self.cluster.node_at(node_index);
         let node_id = node.node_id;
         let config = node.config.clone();
         let current_time = self.cluster.current_time;
 
-        let failure_time = config.failure_dist.sample(&mut self.rng);
-        self.event_queue.push(Event::new(
-            current_time + failure_time,
-            EventType::NodeFailure,
-            node_id,
-        ));
+        let (native_failure, native_loss) = match self.forced.as_mut() {
+            Some(forced) => (
+                !forced.assign(FailureKind::Transient, node, &self.cluster),
+                !forced.assign(FailureKind::Permanent, node, &self.cluster),
+            ),
+            None => (true, true),
+        };
 
-        let data_loss_time = config.data_loss_dist.sample(&mut self.rng);
-        self.event_queue.push(Event::new(
-            current_time + data_loss_time,
-            EventType::NodeDataLoss,
-            node_id,
-        ));
+        if native_failure {
+            let failure_time = config.failure_dist.sample(&mut self.rng);
+            self.event_queue.push(Event::new(
+                current_time + failure_time,
+                EventType::NodeFailure,
+                node_id,
+            ));
+        }
+
+        if native_loss {
+            let data_loss_time = config.data_loss_dist.sample(&mut self.rng);
+            self.event_queue.push(Event::new(
+                current_time + data_loss_time,
+                EventType::NodeDataLoss,
+                node_id,
+            ));
+        }
     }
 
     /// Schedule the next outage for a region.
@@ -812,6 +833,15 @@ impl Simulator {
             event.target_id,
         ));
 
+        // A slotted node's next failure comes from its slot.
+        if self
+            .forced
+            .as_ref()
+            .is_some_and(|f| !f.is_native(FailureKind::Transient, event.target_id))
+        {
+            return;
+        }
+
         // The next failure is measured from the end of this outage.
         let next_failure_time = config.failure_dist.sample(&mut self.rng);
         self.event_queue.push(Event::new(
@@ -1119,29 +1149,38 @@ impl Simulator {
         self.initialize();
 
         let end_reason = loop {
-            let Some(event) = self.event_queue.pop() else {
-                break EndReason::NoEvents;
-            };
-
-            if let Some(limit) = end_time {
-                if event.time > limit {
-                    self.event_queue.push(event);
-
-                    let elapsed = limit - self.cluster.current_time;
-                    self.advance_commit_index(elapsed, None);
-
-                    // No event to apply, so state does not change between
-                    // recording and updating.
-                    self.metrics
-                        .record_elapsed(limit, &self.cluster, self.protocol.as_ref(), None);
-                    self.metrics
-                        .update(&self.cluster, limit, self.protocol.as_ref(), None);
-                    self.cluster.current_time = limit;
+            // A pre-drawn failure fires when it is due before the queue's
+            // next event.  Ties go to the queue; they have probability zero.
+            let candidate_time = self.forced.as_ref().and_then(|f| f.peek_time());
+            let queue_time = self.event_queue.peek().map(|e| e.time);
+            if let Some(time) = candidate_time.filter(|&c| queue_time.is_none_or(|q| c < q)) {
+                if end_time.is_some_and(|limit| time > limit) {
+                    self.finish_at(end_time.unwrap());
                     break EndReason::TimeLimit;
                 }
-            }
+                let hit = self.forced.as_mut().expect("checked above").fire(&self.cluster);
+                // A candidate that hits no node changes nothing.
+                let Some((kind, node_id)) = hit else { continue };
+                let event_type = match kind {
+                    FailureKind::Transient => EventType::NodeFailure,
+                    FailureKind::Permanent => EventType::NodeDataLoss,
+                };
+                self.process_event(Event::new(time, event_type, node_id));
+            } else {
+                let Some(event) = self.event_queue.pop() else {
+                    break EndReason::NoEvents;
+                };
 
-            self.process_event(event);
+                if let Some(limit) = end_time {
+                    if event.time > limit {
+                        self.event_queue.push(event);
+                        self.finish_at(limit);
+                        break EndReason::TimeLimit;
+                    }
+                }
+
+                self.process_event(event);
+            }
 
             // Data loss is the more specific outcome, so it is checked first.
             if self.protocol.has_actual_data_loss(&self.cluster) {
@@ -1158,6 +1197,50 @@ impl Simulator {
         SimulationResult {
             end_time: self.cluster.current_time,
             end_reason,
+            metrics: self.metrics.snapshot(),
+            event_log: if self.log_events {
+                self.event_log.clone()
+            } else {
+                Vec::new()
+            },
+        }
+    }
+
+    /// Account for the quiet interval up to `limit` and stop the clock there.
+    fn finish_at(&mut self, limit: Seconds) {
+        let elapsed = limit - self.cluster.current_time;
+        self.advance_commit_index(elapsed, None);
+
+        // No event to apply, so state does not change between recording
+        // and updating.
+        self.metrics
+            .record_elapsed(limit, &self.cluster, self.protocol.as_ref(), None);
+        self.metrics
+            .update(&self.cluster, limit, self.protocol.as_ref(), None);
+        self.cluster.current_time = limit;
+    }
+
+    /// Run through the whole horizon, even past data loss.
+    ///
+    /// [`run_until`](Self::run_until) stops at data loss regardless of
+    /// configuration, which would measure availability over a shorter
+    /// window in exactly the runs that matter most.  This resumes after
+    /// such stops, so every run covers `[0, horizon]` and the time after a
+    /// loss counts as unavailable -- the protocol cannot commit again.  The
+    /// result's `end_reason` is the first stop's.
+    pub fn run_through(&mut self, horizon: Seconds) -> SimulationResult {
+        let first = self.run_until(Some(horizon), None);
+        let mut last_reason = first.end_reason;
+        while self.cluster.current_time < horizon {
+            if last_reason == EndReason::NoEvents {
+                self.finish_at(horizon);
+                break;
+            }
+            last_reason = self.run_until(Some(horizon), None).end_reason;
+        }
+        SimulationResult {
+            end_time: self.cluster.current_time,
+            end_reason: first.end_reason,
             metrics: self.metrics.snapshot(),
             event_log: if self.log_events {
                 self.event_log.clone()

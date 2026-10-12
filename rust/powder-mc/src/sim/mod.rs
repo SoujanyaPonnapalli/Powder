@@ -12,6 +12,7 @@ pub mod metrics;
 pub mod network;
 pub mod node;
 pub mod protocol;
+pub mod schedule;
 pub mod simulator;
 pub mod strategy;
 pub mod util;

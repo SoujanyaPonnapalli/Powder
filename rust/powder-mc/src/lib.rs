@@ -11,3 +11,4 @@ pub mod monte_carlo;
 pub mod pool;
 pub mod sim;
 pub mod stats;
+pub mod stratified;

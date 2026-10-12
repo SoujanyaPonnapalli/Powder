@@ -67,7 +67,7 @@ only under `--unordered`.
 ```jsonc
 {
   "job_id": "optional, echoed back in the result",
-  "mode": "single" | "monte_carlo" | "converged",
+  "mode": "single" | "monte_carlo" | "converged" | "stratified",
 
   "node_configs": {
     "standard": {
@@ -116,9 +116,47 @@ only under `--unordered`.
 
   "convergence": {"confidence_level": 0.95, "relative_error": 0.05,
                   "absolute_error": null, "metrics": ["availability"],
-                  "min_runs": 30, "max_runs": 10000, "batch_size": 10}
+                  "min_runs": 30, "max_runs": 10000, "batch_size": 10},
+
+  "stratified": null   // required for mode "stratified"; see below
 }
 ```
+
+### Stratified mode
+
+`"mode": "stratified"` estimates availability or data-loss probability over
+a fixed horizon (`run.max_time`, and `run.base_seed` is required) by
+stratifying on how many transient and permanent failures land in it. Each
+run covers the whole horizon, continuing past data loss, which counts as
+unavailable from then on.
+
+```jsonc
+"stratified": {
+  "allocation": "proportional",     // or "neyman", or "naive" (no strata, native clocks)
+  "metric": "availability",         // or "data_loss_probability"
+  "absolute_error": 2e-6,           // half-width to reach
+  "confidence_level": 0.99,
+  "stopping_rule": "bernstein",     // or "clt"
+  "prune_fraction": 0.1,            // pruned mass may cost at most this share of absolute_error
+  "min_runs": 30,                   // naive arm's first check
+  "max_runs": 10000000,
+  "growth": 1.1,                    // run budget multiplier between checks
+  "slot_headroom": null,            // extra slots for replacement nodes; default target size + 1
+  "max_strata": 1000000
+}
+```
+
+Nodes that share a failure kind and an exponential rate form an axis. Each axis
+has a fixed number of slots, and each slot carries an independent Poisson stream
+at the per-node rate. A stratum is one candidate count per axis. Strata are
+visited from most to least likely, and the walk stops once the unvisited mass
+fits within `prune_fraction * absolute_error`. That mass is imputed at 0.5, and
+half of it is added to the half-width. The stratum with no failures is
+deterministic, so it is simulated once. A node that finds every slot held keeps
+its native clocks, so the slot count is a tuning knob, not a correctness bound.
+Only exponential failure and data-loss distributions are supported for now. See
+`src/stratified.rs` and `src/sim/schedule.rs` for the construction and the
+stopping rule.
 
 `max_time: null` with `stop_on_data_loss: true` runs each simulation until
 data loss, which is what MTTDL estimation needs. `run.parallel_workers` is
