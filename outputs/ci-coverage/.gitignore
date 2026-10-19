@@ -1,0 +1,2 @@
+# Raw per-run traces (~23 MB); regenerate with the study's test phase.
+test.jsonl

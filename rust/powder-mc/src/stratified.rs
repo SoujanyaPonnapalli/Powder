@@ -495,10 +495,18 @@ pub struct StratifiedSpec {
     /// as exact: quorum and leader both survive, so nothing is random.
     #[serde(default)]
     pub leader_strata: bool,
+    /// Runs every sampled stratum gets before its variance is trusted,
+    /// and never drops below.  At least two, so a variance exists.
+    #[serde(default = "default_min_stratum_runs")]
+    pub min_stratum_runs: u64,
     /// Extra runs of each exact stratum, which must all repeat the first
     /// run's outcome exactly; a mismatch is an error, not a bias.
     #[serde(default = "default_exact_checks")]
     pub exact_checks: u64,
+}
+
+fn default_min_stratum_runs() -> u64 {
+    2
 }
 
 fn default_exact_checks() -> u64 {
@@ -558,6 +566,9 @@ impl StratifiedSpec {
         }
         if self.min_runs < 2 {
             return Err("min_runs must be >= 2".to_string());
+        }
+        if self.min_stratum_runs < 2 {
+            return Err("min_stratum_runs must be >= 2".to_string());
         }
         Ok(())
     }
@@ -885,8 +896,9 @@ pub fn run_stratified(
 
     let mut avail = vec![Moments::default(); sampled.len()];
     let mut loss = vec![Moments::default(); sampled.len()];
-    let mut targets = vec![2u64; sampled.len()];
-    let mut budget = 2 * sampled.len();
+    let floor = spec.min_stratum_runs;
+    let mut targets = vec![floor; sampled.len()];
+    let mut budget = floor as usize * sampled.len();
 
     let estimates = |avail: &[Moments], loss: &[Moments]| {
         let pairs = |m: &[Moments]| -> Vec<(f64, Moments)> {
@@ -1009,7 +1021,7 @@ pub fn run_stratified(
                 let log_term = (4.0 / (1.0 - spec.confidence_level)).ln();
                 let plan = bernstein_allocation(&weights, &sigmas, budget as f64, log_term);
                 for (target, n) in targets.iter_mut().zip(plan) {
-                    *target = (*target).max(n.ceil() as u64).max(2);
+                    *target = (*target).max(n.ceil() as u64).max(floor);
                 }
                 continue;
             }
@@ -1027,7 +1039,7 @@ pub fn run_stratified(
                 strata[sampled[slot]].weight / sampled_mass
             };
             let want = 1 + (extra * share).ceil() as u64;
-            targets[slot] = targets[slot].max(want).max(2);
+            targets[slot] = targets[slot].max(want).max(floor);
         }
     }
 }

@@ -359,3 +359,15 @@ fn leader_strata_agree_with_naive_and_hold_their_exact_cells() {
     let gap = (naive.target.mean - leader.target.mean).abs();
     assert!(gap <= naive.target.half_width + leader.target.half_width, "gap {gap}");
 }
+
+#[test]
+fn every_sampled_stratum_gets_the_minimum_runs() {
+    let text = job(
+        "stratified",
+        r#", "stratified": {"allocation": "proportional", "metric": "availability",
+             "absolute_error": 0.05, "min_stratum_runs": 30, "emit_strata": true}"#,
+    );
+    let record = run_job_json(&text).stratified.unwrap();
+    let strata = record.strata.unwrap();
+    assert!(strata.iter().filter(|s| !s.exact).all(|s| s.runs >= 30));
+}
