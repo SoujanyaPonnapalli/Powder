@@ -154,6 +154,9 @@ def make_job(row, metric, arm, replicate):
                          "metric": metric, "confidence_level": CONFIDENCE,
                          "absolute_error": row["tolerance"], "prune_fraction": 0.1,
                          "max_runs": MAX_RUNS, "growth": 1.1,
+                         # Pinned to the settings the saved results used,
+                         # which predate the current engine defaults.
+                         "min_runs": 30, "min_stratum_runs": 2,
                          "emit_strata": True}
     return job
 

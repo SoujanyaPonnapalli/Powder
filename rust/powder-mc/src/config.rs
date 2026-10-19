@@ -437,10 +437,10 @@ fn default_metrics() -> Vec<String> {
     vec!["availability".to_string()]
 }
 fn default_min_runs() -> usize {
-    30
+    50_000
 }
 fn default_max_runs() -> usize {
-    10_000
+    10_000_000
 }
 fn default_batch_size() -> usize {
     10

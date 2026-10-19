@@ -127,8 +127,12 @@ impl Default for ConvergenceCriteria {
             relative_error: Some(0.05),
             absolute_error: None,
             metrics: vec![ConvergenceMetric::Availability],
-            min_runs: 30,
-            max_runs: 10_000,
+            // A few dozen runs routinely miss the rare long outages that
+            // carry most of the downtime of a reliable RSM, and the interval
+            // then looks tight exactly when it is wrong (see
+            // outputs/ci-coverage/).  Never stop before this many.
+            min_runs: 50_000,
+            max_runs: 10_000_000,
             batch_size: 10,
         }
     }
@@ -1004,8 +1008,8 @@ mod tests {
         assert_eq!(c.absolute_error, None);
         assert!(!c.uses_absolute_error());
         assert_eq!(c.metrics, vec![ConvergenceMetric::Availability]);
-        assert_eq!(c.min_runs, 30);
-        assert_eq!(c.max_runs, 10_000);
+        assert_eq!(c.min_runs, 50_000);
+        assert_eq!(c.max_runs, 10_000_000);
         assert_eq!(c.batch_size, 10);
     }
 

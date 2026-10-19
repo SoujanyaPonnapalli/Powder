@@ -116,7 +116,7 @@ only under `--unordered`.
 
   "convergence": {"confidence_level": 0.95, "relative_error": 0.05,
                   "absolute_error": null, "metrics": ["availability"],
-                  "min_runs": 30, "max_runs": 10000, "batch_size": 10},
+                  "min_runs": 50000, "max_runs": 10000000, "batch_size": 10},
 
   "stratified": null   // required for mode "stratified"; see below
 }
@@ -132,13 +132,15 @@ unavailable from then on.
 
 ```jsonc
 "stratified": {
-  "allocation": "proportional",     // or "neyman", or "naive" (no strata, native clocks)
   "metric": "availability",         // or "data_loss_probability"
   "absolute_error": 2e-6,           // half-width to reach
+  "allocation": "proportional",     // default; or "neyman", "bernstein", "naive" (no strata)
+  "leader_strata": null,            // default: on when the protocol has an initial leader
+  "min_stratum_runs": 30,           // runs per sampled stratum before its variance counts
   "confidence_level": 0.99,
   "stopping_rule": "bernstein",     // or "clt"
   "prune_fraction": 0.1,            // pruned mass may cost at most this share of absolute_error
-  "min_runs": 30,                   // naive arm's first check
+  "min_runs": 50000,                // no arm stops before this many runs
   "max_runs": 10000000,
   "growth": 1.1,                    // run budget multiplier between checks
   "slot_headroom": null,            // extra slots for replacement nodes; default target size + 1
@@ -154,7 +156,14 @@ fits within `prune_fraction * absolute_error`. That mass is imputed at 0.5, and
 half of it is added to the half-width. The stratum with no failures is
 deterministic, so it is simulated once. A node that finds every slot held keeps
 its native clocks, so the slot count is a tuning knob, not a correctness bound.
-Only exponential failure and data-loss distributions are supported for now. See
+Only exponential failure and data-loss distributions are supported for now.
+
+The defaults come from `outputs/ci-coverage/`: over 1000 random RSMs, a
+99% interval that stops after a few dozen runs was wrong for about a
+quarter of them, because the rare long outages that carry most of the
+downtime had not been sampled yet. Hence the 50,000-run minimum here and
+in `converged` mode. Leader strata, proportional allocation and 30 runs
+per stratum gave the best-calibrated stratified interval. See
 `src/stratified.rs` and `src/sim/schedule.rs` for the construction and the
 stopping rule.
 

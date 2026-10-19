@@ -622,8 +622,8 @@ fn test_defaults() {
     assert_eq!(criteria.absolute_error, None);
     assert!(!criteria.uses_absolute_error());
     assert_eq!(criteria.metrics, vec![ConvergenceMetric::Availability]);
-    assert_eq!(criteria.min_runs, 30);
-    assert_eq!(criteria.max_runs, 10_000);
+    assert_eq!(criteria.min_runs, 50_000);
+    assert_eq!(criteria.max_runs, 10_000_000);
     assert_eq!(criteria.batch_size, 10);
 }
 

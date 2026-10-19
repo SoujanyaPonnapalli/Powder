@@ -431,12 +431,15 @@ impl StoppingRule {
 // ---------------------------------------------------------------------------
 
 /// How runs are spread over strata.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Allocation {
     /// No stratification: plain Monte Carlo with native clocks.
     Naive,
-    /// Runs in proportion to stratum weight, at least two per stratum.
+    /// Runs in proportion to stratum weight, at least `min_stratum_runs`
+    /// per stratum.  The default: with leader strata and 30 runs per
+    /// stratum it was the best-calibrated interval in the coverage study.
+    #[default]
     Proportional,
     /// Runs in proportion to weight times standard deviation, at least two
     /// per stratum.
@@ -450,6 +453,7 @@ pub enum Allocation {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct StratifiedSpec {
     /// How runs are allocated.
+    #[serde(default)]
     pub allocation: Allocation,
     /// Metric that must converge: `availability` or
     /// `data_loss_probability`.
@@ -466,8 +470,9 @@ pub struct StratifiedSpec {
     /// pruned mass times the metric's range.
     #[serde(default = "default_prune_fraction")]
     pub prune_fraction: f64,
-    /// First check for the naive arm; stratified arms start from two runs
-    /// per stratum.
+    /// No arm stops before this many runs.  The naive arm's first check
+    /// comes here; stratified arms also start from `min_stratum_runs` per
+    /// stratum, which may be more.
     #[serde(default = "default_min_runs")]
     pub min_runs: usize,
     /// Cap on total runs.
@@ -493,8 +498,9 @@ pub struct StratifiedSpec {
     /// Give the initial leader its own axes, and treat every stratum where
     /// it never fails and the other nodes fail at most `f` times in total
     /// as exact: quorum and leader both survive, so nothing is random.
+    /// Unset means on whenever the protocol has an initial leader.
     #[serde(default)]
-    pub leader_strata: bool,
+    pub leader_strata: Option<bool>,
     /// Runs every sampled stratum gets before its variance is trusted,
     /// and never drops below.  At least two, so a variance exists.
     #[serde(default = "default_min_stratum_runs")]
@@ -506,7 +512,7 @@ pub struct StratifiedSpec {
 }
 
 fn default_min_stratum_runs() -> u64 {
-    2
+    30
 }
 
 fn default_exact_checks() -> u64 {
@@ -520,7 +526,7 @@ fn default_prune_fraction() -> f64 {
     0.1
 }
 fn default_min_runs() -> usize {
-    30
+    50_000
 }
 fn default_max_runs() -> usize {
     10_000_000
@@ -804,10 +810,10 @@ pub fn run_stratified(
     let headroom = spec
         .slot_headroom
         .unwrap_or(scenario.template.target_cluster_size + 1);
-    let leader = if spec.leader_strata {
-        Some(initial_leader(scenario)?)
-    } else {
-        None
+    let leader = match spec.leader_strata {
+        Some(true) => Some(initial_leader(scenario)?),
+        Some(false) => None,
+        None => initial_leader(scenario).ok(),
     };
     let axes = poisson_axes(
         &scenario.template,
@@ -944,7 +950,8 @@ pub fn run_stratified(
                 clt_half_width: et.clt_half_width,
             });
         }
-        let converged = spec.stopping_rule.half_width(&et) <= spec.absolute_error;
+        let converged = total_runs >= spec.min_runs
+            && spec.stopping_rule.half_width(&et) <= spec.absolute_error;
         if converged || total_runs >= spec.max_runs {
             let forced = simulator.forced.as_ref().expect("set above");
             return Ok(StratifiedRecord {
@@ -1007,7 +1014,7 @@ pub fn run_stratified(
             });
         }
 
-        budget = next_budget(budget, spec);
+        budget = next_budget(budget, spec).max(spec.min_runs.min(spec.max_runs));
         let target_moments = match target {
             ConvergenceMetric::Availability => &avail,
             _ => &loss,

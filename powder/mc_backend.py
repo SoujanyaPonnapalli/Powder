@@ -86,8 +86,11 @@ class ConvergenceCriteria:
         metrics: Which metrics to target for convergence. All must converge
             before stopping. Defaults to [AVAILABILITY].
         min_runs: Minimum number of runs before checking convergence.
-            Must be >= 2 for variance estimation. Default 30.
-        max_runs: Maximum number of runs (safety cap). Default 10000.
+            Must be >= 2 for variance estimation. Default 50,000: with only
+            a few dozen runs the interval is routinely wrong for reliable
+            RSMs, because the rare long outages are not yet sampled (see
+            outputs/ci-coverage/REPORT.md).
+        max_runs: Maximum number of runs (safety cap). Default 10,000,000.
         batch_size: Number of runs per batch between convergence checks.
             Default 10.
     """
@@ -98,8 +101,8 @@ class ConvergenceCriteria:
     metrics: list[ConvergenceMetric] = field(
         default_factory=lambda: [ConvergenceMetric.AVAILABILITY]
     )
-    min_runs: int = 30
-    max_runs: int = 10_000
+    min_runs: int = 50_000
+    max_runs: int = 10_000_000
     batch_size: int = 10
 
     def __post_init__(self) -> None:
@@ -1015,8 +1018,8 @@ def run_monte_carlo_converged(
     stop_on_data_loss: bool = True,
     parallel_workers: int = 1,
     seed: int | None = None,
-    min_runs: int = 30,
-    max_runs: int = 10_000,
+    min_runs: int = 50_000,
+    max_runs: int = 10_000_000,
     batch_size: int = 10,
     progress_callback: Callable[[int, int, bool], None] | None = None,
 ) -> ConvergenceResult:
@@ -1051,8 +1054,8 @@ def run_monte_carlo_converged(
         parallel_workers: Accepted for compatibility and ignored; see
             MonteCarloConfig.
         seed: Base random seed.
-        min_runs: Minimum runs before checking convergence (default 30).
-        max_runs: Maximum runs safety cap (default 10000).
+        min_runs: Minimum runs before checking convergence (default 50,000).
+        max_runs: Maximum runs safety cap (default 10,000,000).
         batch_size: Runs per batch between convergence checks (default 10).
         progress_callback: Optional callback(completed, estimated_total, converged).
 

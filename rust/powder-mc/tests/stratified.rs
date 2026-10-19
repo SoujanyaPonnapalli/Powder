@@ -229,7 +229,8 @@ fn stratified(allocation: Allocation, metric: &str, tolerance: f64) -> serde_jso
         "stratified",
         &format!(
             r#", "stratified": {{"allocation": {allocation}, "metric": "{metric}",
-                 "absolute_error": {tolerance}, "max_runs": 2000000}}"#
+                 "absolute_error": {tolerance}, "max_runs": 2000000,
+                 "min_runs": 30, "min_stratum_runs": 2, "leader_strata": false}}"#
         ),
     );
     let result = run_job_json(&text);
@@ -308,7 +309,7 @@ fn non_exponential_failures_are_rejected() {
     let text = job(
         "stratified",
         r#", "stratified": {"allocation": "proportional", "metric": "availability",
-             "absolute_error": 0.01}"#,
+             "absolute_error": 0.01, "min_runs": 30, "min_stratum_runs": 2, "leader_strata": false}"#,
     )
     .replacen(
         r#""failure_dist": {"type": "exponential", "rate": 0.000023148148148148147}"#,
@@ -324,7 +325,7 @@ fn emitted_strata_carry_all_kept_mass() {
     let text = job(
         "stratified",
         r#", "stratified": {"allocation": "proportional", "metric": "availability",
-             "absolute_error": 0.01, "emit_strata": true}"#,
+             "absolute_error": 0.01, "emit_strata": true, "min_runs": 30, "min_stratum_runs": 2, "leader_strata": false}"#,
     );
     let record = run_job_json(&text).stratified.unwrap();
     let strata = record.strata.unwrap();
@@ -341,7 +342,8 @@ fn leader_strata_agree_with_naive_and_hold_their_exact_cells() {
             "stratified",
             &format!(
                 r#", "stratified": {{"allocation": "{allocation}", "metric": "availability",
-                     "absolute_error": 0.004, "leader_strata": {leader}, "exact_checks": 20}}"#
+                     "absolute_error": 0.004, "leader_strata": {leader}, "exact_checks": 20,
+                     "min_runs": 30, "min_stratum_runs": 2}}"#
             ),
         );
         let result = run_job_json(&text);
@@ -355,9 +357,17 @@ fn leader_strata_agree_with_naive_and_hold_their_exact_cells() {
     assert_eq!(leader.axes.iter().filter(|a| a.leader).count(), 2);
     // Singling out the leader can only enlarge the known part.  In this
     // harsh scenario both are near zero; the 1-day study is where it bites.
-    assert!(leader.exact_mass >= plain.exact_mass, "{} < {}", leader.exact_mass, plain.exact_mass);
+    assert!(
+        leader.exact_mass >= plain.exact_mass,
+        "{} < {}",
+        leader.exact_mass,
+        plain.exact_mass
+    );
     let gap = (naive.target.mean - leader.target.mean).abs();
-    assert!(gap <= naive.target.half_width + leader.target.half_width, "gap {gap}");
+    assert!(
+        gap <= naive.target.half_width + leader.target.half_width,
+        "gap {gap}"
+    );
 }
 
 #[test]
@@ -365,9 +375,58 @@ fn every_sampled_stratum_gets_the_minimum_runs() {
     let text = job(
         "stratified",
         r#", "stratified": {"allocation": "proportional", "metric": "availability",
-             "absolute_error": 0.05, "min_stratum_runs": 30, "emit_strata": true}"#,
+             "absolute_error": 0.05, "min_stratum_runs": 30, "emit_strata": true,
+             "min_runs": 30, "leader_strata": false}"#,
     );
     let record = run_job_json(&text).stratified.unwrap();
     let strata = record.strata.unwrap();
     assert!(strata.iter().filter(|s| !s.exact).all(|s| s.runs >= 30));
+}
+
+#[test]
+fn defaults_are_leader_strata_proportional_with_floors() {
+    let spec: powder_mc::stratified::StratifiedSpec =
+        serde_json::from_str(r#"{"metric": "availability", "absolute_error": 0.01}"#).unwrap();
+    assert_eq!(spec.allocation, Allocation::Proportional);
+    assert_eq!(spec.leader_strata, None);
+    assert_eq!(spec.min_stratum_runs, 30);
+    assert_eq!(spec.min_runs, 50_000);
+}
+
+#[test]
+fn default_leader_strata_switch_off_for_leaderless_protocols() {
+    let text = job(
+        "stratified",
+        r#", "stratified": {"metric": "availability", "absolute_error": 0.5,
+             "min_runs": 30, "min_stratum_runs": 2}"#,
+    )
+    .replacen(
+        r#""protocol": {"type": "raft", "election_time_dist": {"type": "exponential", "rate": 0.2}}"#,
+        r#""protocol": {"type": "leaderless"}"#,
+        1,
+    );
+    let result = run_job_json(&text);
+    assert!(result.error.is_none(), "{:?}", result.error);
+    assert!(result.stratified.unwrap().axes.iter().all(|a| !a.leader));
+}
+
+#[test]
+fn no_arm_stops_before_min_runs() {
+    for allocation in ["naive", "proportional"] {
+        let text = job(
+            "stratified",
+            &format!(
+                r#", "stratified": {{"allocation": "{allocation}", "metric": "availability",
+                     "absolute_error": 0.5, "min_runs": 5000, "min_stratum_runs": 2,
+                     "leader_strata": false}}"#
+            ),
+        );
+        let record = run_job_json(&text).stratified.unwrap();
+        assert!(record.converged);
+        assert!(
+            record.total_runs >= 5000,
+            "{allocation}: {}",
+            record.total_runs
+        );
+    }
 }
