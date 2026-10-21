@@ -295,3 +295,63 @@ def gamma_poisson_eb(counts: Sequence[float], exposures: Sequence[float]) -> Gam
     a, b = math.exp(best[0][0]), math.exp(best[0][1])
     hetero = a < 1e4
     return GammaPoissonEB(a, b, pooled, hetero, -best[1], float(n.sum()), float(T.sum()))
+
+
+# -- small-sample duration MLE (for region-outage durations) -----------------
+
+@dataclass
+class MleFit:
+    family: str
+    params: dict
+    loglik: float
+    aic: float
+    dist: object
+
+
+def mle_duration_fits(x: Sequence[float]) -> list[MleFit]:
+    """MLE fits of exponential, lognormal and Weibull to positive data."""
+    from powder.simulation.distributions import Exponential
+    x = np.asarray(x, float)
+    n = len(x)
+    lx = np.log(x)
+    fits = []
+    lam = 1.0 / x.mean()
+    ll = n * math.log(lam) - lam * x.sum()
+    fits.append(MleFit("exponential", {"rate": lam}, ll, 2 * 1 - 2 * ll, Exponential(lam)))
+    mu, sig = float(lx.mean()), float(lx.std(ddof=0))
+    ll = float(np.sum(-np.log(x * sig * math.sqrt(2 * math.pi)) - (lx - mu) ** 2 / (2 * sig**2)))
+    fits.append(MleFit("lognormal", {"mu": mu, "sigma": sig}, ll, 2 * 2 - 2 * ll, LogNormal(mu, sig)))
+
+    def nll(p):
+        k, lam_ = math.exp(p[0]), math.exp(p[1])
+        z = x / lam_
+        return -float(np.sum(math.log(k / lam_) + (k - 1) * np.log(z) - z**k))
+
+    (lk, ll_), v = nelder_mead(nll, [0.0, math.log(x.mean())], step=[0.3, 0.3])
+    k, sc = math.exp(lk), math.exp(ll_)
+    fits.append(MleFit("weibull", {"shape": k, "scale": sc}, -v, 2 * 2 + 2 * v, Weibull(k, sc)))
+    return fits
+
+
+def _cdf_of(dist) -> Callable[[np.ndarray], np.ndarray]:
+    return lambda v: np.array([dist.cdf(float(t)) for t in np.atleast_1d(v)])
+
+
+def ks_statistic(dist, x: Sequence[float]) -> float:
+    x = np.sort(np.asarray(x, float))
+    n = len(x)
+    F = _cdf_of(dist)(x)
+    return float(max(np.max(np.arange(1, n + 1) / n - F), np.max(F - np.arange(n) / n)))
+
+
+def parametric_bootstrap_ks(fit: MleFit, x: Sequence[float], reps: int = 1000, seed: int = 0) -> float:
+    """p-value of the KS statistic with parameters re-estimated per replicate."""
+    rng = np.random.default_rng(seed)
+    x = np.asarray(x, float)
+    d0 = ks_statistic(fit.dist, x)
+    exceed = 0
+    for _ in range(reps):
+        sim = np.array([fit.dist.sample(rng) for _ in range(len(x))])
+        refit = next(f for f in mle_duration_fits(sim) if f.family == fit.family)
+        exceed += ks_statistic(refit.dist, sim) >= d0
+    return (exceed + 1) / (reps + 1)

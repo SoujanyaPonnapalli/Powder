@@ -283,3 +283,38 @@ def test_planned_events_per_day_matches_n_over_7():
     rng = np.random.default_rng(9)
     counts = [len(schedule([f"n{i}" for i in range(9)], days(1), p, rng)) for _ in range(3000)]
     assert abs(np.mean(counts) - 9 / 7) < 0.06
+
+
+# -- region outages (subtask 1.2) ----------------------------------------------
+
+from powder.faults.regions import region_map  # noqa: E402
+
+
+def test_region_map_decisions():
+    m = region_map()
+    assert m["us-east-1"]["azure_region"] == "eastus2"  # fixed decision, no pooling
+    assert m["us-east-2"]["azure_region"] == "eastus"
+    assert m["us-west-1"]["azure_region"] == "westus"
+    assert m["us-west-2"]["azure_region"] == "westus2"
+    for v in m.values():
+        assert v["distance_km"] < 500
+
+
+def test_region_outage_profile():
+    ro = LIB.get("region_outage/aws-us-from-azure", "region_outage")
+    assert set(ro["regions"]) == {"us-east-1", "us-east-2", "us-west-1", "us-west-2"}
+    for aws, r in ro["regions"].items():
+        per_year = {k: v * 8766 for k, v in r["rate_per_hour"].items()}
+        assert 0.05 < per_year["central"] < 3.0, (aws, per_year)
+        assert r["azure_region"] == region_map()[aws]["azure_region"]
+    d = from_spec(ro["duration"]["central"])
+    assert 3600 < d.mean < 2 * 86400  # region outages last hours, not minutes or weeks
+    assert ro["duration_fit"]["ks_bootstrap_p"] > 0.05
+    pess = LIB.get("region_outage/aws-us-from-azure-incl-single-az", "region_outage")
+    assert pess["regions"]["us-east-1"]["rate_per_hour"]["central"] >= ro["regions"]["us-east-1"]["rate_per_hour"]["central"]
+
+
+def test_region_incident_citations_are_confirmed():
+    ro = LIB.get("region_outage/aws-us-from-azure", "region_outage")
+    for ref in ro["derived_from"]:
+        assert LIB.measurement(ref)["status"] in ("V", "S")

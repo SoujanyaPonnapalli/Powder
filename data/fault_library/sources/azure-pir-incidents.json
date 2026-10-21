@@ -1,0 +1,784 @@
+{
+  "id": "azure-pir-incidents",
+  "kind": "source",
+  "title": "Azure Post Incident Reviews and press reports, 2021-2026 (compiled)",
+  "url": "https://azure.status.microsoft/en-us/status/history/",
+  "population": "Azure public regions; broad incidents with public PIRs",
+  "accessed": "2026-10-21",
+  "notes": "Compiled by web search (search snippets of PIR pages and press; the PIR pages themselves were not fetchable from the sandbox). Status V = PIR text seen in snippet, S = reliable secondary report, U = weak single source (never used). Coverage is good for broad 2023-2026 incidents and US regions, poor for 2021-2022 and for single-region events outside the US. Refine with scripts on a machine with network access.",
+  "measurements": [
+    {
+      "id": "2021-03-15-aad",
+      "metric_verbatim": "Azure AD signing-key rotation bug",
+      "value": {
+        "azure_regions": [
+          "global"
+        ],
+        "start_utc": "2021-03-15T19:00Z",
+        "end_utc": "2021-03-16T09:25Z",
+        "duration_minutes": 865.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://learn.microsoft.com/en-us/answers/questions/315440/notification-authentication-errors-across-multiple",
+      "covers": [
+        "region"
+      ],
+      "notes": "authentication only"
+    },
+    {
+      "id": "2021-04-01-dns",
+      "metric_verbatim": "Azure DNS code defect under query surge",
+      "value": {
+        "azure_regions": [
+          "global"
+        ],
+        "start_utc": "2021-04-01T21:21Z",
+        "end_utc": "2021-04-01T22:00Z",
+        "duration_minutes": 39.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://practical365.com/azure-dns-failure-highlights-cloud-failibility/",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2021-10-13-vm-mgmt",
+      "metric_verbatim": "VM guest agent extension publishing; management ops failed",
+      "value": {
+        "azure_regions": [
+          "multiple"
+        ],
+        "start_utc": "2021-10-13T05:12Z",
+        "end_utc": "2021-10-13T11:45Z",
+        "duration_minutes": 393.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.theregister.com/2021/10/13/azure_vm_glitch/",
+      "covers": [
+        "region"
+      ],
+      "notes": "running VMs not impacted"
+    },
+    {
+      "id": "2022-06-29-fw-adx",
+      "metric_verbatim": "Azure Firewall / Data Explorer disruption",
+      "value": {
+        "azure_regions": [
+          "multiple"
+        ],
+        "start_utc": "2022-06-29T17:18Z",
+        "end_utc": "2022-06-30T17:13Z",
+        "duration_minutes": 1435.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "U",
+      "location": "https://statusgator.com/blog/azure-outage-history/",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2023-01-18-weu-storage",
+      "metric_verbatim": "power event on racks of one storage scale unit",
+      "value": {
+        "azure_regions": [
+          "westeurope"
+        ],
+        "start_utc": "2023-01-18T07:44Z",
+        "end_utc": "2023-01-18T13:23Z",
+        "duration_minutes": 339.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": null,
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://statusgator.com/blog/azure-outage-history/",
+      "covers": [
+        "region"
+      ],
+      "notes": "sub-AZ; VM impact not stated"
+    },
+    {
+      "id": "2023-01-25-wan",
+      "metric_verbatim": "global WAN router change (Madrid)",
+      "value": {
+        "azure_regions": [
+          "global"
+        ],
+        "start_utc": "2023-01-25T07:08Z",
+        "end_utc": "2023-01-25T12:43Z",
+        "duration_minutes": 335.0,
+        "compute_duration_minutes": 117.0,
+        "scope": "region_wide",
+        "compute_affected": "true",
+        "tracking_id": "VSG1-B90"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/en-us/status/history/?trackingId=VSG1-B90",
+      "covers": [
+        "region"
+      ],
+      "notes": "connectivity to and between regions; most regions recovered by 09:05Z"
+    },
+    {
+      "id": "2023-02-07-sea-cooling",
+      "metric_verbatim": "power surge tripped chillers; scale units powered down",
+      "value": {
+        "azure_regions": [
+          "southeastasia",
+          "eastasia"
+        ],
+        "start_utc": "2023-02-07T20:19Z",
+        "end_utc": "2023-02-09T04:30Z",
+        "duration_minutes": 1931.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "VN11-JD8"
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.youtube.com/watch?v=5RhF2zk40LI",
+      "covers": [
+        "region"
+      ],
+      "notes": "one datacenter in one AZ"
+    },
+    {
+      "id": "2023-03-06-weu-storage",
+      "metric_verbatim": "storage scale-unit configuration update",
+      "value": {
+        "azure_regions": [
+          "westeurope"
+        ],
+        "start_utc": "2023-03-06T08:00Z",
+        "end_utc": "2023-03-06T16:34Z",
+        "duration_minutes": 514.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": null,
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://learn.microsoft.com/en-us/answers/questions/1186883/azure-storage-west-europe-investigating-power-auto",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2023-07-05-weu-fiber",
+      "metric_verbatim": "storm cut 1 of 4 inter-DC fiber paths; inter-AZ packet loss",
+      "value": {
+        "azure_regions": [
+          "westeurope"
+        ],
+        "start_utc": "2023-07-05T07:22Z",
+        "end_utc": "2023-07-05T16:00Z",
+        "duration_minutes": 518.0,
+        "compute_duration_minutes": null,
+        "scope": "multi_az",
+        "compute_affected": "true",
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.theregister.com/2023/07/10/azure_storm_poly/",
+      "covers": [
+        "region"
+      ],
+      "notes": "mitigated 22:45Z (923 min)"
+    },
+    {
+      "id": "2023-08-30-aue-cooling",
+      "metric_verbatim": "utility power sag tripped chillers",
+      "value": {
+        "azure_regions": [
+          "australiaeast"
+        ],
+        "start_utc": "2023-08-30T10:30Z",
+        "end_utc": "2023-08-30T22:40Z",
+        "duration_minutes": 730.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "VVTQ-J98"
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.datacenterdynamics.com/en/analysis/staffing-levels-are-data-centers-at-risk-of-unnecessary-outages/",
+      "covers": [
+        "region"
+      ],
+      "notes": "full mitigation 2023-09-03T20:00Z"
+    },
+    {
+      "id": "2023-09-16-eus-power",
+      "metric_verbatim": "datacenter power issue affecting network infrastructure",
+      "value": {
+        "azure_regions": [
+          "eastus"
+        ],
+        "start_utc": "2023-09-16T07:33Z",
+        "end_utc": "2023-09-16T21:38Z",
+        "duration_minutes": 845.0,
+        "compute_duration_minutes": null,
+        "scope": "unknown",
+        "compute_affected": "true",
+        "tracking_id": "2LZ0-3DG"
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.theregister.com/2023/09/18/azure_sql_database_outage/",
+      "covers": [
+        "region"
+      ],
+      "notes": "AZ scope not found; times are Azure SQL"
+    },
+    {
+      "id": "2023-10-20-weu-power",
+      "metric_verbatim": "utility disturbance; generators failed to take load",
+      "value": {
+        "azure_regions": [
+          "westeurope"
+        ],
+        "start_utc": "2023-10-20T07:31Z",
+        "end_utc": "2023-10-20T09:15Z",
+        "duration_minutes": 104.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.theregister.com/2023/10/23/microsoft_azure_power_issue/",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2024-01-21-arm",
+      "metric_verbatim": "ARM latent code defect and retry storm",
+      "value": {
+        "azure_regions": [
+          "centralus",
+          "eastus",
+          "southcentralus",
+          "westcentralus",
+          "westeurope"
+        ],
+        "start_utc": "2024-01-21T01:30Z",
+        "end_utc": "2024-01-21T08:58Z",
+        "duration_minutes": 448.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "NKRF-1TG"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=NKRF-1TG",
+      "covers": [
+        "region"
+      ],
+      "notes": "management plane"
+    },
+    {
+      "id": "2024-03-14-zaf-cables",
+      "metric_verbatim": "subsea cable cuts plus router optic failure",
+      "value": {
+        "azure_regions": [
+          "southafricanorth",
+          "southafricawest"
+        ],
+        "start_utc": "2024-03-14T10:33Z",
+        "end_utc": "2024-03-15T11:00Z",
+        "duration_minutes": 1467.0,
+        "compute_duration_minutes": null,
+        "scope": "region_wide",
+        "compute_affected": "true",
+        "tracking_id": "VT60-RPZ"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=VT60-RPZ",
+      "covers": [
+        "region"
+      ],
+      "notes": "network availability as low as 77%"
+    },
+    {
+      "id": "2024-04-22-china-dns",
+      "metric_verbatim": "registrar nameserver change broke China cloud DNS",
+      "value": {
+        "azure_regions": [
+          "azurechina"
+        ],
+        "start_utc": "2024-04-22T19:45Z",
+        "end_utc": "2024-04-22T22:00Z",
+        "duration_minutes": 135.0,
+        "compute_duration_minutes": null,
+        "scope": "region_wide",
+        "compute_affected": null,
+        "tracking_id": "V_BH-7DZ"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=V_BH-7DZ",
+      "covers": [
+        "region"
+      ],
+      "notes": "DNS/management; not VM hosts"
+    },
+    {
+      "id": "2024-07-18-cus-storage",
+      "metric_verbatim": "storage allow-list misconfiguration across all AZs; VMs lost disks",
+      "value": {
+        "azure_regions": [
+          "centralus"
+        ],
+        "start_utc": "2024-07-18T21:40Z",
+        "end_utc": "2024-07-19T12:15Z",
+        "duration_minutes": 875.0,
+        "compute_duration_minutes": 311.0,
+        "scope": "region_wide",
+        "compute_affected": "true",
+        "tracking_id": "1K80-N_8"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=1K80-N_8",
+      "covers": [
+        "region"
+      ],
+      "notes": "99% of compute recovered by 02:51Z"
+    },
+    {
+      "id": "2024-07-30-afd-ddos",
+      "metric_verbatim": "DDoS plus mitigation misconfiguration (AFD/CDN)",
+      "value": {
+        "azure_regions": [
+          "global"
+        ],
+        "start_utc": "2024-07-30T11:45Z",
+        "end_utc": "2024-07-30T13:58Z",
+        "duration_minutes": 133.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "KTY1-HW8"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=KTY1-HW8",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2024-07-30-uaen-cooling",
+      "metric_verbatim": "temperature event; clusters powered down",
+      "value": {
+        "azure_regions": [
+          "uaenorth"
+        ],
+        "start_utc": "2024-07-30",
+        "end_utc": "2024-07-31",
+        "duration_minutes": null,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "KL65-JB8"
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://developer.microsoft.com/de-de/reactor/series/s-1383/",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2024-09-16-avd",
+      "metric_verbatim": "Azure Virtual Desktop metadata DB lag",
+      "value": {
+        "azure_regions": [
+          "eastus2"
+        ],
+        "start_utc": "2024-09-16T18:46Z",
+        "end_utc": "2024-09-16T20:36Z",
+        "duration_minutes": 110.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "1LG8-1X0"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=1LG8-1X0",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2024-11-13-tm-storage",
+      "metric_verbatim": "Traffic Manager profiles for storage deleted",
+      "value": {
+        "azure_regions": [
+          "multiple"
+        ],
+        "start_utc": "2024-11-13T00:50Z",
+        "end_utc": "2024-11-13T12:30Z",
+        "duration_minutes": 700.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "PSM0-BQ8"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=PSM0-BQ8",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2024-12-26-scus-power",
+      "metric_verbatim": "data hall failed to transfer to alternate power",
+      "value": {
+        "azure_regions": [
+          "southcentralus"
+        ],
+        "start_utc": "2024-12-26T18:40Z",
+        "end_utc": "2024-12-27T19:30Z",
+        "duration_minutes": 1490.0,
+        "compute_duration_minutes": 180.0,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "CNF4-N_0"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=CNF4-N_0",
+      "covers": [
+        "region"
+      ],
+      "notes": "physical AZ03; 85% of VMs recovered by 21:40Z"
+    },
+    {
+      "id": "2025-01-08-eus2-net",
+      "metric_verbatim": "networking config change / PubSub partition loss in AZ01",
+      "value": {
+        "azure_regions": [
+          "eastus2"
+        ],
+        "start_utc": "2025-01-08T22:31Z",
+        "end_utc": "2025-01-11T00:44Z",
+        "duration_minutes": 3013.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "PLP3-1W8"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=PLP3-1W8",
+      "covers": [
+        "region"
+      ],
+      "notes": "zone-redundant services with VNet integration impacted across zones"
+    },
+    {
+      "id": "2025-02-20-noe",
+      "metric_verbatim": "connectivity problems (cause unknown)",
+      "value": {
+        "azure_regions": [
+          "norwayeast"
+        ],
+        "start_utc": "2025-02-20T10:23Z",
+        "end_utc": "2025-02-20T14:17Z",
+        "duration_minutes": 234.0,
+        "compute_duration_minutes": null,
+        "scope": "unknown",
+        "compute_affected": null,
+        "tracking_id": null
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.theregister.com/2025/02/20/microsoft_azure_outage_norway/",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2025-03-18-eus-fiber",
+      "metric_verbatim": "fiber cut plus tooling failure; intermittent AZ03 traffic loss (peak 0.02%)",
+      "value": {
+        "azure_regions": [
+          "eastus"
+        ],
+        "start_utc": "2025-03-18T13:37Z",
+        "end_utc": "2025-03-19T00:30Z",
+        "duration_minutes": 265.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "Z_SZ-NV8"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=Z_SZ-NV8",
+      "covers": [
+        "region"
+      ],
+      "notes": "two windows summed"
+    },
+    {
+      "id": "2025-10-09-afd",
+      "metric_verbatim": "AFD data-plane crash from config metadata",
+      "value": {
+        "azure_regions": [
+          "global"
+        ],
+        "start_utc": "2025-10-09T07:50Z",
+        "end_utc": "2025-10-09T16:00Z",
+        "duration_minutes": 490.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "QNBQ-5W8"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=QNBQ-5W8",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2025-10-29-afd",
+      "metric_verbatim": "AFD incompatible config metadata crashed data plane",
+      "value": {
+        "azure_regions": [
+          "global"
+        ],
+        "start_utc": "2025-10-29T15:41Z",
+        "end_utc": "2025-10-30T00:05Z",
+        "duration_minutes": 504.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "YKYN-BWZ"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/en-us/status/history/?trackingId=YKYN-BWZ",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2025-11-05-weu-cooling",
+      "metric_verbatim": "voltage sag shut down cooling in physical AZ01",
+      "value": {
+        "azure_regions": [
+          "westeurope"
+        ],
+        "start_utc": "2025-11-05T16:53Z",
+        "end_utc": "2025-11-06T02:25Z",
+        "duration_minutes": 572.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "2LGD-9VG"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=2LGD-9VG",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2026-02-02-vm-ext",
+      "metric_verbatim": "storage policy remediation broke VM extension storage; deploy/scale failures",
+      "value": {
+        "azure_regions": [
+          "multiple"
+        ],
+        "start_utc": "2026-02-02T18:03Z",
+        "end_utc": "2026-02-03T06:05Z",
+        "duration_minutes": 722.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "FNJ8-VQZ"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/en-us/status/history/?trackingId=FNJ8-VQZ",
+      "covers": [
+        "region"
+      ],
+      "notes": "running VMs largely unaffected"
+    },
+    {
+      "id": "2026-02-07-wus-power",
+      "metric_verbatim": "transformer failure; generator transfer blocked",
+      "value": {
+        "azure_regions": [
+          "westus"
+        ],
+        "start_utc": "2026-02-07T07:58Z",
+        "end_utc": "2026-02-08T04:24Z",
+        "duration_minutes": 1226.0,
+        "compute_duration_minutes": null,
+        "scope": "single_az",
+        "compute_affected": "true",
+        "tracking_id": "_SVS-5_G"
+      },
+      "unit": "incident",
+      "status": "S",
+      "location": "https://www.datacenterdynamics.com/en/news/microsoft-suffered-power-interruption-at-west-us-cloud-region-in-february/",
+      "covers": [
+        "region"
+      ],
+      "notes": "westus has no AZs: single datacenter"
+    },
+    {
+      "id": "2026-04-24-eus-pubsub",
+      "metric_verbatim": "networking control-plane regression; PubSub failover AZ01 then AZ02/AZ03",
+      "value": {
+        "azure_regions": [
+          "eastus"
+        ],
+        "start_utc": "2026-04-24T11:30Z",
+        "end_utc": "2026-04-24T23:22Z",
+        "duration_minutes": 712.0,
+        "compute_duration_minutes": null,
+        "scope": "multi_az",
+        "compute_affected": "true",
+        "tracking_id": "5GP8-W0G"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/en-us/status/history/?trackingId=5GP8-W0G",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2026-05-29-wus2-storm",
+      "metric_verbatim": "thunderstorm power sags then cooling lockout in AZ01 and AZ03",
+      "value": {
+        "azure_regions": [
+          "westus2"
+        ],
+        "start_utc": "2026-05-29T04:24Z",
+        "end_utc": "2026-05-30T02:30Z",
+        "duration_minutes": 1326.0,
+        "compute_duration_minutes": 456.0,
+        "scope": "multi_az",
+        "compute_affected": "true",
+        "tracking_id": "GHRP-84G"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=GHRP-84G",
+      "covers": [
+        "region"
+      ],
+      "notes": "95% of VMs recovered by 12:00Z"
+    },
+    {
+      "id": "2026-07-23-wus-wan",
+      "metric_verbatim": "tooling defect removed WAN routes; region ingress/egress lost",
+      "value": {
+        "azure_regions": [
+          "westus"
+        ],
+        "start_utc": "2026-07-23T14:44Z",
+        "end_utc": "2026-07-23T19:41Z",
+        "duration_minutes": 297.0,
+        "compute_duration_minutes": null,
+        "scope": "region_wide",
+        "compute_affected": "true",
+        "tracking_id": "ZJV6-SGG"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/status/history/?trackingId=ZJV6-SGG",
+      "covers": [
+        "region"
+      ],
+      "notes": null
+    },
+    {
+      "id": "2026-09-30-gw",
+      "metric_verbatim": "network gateway control plane overload",
+      "value": {
+        "azure_regions": [
+          "uksouth",
+          "ukwest",
+          "northeurope",
+          "francecentral",
+          "southeastasia",
+          "centralus",
+          "westeurope",
+          "switzerlandnorth",
+          "japanwest"
+        ],
+        "start_utc": "2026-09-30T20:30Z",
+        "end_utc": "2026-10-01T02:15Z",
+        "duration_minutes": 345.0,
+        "compute_duration_minutes": null,
+        "scope": "service_only",
+        "compute_affected": "false",
+        "tracking_id": "7Q30-010"
+      },
+      "unit": "incident",
+      "status": "V",
+      "location": "https://azure.status.microsoft/en-us/status/history/?trackingId=7Q30-010",
+      "covers": [
+        "region"
+      ],
+      "notes": "ExpressRoute gateways lost on-prem connectivity ~30 min"
+    }
+  ]
+}

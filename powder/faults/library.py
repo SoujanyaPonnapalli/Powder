@@ -11,7 +11,7 @@ from .schema import validate_entry
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 #: Sub-directories holding raw inputs or derived artefacts, not entries.
-_SKIP_DIRS = {"raw", "digitized"}
+_SKIP_DIRS = {"raw", "digitized", "derived"}
 
 
 class LibraryError(ValueError):
@@ -52,6 +52,9 @@ class FaultLibrary:
                 continue
             data = json.loads(path.read_text())
             for e in data if isinstance(data, list) else [data]:
+                if not isinstance(e, dict) or "kind" not in e:
+                    raise LibraryError(f"{path}: not a library entry (missing 'kind'); "
+                                       "put derived files under derived/ or raw/")
                 eid = e.get("id")
                 if eid in entries:
                     raise LibraryError(f"duplicate id {eid!r} in {path} and {paths[eid]}")
@@ -131,7 +134,7 @@ class FaultLibrary:
         for eid, e in self.entries.items():
             for ref in e.get("derived_from", []):
                 out += self._ref_problems(eid, ref)
-            kind = e["kind"]
+            kind = e.get("kind")
             if kind == "machine":
                 fp = e.get("fault_profile")
                 if fp not in self.entries or self.entries[fp]["kind"] != "node":

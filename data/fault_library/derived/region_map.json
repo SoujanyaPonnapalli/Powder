@@ -1,0 +1,37 @@
+{
+  "note": "AWS metro -> Azure region; Azure coordinates from published region metadata (refresh: scripts/fault_library/azure_locations.py). One Azure region per AWS region.",
+  "mapping": {
+    "us-east-1": {
+      "azure_region": "eastus2",
+      "distance_km": 275.3,
+      "runner_up": "eastus",
+      "runner_up_km": 275.2,
+      "metro": "Ashburn, VA",
+      "rule": "tie with eastus (both Virginia); fixed to eastus2 by decision 2026-10-20"
+    },
+    "us-east-2": {
+      "azure_region": "eastus",
+      "distance_km": 399.0,
+      "runner_up": "northcentralus",
+      "runner_up_km": 443.6,
+      "metro": "Columbus, OH",
+      "rule": "nearest"
+    },
+    "us-west-1": {
+      "azure_region": "westus",
+      "distance_km": 67.7,
+      "runner_up": "westus3",
+      "runner_up_km": 988.7,
+      "metro": "San Jose, CA",
+      "rule": "nearest"
+    },
+    "us-west-2": {
+      "azure_region": "westus2",
+      "distance_km": 155.3,
+      "runner_up": "westus",
+      "runner_up_km": 923.6,
+      "metro": "Boardman, OR",
+      "rule": "nearest"
+    }
+  }
+}
