@@ -1,0 +1,52 @@
+{
+  "fig1": {
+    "status": "ok",
+    "dpi": 600,
+    "frame_px": [
+      44,
+      792,
+      58,
+      1523
+    ],
+    "x_axis_max_residual_px": 1.02344,
+    "series": {
+      "all": {
+        "columns": 1064,
+        "max_gap": 0.0046821,
+        "p99_gap": 0.0046821,
+        "frac_within_0.02": 1.0
+      }
+    }
+  },
+  "fig2": {
+    "status": "ok",
+    "dpi": 600,
+    "frame_px": [
+      44,
+      792,
+      75,
+      1540
+    ],
+    "x_axis_max_residual_px": 0.846431,
+    "series": {
+      "node_restart": {
+        "columns": 643,
+        "max_gap": 0.00478582,
+        "p99_gap": 0.00478582,
+        "frac_within_0.02": 1.0
+      },
+      "planned_reboot": {
+        "columns": 503,
+        "max_gap": 0.00478582,
+        "p99_gap": 0.00409739,
+        "frac_within_0.02": 1.0
+      },
+      "unplanned_reboot": {
+        "columns": 999,
+        "max_gap": 0.0046821,
+        "p99_gap": 0.0046821,
+        "frac_within_0.02": 1.0
+      }
+    }
+  }
+}

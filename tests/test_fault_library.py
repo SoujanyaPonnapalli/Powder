@@ -194,3 +194,38 @@ def test_unconfirmed_citation_is_rejected():
         {"id": "m", "value": 1, "status": "U"}]}
     lib.entries["bad"] = {**lib.entries["legacy/vm-spot"], "id": "bad", "derived_from": ["src/u#m"]}
     assert any("unconfirmed" in p for p in lib.validate())
+
+
+# -- Ford et al. OSDI'10 digitization ------------------------------------------
+
+def test_ford_digitization_checks_pass():
+    src = LIB.get("ford10", "source")
+    chk = src["digitization"]["checks"]
+    assert chk["fig1_F_15min_gt_0.90"]  # "less than 10% of events last longer than 15 minutes"
+    assert chk["node_restart_spans_lt1min_to_gt1h"] and chk["unplanned_reboot_has_largest_mean"]
+    assert chk["raster_fig1_within_0.02"] >= 0.99
+    assert all(v >= 0.99 for v in chk["raster_fig2_within_0.02"].values())
+    # independent consistency: summed >=15-min rates vs Table 2 node MTTF (4.3 months)
+    assert 0.8 < chk["ratio_sum_ge15min_to_table2_node_mttf"] < 1.25
+
+
+def test_ford_axis_calibration_is_tight():
+    cal = LIB.get("ford10", "source")["digitization"]["calibration"]
+    for fig in ("fig1", "fig2"):
+        assert cal[fig]["x"]["max_residual_pt"] < 0.2  # log10 axis, "1mon" = 30 days
+        assert cal[fig]["y"]["max_residual_pt"] < 0.05
+
+
+def test_ford_planned_duration_matches_digitized_median():
+    pd = LIB.get("planned_downtime/weekly-ford10", "planned_downtime")
+    d = from_spec(pd["duration"]["central"])
+    med = next(m for m in LIB.get("ford10")["measurements"] if m["id"] == "digitized-planned_reboot")
+    assert abs(d.ppf(0.5) / med["value"]["median_s"] - 1) < 0.02
+    lo, hi = from_spec(pd["duration"]["low"]), from_spec(pd["duration"]["high"])
+    assert lo.mean < d.mean < hi.mean
+
+
+def test_ford_fig3_rates_inside_table1_range():
+    for c in ("node_restart", "planned_reboot", "unplanned_reboot"):
+        m = next(x for x in LIB.get("ford10")["measurements"] if x["id"] == f"derived-rate-{c}")["value"]
+        assert m["ge15min"]["low"] <= m["fig3_one_cell_ge15min"] <= m["ge15min"]["high"], c

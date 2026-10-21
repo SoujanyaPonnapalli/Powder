@@ -1,0 +1,594 @@
+{
+  "id": "ford10",
+  "kind": "source",
+  "title": "Availability in Globally Distributed Storage Systems",
+  "authors": "D. Ford, F. Labelle, F. I. Popovici, M. Stokely, V.-A. Truong, L. Barroso, C. Grimes, S. Quinlan",
+  "year": 2010,
+  "venue": "OSDI",
+  "url": "https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Ford.pdf",
+  "local_path": "docs/reading/Ford_OSDI10.pdf",
+  "population": "Google storage nodes (bare metal), ~2010",
+  "accessed": "2026-10-21",
+  "digitization": {
+    "calibration": {
+      "fig1": {
+        "x": {
+          "a": 352.17443,
+          "b": 27.337136,
+          "log10": true,
+          "max_residual_pt": 0.11016375,
+          "ticks": [
+            {
+              "pt": 352.189,
+              "value": 1.0
+            },
+            {
+              "pt": 379.535,
+              "value": 10.0
+            },
+            {
+              "pt": 400.786,
+              "value": 60.0
+            },
+            {
+              "pt": 432.923,
+              "value": 900.0
+            },
+            {
+              "pt": 449.382,
+              "value": 3600.0
+            },
+            {
+              "pt": 470.633,
+              "value": 21600.0
+            },
+            {
+              "pt": 487.092,
+              "value": 86400.0
+            },
+            {
+              "pt": 510.166,
+              "value": 604800.0
+            },
+            {
+              "pt": 527.615,
+              "value": 2592000.0
+            }
+          ]
+        },
+        "y": {
+          "a": 169.92829,
+          "b": -89.394571,
+          "log10": false,
+          "max_residual_pt": 0.019542857,
+          "ticks": [
+            {
+              "pt": 169.921,
+              "value": 0.0
+            },
+            {
+              "pt": 152.055,
+              "value": 0.2
+            },
+            {
+              "pt": 134.19,
+              "value": 0.4
+            },
+            {
+              "pt": 116.272,
+              "value": 0.6
+            },
+            {
+              "pt": 98.407,
+              "value": 0.8
+            },
+            {
+              "pt": 80.541,
+              "value": 1.0
+            }
+          ]
+        },
+        "band_decades": 0.0095266016
+      },
+      "fig2": {
+        "x": {
+          "a": 109.1763,
+          "b": 24.992636,
+          "log10": true,
+          "max_residual_pt": 0.092052556,
+          "ticks": [
+            {
+              "pt": 109.189,
+              "value": 1.0
+            },
+            {
+              "pt": 134.191,
+              "value": 10.0
+            },
+            {
+              "pt": 153.619,
+              "value": 60.0
+            },
+            {
+              "pt": 182.995,
+              "value": 900.0
+            },
+            {
+              "pt": 198.048,
+              "value": 3600.0
+            },
+            {
+              "pt": 217.476,
+              "value": 21600.0
+            },
+            {
+              "pt": 232.529,
+              "value": 86400.0
+            },
+            {
+              "pt": 253.624,
+              "value": 604800.0
+            },
+            {
+              "pt": 269.562,
+              "value": 2592000.0
+            }
+          ]
+        },
+        "y": {
+          "a": 169.92829,
+          "b": -89.394571,
+          "log10": false,
+          "max_residual_pt": 0.019542857,
+          "ticks": [
+            {
+              "pt": 169.921,
+              "value": 0.0
+            },
+            {
+              "pt": 152.055,
+              "value": 0.2
+            },
+            {
+              "pt": 134.19,
+              "value": 0.4
+            },
+            {
+              "pt": 116.272,
+              "value": 0.6
+            },
+            {
+              "pt": 98.407,
+              "value": 0.8
+            },
+            {
+              "pt": 80.541,
+              "value": 1.0
+            }
+          ]
+        },
+        "band_decades": 0.010420269
+      },
+      "fig3": {
+        "x_months": {
+          "a": 109.645,
+          "b": 60.94,
+          "log10": false,
+          "max_residual_pt": 5.6843419e-14,
+          "ticks": [
+            {
+              "pt": 109.645,
+              "value": 0.0
+            },
+            {
+              "pt": 170.585,
+              "value": 1.0
+            },
+            {
+              "pt": 231.525,
+              "value": 2.0
+            },
+            {
+              "pt": 292.465,
+              "value": 3.0
+            }
+          ]
+        },
+        "y_events": {
+          "a": 406.248,
+          "b": -3.92305,
+          "log10": false,
+          "max_residual_pt": 0.002,
+          "ticks": [
+            {
+              "pt": 406.248,
+              "value": 0.0
+            },
+            {
+              "pt": 367.019,
+              "value": 10.0
+            },
+            {
+              "pt": 327.785,
+              "value": 20.0
+            },
+            {
+              "pt": 288.556,
+              "value": 30.0
+            },
+            {
+              "pt": 249.327,
+              "value": 40.0
+            }
+          ]
+        }
+      },
+      "note": "x tick '1mon' assumed 30 days; residuals confirm the log10 axis."
+    },
+    "checks": {
+      "fig1_F_15min_gt_0.90": true,
+      "node_restart_spans_lt1min_to_gt1h": true,
+      "unplanned_reboot_has_largest_mean": true,
+      "raster_fig1_within_0.02": 1.0,
+      "raster_fig2_within_0.02": {
+        "node_restart": 1.0,
+        "planned_reboot": 1.0,
+        "unplanned_reboot": 1.0
+      },
+      "sum_ge15min_rates_table1_per_node_hour": 0.00033332187,
+      "table2_node_mttf_rate_per_node_hour": 0.00031835474,
+      "ratio_sum_ge15min_to_table2_node_mttf": 1.047014
+    },
+    "coordinate_quantum_decades": 0.0020840539
+  },
+  "measurements": [
+    {
+      "id": "pop",
+      "metric_verbatim": "tens of Google storage cells, each with 1000 to 7000 nodes, over a one year period",
+      "value": "tens of cells x 1000-7000 nodes x 1 yr",
+      "unit": "text",
+      "status": "V",
+      "location": "p.2 \u00a72.1",
+      "covers": []
+    },
+    {
+      "id": "lt10pct-gt15min",
+      "metric_verbatim": "less than 10% of events last longer than 15 minutes",
+      "value": 0.1,
+      "unit": "fraction",
+      "status": "V",
+      "location": "p.2 \u00a72.1 / Fig 1",
+      "covers": []
+    },
+    {
+      "id": "fig2-scope",
+      "metric_verbatim": "Figure 2 ... one of our storage cells ... we do not exclude events that last less than 15 minutes, but we still end the unavailability period when the system reconstructs all the data",
+      "value": "one cell; includes <15 min; truncated by reconstruction",
+      "unit": "text",
+      "status": "V",
+      "location": "p.3 \u00a73.1",
+      "covers": []
+    },
+    {
+      "id": "table1-node_restart",
+      "metric_verbatim": "Table 1 unavailability (%) average / min / max: node restart",
+      "value": {
+        "average": 0.0139,
+        "min": 0.0004,
+        "max": 0.1295
+      },
+      "unit": "percent of node time",
+      "status": "V",
+      "location": "p.4 Table 1",
+      "covers": [
+        "sw"
+      ]
+    },
+    {
+      "id": "table1-planned_reboot",
+      "metric_verbatim": "Table 1 unavailability (%) average / min / max: planned reboot",
+      "value": {
+        "average": 0.0154,
+        "min": 0.005,
+        "max": 0.0563
+      },
+      "unit": "percent of node time",
+      "status": "V",
+      "location": "p.4 Table 1",
+      "covers": [
+        "planned_reboot"
+      ]
+    },
+    {
+      "id": "table1-unplanned_reboot",
+      "metric_verbatim": "Table 1 unavailability (%) average / min / max: unplanned reboot",
+      "value": {
+        "average": 0.0025,
+        "min": 0.0,
+        "max": 0.0122
+      },
+      "unit": "percent of node time",
+      "status": "V",
+      "location": "p.4 Table 1",
+      "covers": [
+        "hw_reboot"
+      ]
+    },
+    {
+      "id": "table1-unknown",
+      "metric_verbatim": "Table 1 unavailability (%) average / min / max: unknown",
+      "value": {
+        "average": 0.0142,
+        "min": 0.0013,
+        "max": 0.0454
+      },
+      "unit": "percent of node time",
+      "status": "V",
+      "location": "p.4 Table 1",
+      "covers": [
+        "unknown"
+      ]
+    },
+    {
+      "id": "table2-disk-mttf",
+      "metric_verbatim": "Table 2 Disk MTTF 10-50 years",
+      "value": [
+        10.0,
+        50.0
+      ],
+      "unit": "years",
+      "status": "V",
+      "location": "p.5 Table 2",
+      "covers": [
+        "disk"
+      ],
+      "conversion": "rate_per_hour = 1 / (years * 8766)"
+    },
+    {
+      "id": "table2-node-mttf",
+      "metric_verbatim": "Table 2 Node MTTF 4.3 months",
+      "value": 4.3,
+      "unit": "months",
+      "status": "V",
+      "location": "p.5 Table 2",
+      "covers": []
+    },
+    {
+      "id": "table2-rack-mttf",
+      "metric_verbatim": "Table 2 Rack MTTF 10.2 years",
+      "value": 10.2,
+      "unit": "years",
+      "status": "V",
+      "location": "p.5 Table 2",
+      "covers": [],
+      "notes": "input for exec #3 (correlated failures)"
+    },
+    {
+      "id": "digitized-node_restart",
+      "metric_verbatim": "Fig 2 CDF of unavailability duration (node restart), digitized from vector paths",
+      "value": {
+        "n_jumps": 375,
+        "mean_s": 177.46877,
+        "median_s": 62.959716,
+        "p10_s": 19.997416,
+        "p90_s": 247.18272,
+        "F_15min": 0.99059265,
+        "min_s": 4.0069677,
+        "max_s": 89585.195
+      },
+      "unit": "seconds / fraction",
+      "status": "V",
+      "location": "p.4 Fig 2",
+      "covers": [
+        "sw"
+      ],
+      "conversion": "vector path -> step ECDF jumps; see digitized/ford10/*.csv and calibration.json",
+      "notes": "best CDF fit lognormal_mixture2; fits: {\"lognormal\": {\"params\": {\"mu\": 4.183, \"sigma\": 1.042}, \"ks\": 0.05238}, \"weibull\": {\"params\": {\"shape\": 0.991, \"scale\": 99.96}, \"ks\": 0.1122}, \"lognormal_mixture2\": {\"params\": {\"weight1\": 0.6691, \"mu1\": 3.714, \"sigma1\": 0.6877, \"mu2\": 5.194, \"sigma2\": 0.5893}, \"ks\": 0.02245}}"
+    },
+    {
+      "id": "digitized-planned_reboot",
+      "metric_verbatim": "Fig 2 CDF of unavailability duration (planned reboot), digitized from vector paths",
+      "value": {
+        "n_jumps": 556,
+        "mean_s": 1240.2638,
+        "median_s": 727.66289,
+        "p10_s": 280.02932,
+        "p90_s": 1590.8565,
+        "F_15min": 0.57632649,
+        "min_s": 158.19804,
+        "max_s": 480457.63
+      },
+      "unit": "seconds / fraction",
+      "status": "V",
+      "location": "p.4 Fig 2",
+      "covers": [
+        "planned"
+      ],
+      "conversion": "vector path -> step ECDF jumps; see digitized/ford10/*.csv and calibration.json",
+      "notes": "best CDF fit lognormal_mixture2; fits: {\"lognormal\": {\"params\": {\"mu\": 6.599, \"sigma\": 0.692}, \"ks\": 0.06109}, \"weibull\": {\"params\": {\"shape\": 1.68, \"scale\": 968.4}, \"ks\": 0.05537}, \"lognormal_mixture2\": {\"params\": {\"weight1\": 0.8411, \"mu1\": 6.459, \"sigma1\": 0.66, \"mu2\": 7.203, \"sigma2\": 0.1665}, \"ks\": 0.02846}}"
+    },
+    {
+      "id": "digitized-unplanned_reboot",
+      "metric_verbatim": "Fig 2 CDF of unavailability duration (unplanned reboot), digitized from vector paths",
+      "value": {
+        "n_jumps": 425,
+        "mean_s": 2886.7094,
+        "median_s": 1142.4344,
+        "p10_s": 804.81369,
+        "p90_s": 2131.8581,
+        "F_15min": 0.21741235,
+        "min_s": 16.986975,
+        "max_s": 1020590.6
+      },
+      "unit": "seconds / fraction",
+      "status": "V",
+      "location": "p.4 Fig 2",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "vector path -> step ECDF jumps; see digitized/ford10/*.csv and calibration.json",
+      "notes": "best CDF fit lognormal_mixture2; fits: {\"lognormal\": {\"params\": {\"mu\": 7.067, \"sigma\": 0.345}, \"ks\": 0.0627}, \"weibull\": {\"params\": {\"shape\": 3.463, \"scale\": 1332.0}, \"ks\": 0.1042}, \"lognormal_mixture2\": {\"params\": {\"weight1\": 0.7843, \"mu1\": 6.982, \"sigma1\": 0.2391, \"mu2\": 7.644, \"sigma2\": 0.6176}, \"ks\": 0.02564}}"
+    },
+    {
+      "id": "digitized-all_causes_fig1",
+      "metric_verbatim": "Fig 1 CDF of unavailability duration (all causes fig1), digitized from vector paths",
+      "value": {
+        "n_jumps": 510,
+        "mean_s": 324.68803,
+        "median_s": 61.070716,
+        "p10_s": 13.98445,
+        "p90_s": 441.70517,
+        "F_15min": 0.94456308,
+        "min_s": 4.0052451,
+        "max_s": 179273.46
+      },
+      "unit": "seconds / fraction",
+      "status": "V",
+      "location": "p.2 Fig 1",
+      "covers": [],
+      "conversion": "vector path -> step ECDF jumps; see digitized/ford10/*.csv and calibration.json",
+      "notes": "best CDF fit lognormal_mixture2; fits: {\"lognormal\": {\"params\": {\"mu\": 4.158, \"sigma\": 1.428}, \"ks\": 0.0693}, \"weibull\": {\"params\": {\"shape\": 0.7105, \"scale\": 110.8}, \"ks\": 0.139}, \"lognormal_mixture2\": {\"params\": {\"weight1\": 0.6107, \"mu1\": 3.712, \"sigma1\": 0.9903, \"mu2\": 5.114, \"sigma2\": 1.437}, \"ks\": 0.03109}}"
+    },
+    {
+      "id": "fig3-avg-unknown",
+      "metric_verbatim": "Fig 3 events per 1000 nodes per day (unknown), mean over 92 days, one cell",
+      "value": {
+        "mean": 1.4945592,
+        "sd_daily": 3.0200594
+      },
+      "unit": "events/1000 nodes/day",
+      "status": "V",
+      "location": "p.4 Fig 3",
+      "covers": [
+        "unknown"
+      ],
+      "conversion": "sum of stacked-bar heights per colour, legend-mapped"
+    },
+    {
+      "id": "fig3-avg-node_restart",
+      "metric_verbatim": "Fig 3 events per 1000 nodes per day (node restart), mean over 92 days, one cell",
+      "value": {
+        "mean": 0.86919655,
+        "sd_daily": 0.66265589
+      },
+      "unit": "events/1000 nodes/day",
+      "status": "V",
+      "location": "p.4 Fig 3",
+      "covers": [
+        "sw"
+      ],
+      "conversion": "sum of stacked-bar heights per colour, legend-mapped"
+    },
+    {
+      "id": "fig3-avg-planned_reboot",
+      "metric_verbatim": "Fig 3 events per 1000 nodes per day (planned reboot), mean over 92 days, one cell",
+      "value": {
+        "mean": 6.6637971,
+        "sd_daily": 7.3886372
+      },
+      "unit": "events/1000 nodes/day",
+      "status": "V",
+      "location": "p.4 Fig 3",
+      "covers": [
+        "planned_reboot"
+      ],
+      "conversion": "sum of stacked-bar heights per colour, legend-mapped"
+    },
+    {
+      "id": "fig3-avg-unplanned_reboot",
+      "metric_verbatim": "Fig 3 events per 1000 nodes per day (unplanned reboot), mean over 92 days, one cell",
+      "value": {
+        "mean": 1.0651652,
+        "sd_daily": 3.3220474
+      },
+      "unit": "events/1000 nodes/day",
+      "status": "V",
+      "location": "p.4 Fig 3",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "sum of stacked-bar heights per colour, legend-mapped"
+    },
+    {
+      "id": "derived-rate-node_restart",
+      "metric_verbatim": "Derived node restart rate per node-hour (>=15 min and all events)",
+      "value": {
+        "ge15min": {
+          "low": 1.7570209e-06,
+          "central": 6.1056476e-05,
+          "high": 0.00056883551
+        },
+        "all_events": {
+          "low": 0.00018847211,
+          "central": 0.0065494057,
+          "high": 0.061017844
+        },
+        "fig3_one_cell_ge15min": 3.6216523e-05,
+        "fig3_over_table1": 0.59316431,
+        "P_ge_15min": 0.0093224453,
+        "mean_ge_15min_s": 8195.6908
+      },
+      "unit": "per node-hour",
+      "status": "V",
+      "location": "derived from Table 1 + Fig 2 (+ Fig 3 check)",
+      "covers": [
+        "sw"
+      ],
+      "conversion": "lambda_ge15 = U/E[D|D>=15min]; lambda_all = lambda_ge15/P(D>=15min)"
+    },
+    {
+      "id": "derived-rate-planned_reboot",
+      "metric_verbatim": "Derived planned reboot rate per node-hour (>=15 min and all events)",
+      "value": {
+        "ge15min": {
+          "low": 7.9973118e-05,
+          "central": 0.0002463172,
+          "high": 0.00090049731
+        },
+        "all_events": {
+          "low": 0.00018879903,
+          "central": 0.00058150101,
+          "high": 0.0021258771
+        },
+        "fig3_one_cell_ge15min": 0.00027765821,
+        "fig3_over_table1": 1.1272384,
+        "P_ge_15min": 0.42358861,
+        "mean_ge_15min_s": 2250.7563
+      },
+      "unit": "per node-hour",
+      "status": "V",
+      "location": "derived from Table 1 + Fig 2 (+ Fig 3 check)",
+      "covers": [
+        "planned"
+      ],
+      "conversion": "lambda_ge15 = U/E[D|D>=15min]; lambda_all = lambda_ge15/P(D>=15min)"
+    },
+    {
+      "id": "derived-rate-unplanned_reboot",
+      "metric_verbatim": "Derived unplanned reboot rate per node-hour (>=15 min and all events)",
+      "value": {
+        "ge15min": {
+          "low": 0.0,
+          "central": 2.5948185e-05,
+          "high": 0.00012662714
+        },
+        "all_events": {
+          "low": 0.0,
+          "central": 3.3160503e-05,
+          "high": 0.00016182326
+        },
+        "fig3_one_cell_ge15min": 4.4381885e-05,
+        "fig3_over_table1": 1.7104042,
+        "P_ge_15min": 0.78250275,
+        "mean_ge_15min_s": 3468.4507
+      },
+      "unit": "per node-hour",
+      "status": "V",
+      "location": "derived from Table 1 + Fig 2 (+ Fig 3 check)",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "lambda_ge15 = U/E[D|D>=15min]; lambda_all = lambda_ge15/P(D>=15min)"
+    }
+  ]
+}

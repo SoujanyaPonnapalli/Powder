@@ -1,0 +1,16 @@
+{
+  "id": "disk/ford10",
+  "kind": "component",
+  "component": "disk",
+  "version": 1,
+  "derived_from": [
+    "ford10#table2-disk-mttf"
+  ],
+  "built_by": "scripts/fault_library/build_ford10.py",
+  "rate_per_hour": {
+    "low": 2.2815423e-06,
+    "central": 5.1016837e-06,
+    "high": 1.1407712e-05
+  },
+  "notes": "Table 2: disk MTTF 10-50 years (application-visible disk errors). Central = geometric mean."
+}
