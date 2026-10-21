@@ -495,7 +495,8 @@ def test_assignment_extremes_and_multiset():
 def test_reliability_score_units():
     p = LIB.get("cloud/aws-ondemand-nvme", "node")
     lam_t, rec, lam_p = transient_and_permanent(p)
-    manual = (lam_t * rec.mean + lam_p * 3600) * 8766
+    from powder.faults.system import REBUILD_S
+    manual = (lam_t * rec.mean + lam_p * REBUILD_S) * 8766
     assert abs(reliability_score(p) / manual - 1) < 1e-9
 
 
@@ -774,3 +775,17 @@ def test_engine_global_outages_take_quorum_down():
     assert one_region > 0.99999
     expected = 1 - (365 / 20) * 10 / 8760
     assert abs(glob - expected) < 0.005, (glob, expected)
+
+
+
+def test_exec10_simple_system_timings():
+    from powder.faults.system import REBUILD_S, SNAPSHOT_S
+    assert abs(SNAPSHOT_S - 2.147483648) < 1e-9  # 256 MiB over 1 Gbps
+    assert abs(REBUILD_S - (120 + SNAPSHOT_S)) < 1e-9
+    s = LIB.get("scenario/canonical-central", "scenario")
+    assert s["system"]["source"] == "exec10-simple-estimate"
+    cfg = scenario_node_configs(LIB, "scenario/canonical-central")[("machine/aws-ondemand-nvme", "us-east-1")]
+    assert abs(cfg.snapshot_download_time_dist.value - SNAPSHOT_S) < 1e-12
+    assert (cfg.spawn_dist.low, cfg.spawn_dist.high) == (60.0, 180.0)
+    legacy = scenario_node_configs(LIB, "scenario/legacy")[("machine/legacy-standard", "us-east")]
+    assert legacy.spawn_dist.mean == 60.0  # legacy profiles keep their own timings

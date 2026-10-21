@@ -45,7 +45,7 @@ def main() -> int:
            "(planned downtime and region outages are scenario-level and listed separately).", ""]
 
     out += ["## Node fault profiles", "",
-            "| Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (R=1h) | Node availability |",
+            "| Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (rebuild 122 s) | Node availability |",
             "|---|---|---|---|---|---|---|"]
     for p in sorted(lib.query(kind="node"), key=lambda p: (p["tier"], p["id"])):
         lam_t, rec, lam_p = transient_and_permanent(p)

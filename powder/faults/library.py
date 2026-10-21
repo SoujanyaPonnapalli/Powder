@@ -165,6 +165,9 @@ class FaultLibrary:
                     if missing:
                         out.append(f"{eid}: region_outage {ro['id']} has no rate for {missing}")
                 out += self._check_scenario_prices(e)
+                sys_src = e.get("system", {}).get("source")
+                if sys_src is not None and sys_src not in self.entries:
+                    out.append(f"{eid}: system.source {sys_src!r} does not resolve")
         return out
 
     def _check_scenario_prices(self, s: dict[str, Any]) -> list[str]:

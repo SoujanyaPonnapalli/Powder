@@ -40,6 +40,7 @@ DEPLOYMENT = {"instance_type": "i4i.2xlarge", "fallback_instance_type": "m6id.2x
               # from the AWS price list (2026-10-21): offered in all four US regions
               "vcpu": 8, "mem_gb": 64, "storage_gb": 1875, "storage": "1 x 1875 NVMe SSD (instance store)"}
 LEVELS = ("optimistic", "central", "pessimistic")
+from powder.faults.system import REBUILD_H, SYSTEM  # noqa: E402  (exec #10 placeholders)
 RHO0_SEEDS = range(20)
 
 
@@ -70,9 +71,9 @@ def main() -> int:
     (LIB / "machines/ondemand.json").write_text(json.dumps(machines, indent=1) + "\n")
     spot_machines = [m["id"] for m in lib.query(kind="machine") if m["id"].startswith("machine/spot-")]
 
-    scores = {m["id"]: reliability_score(lib.get(m["fault_profile"])) for m in machines}
-    tau = kendall_tau([reliability_score(lib.get(m["fault_profile"]), 0.25) for m in machines],
-                      [reliability_score(lib.get(m["fault_profile"]), 4.0) for m in machines])
+    scores = {m["id"]: reliability_score(lib.get(m["fault_profile"]), REBUILD_H) for m in machines}
+    tau = kendall_tau([reliability_score(lib.get(m["fault_profile"]), REBUILD_H / 4) for m in machines],
+                      [reliability_score(lib.get(m["fault_profile"]), REBUILD_H * 4) for m in machines])
 
     dist = next((d for d in lib.query(kind="price") if d.get("price_kind") == "price_distribution"
                  and d.get("default")), None)
@@ -81,32 +82,33 @@ def main() -> int:
     if dist is not None:
         rf_path = LIB / "derived/region_factors.json"
         factors = json.loads(rf_path.read_text())["factors"].get(DEPLOYMENT["instance_type"], {}) if rf_path.exists() else {}
-        specs = [(0.0, s, 1.0) for s in RHO0_SEEDS] + [(0.5, 0, 1.0), (1.0, 0, 1.0)]
-        if tau < 0.9:  # ranking depends on the rebuild time: also rank with R = 0.25 h and 4 h (plan §3.4)
-            specs += [(1.0, 0, 0.25), (1.0, 0, 4.0)]
+        specs = [(0.0, s, REBUILD_H) for s in RHO0_SEEDS] + [(0.5, 0, REBUILD_H), (1.0, 0, REBUILD_H)]
+        if tau < 0.9:  # ranking depends on the rebuild time: also rank with R/4 and 4R (plan §3.4)
+            specs += [(1.0, 0, REBUILD_H / 4), (1.0, 0, REBUILD_H * 4)]
         for rho, seed, R in specs:
-            sc = scores if R == 1.0 else {m["id"]: reliability_score(lib.get(m["fault_profile"]), R) for m in machines}
+            sc = scores if R == REBUILD_H else {m["id"]: reliability_score(lib.get(m["fault_profile"]), R) for m in machines}
             a = assign_prices(sc, dist["points"], rho, seed)
-            suffix = "" if R == 1.0 else f"-R{R:g}h"
+            suffix = "" if R == REBUILD_H else ("-Rx0.25" if R < REBUILD_H else "-Rx4")
             assignments.append({
                 "id": f"price-assign/rho{rho:g}-seed{seed}{suffix}@{dist['id'].split('@')[-1]}", "kind": "price",
                 "price_kind": "price_assignment", "rho": rho, "seed": seed, "distribution": dist["id"],
                 "derived_from": [dist["id"]], "assignments": a.prices, "region_factors": factors,
                 "reliability_scores_h_per_year": sc, "realised_spearman": a.realised_spearman,
-                "rebuild_hours": R, "kendall_tau_R_0.25_vs_4h": tau,
+                "rebuild_hours": R, "kendall_tau_R_quarter_vs_4x": tau,
                 "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"})
     (LIB / "prices/assignments.json").write_text(json.dumps(assignments, indent=1) + "\n")
 
     all_machines = [m["id"] for m in machines] + spot_machines
     common = {"kind": "scenario", "region_outage": "region_outage/aws-us-from-azure",
-              "planned_downtime": "planned_downtime/weekly-ford10", "deployment": DEPLOYMENT}
+              "planned_downtime": "planned_downtime/weekly-ford10", "deployment": DEPLOYMENT,
+              "system": SYSTEM}
     scenarios = []
     for lvl in LEVELS:
         scenarios.append({**common, "id": f"scenario/canonical-{lvl}", "machines": all_machines, "level": lvl,
                           "price_assignment": None, "price_policy": "none",
                           "notes": "availability-only: every library machine class, no prices"})
         for a in assignments:
-            if (a["rho"], a["seed"]) in ((1.0, 0), (0.0, 0), (0.5, 0)) and a["rebuild_hours"] == 1.0:
+            if (a["rho"], a["seed"]) in ((1.0, 0), (0.0, 0), (0.5, 0)) and a["rebuild_hours"] == REBUILD_H:
                 scenarios.append({**common, "id": f"scenario/canonical-{lvl}-rho{a['rho']:g}", "machines": all_machines,
                                   "level": lvl, "price_assignment": a["id"], "price_policy": "mean_over_window",
                                   "notes": f"priced: rho={a['rho']:g} assignment for on-demand classes; native spot prices"})

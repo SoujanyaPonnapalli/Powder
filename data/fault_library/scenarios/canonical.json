@@ -18,6 +18,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/canonical-optimistic",
   "machines": [
    "machine/aws-ondemand-nvme",
@@ -68,6 +80,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/canonical-optimistic-rho0",
   "machines": [
@@ -120,6 +144,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/canonical-optimistic-rho0.5",
   "machines": [
    "machine/aws-ondemand-nvme",
@@ -170,6 +206,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/canonical-optimistic-rho1",
   "machines": [
@@ -222,6 +270,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/canonical-central",
   "machines": [
    "machine/aws-ondemand-nvme",
@@ -272,6 +332,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/canonical-central-rho0",
   "machines": [
@@ -324,6 +396,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/canonical-central-rho0.5",
   "machines": [
    "machine/aws-ondemand-nvme",
@@ -374,6 +458,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/canonical-central-rho1",
   "machines": [
@@ -426,6 +522,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/canonical-pessimistic",
   "machines": [
    "machine/aws-ondemand-nvme",
@@ -476,6 +584,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/canonical-pessimistic-rho0",
   "machines": [
@@ -528,6 +648,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/canonical-pessimistic-rho0.5",
   "machines": [
    "machine/aws-ondemand-nvme",
@@ -578,6 +710,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/canonical-pessimistic-rho1",
   "machines": [
@@ -630,6 +774,18 @@
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
   },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
   "id": "scenario/reference-ford10",
   "machines": [
    "machine/ford10-google-storage",
@@ -658,6 +814,18 @@
    "mem_gb": 64,
    "storage_gb": 1875,
    "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 2.147483648
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
   },
   "id": "scenario/reference-vishwanath10",
   "machines": [

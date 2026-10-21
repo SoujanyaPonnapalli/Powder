@@ -111,7 +111,7 @@ def machine_node_config(
     """
     machine = lib.get(machine_id, "machine")
     profile = lib.get(machine["fault_profile"], "node")
-    sysd = {**DEFAULT_SYSTEM, **(system or {})}
+    sysd = {**DEFAULT_SYSTEM, **{k: v for k, v in (system or {}).items() if k != "source"}}
     lam_t, recovery, lam_p = transient_and_permanent(profile, level, rate_multiplier, extra_transient)
     spawn = from_spec(profile.get("spawn", sysd["spawn"]))
     fix = engine_compatible if engine else (lambda d: d)

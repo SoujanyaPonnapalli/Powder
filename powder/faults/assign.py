@@ -31,13 +31,16 @@ from .schema import PERMANENT_CAUSES, TRANSIENT_CAUSES
 HOURS_PER_YEAR = 8766.0
 
 
-def reliability_score(profile: dict[str, Any], rebuild_hours: float = 1.0, level: str = "central") -> float:
+def reliability_score(profile: dict[str, Any], rebuild_hours: float | None = None, level: str = "central") -> float:
     """Expected unavailable hours per node-year from node-level causes.
 
     ``H * sum_transient(lambda_i * E[D_i]) + H * lambda_P * R``. Planned
     downtime and region outages are excluded: they are identical for every
     machine class in a scenario, so they cannot change the ranking.
     """
+    if rebuild_hours is None:
+        from .system import REBUILD_H
+        rebuild_hours = REBUILD_H
     rates = node_profile_rates(profile, level)
     down = 0.0
     for c, r in rates.items():

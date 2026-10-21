@@ -1,0 +1,41 @@
+{
+  "id": "exec10-simple-estimate",
+  "kind": "source",
+  "title": "Simple placeholder timings for exec #10 (user decision 2026-10-21)",
+  "population": "assumption, to be replaced by measured AWS timings (exec #10)",
+  "accessed": "2026-10-21",
+  "notes": "Explicit modelling assumption agreed with the user, not a measurement. Status V marks it as a confirmed decision.",
+  "measurements": [
+    {
+      "id": "partition-size",
+      "metric_verbatim": "one partition is 256 MiB",
+      "value": 268435456,
+      "unit": "bytes",
+      "status": "V",
+      "location": "user decision 2026-10-21",
+      "covers": []
+    },
+    {
+      "id": "network",
+      "metric_verbatim": "downloaded over a 1 Gbps network",
+      "value": 1000000000.0,
+      "unit": "bits/s",
+      "status": "V",
+      "location": "user decision 2026-10-21",
+      "covers": [],
+      "conversion": "snapshot download = 256 MiB x 8 / 1 Gbps = 2.147 s (constant; no protocol overhead modelled)"
+    },
+    {
+      "id": "spawn",
+      "metric_verbatim": "a node takes Uniform(1,3) minutes to spawn",
+      "value": {
+        "low_s": 60,
+        "high_s": 180
+      },
+      "unit": "seconds",
+      "status": "V",
+      "location": "user decision 2026-10-21",
+      "covers": []
+    }
+  ]
+}
