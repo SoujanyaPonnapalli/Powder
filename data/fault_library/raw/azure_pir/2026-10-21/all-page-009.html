@@ -1,0 +1,88 @@
+
+
+
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>November 2021</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            9
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-DK83-BDZ" aria-expanded="false" aria-controls="incident-history-collapse-DK83-BDZ">
+                                <span class="hide-text">11/09/2021</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Intermittent Failures When Accessing or Using Access Panel
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: DK83-BDZ
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-down" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-up" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-DK83-BDZ">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact</strong>: <span style="color: rgb(51, 51, 51)">Between 14:03 UTC and 19:28 UTC on Nov 9 2021, customers using Azure Active Directory’s Access Panel whose traffic was routed through West Central US and Central US may have experienced issues when attempting to access or use Access Panel functionality. Users may have experienced intermittent failures when attempting the following operations:&nbsp;</span></p><p>• <span style="color: rgb(51, 51, 51)">Launching Single Sign on (SSO) applications from My Apps or when using direct sign-on links</span></p><p>• <span style="color: rgb(51, 51, 51)">Registering for Multi-Factor authentication (MFA)</span></p><p>• <span style="color: rgb(51, 51, 51)">Self-Service Password Reset</span></p><p>• <span style="color: rgb(51, 51, 51)">Performing self-service management of groups</span></p><p>• <span style="color: rgb(51, 51, 51)">Accepting terms of use agreements</span></p><p><span style="color: rgb(51, 51, 51)">This incident had no impact on authentication and MFA scenarios outside of MFA registration, authentication for applications that were not launched through My Apps or through direct sign-on links.</span></p><p><strong>Root Cause</strong>: <span style="color: rgb(51, 51, 51)">On 09 Nov 2021 between 03:00 and 05:30 UTC, a code change to Access Panel was deployed and introduced an unrelated bug impacting a small subset of customers. After we failed to detect this bug through testing, it was discovered during telemetry validation in the first deployment stage in West Central US, at which point we failed over traffic from West Central US to Central US at 07:00 UTC to prevent customers from experiencing this discovered bug. Based on the information available at the time, failing-over traffic was deemed to be the safest and fastest recovery alternative until a fix could be safely deployed the following morning.</span></p><p><span style="color: rgb(51, 51, 51)">Failing-over is a standard operating procedure exercised on at least a monthly basis, however in this case we made the decision to keep the service in a failed-over state, while working on a fix to be deployed the following morning. Since this procedure is regularly tested and is an order of magnitude faster than rolling back the change, we had determined this path as the best course of action, and did not expect any issues. The difference in this instance was that the failover happened during off-business hours and persisted into business hours. This meant that at the point of failover the Central US datacenter was scaled to handle the low amounts of off-business hours traffic.</span></p><p><span style="color: rgb(51, 51, 51)">As we reached business hours for the region, at 14:03 UTC on 09 Nov 2021, we started seeing traffic rising quickly for the Access Panel service in Central US, at a pace which exceeded what the auto-scaling configuration, which our service relies on for reacting to traffic fluctuations, could handle. Our auto-scaling configuration was not equipped to provision capacity at the pace required to keep up with the rate of traffic increase related to both the failover and incoming morning peak traffic combined. That resulted in customer requests to the service timing out and failing.</span></p><p><span style="color: rgb(51, 51, 51)">The issue was detected by automation at 14:09 UTC on 09 Nov 2021 and engineers were engaged at 14:14 UTC. While investigating and validating the scope of impact, communications were delayed, with first notification being sent at 15:25 UTC.</span></p><p>While the incident was ongoing, we inaccurately scoped the customer impact in our communications to only applications launched through the My Apps portal, without calling out direct sign-on links used outside of My Apps. Upon further investigation, we have also found that a workaround could have been possible for a subset of impacted scenarios, where, for applications using sign-on methods other than SAML, customers could have accessed the application’s site directly.</p><p><strong>Mitigation</strong>: <span style="color: rgb(51, 51, 51)">Impact was mitigated by rebalancing traffic and manually scaling out the service in the impacted regions, West Central US and Central US. Since the Access Panel service in West Central US was previously auto-scaled down, due to no incoming traffic following the service failover, the scaling out operation took a more significant amount of time. The scale out operations completed at 18:40 UTC on 09 Nov 2021 and mitigated impact for the vast majority of customers. Complete mitigation was accomplished when deployment rollback completed at 19:28 UTC.</span></p><p><strong>Next steps</strong>: We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Adjust provisioned capacity and autoscaling configuration for the Access Panel service in all regions to support failover scenarios during peak hours. (To be completed in November 2021)</li><li>Update Access Panel standard operating procedures to include rapidly increasing capacity during scale-out operations to help shorten mitigation times for similar scenarios.&nbsp;(To be completed in November 2021)</li><li>Update test cases to include missing scenarios as surfaced in this incident.&nbsp;(To be completed in November 2021)</li><li>Improve Access Panel tooling and processes to enable rapid rollbacks of configuration changes.&nbsp;(To be completed in December 2021)</li><li>Improve standard operating procedures for notifying customers to drive down time to notify for this class of incident.&nbsp;(To be completed in March 2022)</li><li>Plan to onboard the Access Panel service to automated communication to help drive down time to notify for this class of incidents.&nbsp;(To be completed in March 2022)</li><li>Adjust standard operating procedures to help improve the quality of communications, including details around scope of impact and potential workarounds. (To be completed in March 2022)</li></ul><p><strong style="color: rgb(50, 50, 55)">Provide Feedback:</strong><span style="color: rgb(50, 50, 55)"> Please help us improve the Azure customer communications experience by taking our survey:&nbsp;<a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>October 2021</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            27
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-ZKP4-NSG" aria-expanded="false" aria-controls="incident-history-collapse-ZKP4-NSG">
+                                <span class="hide-text">10/27/2021</span>
+                                <div class="col-md-8 incident-history-title">
+                                    SMS MFA not being received by multiple tenants
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: ZKP4-NSG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-ZKP4-NSG">
+                                    <div class="card-body">
+                                        <p>Starting at 10:03 UTC, a subset of customers using SMS for Multi-Factor Authentication in United States are experiencing difficulties signing into Azure resources, such as Azure Active Directory, when Multi-Factor Authentication is required by policy.</p><p><strong>Workaround:</strong> Customers are recommended to use voice calls or non-telecom authentication methods to complete Multi-Factor Authentication.</p><p><strong>Current status:</strong> The issue is mitigated as of 13:20 UTC. This issue was due to a 3rd party cellular provider in United States which was experiencing issues, impacting Azure MFA users.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    <input type="hidden" class="wa-historyResult-count" value="82" />

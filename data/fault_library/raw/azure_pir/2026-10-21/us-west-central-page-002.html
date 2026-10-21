@@ -1,0 +1,126 @@
+
+
+
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>August 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            18
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-YLBJ-790" aria-expanded="false" aria-controls="incident-history-collapse-YLBJ-790">
+                                <span class="hide-text">08/18/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) - Azure Key Vault - Provisioning Failures
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: YLBJ-790
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-down" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-up" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-YLBJ-790">
+                                    <div class="card-body">
+                                        <p><strong>What happened?</strong></p><p>Between 16:30 UTC on 18 Aug 2022 and 02:22 UTC on 19 Aug 2022, a platform issue caused Azure offerings such as Bastion, ExpressRoute, Azure Container Apps, Azure ML, Azure Managed HSM, Azure Confidential VMs, Azure Database Services (MySQL - Flexible Server, Postgres- Flexible Server, PostgreSQL – Hyperscale) to experience provisioning failures globally. This issue impacted customers that relied on provisioning of certificates as part of provisioning of an Azure resource. This write-up is a Post Incident Review (PIR) we are providing to summarize what went wrong, how we responded, and the steps Microsoft is taking to learn from this and improve.</p><p><strong>What went wrong, and why?</strong></p><p>The requesting authority for Azure Key Vault (the underlying platform, on which all the described services rely for the creation of certificate resources) was experiencing high latency and volume of requests. This resulted in provisioning failures for the impacted services, as those services were not able to acquire certificates within the expected time. During the incident, a backend service that Azure Key Vault relies on, became unhealthy due to an unexpected spike in traffic during scheduled hardware maintenance, which caused a build-up of requests in the queue, resulting in high latencies to fulfil new certificate creation requests.&nbsp;</p><p><strong>How did Microsoft respond?</strong></p><p>We developed and deployed a hotfix to increase the throughput, created new queues for request processing, and drained the queue of accumulated requests to alleviate the overall latency and process requests as expected.</p><p><strong>How is Microsoft making incidents like this less likely, or at least less impactful?</strong></p><p>•	In the short-term, we are implementing request caps and partitioning the request queues, to help prevent lasting failures in the service in similar scenarios.</p><p>•	We are also reviewing the backend capacity and gaps in the maintenance process that led to the loss of availability during this maintenance operation.</p><p>•	Based on our learning from this incident, we are implementing improvements to our health monitoring and operational guidance that would help reduce the time to detect similar issues and allow us to address similar issues before customers experience impact.</p><p>•	In the longer term, we are working to add fine-grained distributed throttling and portioning, to add additional isolation layers to the backend of this service, which will minimize impact in similar scenarios.</p><p>•	Finally, we will work to add more Availability Zones and fault domains in all layers of the stack, along with automatic failover to the service, to help prevent disruption to customer workloads.</p><p><strong>How can we make our incident communication more useful?</strong></p><p>We are piloting this "PIR" format as a potential replacement for our "RCA" (Root Cause Analysis) format.</p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/YLBJ-790" class="wa-link-status">https://aka.ms/AzPIR/YLBJ-790</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>May 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            31
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-YL23-V90" aria-expanded="false" aria-controls="incident-history-collapse-YL23-V90">
+                                <span class="hide-text">05/31/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Azure Active Directory Sign In logs
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: YL23-V90
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-YL23-V90">
+                                    <div class="card-body">
+                                        <p><strong>Summary of impact:&nbsp;</strong>Between 21:35 UTC on 31 May and 09:54 UTC on 01 Jun 2022, you were identified as a customer who may have experienced significant delays in the availability of logging data for resources such as sign in and audit logs, for Azure Active Directory and related Azure services.&nbsp;This impact may also have resulted in missed or misfired alerts, and issues&nbsp;accessing tools such as&nbsp;Microsoft Graph,&nbsp;the Azure portal,&nbsp;Azure Application Insights,&nbsp;Azure Log Analytics, and/or PowerShell. During this time, Azure Resource Manager (ARM) dependent services may also have experienced CRUD (create, read, update, and delete) service operation failures and/or issues communicating with other Azure services.</p><p><strong>Root Cause:&nbsp;</strong>As part of continuous service improvements, a recent change to the underlying infrastructure that was intended to optimize performance, inadvertently caused the observed impact.&nbsp;While this issue was detected by our telemetry, service health degradation was only detected&nbsp;in the final phase of the rollout.&nbsp;This underlying infrastructure has both regional and global endpoints, to facilitate the varying needs of dependent services. When global endpoints become unhealthy, they will have a global impact on services that depend on them. In this incident, we saw the observed impact manifest as the change reached the final phase of the rollout - when it was deployed to high traffic regions and global endpoints. Prior to this issue manifesting, the impactful change was being rolled out over the last week, with no issues being observed.</p><p><strong>Mitigation:&nbsp;</strong>Initially we attempted to roll-back the impactful change however, due to internal service dependencies, this approach was unsuccessful. As a result, we deployed a hotfix to the affected underlying infrastructure, which mitigated all customer impact.</p><p><strong>Next Steps:&nbsp;</strong>We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Disabling the impactful change globally, across all of the affected underlying infrastructure [Completed]</li><li>Updating our standard operating procedures (SOP) to include specific mitigation guidance for similar scenarios to avoid rollback and help to reduce time to mitigation [Will be completed by 6/8/2022]</li><li>Adjusting our rollout plan for similar changes to the underlying infrastructure, to add rollout phases that will help reduce impact to customers in similar scenarios [Will be completed by 6/8/2022]</li><li>Migrating the underlying infrastructure to a new architecture that will eliminate internal service dependencies which prevented us from rolling back the change. This will also improve the speed of our repair actions, to help significantly shorten time to mitigation during similar impact scenarios [Rollout will begin in July 2022]</li></ul><p><strong>Provide Feedback:</strong>&nbsp;Please help us improve the Azure customer communications experience by taking our survey:&nbsp;<a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>December 2021</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            9
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-SNCJ-9ZG" aria-expanded="false" aria-controls="incident-history-collapse-SNCJ-9ZG">
+                                <span class="hide-text">12/09/2021</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Errors connecting to SCM App Service and/or Azure Functions deployments
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: SNCJ-9ZG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-SNCJ-9ZG">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between approximately 21:00 UTC on 09 Dec 2021 and 00:23 UTC on 10 Dec 2021, a subset of customers using App Service and/or Azure Functions may have encountered issues with deployments using web deploy, managing WebJobs, connecting to Web SSH console, executing certain Diagnostic Tools using Azure portal or while accessing SCM endpoint. App Service resources utilizing other deployment methods were not affected. Standard App Service control plane operations and runtime were not impacted.</p><p><strong>Root Cause:</strong> As part of introducing certain resiliency measures, a configuration change was implemented to create a redundant Domain Name Resolution zone for App Service SCM endpoints. However, due to a misconfiguration, this change incorrectly affected the name resolution for App Service SCM endpoint, which resulted in a subset of our customers not being able to connect to the SCM endpoints of the service. This misconfiguration was limited in scope to the SCM endpoint and no other data plane or control plane operations experienced any failures.</p><p><strong>Mitigation:</strong> Engineering was engaged upon receiving reports of failure. In order to mitigate the issue, the misconfigured state of the zone was corrected and persisted for SCM endpoints. Most customers observed resolution within 20 - 40 minutes from when the mitigation was applied. Resolution times varied for customers depending on the Time To Live (TTL) setting of the various networking devices in their traffic pipelines.</p><p><strong>Next Steps:</strong> We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Adding automated detection for SCM endpoint related failures.</li><li>Adding improved validation for zone configuration updates.</li><li>Enhancing review measures for critical network configurations.</li></ul><p><strong>Provide Feedback:</strong> Please help us improve the Azure customer communications experience by taking our survey: <a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    <input type="hidden" class="wa-historyResult-count" value="13" />

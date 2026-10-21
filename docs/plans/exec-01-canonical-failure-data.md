@@ -878,7 +878,7 @@ Remaining:
 - [ ] Rust engine: add `lognormal`, `empirical` and `mixture` `DistributionSpec`s to powder-mc (and `mc_jobs.distribution_spec`), so `engine=True` no longer approximates; `cargo test`.
 - [ ] Rust engine: `PlannedDowntimeSpec` + `PLANNED_DOWNTIME_START/END` events; replacement must ignore planned downtime; cross-check against `planned_downtime.schedule` statistics.
 - [ ] Rust engine + Python `NetworkConfig`: per-region outage rates (`per_region` map); make `RegionOutageModel.as_network_config` exact instead of max/mean.
-- [ ] Refine `region_incidents_azure.csv` from azure.status.microsoft directly (the sandbox could only read search snippets): verify times/scopes of S rows, add missed US incidents, rebuild region outages.
+- [x] Refine `region_incidents_azure.csv` from azure.status.microsoft directly (2026-10-21): all 79 public PIRs fetched (`fetch_azure_pirs.py`) and classified from their full text; window moved to 2022-06-01 (PIR policy change); added missed US VM incidents (East US 2 cooling 2022-06, West US 2 power 2022-08, South Central US networking 2023-01, WAN surge 2022-07); 5GP8-W0G and others reclassified as control-plane only. Result: per-region 0.09-0.13/yr (heterogeneity now detected), global 0.57/yr (2 incidents), durations lognormal, median 5.1 h.
 - [ ] Azure reference: `az login --use-device-code`; run `azure_locations.py` to confirm coordinates (mapping decisions stay fixed).
 - [ ] LANL failure data (CFDR/FTA `lanl05`): download, extract per-system cause counts, Weibull/lognormal fits, frailty; add `hpc/lanl05-*` profiles; pool `rho_SW` with Ford's ratio.
 - [ ] Google ClusterData2019 `machine_events` (BigQuery; likely needs a Google login -> may be blocked): `cluster/google2019-*` + `planned_downtime/google2019`.

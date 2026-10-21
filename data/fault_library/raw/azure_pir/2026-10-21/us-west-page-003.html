@@ -1,0 +1,126 @@
+
+
+
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>February 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            12
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-ZS1T-LCG" aria-expanded="false" aria-controls="incident-history-collapse-ZS1T-LCG">
+                                <span class="hide-text">02/12/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Virtual Machines - West US - Resolved
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: ZS1T-LCG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-down" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-up" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-ZS1T-LCG">
+                                    <div class="card-body">
+                                        <p><strong>Impact Statement</strong>: Between 04:38 UTC and 6:30 UTC on 12 Feb 2022, you were identified as a customer using Virtual Machines, Azure SQL and Storage in West US who may have experienced connection failures when trying to access some resources hosted in the region. Additional downstream services may have also been impacted.</p><p><strong>Preliminary Root Cause</strong>: We determined that a subset of storage resources experienced a drop in network connectivity.</p><p><strong>Mitigation</strong>: We restored the network connectivity to storage resources to mitigate the issue.</p><p><strong style="color: rgb(50, 50, 55)">Next steps:&nbsp;</strong><span style="color: rgb(50, 50, 55)">We will continue to investigate to establish the full root cause and prevent future occurrences.</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>January 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            13
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-PKJ8-TTZ" aria-expanded="false" aria-controls="incident-history-collapse-PKJ8-TTZ">
+                                <span class="hide-text">01/13/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Azure Data Factory V2 - West Europe - Mitigated
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: PKJ8-TTZ
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-PKJ8-TTZ">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between 10:10 UTC on 13 Jan 2022 and 20:00 UTC on 14 Jan 2022, a subset of customers may have experienced issues, timeouts, or failures for some service management operations for services leveraging Azure Resource Manager (ARM). This could have also included issues with operations attempted to manage resources or resource groups. This could have resulted in a downstream impact on other Azure services that rely on Azure Resource Manager.</p><p><br></p><p><strong>Preliminary Root Cause:</strong> We have identified a change to backend role instances leveraged by Azure Resource Manager causing the timeouts and is root cause of the failure.&nbsp;</p><p><br></p><p><strong>Mitigation:</strong> We mitigated background job execution systems causing failures and performed a roll back of recent change following our safe deployment practices (SDP) to return ARM to a previous healthy state, mitigating the issue. The roll back took several hours to complete globally following our SDP process.&nbsp;</p><p><br></p><p><strong>Next Steps:</strong> We will also continue to investigate to establish the full root cause and prevent future occurrences. You can stay informed about Azure service issues, maintenance events, or advisories by creating custom service health alerts (<a href="<a href="<a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a>" class="wa-link-status"><a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a></a>" rel="noopener noreferrer" target="_blank"><a href="<a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a>" class="wa-link-status"><a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a></a></a> for video tutorials and <a href="<a href="<a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a>" class="wa-link-status"><a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a></a>" rel="noopener noreferrer" target="_blank"><a href="<a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a>" class="wa-link-status"><a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a></a></a> for how-to documentation) and you will be notified via your preferred communication channel(s).</p><p><br></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>December 2021</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            9
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-SNCJ-9ZG" aria-expanded="false" aria-controls="incident-history-collapse-SNCJ-9ZG">
+                                <span class="hide-text">12/09/2021</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Errors connecting to SCM App Service and/or Azure Functions deployments
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: SNCJ-9ZG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-SNCJ-9ZG">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between approximately 21:00 UTC on 09 Dec 2021 and 00:23 UTC on 10 Dec 2021, a subset of customers using App Service and/or Azure Functions may have encountered issues with deployments using web deploy, managing WebJobs, connecting to Web SSH console, executing certain Diagnostic Tools using Azure portal or while accessing SCM endpoint. App Service resources utilizing other deployment methods were not affected. Standard App Service control plane operations and runtime were not impacted.</p><p><strong>Root Cause:</strong> As part of introducing certain resiliency measures, a configuration change was implemented to create a redundant Domain Name Resolution zone for App Service SCM endpoints. However, due to a misconfiguration, this change incorrectly affected the name resolution for App Service SCM endpoint, which resulted in a subset of our customers not being able to connect to the SCM endpoints of the service. This misconfiguration was limited in scope to the SCM endpoint and no other data plane or control plane operations experienced any failures.</p><p><strong>Mitigation:</strong> Engineering was engaged upon receiving reports of failure. In order to mitigate the issue, the misconfigured state of the zone was corrected and persisted for SCM endpoints. Most customers observed resolution within 20 - 40 minutes from when the mitigation was applied. Resolution times varied for customers depending on the Time To Live (TTL) setting of the various networking devices in their traffic pipelines.</p><p><strong>Next Steps:</strong> We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Adding automated detection for SCM endpoint related failures.</li><li>Adding improved validation for zone configuration updates.</li><li>Enhancing review measures for critical network configurations.</li></ul><p><strong>Provide Feedback:</strong> Please help us improve the Azure customer communications experience by taking our survey: <a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    <input type="hidden" class="wa-historyResult-count" value="23" />

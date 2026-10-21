@@ -12,9 +12,10 @@ Outputs: data/fault_library/derived/region_map.json
          data/fault_library/profiles/region_outage/aws-us-from-azure.json
 
 Method (plan §7.8, with two recorded deviations):
-* Window 2023-01-01 .. 2026-10-20. Earlier years are excluded: PIRs are kept
-  about 5 years and, since mid-2022, published only for broad incidents, so
-  the 2021-22 search found no confirmable VM outages.
+* Window 2022-06-01 .. 2026-10-20: from 2022-06-01 Microsoft publishes PIRs
+  for broad issues only, so the counting basis is constant over the window.
+  Incidents come from the full PIR texts (fetch_azure_pirs.py ->
+  raw/azure_pir/<date>/pirs.json), classified by hand into the CSV.
 * Count an incident for an Azure region if VMs there lost connectivity
   region-wide or across >= 2 AZs (scope region_wide / multi_az, compute
   affected, confidence high/medium). Single-AZ datacenter events go into the
@@ -57,7 +58,7 @@ from powder.simulation.distributions import Exponential, LogNormal, Weibull  # n
 
 LIB = ROOT / "data/fault_library"
 CSV = LIB / "region_incidents_azure.csv"
-WINDOW = (datetime(2023, 1, 1), datetime(2026, 10, 20))
+WINDOW = (datetime(2022, 6, 1), datetime(2026, 10, 20))
 YEARS = (WINDOW[1] - WINDOW[0]).days / 365.25
 H_PER_YEAR = 8766.0
 STATUS = {"high": "V", "medium": "S", "low": "U"}
@@ -160,22 +161,22 @@ def main():
             "unit": "incident", "status": STATUS[r["confidence"]], "location": r["source_url"],
             "covers": ["region"], "notes": r["notes"] or None})
     src = {"id": "azure-pir-incidents", "kind": "source",
-           "title": "Azure Post Incident Reviews and press reports, 2021-2026 (compiled)",
+           "title": "Azure Post Incident Reviews (public status history), Oct 2021 - Oct 2026",
            "url": "https://azure.status.microsoft/en-us/status/history/",
            "population": "Azure public regions; broad incidents with public PIRs",
            "accessed": "2026-10-21",
-           "notes": ("Compiled by web search (search snippets of PIR pages and press; the PIR pages themselves "
-                     "were not fetchable from the sandbox). Status V = PIR text seen in snippet, S = reliable "
-                     "secondary report, U = weak single source (never used). Coverage is good for broad "
-                     "2023-2026 incidents and US regions, poor for 2021-2022 and for single-region events "
-                     "outside the US. Refine with scripts on a machine with network access."),
+           "notes": ("All 79 PIRs on the public status history (retained 5 years) were fetched on 2026-10-21 "
+                     "(scripts/fault_library/fetch_azure_pirs.py; full texts in raw/azure_pir/2026-10-21/pirs.json) "
+                     "and classified by reading each 'What happened' section: scope (region_wide, multi_az, "
+                     "single_az, degraded, service_only, guest_software) and whether running VMs lost "
+                     "connectivity. Status V = primary PIR text; S = secondary source (one non-US row)."),
            "measurements": meas}
     (LIB / "sources/azure-pir-incidents.json").write_text(json.dumps(src, indent=2) + "\n")
 
     variants = {"": ({"region_wide", "multi_az"}, "default"),
-                "-incl-single-az": ({"region_wide", "multi_az", "single_az", "unknown"},
-                                    "pessimistic: single-datacenter / single-AZ VM outages and unknown-scope "
-                                    "events also count as region outages")}
+                "-incl-single-az": ({"region_wide", "multi_az", "single_az", "unknown", "degraded"},
+                                    "pessimistic: single-datacenter / single-AZ VM outages, degraded-network "
+                                    "events and unknown-scope events also count as region outages")}
     profiles = []
     report = {}
     region_events = [r for r in rows if r["in_window"] and r["compute"] and r["usable"]

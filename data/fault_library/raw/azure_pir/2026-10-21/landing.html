@@ -1,0 +1,1582 @@
+
+
+
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Azure status history | Microsoft Azure</title>
+    <meta name="description" content="Check the status history of Microsoft Azure services here." />
+    <meta name="IsUsingStatusV2" />
+    <meta name="RegionalSiteName" />
+        <link href="/images/icon/favicon.ico" rel="icon" type="image/x-icon">
+        <link href="/Content/bootstrap.min.css" rel="stylesheet">
+
+
+    <script src="/Scripts/jquery-3.6.0.min.js"></script>
+
+        <link href="/Content/bootstrap.min.css" rel="stylesheet">
+<link href="/Content/Site.css?v=1.1.220.0" rel="stylesheet" type="text/css"></link>        <script async src="/scripts/bootstrap.bundle.min.js"></script>
+</head>
+<body id="top">
+        <div class="header-container">
+
+
+
+<header id="azure-header" class="azure-header">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-black navbar-alignment py-0">
+        <div class="navbar-brand col-3 py-0">
+            <a href="https://azure.microsoft.com/" class="msazure-title" title="Microsoft Azure" aria-label="Microsoft Azure" width="30" height="30" alt="" data-event="global-navigation-header-clicked-msazurelogo">
+                <svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-msazure-logo" viewBox="0 0 72 72">
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M0 34.219H34.219V0H0V34.219Z" transform="translate(0.00499725 0.00601196)" fill="#F25022"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M0 34.219H34.219V0H0V34.219Z" transform="translate(37.779)" fill="#7FBA00"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M0 34.219H34.219V0H0V34.219Z" transform="translate(0 37.779)" fill="#00A4EF"/>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M0 34.219H34.219V0H0V34.219Z" transform="translate(37.779 37.779)" fill="#FFB900"/>
+</symbol>
+</defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-msazure-logo"></use>
+                            </svg>  <h1 class="msazure-text">Microsoft Azure</h1>
+            </a>
+        </div>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse py-0" id="navbarSupportedContent">
+            <div class="navbar-brand col-md-5 py-0"></div>
+            <div class="navbar-brand col-md-4 float-md-right py-0">
+                <div class="navbar-brand col-md-3 float-md-right py-0">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="btn-navbar" href="https://azure.microsoft.com/account" title="My account" data-event="global-navigation-header-clicked-myaccountlink" style="min-width:100px;">My account <span class="sr-only">(current)</span></a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn-navbar" href="https://portal.azure.com/">Portal</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>        </div>
+
+    <main class="main-body-adjustment" data-tag-area="content" id="main" data-tag-group="body" tabindex="-1">
+        
+
+
+
+
+
+
+<a href="#history-section" class="skip-to-main-content-link">Skip to Main Content</a>
+
+<div class="banner-section">
+    <div class="row col">
+        <span class="padding-left-right-15-impt">
+            <ul class="breadcrumbs">
+            <li itemscope itemtype="https://schema.org/breadcrumb">
+                <a data-event="global-navigation-body-clicked-breadcrumb" href="/en-us/status/" itemprop="url">
+                    <span itemprop="title">Status</span>
+                </a>
+            </li>
+            <li itemscope itemtype="https://schema.org/breadcrumb">
+                <span itemprop="title">History</span>
+            </li>
+</ul>
+
+        </span>
+    </div>
+    <div class="row col">
+        <h1 class="padding-left-right-15-impt">Azure status history</h1>
+    </div>
+    <div class="row col font-11 history-banner-text">
+        <span class="padding-left-right-15-impt">This page contains Post Incident Reviews (PIRs) of previous service issues, each retained for 5 years. 
+	From November 20, 2019, this included PIRs for all issues about which we communicated publicly. 
+	From June 1, 2022, this includes PIRs for broad issues as described in our <a href="https://docs.microsoft.com/en-us/azure/service-health/azure-status-overview" target="_blank">documentation</a>.</span>
+    </div>
+</div>
+<section id="history-section" class="history-section" aria-label="Service status history">
+        <div class="row history-dropdowns">
+            <div class="col-lg-4">
+                <p>Product:</p>
+                <select aria-label="Product:" id="wa-dropdown-service" name="wa-dropdown-service" data-dropdown-event="area-status-history-changed-productdropdown" data-dropdown-property="CommonProductDropdownValue">
+                    <option value="all">All</option>
+                        <option value="action-groups">Action Groups</option>
+                        <option value="activity-log">Activity Log</option>
+                        <option value="alerts">Alerts</option>
+                        <option value="alerts-classic">Alerts (Classic)</option>
+                        <option value="api-management">API Management</option>
+                        <option value="app-configuration">App Configuration</option>
+                        <option value="app-service">App Service</option>
+                        <option value="app-service-linux">App Service (Linux)</option>
+                        <option value="application-gateway">Application Gateway</option>
+                        <option value="application-gateway-for-containers">Application Gateway for Containers</option>
+                        <option value="application-insights">Application Insights</option>
+                        <option value="automation">Automation</option>
+                        <option value="autoscale">AutoScale</option>
+                        <option value="active-directory-b2c">Azure Active Directory B2C</option>
+                        <option value="advisor">Azure Advisor</option>
+                        <option value="anomaly-detector">Azure AI Anomaly Detector</option>
+                        <option value="bot-services">Azure AI Bot Service</option>
+                        <option value="content-safety">Azure AI Content Safety</option>
+                        <option value="custom-vision-service">Azure AI Custom Vision</option>
+                        <option value="form-recognizer">Azure AI Document Intelligence</option>
+                        <option value="immersive-reader">Azure AI Immersive Reader</option>
+                        <option value="language-service">Azure AI Language</option>
+                        <option value="metrics-advisor">Azure AI Metrics Advisor</option>
+                        <option value="cognitive-services\personalizer">Azure AI Personalizer</option>
+                        <option value="search">Azure AI Search</option>
+                        <option value="cognitive-services">Azure AI services</option>
+                        <option value="speech-services">Azure AI Speech</option>
+                        <option value="translator-text-api">Azure AI Translator</option>
+                        <option value="video-indexer">Azure AI Video Indexer</option>
+                        <option value="computer-vision">Azure AI Vision</option>
+                        <option value="analysis-services">Azure Analysis Services</option>
+                        <option value="azure-api-for-fhir-gen1">Azure API for FHIR</option>
+                        <option value="load-testing">Azure App Testing</option>
+                        <option value="azure-arc">Azure Arc</option>
+                        <option value="azure-arc-data-services">Azure Arc enabled data services</option>
+                        <option value="azure-arc-kubernetes">Azure Arc enabled Kubernetes</option>
+                        <option value="azure-arc-servers">Azure Arc enabled servers</option>
+                        <option value="system-center-virtual-machine-manager">Azure Arc enabled System Center Virtual Machine Manager</option>
+                        <option value="azure-arc-vmware-vsphere">Azure Arc enabled VMware vSphere</option>
+                        <option value="azure-arc-site-manager">Azure Arc site manager</option>
+                        <option value="azure-devops\artifacts">Azure Artifacts</option>
+                        <option value="azure-automanage">Azure Automanage</option>
+                        <option value="backup">Azure Backup</option>
+                        <option value="azure-bastion">Azure Bastion</option>
+                        <option value="blueprints">Azure Blueprints</option>
+                        <option value="azure-devops\boards">Azure Boards</option>
+                        <option value="redis-cache">Azure Cache for Redis</option>
+                        <option value="center-sap-solutions">Azure Center for SAP solutions</option>
+                        <option value="chaos-studio">Azure Chaos Studio</option>
+                        <option value="communication-services">Azure Communication Services</option>
+                        <option value="communications-gateway">Azure Communications Gateway</option>
+                        <option value="azure-compute-fleet">Azure Compute Fleet</option>
+                        <option value="confidential-ledger">Azure confidential ledger</option>
+                        <option value="container-apps">Azure Container Apps</option>
+                        <option value="container-instances">Azure Container Instances</option>
+                        <option value="container-registry">Azure Container Registry</option>
+                        <option value="container-service-v2">Azure Container Service</option>
+                        <option value="container-storage">Azure Container Storage</option>
+                        <option value="cosmos-db">Azure Cosmos DB</option>
+                        <option value="data-explorer">Azure Data Explorer</option>
+                        <option value="data-factory">Azure Data Factory</option>
+                        <option value="data-lake-store">Azure Data Lake Storage Gen1</option>
+                        <option value="energy-data-services">Azure Data Manager for Energy</option>
+                        <option value="data-share">Azure Data Share</option>
+                        <option value="mariadb">Azure Database for MariaDB</option>
+                        <option value="mysql">Azure Database for MySQL</option>
+                        <option value="mysql-flexible-server">Azure Database for MySQL flexible servers</option>
+                        <option value="postgresql">Azure Database for PostgreSQL</option>
+                        <option value="postgresql-flexible-server">Azure Database for PostgreSQL flexible servers</option>
+                        <option value="database-migration-sql-migration-extension">Azure Database Migration Service</option>
+                        <option value="database-migration">Azure Database Migration Service (classic)</option>
+                        <option value="databricks">Azure Databricks</option>
+                        <option value="ddos-protection">Azure DDoS Protection</option>
+                        <option value="virtual-machines\dedicated-host">Azure Dedicated Host</option>
+                        <option value="azure-dedicated-hsm">Azure Dedicated HSM</option>
+                        <option value="deployment-environments">Azure Deployment Environments</option>
+                        <option value="azure-dev-spaces">Azure Dev Spaces</option>
+                        <option value="azure-device-registry">Azure Device Registry</option>
+                        <option value="azure-devops">Azure DevOps</option>
+                        <option value="devtest-lab">Azure DevTest Labs</option>
+                        <option value="digital-twins">Azure Digital Twins</option>
+                        <option value="dns">Azure DNS</option>
+                        <option value="azure-dns-private-zones">Azure DNS Private Zones</option>
+                        <option value="azure-enclave">Azure Enclave</option>
+                        <option value="expressroute">Azure ExpressRoute</option>
+                        <option value="file-sync">Azure File Sync</option>
+                        <option value="azure-firewall">Azure Firewall</option>
+                        <option value="firewall-manager">Azure Firewall Manager</option>
+                        <option value="fluid-relay">Azure Fluid Relay</option>
+                        <option value="frontdoor-standard-premium">Azure Front Door</option>
+                        <option value="functions">Azure Functions</option>
+                        <option value="health-data-services">Azure Health Data Services</option>
+                        <option value="hpc-cache">Azure HPC Cache</option>
+                        <option value="information-protection">Azure Information Protection</option>
+                        <option value="internet-analyzer">Azure Internet Analyzer</option>
+                        <option value="iot-central">Azure IoT Central</option>
+                        <option value="iot-edge">Azure IoT Edge</option>
+                        <option value="iot-hub">Azure IoT Hub</option>
+                        <option value="key-vault-managed-hsm">Azure Key Vault Managed HSM</option>
+                        <option value="kubernetes-service">Azure Kubernetes Service (AKS)</option>
+                        <option value="aks-hci">Azure Kubernetes Service on Azure Stack HCI</option>
+                        <option value="lab-services">Azure Lab Services</option>
+                        <option value="sap-hana-large">Azure Large Instances</option>
+                        <option value="azure-lighthouse">Azure Lighthouse</option>
+                        <option value="managed-applications">Azure Managed Applications</option>
+                        <option value="managed-grafana">Azure Managed Grafana</option>
+                        <option value="managed-instance-apache-cassandra">Azure Managed Instance for Apache Cassandra</option>
+                        <option value="managed-lustre">Azure Managed Lustre</option>
+                        <option value="azure-maps">Azure Maps</option>
+                        <option value="azure-migrate">Azure Migrate</option>
+                        <option value="azure-mobile-app">Azure mobile app</option>
+                        <option value="monitor">Azure Monitor</option>
+                        <option value="azure-monitor-health-models">Azure Monitor Health Models</option>
+                        <option value="virtual-network-nat">Azure NAT Gateway</option>
+                        <option value="netapp">Azure NetApp Files</option>
+                        <option value="azure-network-function-manager">Azure Network Function Manager</option>
+                        <option value="open-datasets">Azure Open Datasets</option>
+                        <option value="openai-service">Azure OpenAI Service</option>
+                        <option value="operator-insights">Azure Operator Insights</option>
+                        <option value="orbital">Azure Orbital Ground Station</option>
+                        <option value="azure-peering">Azure Peering Service</option>
+                        <option value="azure-devops\pipelines">Azure Pipelines</option>
+                        <option value="azure-policy">Azure Policy</option>
+                        <option value="private-5g-core">Azure Private 5G Core</option>
+                        <option value="private-link">Azure Private Link</option>
+                        <option value="programmable-connectivity">Azure Programmable Connectivity</option>
+                        <option value="quantum">Azure Quantum</option>
+                        <option value="openshift">Azure Red Hat OpenShift</option>
+                        <option value="azure-devops\repos">Azure Repos</option>
+                        <option value="resource-graph">Azure Resource Graph</option>
+                        <option value="azure-resource-manager">Azure Resource Manager</option>
+                        <option value="resource-mover">Azure Resource Mover</option>
+                        <option value="route-server">Azure Route Server</option>
+                        <option value="service-fabric">Azure Service Fabric</option>
+                        <option value="service-health">Azure Service Health</option>
+                        <option value="signalr-service">Azure SignalR Service</option>
+                        <option value="site-recovery">Azure Site Recovery</option>
+                        <option value="azure-sphere">Azure Sphere</option>
+                        <option value="spring-apps">Azure Spring Apps</option>
+                        <option value="azure-sql">Azure SQL</option>
+                        <option value="azure-sql-database">Azure SQL Database</option>
+                        <option value="azure-sql\managed-instance">Azure SQL Managed Instance</option>
+                        <option value="azure-stack">Azure Stack</option>
+                        <option value="azure-stack-edge">Azure Stack Edge</option>
+                        <option value="hci">Azure Stack HCI</option>
+                        <option value="azure-storage-discovery">Azure Storage Discovery</option>
+                        <option value="stream-analytics">Azure Stream Analytics</option>
+                        <option value="synapse-analytics">Azure Synapse Analytics</option>
+                        <option value="azure-devops\test-plans">Azure Test Plans</option>
+                        <option value="time-series-insights">Azure Time Series Insights</option>
+                        <option value="update-management-center">Azure Update Manager</option>
+                        <option value="video-analyzer">Azure Video Analyzer</option>
+                        <option value="virtual-desktop">Azure Virtual Desktop</option>
+                        <option value="virtual-network-manager">Azure Virtual Network Manager</option>
+                        <option value="image-builder">Azure VM Image Builder</option>
+                        <option value="azure-vmware">Azure VMware Solution</option>
+                        <option value="azure-vmware-cloudsimple">Azure VMware Solution by CloudSimple</option>
+                        <option value="web-pubsub">Azure Web PubSub</option>
+                        <option value="azure-microsoft-com">azure.microsoft.com</option>
+                        <option value="baremetal-infrastructure">BareMetal Infrastructure</option>
+                        <option value="batch">Batch</option>
+                        <option value="autosuggest-api">Bing Autosuggest</option>
+                        <option value="cognitive-services\bing-custom-search">Bing Custom Search</option>
+                        <option value="cognitive-services\bing-entity-search-api">Bing Entity Search</option>
+                        <option value="cognitive-services\bing-image-search-api">Bing Image Search</option>
+                        <option value="cognitive-services\bing-news-search-api">Bing News Search</option>
+                        <option value="speech-api">Bing Speech</option>
+                        <option value="spellcheck-api">Bing Spell Check</option>
+                        <option value="cognitive-services\bing-video-search-api">Bing Video Search</option>
+                        <option value="cognitive-services\bing-web-search-api">Bing Web Search</option>
+                        <option value="azure-carbon-optimization">Carbon optimization</option>
+                        <option value="change-analysis">Change Analysis</option>
+                        <option value="cloud-services">Cloud Services</option>
+                        <option value="cloud-shell">Cloud Shell</option>
+                        <option value="cdn">Content Delivery Network</option>
+                        <option value="content-moderator">Content Moderator</option>
+                        <option value="content-understanding">Content Understanding</option>
+                        <option value="data-catalog">Data Catalog</option>
+                        <option value="data-factory-v1">Data Factory V1</option>
+                        <option value="data-lake-analytics">Data Lake Analytics</option>
+                        <option value="defender-easm">Defender External Attack Surface Management</option>
+                        <option value="iot-hub-device-update">Device Update for IoT Hub</option>
+                        <option value="diagnostic-logs">Diagnostic Logs</option>
+                        <option value="media-services\encoding">Encoding</option>
+                        <option value="active-directory\enterprise-state-roaming">Enterprise State Roaming</option>
+                        <option value="event-grid">Event Grid</option>
+                        <option value="event-hubs">Event Hubs</option>
+                        <option value="expressroute\circuits">ExpressRoute Circuits</option>
+                        <option value="expressroute\gateways">ExpressRoute Gateways</option>
+                        <option value="face-api">Face API</option>
+                        <option value="foundry-agent-service">Foundry Agent Service</option>
+                        <option value="foundry-models">Foundry Models</option>
+                        <option value="global-secure-access">Global Secure Access</option>
+                        <option value="hdinsight">HDInsight</option>
+                        <option value="health-bot">Health Bot</option>
+                        <option value="cognitive-services\ink-recognizer">Ink Recognizer</option>
+                        <option value="iot-hub\device-provisioning-service">IoT Hub Device Provisioning Service</option>
+                        <option value="key-vault">Key Vault</option>
+                        <option value="language-understanding-intelligent-services">Language Understanding (LUIS)</option>
+                        <option value="media-services\on-demand-streaming">Live and On-Demand Streaming</option>
+                        <option value="load-balancer">Load Balancer</option>
+                        <option value="log-analytics">Log Analytics</option>
+                        <option value="logic-apps">Logic Apps</option>
+                        <option value="machine-learning-service">Machine Learning Service</option>
+                        <option value="machine-learning-studio">Machine Learning Studio (classic)</option>
+                        <option value="marketplace">Marketplace</option>
+                        <option value="media-services">Media Services</option>
+                        <option value="metrics">Metrics</option>
+                        <option value="azure-attestation">Microsoft Azure Attestation</option>
+                        <option value="azure-portal">Microsoft Azure portal</option>
+                        <option value="microsoft-copilot-for-security">Microsoft Copilot for Security</option>
+                        <option value="cost-management">Microsoft Cost Management</option>
+                        <option value="defender-for-cloud">Microsoft Defender for Cloud</option>
+                        <option value="azure-defender-for-iot">Microsoft Defender for IoT</option>
+                        <option value="dev-box">Microsoft Dev Box</option>
+                        <option value="active-directory-ds">Microsoft Entra Domain Services</option>
+                        <option value="active-directory">Microsoft Entra ID (formerly Azure AD)</option>
+                        <option value="microsoft-entra-permissions-management">Microsoft Entra Permissions Management</option>
+                        <option value="genomics">Microsoft Genomics</option>
+                        <option value="microsoft-graph">Microsoft Graph</option>
+                        <option value="planetary-computer-pro">Microsoft Planetary Computer Pro</option>
+                        <option value="playwright-testing">Microsoft Playwright Testing</option>
+                        <option value="purview">Microsoft Purview</option>
+                        <option value="azure-sentinel">Microsoft Sentinel</option>
+                        <option value="multi-factor-authentication">Multi-Factor Authentication</option>
+                        <option value="network-access">Network Infrastructure</option>
+                        <option value="network-security-perimeter">network security perimeter</option>
+                        <option value="network-watcher">Network Watcher</option>
+                        <option value="notification-hubs">Notification Hubs</option>
+                        <option value="oracle-database">Oracle AI Database@Azure</option>
+                        <option value="playwright-workspaces">Playwright Workspaces</option>
+                        <option value="power-bi">Power BI</option>
+                        <option value="power-bi-embedded">Power BI Embedded</option>
+                        <option value="cognitive-services\qna-maker">QnA Maker</option>
+                        <option value="remote-rendering">Remote Rendering</option>
+                        <option value="scheduler">Scheduler</option>
+                        <option value="service-bus">Service Bus</option>
+                        <option value="spatial-anchors">Spatial Anchors</option>
+                        <option value="speaker-recognition">Speaker recognition</option>
+                        <option value="virtual-machines\sql-server">SQL Server on Azure Virtual Machines</option>
+                        <option value="sql-server-stretch-database">SQL Server Stretch Database</option>
+                        <option value="app-service\static">Static Web Apps</option>
+                        <option value="storage">Storage Accounts</option>
+                        <option value="storsimple">StorSimple</option>
+                        <option value="traffic-manager">Traffic Manager</option>
+                        <option value="translator-speech-api">Translator Speech</option>
+                        <option value="trusted-signing">Trusted Signing</option>
+                        <option value="universal-print">Universal Print</option>
+                        <option value="virtual-machine-scale-sets">Virtual Machine Scale Sets</option>
+                        <option value="virtual-machines">Virtual Machines</option>
+                        <option value="virtual-network">Virtual Network</option>
+                        <option value="virtual-wan">Virtual WAN</option>
+                        <option value="visual-studio-online">Visual Studio Codespaces</option>
+                        <option value="vpn-gateway">VPN Gateway</option>
+                        <option value="app-service\containers">Web App for Containers</option>
+                        <option value="web-application-firewall">Web Application Firewall</option>
+                        <option value="app-service\web">Web Apps</option>
+                        <option value="app-service\web-linux">Web Apps Linux</option>
+                        <option value="windows-10-iot-core">Windows 10 IoT Core Services</option>
+                </select>
+            </div>
+            <div class="col-lg-4">
+                <p>Region:</p>
+                <select aria-label="Region:" id="wa-dropdown-history-region" name="wa-dropdown-history-region" data-dropdown-event="area-status-history-changed-regiondropdown" data-dropdown-property="CommonRegionDropdownValue">
+                    <option value="all">All</option>
+                    <option value="global">Global</option>
+                        <option value="public-non-regional">Public Non-Regional</option>
+                        <option value="us-central">Central US</option>
+                        <option value="us-east">East US</option>
+                        <option value="us-east-2">East US 2</option>
+                        <option value="us-north-central">North Central US</option>
+                        <option value="us-south-central">South Central US</option>
+                        <option value="us-west">West US</option>
+                        <option value="us-west-2">West US 2</option>
+                        <option value="us-west-3">West US 3</option>
+                        <option value="us-west-central">West Central US</option>
+                        <option value="canada-central">Canada Central</option>
+                        <option value="canada-east">Canada East</option>
+                        <option value="brazil-south">Brazil South</option>
+                        <option value="brazil-southeast">Brazil Southeast</option>
+                        <option value="europe-north">North Europe</option>
+                        <option value="europe-west">West Europe</option>
+                        <option value="france-central">France Central</option>
+                        <option value="france-south">France South</option>
+                        <option value="united-kingdom-south">UK South</option>
+                        <option value="united-kingdom-west">UK West</option>
+                        <option value="switzerland-north">Switzerland North</option>
+                        <option value="switzerland-west">Switzerland West</option>
+                        <option value="norway-east">Norway East</option>
+                        <option value="norway-west">Norway West</option>
+                        <option value="germany-north">Germany North</option>
+                        <option value="germany-west-central">Germany West Central</option>
+                        <option value="sweden-central">Sweden Central</option>
+                        <option value="sweden-south">Sweden South</option>
+                        <option value="poland-central">Poland Central</option>
+                        <option value="asia-pacific-east">East Asia</option>
+                        <option value="asia-pacific-southeast">Southeast Asia</option>
+                        <option value="australia-central">Australia Central</option>
+                        <option value="australia-central-2">Australia Central 2</option>
+                        <option value="australia-east">Australia East</option>
+                        <option value="australia-southeast">Australia Southeast</option>
+                        <option value="central-india">Central India</option>
+                        <option value="jio-india-central">Jio India Central</option>
+                        <option value="jio-india-west">Jio India West</option>
+                        <option value="south-central-india">India South Central</option>
+                        <option value="south-india">South India</option>
+                        <option value="west-india">West India</option>
+                        <option value="japan-east">Japan East</option>
+                        <option value="japan-west">Japan West</option>
+                        <option value="korea-central">Korea Central</option>
+                        <option value="korea-south">Korea South</option>
+                        <option value="china-east">China East</option>
+                        <option value="china-east-2">China East 2</option>
+                        <option value="china-non-regional">China Non-Regional</option>
+                        <option value="china-north">China North</option>
+                        <option value="china-north-2">China North 2</option>
+                        <option value="china-north-3">China North 3</option>
+                        <option value="south-africa-north">South Africa North</option>
+                        <option value="south-africa-west">South Africa West</option>
+                        <option value="uae-central">UAE Central</option>
+                        <option value="uae-north">UAE North</option>
+                        <option value="qatar-central">Qatar Central</option>
+                        <option value="us-dod-central">US DoD Central</option>
+                        <option value="us-dod-east">US DoD East</option>
+                        <option value="usgov-arizona">US Gov Arizona</option>
+                        <option value="usgov-non-regional">US Gov Non-Regional</option>
+                        <option value="usgov-texas">US Gov Texas</option>
+                        <option value="usgov-virginia">US Gov Virginia</option>
+                        <option value="italy-north">Italy North</option>
+                        <option value="israel-central">Israel Central</option>
+                        <option value="spain-central">Spain Central</option>
+                        <option value="mexico-central">Mexico Central</option>
+                        <option value="new-zealand-north">New Zealand North</option>
+                        <option value="indonesia-central">Indonesia Central</option>
+                        <option value="malaysia-west">Malaysia West</option>
+                        <option value="chile-central">Chile Central</option>
+                        <option value="austria-east">Austria East</option>
+                        <option value="belgium-central">Belgium Central</option>
+                        <option value="denmark-east">Denmark East</option>
+                        <option value="taiwan-north">Taiwan North</option>
+                </select>
+            </div>
+
+            <div class="col-lg-4">
+                <p>Date:</p>
+                <select aria-label="Date:" id="wa-dropdown-date" name="wa-dropdown-date" data-dropdown-event="area-status-history-changed-datedropdown" data-dropdown-property="CommonDateRangeDropdownValue">
+                    <option value="recent">Most recent</option>
+                    <option value="20261019">Last 48 hours</option>
+                    <option value="20261014">Last week</option>
+                    <option value="20260921">Last month</option>
+                    <option value="20260723">Last 90 days</option>
+                    <option value="all">All</option>
+                </select>
+            </div>
+        </div>
+    <div id="history-results-container">
+        
+
+
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>September 2026</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            30
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-7Q30-010" aria-expanded="false" aria-controls="incident-history-collapse-7Q30-010">
+                                <span class="hide-text">09/30/2026</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) – Network Connectivity – Gateway service degradation in multiple regions
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: 7Q30-010
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-down" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-up" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-7Q30-010">
+                                    <div class="card-body">
+                                        <p><em>Join either of our upcoming 'Azure Incident Retrospective' livestreams discussing this incident (to hear from our engineering leaders, and to get any questions answered by our experts) or watch a recording of the livestream (available the following week, on YouTube):&nbsp;</em></p><ul><li><em>Option #1 - 18:30 to 19:00 UTC on 22 October 2026 - <a href="https://aka.ms/air/7Q30-010/1" class="wa-link-status">https://aka.ms/air/7Q30-010/1</a></em></li><li><em>Option #2 - 06:30 to 07:00 UTC on 23 October 2026 - <a href="https://aka.ms/air/7Q30-010/2" class="wa-link-status">https://aka.ms/air/7Q30-010/2</a></em></li></ul><p><br></p><p><strong>What happened?&nbsp;</strong></p><p>Between 20:30 UTC on 30 September 2026 and 02:15 UTC on 1 October 2026, customers using several Azure networking services – including Azure ExpressRoute Gateway, Azure Application Gateway, Azure Firewall, Azure Bastion, Azure Virtual WAN, and Azure VPN Gateway – experienced intermittent failures when performing service management operations. In addition, a subset of upgraded Azure ExpressRoute gateways could not retrieve their required configuration from the control plane service, resulting in temporary connectivity loss. Customers using Azure VMware Solution may also have temporarily lost network connectivity to their software-defined datacenter environments.&nbsp;</p><p>The issue affected multiple regions including Australia Central 2, Australia Southeast, Austria East, Belgium Central, Canada East, Central US, Chile Central, Denmark East, East Asia, France Central, Germany North, Germany West Central, India South Central, Indonesia Central, Japan West, Jio India Central, Korea Central, Malaysia West, North Europe, Norway West, South Africa North, South Central US, South India, Southeast Asia, Sweden South, Switzerland North, Taiwan North, UAE North, UK South, West Europe, West US, West US 2, and West US 3.&nbsp;&nbsp;</p><p>The issue began when a platform-triggered gateway update resumed across multiple regions, increasing request volume to the regional gateway control plane service, thereby affecting its ability to process management operations reliably. Impact times varied region by region, as the issue was triggered by a rolling update moving through the regions. We paused this update while applying a configuration change in phases to restore the control plane service. The last wave of customer impact was mitigated at 02:15 UTC on 1 October 2026.&nbsp;&nbsp;</p><p><strong>What went wrong and why?&nbsp;</strong></p><p>Azure regularly applies operating system and security updates to networking gateway services. These updates are designed to roll out gradually across deployment stages and redundant gateway instances, allowing service health to be evaluated before updates proceed. Before this incident, a temporary deployment restriction had paused operating system updates for a group of networking gateways. When this restriction expired, a large number of gateway updates resumed within a short period, generating a surge in gateway restarts and configuration-retrieval requests. At the same time, a previously deployed change had increased the processing time required for configuration operations handled by a shared regional networking control plane service. The combination of increased request volume and longer processing times overwhelmed the control plane, affecting its ability to process requests reliably. As a result, management operations for several Azure networking services failed intermittently. Existing request-throttling and load-protection mechanisms did not sufficiently protect critical processing under these conditions.&nbsp;</p><p>For Azure ExpressRoute Gateway, an additional issue prolonged connectivity impact. Gateway instances restarting during the update process were marked healthy before their configuration and routing state had been fully restored. This allowed updates to proceed to another redundant instance before the first instance was ready. Consequently, some gateways temporarily lost connectivity to connected on-premises networks because neither instance could retrieve the required routing configuration. After approximately 30 minutes of unsuccessful configuration-retrieval attempts, the affected gateways automatically applied their locally stored last known good (LKG) configurations and restored connectivity.&nbsp;</p><p>Automated monitoring detected ExpressRoute connectivity degradation at 20:43 UTC on 30 September 2026, followed by broader control plane degradation at 20:58 UTC. We pursued several recovery approaches in parallel, including pausing further gateway updates at 21:45 UTC, shifting control plane traffic, and attempting to add resources. Although these actions provided temporary relief, they did not fully resolve the issue. Further investigation identified the combination of elevated request volume and increased processing time per operation as the primary contributing factors.&nbsp;</p><p>Once this was understood, we began rolling back the change that had increased control plane processing time, starting at 01:15 UTC on 1 October 2026. The rollback was applied across the affected regions, and customer impact ended at 02:15 UTC.&nbsp;</p><p><strong>How did we respond?&nbsp;</strong></p><ul><li>20:30 UTC on 30 September 2026 – Customer impact began, with intermittent failures affecting management operations across multiple Azure networking services.&nbsp;</li><li>20:43 UTC on 30 September 2026 – ExpressRoute monitoring detected connectivity degradation.&nbsp;</li><li>20:58 UTC on 30 September 2026 – Control plane monitoring detected health failures across additional regions.&nbsp;</li><li>21:12 UTC on 30 September 2026 – Multiple teams were engaged to investigate the issue and coordinate response efforts.&nbsp;</li><li>21:45 UTC on 30 September 2026 – Further gateway operating system updates were paused to prevent additional update activity.&nbsp;</li><li>22:09 UTC on 30 September 2026 – Traffic shifting actions provided temporary relief, but elevated resource utilization returned. Further traffic shifts were stopped.&nbsp;</li><li>22:15 UTC on 30 September 2026 – Attempts to add control plane resources were investigated, and constraints involving dependent platform services were addressed.&nbsp;</li><li>22:36 UTC on 30 September 2026 – Affected ExpressRoute gateways automatically restored connectivity using their last known good configurations.&nbsp;</li><li>23:55 UTC on 30 September 2026 – We identified increased processing time for gateway configuration operations were associated with a previously deployed performance change, so we determined that a rollback would be a relevant mitigation.&nbsp;</li><li>01:15 UTC on 1 October 2026 – The rollback began in an initial region, where the results were validated before proceeding.&nbsp;</li><li>02:15 UTC on 1 October 2026 – The rollback was completed across the affected regions, and customer impact ended.&nbsp;</li></ul><p><strong>How are we making incidents like this less likely or less impactful?&nbsp;</strong></p><ul><li>We have rolled back the change that introduced the performance regression, to de-risk this failure mode immediately. (Completed)&nbsp;</li><li>We are improving how paused operating system updates resume, to ensure they follow staged rollout practices rather than resuming across large numbers of gateways at once. (Estimated completion: October 2026)&nbsp;</li><li>We are strengthening ExpressRoute gateway health checks, to ensure that redundant instances are updated only after the initial instances have fully restored its configuration and routing state. (Estimated completion: March 2027)&nbsp;</li><li>We are addressing platform issues that prevented the control plane service from scaling out successfully during the incident. (Estimated completion: March 2027)&nbsp;</li><li>In the longer term, we are improving throttling and load-shedding mechanisms in the control plane service to help protect critical request processing during unexpected increases in demand. (Estimated completion: June 2027)&nbsp;</li></ul><p><strong>How can customers make Incidents like this less impactful?&nbsp;</strong></p><ul><li>There was nothing that customers could have done to avoid or minimize impact from this specific service incident.&nbsp;</li><li>More generally, consider evaluating the reliability of your applications using guidance from the Azure Well-Architected Framework and its interactive Well-Architected Review: <a href="https://aka.ms/AzPIR/WAF" class="wa-link-status">https://aka.ms/AzPIR/WAF</a></li><li>The impact times above represent the overall incident duration and are not specific to any individual customer. Actual impact varied by service, region, customer, and resource. For guidance on implementing monitoring to understand granular impact: <a href="https://aka.ms/AzPIR/Monitoring" class="wa-link-status">https://aka.ms/AzPIR/Monitoring</a></li><li>Finally, consider ensuring that the right people in your organization are notified about any future service issues by configuring Azure Service Health alerts. These can trigger emails, SMS, push notifications, webhooks, and more: <a href="https://aka.ms/AzPIR/Alerts" class="wa-link-status">https://aka.ms/AzPIR/Alerts</a></li></ul><p><strong>How can we make our incident communications more useful?</strong></p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/7Q30-010" class="wa-link-status">https://aka.ms/AzPIR/7Q30-010</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            29
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-7QL5-Z50" aria-expanded="false" aria-controls="incident-history-collapse-7QL5-Z50">
+                                <span class="hide-text">09/29/2026</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) – Azure OpenAI Service, Foundry Agent Service, Foundry Models, and Azure AI services – Intermittent request failures and latency in Sweden Central
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: 7QL5-Z50
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-7QL5-Z50">
+                                    <div class="card-body">
+                                        <p><em>Join either of our upcoming 'Azure Incident Retrospective' livestreams discussing this incident (to hear from our engineering leaders, and to get any questions answered by our experts) or watch a recording of the livestream (available the following week, on YouTube):</em></p><ul><li><em>Option #1 - 17:30 to 18:00 UTC on 22 October 2026 - <a href="https://aka.ms/air/7QL5-Z50/1" class="wa-link-status">https://aka.ms/air/7QL5-Z50/1</a></em></li><li><em>Option #2 - 05:30 to 06:00 UTC on 23 October 2026 - <a href="https://aka.ms/air/7QL5-Z50/2" class="wa-link-status">https://aka.ms/air/7QL5-Z50/2</a></em></li></ul><p><br></p><p><strong>What happened?</strong></p><p>Between 10:03 UTC and 15:58 UTC on 29 September 2026, a platform issue resulted in impact to Azure OpenAI Service, Foundry Agent Service, Foundry Models, and Azure AI services in the Sweden Central region. Impacted customers experienced intermittent request failures, increased latency, and/or HTTP 500 and 503 errors when submitting requests to affected models and data plane APIs hosted in this region.&nbsp;</p><p>Note that the Azure OpenAI Service processes customer requests through model engines deployed across multiple Azure regions and supported by traffic routing systems. Depending on the selected deployment model (Global, Data Zone, or Regional), note that requests may be routed across multiple Azure regions within defined geographic boundaries to support availability and resilience, while customer data remains stored at rest in the selected Azure region. Learn more at: <a href="https://azure.microsoft.com/blog/enterprise-trust-in-azure-openai-service-strengthened-with-data-zones/" class="wa-link-status">https://azure.microsoft.com/blog/enterprise-trust-in-azure-openai-service-strengthened-with-data-zones/</a></p><p><strong>What went wrong and why?</strong></p><p>When requests are made to Azure OpenAI Service and related Azure AI services in a region, the service relies on a regional backend service to retrieve resource metadata and configuration information for the account making the request. This backend service reads from a caching layer and a database layer. Other internal services that call this backend service maintain their own caches of this information, to reduce load on the backend service.</p><p>At approximately 09:38 UTC on 29 September 2026, a planned deployment of one of these internal services began in Sweden Central. As part of this deployment, the internal service's caches were cleared and - because the deployment coincided with peak traffic hours in the region - this produced a large number of cache misses, where requests were made for information no longer stored in the cache. Two other defects in how that service read from its caches amplified this effect, causing most lookups to bypass the cache and fall back to calling the backend service directly. By approximately 10:00 UTC, traffic to the backend service had increased to approximately 20 times its normal level.</p><p>This surge drove a sharp increase in requests from the backend service to its caching layer, which reached full utilization, thereby increasing latency. This higher latency caused connections to be held open longer, while client retries added further requests. As a result, the network connection capacity on the infrastructure node instances was exhausted, so new outbound connections to both the caching layer and the database layer could not be established.</p><p>While this traffic surge was a trigger, the extended duration of the incident was primarily caused by how the backend service determined whether its instances were healthy. Automated health checks for each instance depended on successfully connecting to the database layer. When instances could not establish new outbound connections, they failed this health check and were automatically restarted by design. As more instances entered this restart loop, fewer healthy instances remained to serve requests, and retries from dependent services further increased the load on the remaining instances.</p><p>Multiple factors also extended the duration of the incident. Existing network metrics and diagnostic metrics did not effectively indicate the connection exhaustion issue in this scenario. It took an extended amount of time to correlate the failures with what was causing this specific connection exhaustion scenario. As a result, different mitigation attempts - including scaling the number of service instances, and increasing compute and memory resources - could not resolve the incident, until the health check issue was identified and mitigated.</p><p><strong>How did we respond?</strong></p><ul><li>09:38 UTC on 29 September 2026 – A deployment of an internal service in Sweden Central began, which cleared its caches.</li><li>10:00 UTC on 29 September 2026 – Traffic to the backend service began increasing sharply.</li><li>10:03 UTC on 29 September 2026 – Customer impact began because of service instance instability.</li><li>10:17 UTC on 29 September 2026 – Service monitoring detected elevated failure rates for Azure OpenAI Service requests in the region, and alerted our engineering teams.</li><li>10:28 UTC on 29 September 2026 – Engineers were engaged and investigating the issue.</li><li>11:21 UTC on 29 September 2026 – Additional engineering teams were engaged, ongoing deployments were reviewed for the Azure OpenAI Service in Sweden Central to determine whether any recent change correlated with the issue.</li><li>11:30 UTC on 29 September 2026 – We identified that infrastructure node service instances were experiencing timeouts when attempting to connect to the backend service's caching and database layers.</li><li>13:55 UTC on 29 September 2026 – We confirmed that the database layer was healthy. We made attempts to mitigate through different scaling adjustments of service instances to lower the number of outbound connections, which did not result in significant improvements.</li><li>15:00 UTC on 29 September 2026 – We further increased compute resources for the backend service and increased its resource limits. In parallel, we investigated infrastructure health for affected service instances and restarted service instances.</li><li>15:40 UTC on 29 September 2026 – We reconfigured the automated health check to no longer depend on remote connectivity, which stopped the restart loop. Service availability began to recover.</li><li>15:58 UTC on 29 September 2026 – Service availability had recovered, and customer impact was mitigated.</li><li>16:30 UTC on 29 September 2026 – We identified the source of the increased traffic and correlated it with the internal service deployment, while monitoring confirmed that services were stable.</li></ul><p><strong>How are we making incidents like this less likely or less impactful?</strong></p><ul><li>We have reconfigured the automated health check for the backend service so that it no longer depends on connectivity to its database layer, preventing instances from being restarted unnecessarily during dependency issues. (Completed)</li><li>We have added monitoring and alerting on the load and latency of the caching layer used by the backend service. (Completed)</li><li>We have updated our troubleshooting and procedural guidance for such connection exhaustion scenarios, to assist on-call engineers in mitigating similar scenarios. (Completed)</li><li>We are adding additional throttling and rate limiting for the backend service, to protect it from sudden increases in traffic. (Estimated completion: October 2026)</li><li>We are increasing the resource capacity of the caching layer used by the backend service across regions. (Estimated completion: October 2026)</li><li>We are improving diagnostic metrics and automated detection, to help identify such issues more quickly. (Estimated completion: October 2026)</li><li>In the longer term, we are partitioning the caching layer used by the backend service to increase its throughput. (Estimated completion: December 2026)</li></ul><p><strong>How can customers make incidents like this less impactful?</strong></p><ul><li>Consider reviewing our guidance and best practices related to Business Continuity and Disaster Recovery (BCDR) scenarios for Microsoft Foundry: <a href="https://learn.microsoft.com/azure/foundry/how-to/high-availability-resiliency" class="wa-link-status">https://learn.microsoft.com/azure/foundry/how-to/high-availability-resiliency</a></li><li>Consider reviewing and implementing our best practices surrounding retry patterns, especially with exponential backoff, to improve workload resiliency during intermittent issues: <a href="https://learn.microsoft.com/azure/architecture/patterns/retry" class="wa-link-status">https://learn.microsoft.com/azure/architecture/patterns/retry</a></li><li>More generally, consider evaluating the reliability of your applications using guidance from the Azure Well-Architected Framework and its interactive Well-Architected Review: <a href="https://aka.ms/AzPIR/WAF" class="wa-link-status">https://aka.ms/AzPIR/WAF</a></li><li>The impact times above represent the full incident duration, so are not specific to any individual customer. Actual impact to service availability varied between customers and resources – for guidance on implementing monitoring to understand granular impact: <a href="https://aka.ms/AzPIR/Monitoring" class="wa-link-status">https://aka.ms/AzPIR/Monitoring</a></li><li>Finally, consider ensuring that the right people in your organization will be notified about any future service issues – by configuring Azure Service Health alerts. These can trigger emails, SMS, push notifications, webhooks, and more: <a href="https://aka.ms/AzPIR/Alerts" class="wa-link-status">https://aka.ms/AzPIR/Alerts</a></li></ul><p><strong>How can we make our incident communications more useful?</strong></p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/7QL5-Z50" class="wa-link-status">https://aka.ms/AzPIR/7QL5-Z50</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    <input type="hidden" class="wa-historyResult-count" value="2" />
+
+    </div>
+
+    <div class="row col pagination-container">
+        <nav aria-label="Pagination navigation">
+            <div class="wa-pagination" data-control="pagination" data-prev="Previous page" data-next="Next page" data-gotopage="Go to page" data-currentpage="Current page, page"></div>
+        </nav>
+    </div>
+
+    <div id="history-error-message" class="hide row col margin-top-36" aria-hidden="true">
+        <h5>Sorry for the inconvenience, but something went wrong.  Please try refreshing the page.</h5>
+    </div>
+</section>
+
+
+
+
+    </main>
+
+<script type="text/javascript">/* global jQuery */
+
+(function ($, document) {
+    'use strict';
+
+    $(function () {
+        var $cultures = $('footer #dropdown-languages select');
+
+        /**
+         * Redirect the current page with selected lang-locale
+         */
+        function updateCulture() {
+            var locale = '/' + $(this).val() + '/';
+            var pathname = document.location.pathname;
+            if (pathname.startsWith('/status')) {
+                document.location.replace(locale + pathname.substring(1));
+            } else {
+                document.location = document.location.pathname.replace(/^\/[a-z]{2}-[a-z]{2}\//, locale); // eslint-disable-line
+            }
+        }
+
+        $cultures.on('change', updateCulture);
+    });
+})(jQuery, window.document);
+</script>
+<footer class="section-footer" data-tag-area="footer" data-tag-group="footer">
+
+<div class="row footer-content">
+    <div class="col-md-2">
+        <div class="footer-hello">Hello from Seattle.</div>
+    </div>
+    <div class="col-md-2">
+        <div id="dropdown-languages">
+            <select title="Language" aria-label="Language" data-dropdown-event="global-footer-dropdownmenu-changed-language" data-dropdown-property="CommonLanguageDropdownValue">
+                        <option value="en-us" selected="selected">English (US)</option>
+                        <option value="cs-cz">Čeština</option>
+                        <option value="da-dk">Dansk</option>
+                        <option value="de-de">Deutsch</option>
+                        <option value="en-gb">English (UK)</option>
+                        <option value="es-es">Espa&#241;ol</option>
+                        <option value="fr-fr">Fran&#231;ais</option>
+                        <option value="id-id"></option>
+                        <option value="it-it">Italiano</option>
+                        <option value="hu-hu">Magyar</option>
+                        <option value="nb-no">Norsk</option>
+                        <option value="nl-nl">Nederlands</option>
+                        <option value="pl-pl">Polski</option>
+                        <option value="pt-br">Portugu&#234;s (Brasil)</option>
+                        <option value="pt-pt">Portugu&#234;s</option>
+                        <option value="sv-se">Svenska</option>
+                        <option value="tr-tr">T&#252;rk&#231;e</option>
+                        <option value="ru-ru">русский</option>
+                        <option value="ja-jp">日本語</option>
+                        <option value="ko-kr">한국어</option>
+                        <option value="zh-cn">中文(简体)</option>
+                        <option value="zh-tw">中文(繁體)</option>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-5">
+        <div class="col-md-12 row linklist linklist-legal en-us">
+            <div class="col hidelanguageelement"><a href="https://www.microsoft.com/de-de/rechtliche-hinweise/nutzungsbedingungen">Nutzungsbedingungen</a></div>
+            <div class="col hidelanguageelement"><a href="https://www.microsoft.com/de-de/rechtliche-hinweise/impressum">Impressum</a></div>
+            <div class="col hidelanguageelement"><a href="https://go.microsoft.com/fwlink/?linkid=2121428">Accessibilité</a></div>
+            <div class="col hidelanguageelement"><a href="https://www.microsoft.com/it-it/accessibility/declarations">Accessibilità</a></div>
+            <div class="col"><a href="https://feedback.azure.com/forums/919477-azure-service-health">Feedback</a></div>
+            <div class="col"><a href="https://www.microsoft.com/en-us/legal/intellectualproperty/Trademarks/">Trademarks</a></div>
+            <div class="col"><a href="https://go.microsoft.com/fwlink/?LinkId=248681&clcid=0x409"><span class="privacy-link">Privacy &amp; Cookies</span></a></div>
+            <div class="col"><a href="https://www.microsoft.com/en-us/legal/intellectualproperty/copyright/default">Terms of use</a></div>
+            <div class="col"><a href="https://go.microsoft.com/fwlink/?linkid=2259814">Consumer Health Privacy</a></div>
+        </div>
+    </div>
+    <div class="col-md-1"></div>
+    <div class="col-md-2">
+        <div class="footer-copyright padding-left-right-15-impt">
+            <a href="https://www.microsoft.com" aria-label="Microsoft logo" class="logo-microsoft"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-microsoft" viewBox="0 0 244.052 47.146">
+    <path d="M48.019,4.991v43.2h-7.5V14.33H40.4L26.99,48.191H22.02L8.283,14.33h-.09V48.191H1.263V4.991H12.018L24.43,37.015h.18l13.1-32.024Zm6.273,3.284A3.969,3.969,0,0,1,55.6,5.247a4.42,4.42,0,0,1,3.118-1.22,4.359,4.359,0,0,1,3.193,1.25,4.065,4.065,0,0,1,1.266,3,3.909,3.909,0,0,1-1.3,2.982,4.474,4.474,0,0,1-3.164,1.205,4.387,4.387,0,0,1-3.148-1.22A3.944,3.944,0,0,1,54.291,8.275Zm8.043,8.947V48.191h-7.29V17.222ZM84.448,42.889a10.068,10.068,0,0,0,3.584-.753,15.074,15.074,0,0,0,3.615-1.988v6.778a14.6,14.6,0,0,1-3.962,1.506,21.584,21.584,0,0,1-4.865.512A14.733,14.733,0,0,1,67.426,33.58a17.661,17.661,0,0,1,4.369-12.307q4.368-4.835,12.381-4.835a16.926,16.926,0,0,1,4.142.527,13.835,13.835,0,0,1,3.328,1.22v6.989A14.909,14.909,0,0,0,88.2,23.262a9.957,9.957,0,0,0-3.6-.678,9.137,9.137,0,0,0-6.959,2.8,10.548,10.548,0,0,0-2.651,7.561,10.065,10.065,0,0,0,2.546,7.321A9.191,9.191,0,0,0,84.448,42.889ZM112.4,16.71a9.239,9.239,0,0,1,1.567.12,6.544,6.544,0,0,1,1.175.3v7.38a6.363,6.363,0,0,0-1.672-.8,8.282,8.282,0,0,0-2.666-.376,5.659,5.659,0,0,0-4.534,2.259q-1.852,2.259-1.853,6.959V48.191H97.13V17.222h7.291V22.1h.12a8.547,8.547,0,0,1,3.013-3.962A8.173,8.173,0,0,1,112.4,16.71Zm3.136,16.448q0-7.682,4.338-12.171t12.05-4.489q7.26,0,11.343,4.323T147.352,32.5q0,7.532-4.338,11.99T131.2,48.944q-7.2,0-11.432-4.232T115.54,33.158Zm7.592-.241q0,4.851,2.2,7.411a7.843,7.843,0,0,0,6.3,2.56,7.341,7.341,0,0,0,6.055-2.56q2.079-2.561,2.079-7.592,0-5-2.154-7.547a7.48,7.48,0,0,0-6.04-2.545,7.638,7.638,0,0,0-6.221,2.666Q123.131,27.976,123.132,32.917ZM158.2,25.356a3.124,3.124,0,0,0,.994,2.455,17.011,17.011,0,0,0,4.4,2.244,14.908,14.908,0,0,1,6.13,3.932,8.152,8.152,0,0,1,1.762,5.287,8.5,8.5,0,0,1-3.359,7.019q-3.359,2.652-9.083,2.651a21.86,21.86,0,0,1-4.263-.467,18.991,18.991,0,0,1-3.962-1.19v-7.17a17.961,17.961,0,0,0,4.278,2.2,12.533,12.533,0,0,0,4.157.814,7.407,7.407,0,0,0,3.646-.693,2.477,2.477,0,0,0,1.174-2.32,3.221,3.221,0,0,0-1.22-2.546,18.084,18.084,0,0,0-4.625-2.4,14.284,14.284,0,0,1-5.724-3.8,8.314,8.314,0,0,1-1.687-5.363,8.474,8.474,0,0,1,3.329-6.884,13.283,13.283,0,0,1,8.631-2.7,20.89,20.89,0,0,1,3.645.361,16.121,16.121,0,0,1,3.374.934v6.929a15.571,15.571,0,0,0-3.374-1.657,11.257,11.257,0,0,0-3.826-.693,5.577,5.577,0,0,0-3.239.813A2.579,2.579,0,0,0,158.2,25.356Zm16.417,7.8q0-7.682,4.338-12.171T191,16.5q7.26,0,11.343,4.323T206.427,32.5q0,7.532-4.338,11.99t-11.81,4.458q-7.2,0-11.432-4.232T174.614,33.158Zm7.592-.241q0,4.851,2.2,7.411a7.843,7.843,0,0,0,6.3,2.56,7.341,7.341,0,0,0,6.055-2.56q2.079-2.561,2.079-7.592,0-5-2.154-7.547a7.48,7.48,0,0,0-6.04-2.545,7.638,7.638,0,0,0-6.221,2.666Q182.206,27.976,182.206,32.917Zm48.407-9.731H219.755v25h-7.38v-25h-5.182V17.222h5.182V12.914a10.716,10.716,0,0,1,3.178-8A11.146,11.146,0,0,1,223.7,1.8a18.088,18.088,0,0,1,2.35.136,9.322,9.322,0,0,1,1.808.406v6.3a7.546,7.546,0,0,0-1.266-.512,6.581,6.581,0,0,0-2.078-.3,4.4,4.4,0,0,0-3.525,1.431,6.316,6.316,0,0,0-1.235,4.232v3.736h10.858v-6.96l7.321-2.229v9.189h7.381v5.965h-7.381v14.49a6.108,6.108,0,0,0,1.039,4.037,4.148,4.148,0,0,0,3.269,1.175,4.873,4.873,0,0,0,1.522-.3,7.142,7.142,0,0,0,1.552-.723V47.89a8.575,8.575,0,0,1-2.3.723,15.726,15.726,0,0,1-3.178.331q-4.61,0-6.914-2.455t-2.3-7.4Z" transform="translate(-1.263 -1.797)" fill="#fff" />
+</symbol>
+</defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-microsoft"></use>
+                            </svg></a>
+            <span>&copy; 2026 Microsoft</span>
+        </div>
+    </div>
+</div>
+</footer>
+
+    
+    
+    <script type="text/javascript">(function ($, global) {
+    "use strict";
+
+    global.Core = {};
+
+})(jQuery, window);</script>
+    <script type="text/javascript">(function ($, global) {
+    "use strict";
+
+    global.Acom = global.Acom || {};
+
+})(jQuery, window);
+</script>
+    <script type="text/javascript">(function ($, Acom) {
+    "use strict";
+
+    Acom.Util = {};
+
+})(jQuery, Acom);</script>
+    <script type="text/javascript">/* global jQuery */
+
+/** @requires wacom.js */
+/**
+ * Interface to the endpoint to render razor files
+ *
+ * @class Acom.Util.Render
+ */
+Acom.Util.Render = (function ($) { // eslint-disable-line
+
+    'use strict';
+
+    var renderUrlGalleryVideosIndexResults = '/videoapi/index/',
+        renderUrlBlogPostsItemsResults = '/blogapi/',
+        renderUrlVideoThumbnail = '/en-us/videoapi/videothumbnail/',
+        renderUrlSiteSearchResults = '/searchapi/',
+        renderUrlAzureSiteSearchResults = '/azuresearchapi/',
+        renderUrlAzureFridaySearchResults = '/search/azure-friday/',
+        renderUrlStatushistoryResults = '/statushistoryapi/',
+        //renderUrlStatushistoryResults = 'status/HistoryResults/',
+        renderEventsSearchResults = '/community/eventsresults/',
+        renderMyEstimatesResults = '/pricing/calculator/channel/myestimates/list/',
+
+        CaseStudiesApi = '/casestudiesapi/',
+
+        DocTemplatesApi = '/resources/templatesapi/',
+
+        VideoEventApi = '/campaigns/videoevent/searchapi/',
+
+        SamplesApi = '/resources/samples/samplesapi/',
+
+        IoTSolutionsApi = '/develop/iotsolutionsapi/',
+
+        culture = 'en-us',
+
+        /**
+         * Helper for ajax call
+         * @returns the promise
+         */
+
+        renderAjaxGet = function (renderUrl, renderData) {
+            return $.ajax({
+                url: '/' + culture + renderUrl,
+                type: 'GET',
+                dataType: 'html',
+                data: renderData
+            });
+        },
+
+        renderJson = function (renderUrl, renderData) {
+            return $.ajax({
+                url: '/' + culture + renderUrl,
+                type: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                data: JSON.stringify(renderData)
+            });
+        };
+
+    return {
+        GalleryVideosIndexResults: function (service, series, pageNumber, sort, tag, success, error) {
+            $.ajax({
+                url: '/' + culture + renderUrlGalleryVideosIndexResults,
+                type: 'GET',
+                dataType: 'html',
+                data: {
+                    service: service,
+                    series: series,
+                    pageNumber: pageNumber,
+                    sort: sort,
+                    tag: tag
+                },
+                success: success,
+                error: error
+            });
+        },
+        BlogPostsItemsResults: function (pageNumber, endpointAction, slug, success, error) {
+            var data = {
+                pageNumber: pageNumber
+            };
+
+            if (slug) {
+                data.slug = slug;
+            }
+
+            $.ajax({
+                url: '/' + culture + renderUrlBlogPostsItemsResults + endpointAction + '/',
+                type: 'GET',
+                dataType: 'html',
+                data: data,
+                success: success,
+                error: error
+            });
+        },
+        VideoThumbnail: function (videoSlug) {
+            return $.ajax({
+                url: renderUrlVideoThumbnail,
+                type: 'GET',
+                data: {
+                    VideoSlug: videoSlug
+                },
+                dataType: 'html'
+            });
+        },
+        SiteSearchResults: function (searchTerm, pageNumber, isAzure, isMsdn, isForums, success, error) {
+            $.ajax({
+                url: '/' + culture + renderUrlSiteSearchResults,
+                type: 'GET',
+                dataType: 'html',
+                data: {
+                    query: searchTerm,
+                    page: pageNumber,
+                    azure: isAzure,
+                    msdn: isMsdn,
+                    forums: isForums
+                },
+                success: success,
+                error: error
+            });
+        },
+        AzureSiteSearchResults: function (searchTerm, pageNumber, isAzure, isMsdn, isForums, success, error) {
+            $.ajax({
+                url: '/' + culture + renderUrlAzureSiteSearchResults,
+                type: 'GET',
+                dataType: 'html',
+                data: {
+                    query: searchTerm,
+                    page: pageNumber,
+                    azure: isAzure,
+                    msdn: isMsdn,
+                    forums: isForums
+                },
+                success: success,
+                error: error
+            });
+        },
+        AzureFridaySearchResults: function (searchTerm, services, pageNumber) {
+            return renderJson(renderUrlAzureFridaySearchResults + '?query=' + encodeURIComponent(searchTerm) + '&page=' + pageNumber,
+                {
+                    services: services
+                });
+        },
+        StatusHistoryResults: function (service, region, startDate, pageNumber, success, error) {
+            const newSHDDomain = 'azure.status.microsoft';
+            const shdRefreshFlagName = 'shdrefreshflag';
+            let searchParams = new URLSearchParams(window.location.search);
+            $.ajax({
+                url: '/' + culture + renderUrlStatushistoryResults,
+                type: 'GET',
+                dataType: 'html',
+                data: {
+                    serviceSlug: service,
+                    regionSlug: region,
+                    startDate: startDate,
+                    page: pageNumber,
+                    shdrefreshflag: searchParams.get(shdRefreshFlagName) || window.location.host.endsWith(newSHDDomain)
+                },
+                success: success,
+                error: error
+            });
+        },
+
+        Events: function (type, country, service, showAllLanguages, pageNumber) {
+            var data = {
+                eventType: type,
+                country: country,
+                service: service,
+                showAllLanguages: showAllLanguages,
+                page: pageNumber
+            };
+            return renderAjaxGet(renderEventsSearchResults, data);
+        },
+
+        CaseStudies: function (options) {
+            return renderAjaxGet(CaseStudiesApi, options);
+        },
+
+        DocTemplates: function (options) {
+            return renderAjaxGet(DocTemplatesApi, options);
+        },
+
+        Samples: function (term, sortType, service, platform, pageNumber, showPrivate) {
+            var data = {
+                term: term, sortType: sortType, service: service, platform: platform, pageNumber: pageNumber
+            };
+            if (showPrivate) { return renderAjaxGet(SamplesApi + 'private/', data); }
+            return renderAjaxGet(SamplesApi, data);
+        },
+
+        VideoEvent: function (series, term, tag, pageNumber) {
+            var data = {
+                series: series, term: term, tag: tag, pageNumber: pageNumber
+            };
+            return renderAjaxGet(VideoEventApi, data);
+        },
+
+        IoTSolutions: function (device, platform, language) {
+            var data = { device: device, platform: platform, language: language };
+            return renderAjaxGet(IoTSolutionsApi, data);
+        },
+
+        MyEstimates: function () {
+            var data = {};
+            return renderAjaxGet(renderMyEstimatesResults, data);
+        }
+    };
+})(jQuery);
+</script>
+    <script type="text/javascript">(function ($, Core) {
+    "use strict";
+
+    Core.Controls = {};
+
+})(jQuery, Core);</script>
+    <script type="text/javascript">(function ($) {
+
+    "use strict";
+    /**
+     * Creates Pagination
+     * #fires: "paged.pagination"
+     * #subscribed: "page.pagination"
+     */
+
+    Core.Controls.Pagination = function (element) {
+        var pagination  = $("<ul />"),
+
+            // Kep press values for navigation
+            keyControls = typeof element.data("keyboard") === "undefined" ? false : true,
+            prevKey     = 37,
+            nextKey     = 39,
+
+            // Cached pages
+            hideMax     = typeof element.data("hidemax") === "undefined" ? false : true,
+            currentPage = 1,
+            prevPage    = 1,
+            nextPage    = 1,
+            lastPage    = 1,
+            firstPage   = 1,
+
+            // Total number of items paginate over
+            totalItems  = 0,
+
+            // Page size
+            pageSize    = 10,
+
+            // Minimum number of pages to show before introducing ellipses
+            visiblePages = 7,
+
+            // Top offset value of the DOM element to scroll to
+            // Used for calculating scrollTop position after clicking a pagination link
+            paginationMarkerOffsetTop,
+            headerHeight = $('header.azure-header').outerHeight();
+
+        function startPageSelected (e, page) {
+            updateOptions(page);
+        }
+
+        /**
+         * Updates Pagination to the page selected
+         * @param e the triggering event
+         */
+        function pageSelected (e) {
+            e.preventDefault();
+            var that = $(e.currentTarget),
+                page = that.data("page"),
+                marker = $('#pagination-scroll-marker');
+            paginationMarkerOffsetTop = marker.length !== 0 ? marker.offset().top : 0;
+
+            if (!that.hasClass("disabled")) {
+                updateOptions(page);
+            }
+        }
+
+        /**
+         * Updates Pagination with the arrow keys
+         * @param e the triggering event
+         */
+        function pageKeyNavigation (e) {
+            if (e.keyCode === nextKey) {
+                e.preventDefault();
+                pagination.children().last().find("a").trigger("click");
+            } else if (e.keyCode === prevKey) {
+                e.preventDefault();
+                pagination.children().first().find("a").trigger("click");
+            }
+        }
+
+        /**
+         * Updates the Pagination options
+         * @param current the current page
+         */
+        function updateOptions (current) {
+            totalItems      = (element.data("items") === 0) ? element.data("items") : (element.data("items") || totalItems);
+            pageSize        = element.data("pagesize") || pageSize;
+            current         = parseInt(current, 10) || 1;
+
+            currentPage =  current > Math.ceil(totalItems / pageSize) ? 1 : current;
+
+            prevPage        = currentPage - 1;
+            nextPage        = currentPage + 1;
+            lastPage        = Math.ceil(totalItems / pageSize);
+
+            pagePagination();
+        }
+
+        /**
+         * Determines if the page should be shown or replaced with ellipsis.
+         * @param page The page number to evaluate.
+         */
+        function showPage (page) {
+            if (!!paginationMarkerOffsetTop) {
+                $(window).scrollTop(paginationMarkerOffsetTop - headerHeight);
+            } else {
+                $(window).scrollTop(paginationMarkerOffsetTop);
+            }
+
+            return ((page === currentPage) || (page === prevPage) ||
+                    (page === nextPage) || ((page === lastPage) && !hideMax) ||
+                    (page === firstPage) || (lastPage < visiblePages));
+        }
+
+        function GetUpdatedPageQuerystring (pageNumber) {
+            if (pageNumber === 1) {
+                pageNumber = null;
+            }
+
+            return Core.Util.UpdateQueryString(window.location.search, "page", pageNumber);
+        }
+
+        /**
+         * Draws the markup for the pagination.
+         */
+        function pagePagination () {
+            var omitted = false,
+                useSmartHrefs = element.data("smart-href") !== "off",
+                i,
+                prevUrl = useSmartHrefs ? window.location.pathname + GetUpdatedPageQuerystring(currentPage - 1) : "#",
+                nextUrl = useSmartHrefs ? window.location.pathname + GetUpdatedPageQuerystring(currentPage + 1) : "#";
+
+            element.empty();
+            pagination.empty();
+
+            if (lastPage > 1) {
+                var prevAnchor = $('<a>', {
+                            'data-page': prevPage
+                });
+
+                if (currentPage !== 1) {
+                    prevAnchor.attr('href', prevUrl);
+                    // Modification from original Pagination.js to hide next arrow on first page
+                    pagination.append(
+                        $('<li />').append(
+                            prevAnchor.append('<span class="wa-icon-triangleDarkPrev"></span>')
+                        )
+                    );
+                }
+
+                prevAnchor.attr('aria-label', $("[data-control='pagination']").data('prev'));
+
+                for (i = 1; i <= lastPage; i++) {
+                    if (showPage(i)) {
+
+                        var url = useSmartHrefs ? window.location.pathname + GetUpdatedPageQuerystring(i) : "#",
+                            currentAnchor = $('<a>', {
+                                'data-page': i,
+                                'aria-label': $("[data-control='pagination']").data('gotopage') + ' ' + i
+                            });
+
+                        if (currentPage === i) {
+                            currentAnchor.addClass('disabled');
+                            currentAnchor.attr('aria-label', $("[data-control='pagination']").data('currentpage') + ' ' + i);
+                            currentAnchor.attr('aria-current', 'true');
+                        } else {
+                            currentAnchor.attr('href', url);
+                            currentAnchor.attr('aria-current', 'false');
+                        }
+
+                        pagination.append(
+                            $('<li />').append(
+                                currentAnchor.text(i)
+                        ));
+                        omitted = false;
+                    } else {
+                        if (!omitted) {
+                            pagination.append("<li>&hellip;</li>");
+                            omitted = true;
+                        }
+                    }
+                }
+
+                var nextAnchor = $('<a>', {
+                        'data-page': nextPage,
+                        'class': currentPage === lastPage ? 'disabled' : ''
+                    });
+
+                if (currentPage !== lastPage) {
+                    nextAnchor.attr('href', nextUrl);
+                    // Modification from original Pagination.js to hide next arrow on last page
+                    pagination.append(
+                        $('<li />').append(
+                            nextAnchor.append('<span class="wa-icon-triangleDarkNext"></span>')
+                        )
+                    );
+                }
+                nextAnchor.attr('aria-label', $("[data-control='pagination']").data('next'));
+
+                element.append(pagination);
+                element.show();
+            } else {
+                element.hide();
+            }
+
+            element.data({"pagesize": pageSize, "current": currentPage});
+            element.trigger("paged.pagination", [currentPage]);
+        }
+
+        // Pagination Events
+        element.on("click", "a", pageSelected);
+        element.on("page.pagination", startPageSelected);
+
+        if (keyControls) {
+            $(document).keydown(pageKeyNavigation);
+        }
+
+        updateOptions();
+    };
+
+    $(function () {
+        $("[data-control='pagination']").each(function () {
+            new Core.Controls.Pagination($(this));
+        });
+    });
+})(jQuery);
+</script>
+    <script type="text/javascript">(function ($, Core) {
+    "use strict";
+
+    /**
+     * Utility functions used throughout the site for common tasks.
+     *
+     * @class Core.Util
+     */
+    Core.Util = (function () {
+
+        window.isLocalStorageAvailable = undefined;
+
+        return {
+
+            /**
+             * Encodes html attribute string.
+             *
+             * @param value The string to encode.
+             * @return The encoded string.
+             */
+            EncodeAttribute: function (value) {
+                return Core.Util.EncodeHtml(value).replace(/"/g, "&quot;").replace(/'/g, "&apos;").replace(/`/g, "&#96;");
+            },
+            /**
+             * Encodes html string.
+             *
+             * @param value The string to encode.
+             * @return The encoded string.
+             */
+            EncodeHtml: function (value) {
+                if (!value) {
+                    return "";
+                }
+                return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            },
+
+            /**
+             * Encodes string elements.
+             * https://github.com/janl/mustache.js/blob/master/mustache.js#L53
+             *
+             * @param string Value to be encoded.
+             */
+            EscapeHtml: function (string) {
+                var escapeMap = {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;",
+                    "/": "&#x2F;"
+                };
+
+                return string.replace(/[&<>"'\/]/g, function (element) {
+                    return escapeMap[element];
+                });
+            },
+
+            /**
+             * Sanitizes a string by making lower-cased and trimmed.
+             *
+             * @param string Value to be sanitized.
+             */
+            SanitizeString: function (string) {
+                return $.trim(string).toLowerCase();
+            },
+
+            /**
+             * Appends to the URL, adding to the history if available,
+             * otherwise refreshing the page.
+             *
+             * @param url Updated url.
+             */
+            SoftLoadUrl: function (state, title, url) {
+                var current = window.location.href.split(window.location.host)[1];
+
+                if (current !== url) {
+                    if (window.history && window.history.pushState) {
+                        window.history.pushState(state, title, url);
+                        return true;
+                    } else {
+                        window.location = url;
+                        return false;
+                    }
+                }
+            },
+
+            /**
+             * Accepts pairs key value pairs of query string params
+             * Soft loads them using SoftLoadUrl
+             *
+             * @param kvPairs pairs of query string params
+             */
+            SoftLoadQueryStringPairs: function (kvPairs) {
+                var qs = Core.Util.GetQueryStringFromPairs(kvPairs);
+                if (qs !== window.location.search) {
+                    return Core.Util.SoftLoadUrl(null, null, location.href.split("?")[0] + qs);
+                } else {
+                    return true;
+                }
+            },
+
+            /**
+             * Updates a given query string with a given name and value
+             *
+             * @param qs The whole querystring
+             * @param name the name of the query string parameter
+             * @param value the value of the query string parameter
+             */
+            UpdateQueryString: function (qs, name, value) {
+                if (value && value !== null) {
+                    value = value.toString();
+                    var match = RegExp("[?&]" + name + "=([^&]*)", 'gi').exec(qs);
+                    if (match !== null) {
+                        return qs.replace(new RegExp("([?&]" + name + "=)([^&]*)", 'gi'), "$1" + value.replace(/ /g, "+"));
+                    } else {
+                        var param = (qs.length > 0 ? "&" : "?");
+                        param += name + "=" + value.replace(/ /g, "+");
+                        return qs + param;
+                    }
+                } else {
+                    /* remove parameter if value null */
+                    qs = qs.replace(new RegExp("([?&]" + name + "=)([^&]*)"), "");
+                    if (qs[0] === "&") {
+                        qs = "?" + qs.slice(1);
+                    }
+
+                    return qs;
+                }
+            },
+
+            /**
+             * Extracts a value of a query string pair from the name
+             *
+             * @param name the key of the query string pair
+             */
+            GetParameterByName: function (name) {
+                var match = RegExp("[?&]" + name + "=([^&]*)").exec(window.location.search);
+                return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+            },
+
+            /**
+             * Extracts a query string from given pairs and the current query string
+             *
+             * @param kvPairs The set of query string pairs
+             */
+            GetQueryStringFromPairs: function (kvPairs) {
+                var qs = location.search;
+                $.each(kvPairs, function (k, v) {
+                    qs = Core.Util.UpdateQueryString(qs, k, v);
+                });
+
+                return qs;
+            },
+
+            /**
+             * Sets a cookie
+             *
+             * @param key The cookie key
+             * @param value The cookie value
+             * @param expire The cookie expiration date
+             */
+            SetCookie: function (key, value, expire) {
+                var expiresDefault = 365;
+
+                if (!expire || typeof expire !== "number") {
+                    expire = expiresDefault;
+                }
+
+                if (key && value) {
+                    $.cookie(key, value, { expires: expire, path: "/" });
+                    return true;
+                } else {
+                    return false;
+                }
+            },
+
+            /**
+             * Gets a cookie
+             *
+             * @param key The cookie key
+             */
+            GetCookie: function (key) {
+                return $.cookie(key);
+            },
+
+            /**
+             * Sets a key value pair in localStorage
+             *
+             * @param key The stored key
+             * @param value The stored value
+             */
+            SetStorage: function (key, value) {
+                if (window.localStorage && Core.Util.CheckLocalStorageavailability()) {
+                    try {
+                        localStorage.setItem(key, value);
+                    } catch (err) {
+                        Core.Util.TrackException('Error to set value to local storage, key is "' + key + '", value is :"' + value + '", err is : ' + JSON.stringify(err) + '.');
+                    }
+                }
+            },
+            /**
+             * Checking if local storage can set value.
+             * Should help to catch issue with Safari private mode.
+             */
+            CheckLocalStorageavailability: function () {
+                if (!window.localStorage) {
+                    window.isLocalStorageAvailable = false;
+                } else if (typeof window.isLocalStorageAvailable === 'undefined') {
+                    try {
+                        localStorage.setItem('azure-test', 'test');
+
+                        localStorage.removeItem('azure-test');
+
+                        window.isLocalStorageAvailable = true;
+                    } catch (err) {
+                        window.isLocalStorageAvailable = false;
+                    }
+                }
+
+                return window.isLocalStorageAvailable;
+            },
+
+            /**
+             * Gets a value from localStorage
+             *
+             * @param key The stored key
+             */
+            GetStorage: function (key) {
+                var result = null;
+                if (window.localStorage && Core.Util.CheckLocalStorageavailability()) {
+                    var result = null;
+                    try {
+                        result = localStorage.getItem(key);
+                        return result;
+                    } catch (err) {
+                        Core.Util.TrackException('Error to get value by key from local storage, key is "' + key + '", err is : ' + JSON.stringify(err) + '.');
+                    }
+                }
+
+                return result;
+            },
+
+            /**
+             * Removes a key from localStorage
+             *
+             * @param key The stored key
+             */
+            RemoveStorage: function (key) {
+                if (window.localStorage && Core.Util.CheckLocalStorageavailability()) {
+                    try {
+                        localStorage.removeItem(key);
+
+                        return true;
+                    } catch (ex) {
+                        Core.Util.TrackException('Error to remove key from local storage, key is "' + key + '", err is : ' + JSON.stringify(err) + '.');
+                        return false;
+                    }
+                }
+            },
+
+            /**
+             * Convert a string to lowercase, and replace non-slug characters with dashes
+             */
+            Sluggify: function (string) {
+                return string.replace(/[,. :]/g, '-').toLowerCase();
+            },
+
+            /**
+             * Format a string replacing placeholders such as {0}, {1}, etc. by the provided values
+             */
+            FormatString: function () {
+                var s = arguments[0];
+                for (var i = 0; i < arguments.length - 1; i++) {
+                    var reg = new RegExp("\\{" + i + "\\}", "gm");
+                    s = s.replace(reg, arguments[i + 1]);
+                }
+
+                return s;
+            },
+
+            /**
+             * Track exception using Application Insight
+             */
+
+            TrackException: function (msg) {
+                if (window.appInsights) { // eslint-disable-line
+                    var schemaError = new Error(msg);
+
+                    window.appInsights.trackException(schemaError);
+                }
+            }
+        };
+    })();
+
+})(jQuery, Core);
+</script>
+    <script type="text/javascript">/* global jQuery, Acom */
+
+(function ($, global, Core) {
+    var $body = $('body'),
+        $zoneTabs = $('.zone'),
+        $zonetabsa = $('.zone a'),
+        zoneQueryString = "", //qs2object(global.location.search).zone,
+        $refreshDropdown = $('#refresh'),
+        pagination = $('[data-control="pagination"]'),
+        paginationPageSize = 10,
+        $historyErrorMessage = $('#history-error-message'),
+        historyPageNumber = 1,
+        historyRegion = 'all',
+        historyService = 'all',
+        historyDate = 'recent',
+        historyContainer = $('#history-results-container'),
+        dropdownHistoryRegion = $('#wa-dropdown-history-region'),
+        dropdownHistoryService = $('#wa-dropdown-service'),
+        dropdownHistoryDate = $('#wa-dropdown-date'),
+        timer,
+        statusRegionItem = Core.Util.GetStorage('status-region'),
+        statusRefreshItem = Core.Util.GetStorage('statusRefresh');
+
+    if (global.location.hash === '#history') {
+        global.location = global.location.pathname + 'history/'; // eslint-disable-line no-param-reassign
+    }
+
+    function changeRefresh(time) {
+        Core.Util.SetStorage('statusRefresh', time);
+
+        if ($refreshDropdown.length > 0) {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(function () {
+                window.location = window.location;
+            }, time);
+        }
+    }
+
+    function updateZone(zone) {
+        // Default to the first rendered tab when no zone is supplied, or when a
+        // stored zone from another status view (e.g. "current-impact" on IndexV3)
+        // doesn't exist on this page. This lets both IndexV3 and the
+        // shdRefreshFlag=false view share this single script.
+        var currentZone = zone;
+        if (!currentZone || $('.status-table[data-zone-name="' + currentZone + '"]').length === 0) {
+            currentZone = $zoneTabs.first().data('zone-name');
+        }
+
+        Core.Util.SetStorage('status-region', currentZone);
+
+        // hide and show appropriate tables
+        $('.status-table').css('display', 'none').removeClass('active');
+        $('.status-table[data-zone-name="' + currentZone + '"]').addClass('active').css('display', 'table');
+
+
+        // update the active tab
+        $zoneTabs.removeClass('active');
+        $zonetabsa.attr('aria-selected', 'false');
+        $('.zone[data-zone-name="' + currentZone + '"]').addClass('active');
+        $('.zone[data-zone-name="' + currentZone + '"] a').attr('aria-selected', 'true');
+    }
+
+    // check for filtered results based on query string or local storage else default to first zone
+    if (zoneQueryString) {
+        updateZone(zoneQueryString);
+    } else if (statusRegionItem) {
+        updateZone(statusRegionItem);
+    } else {
+        updateZone($zoneTabs.first().data('zone-name'));
+    }
+
+    // event listeners
+    $body.on('click', '.zone', function (e) {
+        updateZone($(this).data('zone-name'));
+        e.preventDefault();
+    });
+
+    // if there are zones with issues, show the first tab with impacted regions and services
+    if ($('.zone.impacted').length > 0) {
+        $('.zone.impacted').eq(0).trigger('click');
+    }
+
+    // get and set page refresh time in local storage and dropdown,
+    if (statusRefreshItem && typeof statusRefreshItem === 'number' && !isNaN(statusRefreshItem)) { // eslint-disable-line
+        $refreshDropdown.find('option[value="' + statusRefreshItem + '"]').attr('selected', 'selected');
+        changeRefresh(statusRefreshItem);
+    } else {
+        changeRefresh($refreshDropdown.val());
+    }
+
+    $refreshDropdown.on('change', function () {
+        changeRefresh($(this).find('option:selected').val());
+    });
+
+
+    // get it started!
+    updateZone($('.zone.active').data('zone-name'));
+
+ /** Start History **/
+
+    function renderHistoryResultsError() {
+        historyContainer.html('');
+        $historyErrorMessage.attr('aria-hidden', false).removeClass('hide');
+    }
+
+    /** Results success callback */
+    function renderHistoryResultsSuccess(data) {
+        if (data && data.length > 0) {
+            historyContainer.html(data);
+            $historyErrorMessage.attr('aria-hidden', true).addClass('hide');
+            paginate(); // eslint-disable-line no-use-before-define
+        } else {
+            renderHistoryResultsError();
+        }
+
+        if (historyDate === 'recent') {
+            pagination.hide();
+        } else {
+            pagination.show();
+        }
+    }
+
+    /** Ajax call to get fresh results */
+    function renderHistoryResults() {
+        historyContainer.html('').html('<div class="wa-loader"></div>');
+        Acom.Util.Render.StatusHistoryResults(historyService, historyRegion, historyDate, historyPageNumber, renderHistoryResultsSuccess, renderHistoryResultsError);
+    }
+
+    // history page functionality
+    function updatePage(e, page) {
+        historyPageNumber = page;
+        renderHistoryResults();
+    }
+
+    function paginate() {
+        pagination.off('paged.pagination');
+        pagination.data({ items: $('.wa-historyResult-count').val(), pagesize: paginationPageSize }).trigger('page.pagination', historyPageNumber);
+        pagination.on('paged.pagination', updatePage);
+    }
+
+    /** Results error callback */
+
+    /** Updates the region selection for history filtering */
+    function changeHistoryRegion() {
+        historyRegion = this.value;
+        historyPageNumber = 1;
+        renderHistoryResults();
+    }
+
+    /** Updates the service selection for history filtering */
+    function changeHistoryService() {
+        historyService = this.value;
+        historyPageNumber = 1;
+        renderHistoryResults();
+    }
+
+    /** Updates the service selection for history filtering */
+    function changeHistoryDate() {
+        historyDate = this.value;
+        historyPageNumber = 1;
+        renderHistoryResults();
+    }
+
+    // History Tab
+    dropdownHistoryRegion.on('change', changeHistoryRegion);
+    dropdownHistoryService.on('change', changeHistoryService);
+    dropdownHistoryDate.on('change', changeHistoryDate);
+
+    // Toggle status history card chevron
+    $('.incident-history-header').click(function () {
+        $(this).find('.chevron-down, .chevron-up').toggle();
+    });
+
+ /** End History **/
+})(jQuery, window, window.Core);
+</script>
+
+
+
+</body>
+</html>
+

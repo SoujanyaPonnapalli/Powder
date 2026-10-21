@@ -8,35 +8,36 @@
       "default"
     ],
     "derived_from": [
+      "azure-pir-incidents#2022-07-29-wan-surge",
+      "azure-pir-incidents#2022-08-27-wus2-power",
       "azure-pir-incidents#2023-01-25-wan",
-      "azure-pir-incidents#2023-07-05-weu-fiber",
       "azure-pir-incidents#2024-03-14-zaf-cables",
       "azure-pir-incidents#2024-07-18-cus-storage",
-      "azure-pir-incidents#2026-04-24-eus-pubsub",
+      "azure-pir-incidents#2025-09-26-szn-cert",
       "azure-pir-incidents#2026-05-29-wus2-storm",
       "azure-pir-incidents#2026-07-23-wus-wan"
     ],
     "built_by": "scripts/fault_library/build_region_outages.py",
     "window": [
-      "2023-01-01",
+      "2022-06-01",
       "2026-10-20"
     ],
     "counting_rule": "default; scopes counted: multi_az, region_wide",
     "rate_model": {
       "method": "empirical-Bayes Gamma-Poisson over Azure US regions",
-      "alpha": 44060900000.0,
-      "beta_years": 376353000000.0,
-      "heterogeneous": false,
-      "pooled_per_year": 0.116955,
+      "alpha": 5.35067,
+      "beta_years": 52.8033,
+      "heterogeneous": true,
+      "pooled_per_year": 0.101332,
       "azure_counts": {
-        "eastus": 1,
+        "eastus": 0,
         "eastus2": 0,
         "centralus": 1,
         "northcentralus": 0,
         "southcentralus": 0,
         "westcentralus": 0,
         "westus": 1,
-        "westus2": 1,
+        "westus2": 2,
         "westus3": 0
       },
       "high_rule": "2 x posterior 95th percentile (under-reporting)"
@@ -47,12 +48,12 @@
         "distance_km": 275.3,
         "rule": "tie with eastus (both Virginia); fixed to eastus2 by decision 2026-10-20",
         "rate_per_hour": {
-          "low": 5.5454e-06,
-          "central": 1.50096e-05,
-          "high": 5.64327e-05
+          "low": 4.37189e-06,
+          "central": 1.06731e-05,
+          "high": 3.84353e-05
         },
         "n_incidents": 0,
-        "exposure_years": 3.80014,
+        "exposure_years": 4.38604,
         "incidents": []
       },
       "us-east-2": {
@@ -60,27 +61,25 @@
         "distance_km": 399.0,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 5.5454e-06,
-          "central": 1.50096e-05,
-          "high": 5.64327e-05
+          "low": 4.37189e-06,
+          "central": 1.06731e-05,
+          "high": 3.84353e-05
         },
-        "n_incidents": 1,
-        "exposure_years": 3.80014,
-        "incidents": [
-          "2026-04-24-eus-pubsub"
-        ]
+        "n_incidents": 0,
+        "exposure_years": 4.38604,
+        "incidents": []
       },
       "us-west-1": {
         "azure_region": "westus",
         "distance_km": 67.7,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 5.5454e-06,
-          "central": 1.50096e-05,
-          "high": 5.64327e-05
+          "low": 5.67657e-06,
+          "central": 1.26678e-05,
+          "high": 4.38132e-05
         },
         "n_incidents": 1,
-        "exposure_years": 3.80014,
+        "exposure_years": 4.38604,
         "incidents": [
           "2026-07-23-wus-wan"
         ]
@@ -90,26 +89,28 @@
         "distance_km": 155.3,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 5.5454e-06,
-          "central": 1.50096e-05,
-          "high": 5.64327e-05
+          "low": 7.03504e-06,
+          "central": 1.46626e-05,
+          "high": 4.90811e-05
         },
-        "n_incidents": 1,
-        "exposure_years": 3.80014,
+        "n_incidents": 2,
+        "exposure_years": 4.38604,
         "incidents": [
+          "2022-08-27-wus2-power",
           "2026-05-29-wus2-storm"
         ]
       }
     },
     "global": {
       "rate_per_hour": {
-        "low": 5.28107e-06,
-        "central": 4.50288e-05,
-        "high": 0.000234592
+        "low": 1.48964e-05,
+        "central": 6.50229e-05,
+        "high": 0.000287934
       },
-      "n_incidents": 1,
-      "exposure_years": 3.80014,
+      "n_incidents": 2,
+      "exposure_years": 4.38604,
       "incidents": [
+        "2022-07-29-wan-surge",
         "2023-01-25-wan"
       ],
       "method": "Jeffreys Gamma(n + 1/2, T); low = q05, high = 2 x q95",
@@ -118,46 +119,48 @@
     "duration": {
       "low": {
         "type": "lognormal",
-        "mu": 9.61609,
-        "sigma": 0.730408
+        "mu": 9.40461,
+        "sigma": 0.668757
       },
       "central": {
         "type": "lognormal",
-        "mu": 10.1554,
-        "sigma": 0.730408
+        "mu": 9.89637,
+        "sigma": 0.668757
       },
       "high": {
         "type": "lognormal",
-        "mu": 10.5452,
-        "sigma": 0.730408
+        "mu": 10.4353,
+        "sigma": 0.668757
       }
     },
     "duration_fit": {
-      "n": 7,
+      "n": 8,
       "values_s": [
         7020.0,
+        14760.0,
+        15180.0,
         17820.0,
         18660.0,
+        19200.0,
         27360.0,
-        31080.0,
-        42720.0,
         88020.0
       ],
       "best": "lognormal",
       "aic": {
-        "exponential": 161.761,
-        "lognormal": 161.642,
-        "weibull": 162.297
+        "exponential": 180.655,
+        "lognormal": 178.608,
+        "weibull": 181.71
       },
-      "ks_bootstrap_p": 0.864136,
-      "mean_s": 33240.0,
-      "median_s": 27360.0,
+      "ks_bootstrap_p": 0.0979021,
+      "mean_s": 26002.5,
+      "median_s": 18240.0,
       "bootstrap_mean_5_95_s": [
-        19591.3,
-        49611.4
+        15187.5,
+        42570.0
       ]
     },
     "multi_region_incidents": [
+      "2022-07-29-wan-surge",
       "2023-01-25-wan"
     ],
     "notes": "Modelling assumption: an AWS region fails like its mapped Azure region. 'regions' are independent per-region processes from region-specific incidents; 'global' is a separate process of outages that hit every region at once (decision 2026-10-21)."
@@ -171,40 +174,44 @@
       "pessimistic"
     ],
     "derived_from": [
+      "azure-pir-incidents#2022-06-07-eus2-cooling",
+      "azure-pir-incidents#2022-06-28-slb",
+      "azure-pir-incidents#2022-07-29-wan-surge",
+      "azure-pir-incidents#2022-08-27-wus2-power",
+      "azure-pir-incidents#2023-01-23-scus-net",
       "azure-pir-incidents#2023-01-25-wan",
-      "azure-pir-incidents#2023-07-05-weu-fiber",
       "azure-pir-incidents#2023-09-16-eus-power",
       "azure-pir-incidents#2024-03-14-zaf-cables",
       "azure-pir-incidents#2024-07-18-cus-storage",
       "azure-pir-incidents#2024-12-26-scus-power",
       "azure-pir-incidents#2025-01-08-eus2-net",
       "azure-pir-incidents#2025-03-18-eus-fiber",
+      "azure-pir-incidents#2025-09-26-szn-cert",
       "azure-pir-incidents#2026-02-07-wus-power",
-      "azure-pir-incidents#2026-04-24-eus-pubsub",
       "azure-pir-incidents#2026-05-29-wus2-storm",
       "azure-pir-incidents#2026-07-23-wus-wan"
     ],
     "built_by": "scripts/fault_library/build_region_outages.py",
     "window": [
-      "2023-01-01",
+      "2022-06-01",
       "2026-10-20"
     ],
-    "counting_rule": "pessimistic: single-datacenter / single-AZ VM outages and unknown-scope events also count as region outages; scopes counted: multi_az, region_wide, single_az, unknown",
+    "counting_rule": "pessimistic: single-datacenter / single-AZ VM outages, degraded-network events and unknown-scope events also count as region outages; scopes counted: degraded, multi_az, region_wide, single_az, unknown",
     "rate_model": {
       "method": "empirical-Bayes Gamma-Poisson over Azure US regions",
-      "alpha": 24801100.0,
-      "beta_years": 94248900.0,
+      "alpha": 3.31568e+16,
+      "beta_years": 8.20639e+16,
       "heterogeneous": false,
-      "pooled_per_year": 0.263148,
+      "pooled_per_year": 0.405327,
       "azure_counts": {
         "eastus": 3,
-        "eastus2": 1,
+        "eastus2": 3,
         "centralus": 1,
-        "northcentralus": 0,
-        "southcentralus": 1,
+        "northcentralus": 1,
+        "southcentralus": 2,
         "westcentralus": 0,
-        "westus": 2,
-        "westus2": 1,
+        "westus": 3,
+        "westus2": 3,
         "westus3": 0
       },
       "high_rule": "2 x posterior 95th percentile (under-reporting)"
@@ -215,13 +222,15 @@
         "distance_km": 275.3,
         "rule": "tie with eastus (both Virginia); fixed to eastus2 by decision 2026-10-20",
         "rate_per_hour": {
-          "low": 1.68725e-05,
-          "central": 3.16869e-05,
-          "high": 0.000100543
+          "low": 3.01512e-05,
+          "central": 4.76835e-05,
+          "high": 0.000136981
         },
-        "n_incidents": 1,
-        "exposure_years": 3.80014,
+        "n_incidents": 3,
+        "exposure_years": 4.38604,
         "incidents": [
+          "2022-06-07-eus2-cooling",
+          "2022-06-28-slb",
           "2025-01-08-eus2-net"
         ]
       },
@@ -230,16 +239,16 @@
         "distance_km": 399.0,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 1.68725e-05,
-          "central": 3.16869e-05,
-          "high": 0.000100543
+          "low": 3.01512e-05,
+          "central": 4.76835e-05,
+          "high": 0.000136981
         },
         "n_incidents": 3,
-        "exposure_years": 3.80014,
+        "exposure_years": 4.38604,
         "incidents": [
+          "2022-06-28-slb",
           "2023-09-16-eus-power",
-          "2025-03-18-eus-fiber",
-          "2026-04-24-eus-pubsub"
+          "2025-03-18-eus-fiber"
         ]
       },
       "us-west-1": {
@@ -247,13 +256,14 @@
         "distance_km": 67.7,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 1.68725e-05,
-          "central": 3.16869e-05,
-          "high": 0.000100543
+          "low": 3.01512e-05,
+          "central": 4.76835e-05,
+          "high": 0.000136981
         },
-        "n_incidents": 2,
-        "exposure_years": 3.80014,
+        "n_incidents": 3,
+        "exposure_years": 4.38604,
         "incidents": [
+          "2022-06-28-slb",
           "2026-02-07-wus-power",
           "2026-07-23-wus-wan"
         ]
@@ -263,26 +273,29 @@
         "distance_km": 155.3,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 1.68725e-05,
-          "central": 3.16869e-05,
-          "high": 0.000100543
+          "low": 3.01512e-05,
+          "central": 4.76835e-05,
+          "high": 0.000136981
         },
-        "n_incidents": 1,
-        "exposure_years": 3.80014,
+        "n_incidents": 3,
+        "exposure_years": 4.38604,
         "incidents": [
+          "2022-06-28-slb",
+          "2022-08-27-wus2-power",
           "2026-05-29-wus2-storm"
         ]
       }
     },
     "global": {
       "rate_per_hour": {
-        "low": 5.28107e-06,
-        "central": 4.50288e-05,
-        "high": 0.000234592
+        "low": 1.48964e-05,
+        "central": 6.50229e-05,
+        "high": 0.000287934
       },
-      "n_incidents": 1,
-      "exposure_years": 3.80014,
+      "n_incidents": 2,
+      "exposure_years": 4.38604,
       "incidents": [
+        "2022-07-29-wan-surge",
         "2023-01-25-wan"
       ],
       "method": "Jeffreys Gamma(n + 1/2, T); low = q05, high = 2 x q95",
@@ -291,46 +304,49 @@
     "duration": {
       "low": {
         "type": "lognormal",
-        "mu": 9.61609,
-        "sigma": 0.730408
+        "mu": 9.40461,
+        "sigma": 0.668757
       },
       "central": {
         "type": "lognormal",
-        "mu": 10.1554,
-        "sigma": 0.730408
+        "mu": 9.89637,
+        "sigma": 0.668757
       },
       "high": {
         "type": "lognormal",
-        "mu": 10.5452,
-        "sigma": 0.730408
+        "mu": 10.4353,
+        "sigma": 0.668757
       }
     },
     "duration_fit": {
-      "n": 7,
+      "n": 8,
       "values_s": [
         7020.0,
+        14760.0,
+        15180.0,
         17820.0,
         18660.0,
+        19200.0,
         27360.0,
-        31080.0,
-        42720.0,
         88020.0
       ],
       "best": "lognormal",
       "aic": {
-        "exponential": 161.761,
-        "lognormal": 161.642,
-        "weibull": 162.297
+        "exponential": 180.655,
+        "lognormal": 178.608,
+        "weibull": 181.71
       },
-      "ks_bootstrap_p": 0.864136,
-      "mean_s": 33240.0,
-      "median_s": 27360.0,
+      "ks_bootstrap_p": 0.0979021,
+      "mean_s": 26002.5,
+      "median_s": 18240.0,
       "bootstrap_mean_5_95_s": [
-        19591.3,
-        49611.4
+        15187.5,
+        42570.0
       ]
     },
     "multi_region_incidents": [
+      "2022-06-28-slb",
+      "2022-07-29-wan-surge",
       "2023-01-25-wan"
     ],
     "notes": "Modelling assumption: an AWS region fails like its mapped Azure region. 'regions' are independent per-region processes from region-specific incidents; 'global' is a separate process of outages that hit every region at once (decision 2026-10-21)."

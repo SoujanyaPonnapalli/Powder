@@ -1,0 +1,157 @@
+
+
+
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>February 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            12
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-SL1P-TSZ" aria-expanded="false" aria-controls="incident-history-collapse-SL1P-TSZ">
+                                <span class="hide-text">02/12/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Azure SQL DB and Cosmos DB Unavailable
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: SL1P-TSZ
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-down" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-up" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-SL1P-TSZ">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between 11:45 UTC on 12 Feb 2022 and 11:43 UTC on 15 Feb 2022, a limited subset of customers using SQL Databases or Cosmos DB experienced database unavailability and may have seen errors when connecting to their database instances. This issue affected a specific generation of hardware hosting SQL and Cosmos DB resources in six regions.</p><p><strong>Root Cause:</strong> Our telemetry has shown that a subset of nodes running our newest hardware generation hosting SQL DB and Cosmos DB experienced a loss of connectivity to the network control plane starting on 12 Feb 2022. Our newest hardware generation uses a new and optimized network control plane and data plane designed to improve performance and reduce irregularities and latency, with a new control plane secured by TLS authentication. The TLS certificates that secure this channel are rotated regularly and expire within a short timespan for security purposes. A race condition in the underlying Remote Procedure Call (RPC) mechanism caused the network control plane channel in some cases to not pick up the rotated certificate, leading to connectivity failures once the certificate expired.&nbsp;</p><p>Routine maintenance in the general Azure compute fleet had fixed this issue with a code update in January. However, based on telemetry, we did not believe this was a significant risk to SQL and Cosmos DB environments, which were scheduled to receive the code update later in February. On 12 Feb 2022, a significant number of previously rotated certificates expired simultaneously, causing impact. We first mitigated the impacted nodes and DBs, and then pushed the code update using an emergency process through the SQL and Cosmos DB fleets to make sure the impact would not recur.</p><p><strong>Mitigation:</strong> Once impact was identified, we recovered nodes with network control plane connectivity loss and brought DBs back to a healthy state over the course of 12 Feb - 15 Feb. While most DBs recovered earlier in the incident, running a full update to get the code fix to all nodes had to proceed slowly to ensure uptime and data integrity, so it took until 14 Feb for Cosmos DB and 15 Feb for SQL DB to complete the rollout.</p><p><strong>Next Steps: </strong>We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Improved procedures to help determine if code updates for Azure servers are critical, so we can patch critical data services like SQL and Cosmos DB sooner, instead of taking them at a normally scheduled pace.</li><li>Faster automated recovery and deployment for critical fixes to SQL and Cosmos DB, to help reduce impact time for critical node fixes.</li><li>Improved telemetry to help detect certificate expiration risk.</li></ul><p><strong>Provide Feedback</strong>: Please help us improve the Azure customer communications experience by taking our survey: <a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>January 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            13
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-PKJ8-TTZ" aria-expanded="false" aria-controls="incident-history-collapse-PKJ8-TTZ">
+                                <span class="hide-text">01/13/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Azure Data Factory V2 - West Europe - Mitigated
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: PKJ8-TTZ
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-PKJ8-TTZ">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between 10:10 UTC on 13 Jan 2022 and 20:00 UTC on 14 Jan 2022, a subset of customers may have experienced issues, timeouts, or failures for some service management operations for services leveraging Azure Resource Manager (ARM). This could have also included issues with operations attempted to manage resources or resource groups. This could have resulted in a downstream impact on other Azure services that rely on Azure Resource Manager.</p><p><br></p><p><strong>Preliminary Root Cause:</strong> We have identified a change to backend role instances leveraged by Azure Resource Manager causing the timeouts and is root cause of the failure.&nbsp;</p><p><br></p><p><strong>Mitigation:</strong> We mitigated background job execution systems causing failures and performed a roll back of recent change following our safe deployment practices (SDP) to return ARM to a previous healthy state, mitigating the issue. The roll back took several hours to complete globally following our SDP process.&nbsp;</p><p><br></p><p><strong>Next Steps:</strong> We will also continue to investigate to establish the full root cause and prevent future occurrences. You can stay informed about Azure service issues, maintenance events, or advisories by creating custom service health alerts (<a href="<a href="<a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a>" class="wa-link-status"><a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a></a>" rel="noopener noreferrer" target="_blank"><a href="<a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a>" class="wa-link-status"><a href="https://aka.ms/ash-videos" class="wa-link-status">https://aka.ms/ash-videos</a></a></a> for video tutorials and <a href="<a href="<a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a>" class="wa-link-status"><a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a></a>" rel="noopener noreferrer" target="_blank"><a href="<a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a>" class="wa-link-status"><a href="https://aka.ms/ash-alerts" class="wa-link-status">https://aka.ms/ash-alerts</a></a></a> for how-to documentation) and you will be notified via your preferred communication channel(s).</p><p><br></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            4
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-9VT8-HPG" aria-expanded="false" aria-controls="incident-history-collapse-9VT8-HPG">
+                                <span class="hide-text">01/04/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Azure Cosmos DB - East US
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: 9VT8-HPG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-9VT8-HPG">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:<u> </u></strong>Between 12:30 UTC on 04 Jan 2022 and 7:41 UTC on 5 Jan 2022, customers with Azure Cosmos DB accounts in East US may have experienced connectivity and service availability errors while accessing their Cosmos DB databases. One Cosmos DB cluster in the East US region was unavailable during this time, so both new and existing connections to databases in this subscription in this region may have resulted in errors or timeouts.</p><p><strong>Root Cause: </strong>Cosmos DB uses Azure Service Fabric as the underlying platform for providing fault tolerance in the cluster. Service Fabric uses the ring topology, and each node establishes a lease relationship with nodes in its proximity (i.e. neighborhood) to detect failure. It has a set of nodes that are responsible for determining cluster memberships of other nodes, known as Arbitrators. A node that fails to refresh lease within a timeout period will be reported by its neighbors, and the arbitrators need to determine whether the node should leave the cluster. This check is done in a timer callback.</p><p>During this incident, the timer callback on one of the nodes was fired multiple times at a frequency higher than intended. This resulted in the node's neighbors getting incorrectly reported as unavailable. By design, the Arbitrators trusted this information as they did not receive any healthy uptime notification within the stipulated time frame. This continued until the quorum of nodes was lost, and the cluster went down eventually. The cluster came back up once the culprit node was manually rebooted as part of the mitigation efforts.</p><p><strong>Mitigation: </strong>After the initial investigation, the cluster was marked as offline at 14:08 UTC on 04 Jan 2022 which triggered regional failover for accounts that had multiple regions and automatic failover enabled. Customers that did not have automatic failover enabled continued to be impacted until the cluster was recovered.</p><p>The cluster was recovered by rebooting the Service Fabric Infrastructure nodes after removing the culprit node. However, recovery of the cluster was delayed due to overload of the configuration store as the service was restarting. Cosmos DB Engineers initially tried to reduce the load on the configuration store by delaying the startup of about 20% of the nodes. This approach did not fully resolve the problem. Engineers then manually applied configuration changes to increase the timeout on the requests used to fetch data from the configuration store. This change allowed the recovery to continually make progress. Availability to the cluster was incrementally restored as service back end processes started running. Recovery was completed at 07:41 UTC on 05 Dec 2022.</p><p><br></p><p><strong>Next Steps: </strong>We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><p>Service Fabric team to develop a fix to improve resilience in case of misfired timer(s) reporting incorrect node health status within Azure Service Fabric.</p><p>Azure Cosmos DB to improve monitoring to better identify culprit nodes early on if this failure pattern reoccurs.</p><p>Provide Feedback: Please help us improve the Azure customer communications experience by taking our survey: <a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>December 2021</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            9
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-SNCJ-9ZG" aria-expanded="false" aria-controls="incident-history-collapse-SNCJ-9ZG">
+                                <span class="hide-text">12/09/2021</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Errors connecting to SCM App Service and/or Azure Functions deployments
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: SNCJ-9ZG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-SNCJ-9ZG">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between approximately 21:00 UTC on 09 Dec 2021 and 00:23 UTC on 10 Dec 2021, a subset of customers using App Service and/or Azure Functions may have encountered issues with deployments using web deploy, managing WebJobs, connecting to Web SSH console, executing certain Diagnostic Tools using Azure portal or while accessing SCM endpoint. App Service resources utilizing other deployment methods were not affected. Standard App Service control plane operations and runtime were not impacted.</p><p><strong>Root Cause:</strong> As part of introducing certain resiliency measures, a configuration change was implemented to create a redundant Domain Name Resolution zone for App Service SCM endpoints. However, due to a misconfiguration, this change incorrectly affected the name resolution for App Service SCM endpoint, which resulted in a subset of our customers not being able to connect to the SCM endpoints of the service. This misconfiguration was limited in scope to the SCM endpoint and no other data plane or control plane operations experienced any failures.</p><p><strong>Mitigation:</strong> Engineering was engaged upon receiving reports of failure. In order to mitigate the issue, the misconfigured state of the zone was corrected and persisted for SCM endpoints. Most customers observed resolution within 20 - 40 minutes from when the mitigation was applied. Resolution times varied for customers depending on the Time To Live (TTL) setting of the various networking devices in their traffic pipelines.</p><p><strong>Next Steps:</strong> We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Adding automated detection for SCM endpoint related failures.</li><li>Adding improved validation for zone configuration updates.</li><li>Enhancing review measures for critical network configurations.</li></ul><p><strong>Provide Feedback:</strong> Please help us improve the Azure customer communications experience by taking our survey: <a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    <input type="hidden" class="wa-historyResult-count" value="24" />

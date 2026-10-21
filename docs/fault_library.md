@@ -49,16 +49,16 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 
 | Profile | AWS region | Azure region | Outages per year (low / central / high) | Mean duration |
 |---|---|---|---|---|
-| `region_outage/aws-us-from-azure` | us-east-1 | eastus2 | 0.0486 / 0.132 / 0.495 | 9.33 h |
-| `region_outage/aws-us-from-azure` | us-east-2 | eastus | 0.0486 / 0.132 / 0.495 | 9.33 h |
-| `region_outage/aws-us-from-azure` | us-west-1 | westus | 0.0486 / 0.132 / 0.495 | 9.33 h |
-| `region_outage/aws-us-from-azure` | us-west-2 | westus2 | 0.0486 / 0.132 / 0.495 | 9.33 h |
-| `region_outage/aws-us-from-azure` | **all regions at once** | global process (1 incident) | 0.0463 / 0.395 / 2.06 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-east-1 | eastus2 | 0.148 / 0.278 / 0.881 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-east-2 | eastus | 0.148 / 0.278 / 0.881 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-west-1 | westus | 0.148 / 0.278 / 0.881 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-west-2 | westus2 | 0.148 / 0.278 / 0.881 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | **all regions at once** | global process (1 incident) | 0.0463 / 0.395 / 2.06 | 9.33 h |
+| `region_outage/aws-us-from-azure` | us-east-1 | eastus2 | 0.0383 / 0.0936 / 0.337 | 6.9 h |
+| `region_outage/aws-us-from-azure` | us-east-2 | eastus | 0.0383 / 0.0936 / 0.337 | 6.9 h |
+| `region_outage/aws-us-from-azure` | us-west-1 | westus | 0.0498 / 0.111 / 0.384 | 6.9 h |
+| `region_outage/aws-us-from-azure` | us-west-2 | westus2 | 0.0617 / 0.129 / 0.43 | 6.9 h |
+| `region_outage/aws-us-from-azure` | **all regions at once** | global process (2 incident) | 0.131 / 0.57 / 2.52 | 6.9 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-east-1 | eastus2 | 0.264 / 0.418 / 1.2 | 6.9 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-east-2 | eastus | 0.264 / 0.418 / 1.2 | 6.9 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-west-1 | westus | 0.264 / 0.418 / 1.2 | 6.9 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-west-2 | westus2 | 0.264 / 0.418 / 1.2 | 6.9 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | **all regions at once** | global process (2 incident) | 0.131 / 0.57 / 2.52 | 6.9 h |
 
 ## Machine classes
 

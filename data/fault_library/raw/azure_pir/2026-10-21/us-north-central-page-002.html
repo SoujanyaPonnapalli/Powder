@@ -1,0 +1,271 @@
+
+
+
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>September 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            7
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-YV8C-DT0" aria-expanded="false" aria-controls="incident-history-collapse-YV8C-DT0">
+                                <span class="hide-text">09/07/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) - Azure Front Door - Connectivity Issues
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: YV8C-DT0
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-down" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg style="display:none; visibility:hidden;">
+                                <defs><symbol id="svg-chevron-up" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path fill-rule="evenodd" d="M7.646 4.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1-.708.708L8 5.707l-5.646 5.647a.5.5 0 0 1-.708-.708l6-6z"/>
+</symbol></defs>
+                            </svg><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-YV8C-DT0">
+                                    <div class="card-body">
+                                        <p><em>Watch our 'Azure Incident Retrospective' video about this incident: <a href="https://aka.ms/AIR/YV8C-DT0" class="wa-link-status">https://aka.ms/AIR/YV8C-DT0</a></em></p><p><strong>What happened?&nbsp;</strong></p><p>Between 16:10 and 19:55 UTC on 07 Sep 2022, a subset of customers using Azure Front Door (AFD) experienced intermittent availability drops, connection timeouts and increased latency. At its peak, this impacted approximately 25% of the traffic, and on average, 10% of the traffic that traverses through the AFD service during the impact window. Some customers may have seen higher failures if their traffic was concentrated in the edges or regions with higher impact. This could also have impacted customers’ ability to access other Azure services that leverage AFD, in particular the Azure management portal and Azure Content Delivery Network (CDN).</p><p><strong>What went wrong and why?&nbsp;</strong></p><p>The AFD platform automatically balances traffic across our global network of edge sites. When there is a failure in any of our edge sites or an edge site becomes overloaded, traffic is automatically moved to other healthy edge sites in other regions where we have fallback capacity. It is because of this design that customers and end users don’t experience any issues in case of localized or regionalized impact.&nbsp;In addition to that, we also have protections built in every single node to protect our platform from unusual traffic spikes corresponding to each domain hosted on AFD.</p><p>&nbsp;Between 15:15 and 16:44 UTC we observed 3 unusual traffic spikes for one of the domains hosted on AFD.</p><ul><li><span style="color: rgb(36, 36, 36)">The first two spikes for this domain occurred at 15:15 UTC and 16:00 UTC on 07 of September, 2022 and were fully mitigated by AFD platform</span>. A third spike that occurred between 16:10 to 16:44 caused a subset of environments managing this traffic to go offline.</li><li>The first two spikes were successfully absorbed due the platform protection mechanisms, however the ones that were initiated during the third spike did not fully mitigate the unexpected increase due to the nature of the traffic pattern (different from the first two spikes). At this stage in our investigation, we believe that all three traffic spikes were malicious HTTPS flood attacks. (Layer 7 volumetric DDOS attacks)&nbsp;</li><li>The malicious traffic spikes did not originate from a single region. We found that they were coming from all around the world. A combination of malicious traffic (3rd spike), large traffic ramp-up for legitimate traffic for other customer and degraded customer origins, resulted in overwhelming the resources of a few environments taking them offline and resulting in a 25% drop in overall availability during the third traffic spike</li><li>By design, these environments will automatically recover and resume taking traffic once healthy. During this instance, users and our systems retried the requests, resulting in a larger build-up of requests. This build-up did not allow time for a subset of the environments to recover fully resulting in a subsequent 8% availability drop, for more than 3.5 hours following the traffic spike.</li></ul><p><strong>How did we respond?&nbsp;</strong></p><p>We have automatic protection mechanisms in such events which mitigate circa 2,000 DDoS attacks per day, and the record that we have mitigated in a day has been 4,296. (More information can be found here: <a href="https://azure.microsoft.com/en-us/blog/azure-ddos-protection-2021-q3-and-q4-ddos-attack-trends/" class="wa-link-status">https://azure.microsoft.com/en-us/blog/azure-ddos-protection-2021-q3-and-q4-ddos-attack-trends/</a>). In addition to this, AFD platform also has in-built DDoS protection mechanisms on each node at both a system and an application layer. These help for further mitigations in such cases. In this instance, these mechanisms significantly helped to absorb the first two spikes without any customer impact.</p><p>During the third spike, the platform protection mechanisms were partially effective, mitigating around 40% of the traffic. This significantly helped to limit global impact. For a larger duration, 8.5% of the overall AFD service, concentrated in some regions, was impacted by this issue. Some customers may have seen higher failures if their traffic was concentrated in predominantly North America, Europe, or the APAC regions.</p><p>&nbsp;As our telemetry alerted us regarding impact on availability, we manually intervened. The first step was that we took manual action to further block the attack traffic. In addition, we expedited the AFD load balancing process which then enabled auto-recovery systems to work as designed. The systems worked by ensuring the most efficient load distributions in regions where there was a large build-up of traffic. Once the environment recovered, we began to gradually bring AFD instances back online to resume traffic management in a normal way. We were 100% globally recovered by 19:55 UTC.</p><p><strong>How are we making incidents like this less likely or less impactful?</strong></p><p>Although the AFD platform has built-in resiliency and capacity, we must continuously strive to improve through these lessons learned. We have a few previously planned repair items that were inflight being either partially deployed and/or staged to be deployed. We believe that these repair items would have mitigated the third malicious traffic spike had they been in place before Sept 7<sup>th</sup>. We are now expediting these repair items that were scheduled for later this year and they should be completed in the next few weeks. These include:&nbsp;</p><ul><li>Effectively tuning the protection mechanisms in the AFD nodes to mitigate the impact of this class of traffic patterns in future. (Estimated completion September 2022)</li><li>Addressing issues identified in the current platform environment recovery process. This will reduce time to recover for each environment and will prevent environments from becoming overloaded. (Estimated completion September 2022)</li><li>Tooling to trigger ‘per customer’ failover until we have fully automated the traffic shifting mechanisms. This work is completed.</li><li>Improvements in dynamic rate limiting algorithm to ensure fairness to legitimate traffic. (Estimated completion October 2022)</li><li>Improve existing proactive automatic communication process to notify customers more expeditiously. (Estimated completion October 2022)</li></ul><p><strong>How can we make our incident communications more useful?</strong></p><p>Microsoft is piloting this “PIR” template as a potential replacement for our “RCA” (Root Cause Analysis) template.</p><p>You can rate this PIR and provide any feedback using our quick 3-question survey,&nbsp;<a href="https://www.aka.ms/AzPIR/YV8C-DT0" class="wa-link-status">https://www.aka.ms/AzPIR/YV8C-DT0</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>August 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            30
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-2TWN-VT0" aria-expanded="false" aria-controls="incident-history-collapse-2TWN-VT0">
+                                <span class="hide-text">08/30/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) - Canonical Ubuntu issue impacted VMs and AKS
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: 2TWN-VT0
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-2TWN-VT0">
+                                    <div class="card-body">
+                                        <p><strong>What happened?</strong></p><p>Between 06:00 UTC on 30 Aug 2022 and 16:00 UTC on 31 Aug 2022, customers running Ubuntu 18.04 (bionic) Virtual Machines (VMs) who had Ubuntu Unattended-Upgrades enabled received a systemd version that resulted in Domain Name System (DNS) resolution errors. This issue was confined to Ubuntu version 18.04, but impacted all Azure regions including public and sovereign clouds.</p><p>Downstream Azure services that rely on impacted Ubuntu VMs also experienced impact during this window – including Azure Kubernetes Service (AKS), Azure Monitor, Application Insights, Log Analytics and Microsoft Sentinel. AKS customers could have experienced pod creation errors such as ImagePullBackoff as kubelet was unable to resolve DNS names of container registry. Customers may have experienced an inability to access Azure Monitor, Application Insights, Log Analytics, and/or Microsoft Sentinel log data, and may have noticed missed or delayed Log Search alerts and/or Microsoft Sentinel alerts.</p><p><strong>What went wrong, and why?</strong></p><p>At 06:00 UTC on 30 August 2022, a Canonical Ubuntu security update was published – so Azure VMs running Ubuntu 18.04 (bionic) with unattended-upgrade enabled started to download and install the new packages, including systemd version 237-3ubuntu10.54. This led to a loss of their DNS configurations due to a race-condition bug: <a href="https://bugs.launchpad.net/ubuntu/+source/systemd/+bug/1988119" class="wa-link-status">https://bugs.launchpad.net/ubuntu/+source/systemd/+bug/1988119</a>.</p><p>The manifestation of this bug was triggered due to the combination of this and a previous update. This bug only affects systems using a driver name to identify the proper Network Interface Card (NIC) in their network configuration, which is why this issue impacted Azure uniquely and not other major cloud providers. This resulted in DNS resolution failures and network connectivity issues for Azure VMs running Ubuntu 18.04 (bionic). As a result, other services dependent on these VMs were impacted by the same DNS resolution issues.</p><p>When unattended-upgrades are enabled, security updates are automatically downloaded and applied once per day by default. Considering their criticality, security updates like these do not go through our Safe Deployment Practices (SDP) process. However, we are reviewing this process to ensure that we minimize customer impact during incidents like these.</p><p><strong>How did we respond?</strong></p><p>Multiple Azure teams detected the issue shortly after the packages were published via production alerts, including our AKS and Azure Container Apps service teams. Upon investigation, we identified the root cause as the bug in Ubuntu mentioned above, and began engaging other teams to explore appropriate mitigations. During this time, incoming customer support cases describing the issue validated that the issues were limited to the Ubuntu versions described above.</p><p>There were multiple mitigation and remediation steps, several of which were completed in partnership with Canonical / Ubuntu:</p><ul><li>This bug and a potential fix have been highlighted on the Canonical / Ubuntu website, which we encouraged impacted customers to read (linked above).</li><li>For impacted Azure VM instances, we recommended that customers reboot the VM(s) or, if reboot was not an option, run a script to fix it. Azure provided a template script but encouraged customers to test and modify the script as needed before applying: <a href="https://github.com/mcgov/az_scripts/blob/main/az_fix_dns_resolve.sh" class="wa-link-status">https://github.com/mcgov/az_scripts/blob/main/az_fix_dns_resolve.sh</a>.</li><li>For the impact to AKS nodes, our AKS team developed an automatic detection and remediation solution then rolled this out across all regions. This resolved the vast majority of customers, others required manual mitigations through support.</li><li>Additional downstream impact to other services was addressed through similar remediation steps to address the bug in their specific Ubuntu version, so some of these services recovered prior to the final mitigation time above.</li></ul><p><strong>How are we making incidents like this less likely or less impactful?</strong></p><p>Already completed:</p><ul><li>Improved monitoring of AKS data plane for alerts on the uptick of errors.</li><li>Reviewed AKS monitoring algorithms to help ensure detection and alerting upon similar VM errors that were experienced in this scenario.</li><li>Established an improved escalation path to Canonical during outages and include that in our internal Technical Service Guides (TSGs).</li></ul><p>Short term:</p><ul><li>AKS will take full control over the security patch mechanism, versus shared control with Canonical today. This includes additional testing and controlled release of these patches done directly by AKS. (Estimated completion: December 2022).</li></ul><p>Medium term:</p><ul><li>For IaaS VMs, we are working to engage with Canonical to run dedicated tests on proposed packages before they are published for Azure users.</li></ul><p>Longer-term:</p><ul><li>AKS will establish a process with Canonical to close the testing gap for the upgrade scenario. (Estimated completion: March 2023).</li><li>AKS will provide customers with maintenance window control and environment staging for these patches when they are deemed safe to release. (Estimated completion: December 2023).</li></ul><p><strong>How can our customers and partners make incidents like this less impactful?</strong></p><ul><li>AKS customers can ensure their nodes are up to date and exclusively leveraging Microsoft’s supply chain by using automatic node image upgrade: <a href="https://docs.microsoft.com/en-us/azure/aks/auto-upgrade-cluster" class="wa-link-status">https://docs.microsoft.com/en-us/azure/aks/auto-upgrade-cluster</a>.</li><li>For IaaS VMs, customers can choose to configure VMs to use the following service to get Ubuntu patches here: <a href="https://docs.microsoft.com/en-us/azure/virtual-machines/automatic-vm-guest-patching" class="wa-link-status">https://docs.microsoft.com/en-us/azure/virtual-machines/automatic-vm-guest-patching</a>. This service will limit the blast radius of VMs seeing the patches from Ubuntu and do an orchestrated update of the VMs. The service also provides health monitoring and to detect issues, users can provide app health signals through app health extension. Please refer to: <a href="https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-health-extension" class="wa-link-status">https://docs.microsoft.com/en-us/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-health-extension</a>.</li></ul><p><strong>How can we make our incident communications more useful?</strong></p><p>Microsoft is piloting this “PIR” template as a potential replacement for our “RCA” (Root Cause Analysis) template.</p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/2TWN-VT0" class="wa-link-status">https://aka.ms/AzPIR/2TWN-VT0</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            18
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-YLBJ-790" aria-expanded="false" aria-controls="incident-history-collapse-YLBJ-790">
+                                <span class="hide-text">08/18/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) - Azure Key Vault - Provisioning Failures
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: YLBJ-790
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-YLBJ-790">
+                                    <div class="card-body">
+                                        <p><strong>What happened?</strong></p><p>Between 16:30 UTC on 18 Aug 2022 and 02:22 UTC on 19 Aug 2022, a platform issue caused Azure offerings such as Bastion, ExpressRoute, Azure Container Apps, Azure ML, Azure Managed HSM, Azure Confidential VMs, Azure Database Services (MySQL - Flexible Server, Postgres- Flexible Server, PostgreSQL – Hyperscale) to experience provisioning failures globally. This issue impacted customers that relied on provisioning of certificates as part of provisioning of an Azure resource. This write-up is a Post Incident Review (PIR) we are providing to summarize what went wrong, how we responded, and the steps Microsoft is taking to learn from this and improve.</p><p><strong>What went wrong, and why?</strong></p><p>The requesting authority for Azure Key Vault (the underlying platform, on which all the described services rely for the creation of certificate resources) was experiencing high latency and volume of requests. This resulted in provisioning failures for the impacted services, as those services were not able to acquire certificates within the expected time. During the incident, a backend service that Azure Key Vault relies on, became unhealthy due to an unexpected spike in traffic during scheduled hardware maintenance, which caused a build-up of requests in the queue, resulting in high latencies to fulfil new certificate creation requests.&nbsp;</p><p><strong>How did Microsoft respond?</strong></p><p>We developed and deployed a hotfix to increase the throughput, created new queues for request processing, and drained the queue of accumulated requests to alleviate the overall latency and process requests as expected.</p><p><strong>How is Microsoft making incidents like this less likely, or at least less impactful?</strong></p><p>•	In the short-term, we are implementing request caps and partitioning the request queues, to help prevent lasting failures in the service in similar scenarios.</p><p>•	We are also reviewing the backend capacity and gaps in the maintenance process that led to the loss of availability during this maintenance operation.</p><p>•	Based on our learning from this incident, we are implementing improvements to our health monitoring and operational guidance that would help reduce the time to detect similar issues and allow us to address similar issues before customers experience impact.</p><p>•	In the longer term, we are working to add fine-grained distributed throttling and portioning, to add additional isolation layers to the backend of this service, which will minimize impact in similar scenarios.</p><p>•	Finally, we will work to add more Availability Zones and fault domains in all layers of the stack, along with automatic failover to the service, to help prevent disruption to customer workloads.</p><p><strong>How can we make our incident communication more useful?</strong></p><p>We are piloting this "PIR" format as a potential replacement for our "RCA" (Root Cause Analysis) format.</p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/YLBJ-790" class="wa-link-status">https://aka.ms/AzPIR/YLBJ-790</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>July 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            29
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-7SHM-P88" aria-expanded="false" aria-controls="incident-history-collapse-7SHM-P88">
+                                <span class="hide-text">07/29/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR) – Network Connectivity Issues
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: 7SHM-P88
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-7SHM-P88">
+                                    <div class="card-body">
+                                        <p><strong>What happened?</strong></p><p>Between 08:00 UTC and until 13:20 UTC on 29 July 2022, customers may have experienced connectivity issues such as network drops, latency, and/or degradation when attempting to access or manage Azure resources in multiple regions.</p><p>The most significant impact would have been experienced in the following regions – Brazil South, Canada Central, East Asia, East US, East US 2, France Central, Japan East, Korea Central, North Central US, South Africa North, South Central US, Southeast Asia, West Europe, and West US. Customers in other regions may have seen an intermittent impact when accessing resources across the Microsoft wide area network (WAN).</p><p><strong>What went wrong, and why?</strong></p><p>Starting at 08:00 UTC on 29 July, the Azure WAN began to experience a sudden and significant increase of traffic, upwards of 60 Tbps in additional traffic compared to the normal levels of traffic carried on the network.</p><p>While the event was detected immediately and automated remediation was triggered, the substantial increased bursts of traffic occurring throughout the event affected the ability of automated mitigations to continue providing the necessary relief to the network. WAN routers then became overloaded and dropped network packets, which resulted in network connectivity issues experienced by some customers.</p><p>This event included impact to both intra-region and cross-region traffic over various network paths, which included ExpressRoute.</p><p><strong>How did we respond?</strong></p><p>We have several detection and mitigation algorithms that were triggered automatically around 08:00 UTC when an increased burst of traffic occurred. The volume of traffic surges continued to substantially increase, reaching 10-15 times greater than any traffic volume experienced on the network prior.</p><p>While the mitigation mechanisms were successfully triggered to load balance and throttle the traffic bursts to help prevent impact, the significance of traffic on the WAN routers resulted in these mechanisms to take longer to alleviate the traffic surges and restore traffic back to normal levels.</p><p>By 13:20 UTC, traffic levels returned to normal as network telemetry confirmed packet drops had reduced to standard levels, which is when customers would have seen resource and service network health restored.</p><p><strong>How are we making incidents like this less likely or less impactful?</strong></p><p>We are implementing service repairs because of this incident, including but not limited to:</p><p>Already completed:&nbsp;</p><ul><li>Additional alerting for specific packet drops signature caused by significant traffic bursts.</li><li>Improvements to network device capabilities to help reduce packet drops when handling significant traffic bursts.</li><li>Changes to the network design for traffic spike detection to help reduce the time to mitigate for similar events.</li><li>Improve network incident response playbook to better streamline preventative actions performed for similar events.</li><li>Apply additional layers of network throttling to help protect the network reliability when increased traffic surges occur.&nbsp;</li></ul><p><strong>How did we communicate with impacted customers?</strong></p><p>Starting around 11:00 UTC, we began to receive some reports of a potential emerging issue. As signals continued to gradually increase, we posted an initial statement to the Azure status page at 11:52 UTC.</p><p>Delays in communications via Service Health in the portal were primarily due to challenges gauging the extent of impact and affected regions as limited telemetry of the networking event developing did not clearly indicate a viable scope of impact. Though other signals via internal and external reports indicated a likely platform event ongoing, the disparity of signals deterred targeted notifications until a broad networking issue was determined.</p><p>Communications were sent via Azure Service Health for Azure services that started to report impact, where were later determined to be affected by the networking event. With further analysis and evidence of regional impact confirmed, broad targeted communication was sent to customers region-wide for the identified affected regions by 13:28 UTC.&nbsp;</p><p>Between 13:28 and 15:32 UTC, communications were sent to the customers of additional impacted regions identified.</p><p>By 15:32 UTC, we began reporting recovery via the status page and Service Health, but monitoring and preventative workstreams persisted, which we continued to report until the necessary preventative workstreams were completed by 19:52 UTC.</p><p><strong>How can we make our incident communications more useful?</strong></p><p>We are piloting this "PIR" format as a potential replacement for our "RCA" (Root Cause Analysis) format.</p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/7SHM-P88" class="wa-link-status">https://aka.ms/AzPIR/7SHM-P88</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>June 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            28
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-YVTL-RS0" aria-expanded="false" aria-controls="incident-history-collapse-YVTL-RS0">
+                                <span class="hide-text">06/28/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    Post Incident Review (PIR)  - Azure Software Load Balancer - Multiple Regions
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: YVTL-RS0
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-YVTL-RS0">
+                                    <div class="card-body">
+                                        <p><em>Watch our 'Azure Incident Retrospective' video about this incident: <a href="https://aka.ms/AIR/YVTL-RS0" class="wa-link-status">https://aka.ms/AIR/YVTL-RS0</a></em></p><p><strong>What happened?</strong></p><p><em>Across 28 and 29 June, 2022, two independent Azure networking service incidents occurred simultaneously. While very few customer subscriptions were impacted by both, the overlapping nature of the incident timelines meant that we previously delivered a Preliminary Post Incident Review (PIR) that addressed both issues. After thorough investigations, we are publishing a Final PIR for each incident independently. Below is the Final PIR for Incident YVTL-RS0, summarizing our multi-region Software Load Balancer (SLB) issue – we have separately published a Final PIR for Incident YKDK-TT8, summarizing our EMEA-impacting Wide Area Network (WAN) issue.</em></p><p>Between 05:26 UTC on 28 June 2022 and 04:00 UTC on 1 July 2022, a subset of customers experienced intermittent network failures and packet loss while trying to connect to resources behind a Software Load Balancer (SLB). This incident impacted customers whose Load Balancer frontend IPs (VIPs) were in either of two specific scenarios:</p><p>(1) Azure Firewall customers with more than 15 Destination IP addresses (DIPs) behind an Azure Load Balancer, combined with a requirement for both upstream and downstream packets of a single flow to always land on the same DIP. This scenario impacted services in 14 regions.</p><p>(2) A service endpoint or private link endpoint connection to a service in the region with more than 15 DIPs – for example, SQL and/or Storage. Impacted customers experienced intermittent connectivity failures and packet loss while trying to connect to their resources. This scenario impacted services in three regions.</p><p><strong>What went wrong, and why?</strong></p><p>The Software Load Balancer (SLB) is our software-based routing and load balancing service for all network traffic within our datacenters and clusters. At the highest level, it is a set of servers called multiplexers or MUXs that create an SLB scale unit. Each scale unit hosts many VIPs (Virtual IPs) to serve traffic to multiple DIPs (Destination IPs, these are the IPs of the resources behind the VIP). The MUXs then direct traffic to the DIPs that are in service behind the VIP, which are dynamically monitored utilizing periodic probes to monitor health of DIPs.</p><p>Upon investigating this issue, we identified a change in our latest code deployment which caused some MUX instances to store the backend DIPs in a different order. The change only occurred for load balancers with more than 15 DIPs in the backend pool. The order of the DIPs is important, as it is tied directly to the process used to select the backend server that receives a particular connection. The ordering change impacts traffic that passes through more than one MUX. There are two scenarios where this can occur – the first is when traffic passes through a firewall in both the incoming and return paths; the second is when a particular connection moves from one MUX to another MUX, due a change in routing path through the physical network.</p><p>The first scenario impacted Azure Firewall customers, but only those with more than 15 firewall instances behind a Load Balancer. That’s because Azure Firewall is a stateful firewall that leverages Azure Load Balancer behind the scenes, scaling horizontally to handle traffic load. Since flows are pinned to instances for firewall processing, the load balancer issue meant that packets for a given flow would be received at different instances and be dropped, impacting customer traffic. The number of instances behind the Firewall’s internal Load Balancer are determined by a customer’s traffic pattern. Not all Firewall’s internal Load Balancers have this many instances, which led to delays in correlation between customer reported issues and the behavior of the platform.</p><p>The second scenario occurred due to a change in the flow identifier for an IPv6 packet routing header used for Private Link and service endpoint traffic. Traffic that used this technology would have seen drops as the connection moved from one MUX to another MUX. The new MUX would forward the connection to a different server in the backend pool, which would then reject the request.</p><p>When we deploy updates to our cloud, we use a system called Safe Deployment Practices (SDP). SDP is how we manage change automation so that all code and configuration updates go through well-defined stages, to catch regressions and bugs before they reach customers or – if they do make it past the early stages – impact the smallest number possible. Although telemetry observed a small increase in errors (and a number of customer support requests had been raised) the intermittent nature of this failure meant that our health checks did not correlate these signals to the recent change. This meant that the code had propagated to 14 regions (of our 60+ regions) before we correlated customer impact to this specific deployment.</p><p><strong>How did we respond?</strong></p><p>We engaged multiple investigation and mitigation workstreams in parallel. While we worked to understand the issue, we initially used targeted operations to mitigate VIPs manually for specific customers that were identified as impacted.</p><p>Simultaneously, we developed a hotfix that would address the bug that could be applied without causing further impact to customer traffic. After the hotfix was tested, it was rolled out using a phased approach as per our Safe Deployment Practices.&nbsp;</p><p>Additionally, we created automation that would scan all VIPs every five minutes and mitigate any VIP that was in an inconsistent state to minimize the impact to customers while the hotfix rolled out. This script continued to run until we had our sustainable mitigation completely rolled out.</p><p><strong>How are we making outages like this less likely or less impactful?</strong></p><p>Already completed:</p><ul><li>We have restored consistent ordering for our backend instances, returning to the pre-incident state. The order of these is tied directly to the process used to select the backend server that receives a particular connection.</li></ul><p>Work in progress:</p><ul><li>To address SLB scenario #1 above, we are investing in additional monitoring for Azure Firewall to detect cases when upstream and downstream packets on a single flow do not reach the same DIP.</li><li>To address SLB scenario #2 above, we are fixing the IPv6 flow identifier change so that it remains consistent for the lifetime of the connection and, as a result, all packets will land on a single MUX.</li><li>For Azure Firewall, we are investing in improved packet capture support specific to firewalls (which will help to identify and mitigate issues like this more quickly in the future), as well as enhanced logging for TCP flows (to help isolate the issue more effectively, by logging invalid packets, RST, FIN and FIN-ACK packets).</li></ul><p>In the longer term:</p><ul><li>This incident has validated the need for more thorough end-to-end monitoring during safe deployments, so we are accelerating the onboarding of additional Azure services to use our internal Gandalf AIOps solution suite (See: <a href="https://azure.microsoft.com/blog/advancing-safe-deployment-with-aiops-introducing-gandalf/" class="wa-link-status">https://azure.microsoft.com/blog/advancing-safe-deployment-with-aiops-introducing-gandalf/</a>)</li></ul><p><strong>How can we make our incident communications more useful?</strong></p><p>We are piloting this "PIR" template as a potential replacement for our "RCA" (Root Cause Analysis) template.</p><p>You can rate this PIR and provide any feedback using our quick 3-question survey: <a href="https://aka.ms/AzPIR/YVTL-RS0" class="wa-link-status">https://aka.ms/AzPIR/YVTL-RS0</a></p><h3><br></h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>May 2022</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            31
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-YL23-V90" aria-expanded="false" aria-controls="incident-history-collapse-YL23-V90">
+                                <span class="hide-text">05/31/2022</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Azure Active Directory Sign In logs
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: YL23-V90
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-YL23-V90">
+                                    <div class="card-body">
+                                        <p><strong>Summary of impact:&nbsp;</strong>Between 21:35 UTC on 31 May and 09:54 UTC on 01 Jun 2022, you were identified as a customer who may have experienced significant delays in the availability of logging data for resources such as sign in and audit logs, for Azure Active Directory and related Azure services.&nbsp;This impact may also have resulted in missed or misfired alerts, and issues&nbsp;accessing tools such as&nbsp;Microsoft Graph,&nbsp;the Azure portal,&nbsp;Azure Application Insights,&nbsp;Azure Log Analytics, and/or PowerShell. During this time, Azure Resource Manager (ARM) dependent services may also have experienced CRUD (create, read, update, and delete) service operation failures and/or issues communicating with other Azure services.</p><p><strong>Root Cause:&nbsp;</strong>As part of continuous service improvements, a recent change to the underlying infrastructure that was intended to optimize performance, inadvertently caused the observed impact.&nbsp;While this issue was detected by our telemetry, service health degradation was only detected&nbsp;in the final phase of the rollout.&nbsp;This underlying infrastructure has both regional and global endpoints, to facilitate the varying needs of dependent services. When global endpoints become unhealthy, they will have a global impact on services that depend on them. In this incident, we saw the observed impact manifest as the change reached the final phase of the rollout - when it was deployed to high traffic regions and global endpoints. Prior to this issue manifesting, the impactful change was being rolled out over the last week, with no issues being observed.</p><p><strong>Mitigation:&nbsp;</strong>Initially we attempted to roll-back the impactful change however, due to internal service dependencies, this approach was unsuccessful. As a result, we deployed a hotfix to the affected underlying infrastructure, which mitigated all customer impact.</p><p><strong>Next Steps:&nbsp;</strong>We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Disabling the impactful change globally, across all of the affected underlying infrastructure [Completed]</li><li>Updating our standard operating procedures (SOP) to include specific mitigation guidance for similar scenarios to avoid rollback and help to reduce time to mitigation [Will be completed by 6/8/2022]</li><li>Adjusting our rollout plan for similar changes to the underlying infrastructure, to add rollout phases that will help reduce impact to customers in similar scenarios [Will be completed by 6/8/2022]</li><li>Migrating the underlying infrastructure to a new architecture that will eliminate internal service dependencies which prevented us from rolling back the change. This will also improve the speed of our repair actions, to help significantly shorten time to mitigation during similar impact scenarios [Rollout will begin in July 2022]</li></ul><p><strong>Provide Feedback:</strong>&nbsp;Please help us improve the Azure customer communications experience by taking our survey:&nbsp;<a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        <div class="row col-12 margin-top-bottom-40 month-title-container">
+            <h2>December 2021</h2>
+        </div>
+        <div class="month-incident-container-wrapper">
+            <div class="month-incident-container">
+                    <div class="row">
+                        <h2 class="col-sm-1 incident-history-day">
+                            9
+                        </h2>
+                        <div class="col-sm-11 incident-history-item">
+                            <button class="row incident-history-header" type="button" data-toggle="collapse" data-target="#incident-history-collapse-SNCJ-9ZG" aria-expanded="false" aria-controls="incident-history-collapse-SNCJ-9ZG">
+                                <span class="hide-text">12/09/2021</span>
+                                <div class="col-md-8 incident-history-title">
+                                    RCA - Errors connecting to SCM App Service and/or Azure Functions deployments
+                                </div>
+                                <div class="col-md-3 incident-history-tracking-id">
+                                    Tracking ID: SNCJ-9ZG
+                                </div>
+                                <div class="col-md-1 incident-history-chevron">
+                                    <span class="chevron-down"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-down"></use>
+                            </svg></span>
+                                    <span class="chevron-up"><svg aria-hidden="true" role="presentation">
+                                <use xlink:href="#svg-chevron-up"></use>
+                            </svg></span>
+                                </div>
+                            </button>
+                            <div class="row">
+                                <div class="collapse incident-history-collapse" id="incident-history-collapse-SNCJ-9ZG">
+                                    <div class="card-body">
+                                        <p><strong>Summary of Impact:</strong> Between approximately 21:00 UTC on 09 Dec 2021 and 00:23 UTC on 10 Dec 2021, a subset of customers using App Service and/or Azure Functions may have encountered issues with deployments using web deploy, managing WebJobs, connecting to Web SSH console, executing certain Diagnostic Tools using Azure portal or while accessing SCM endpoint. App Service resources utilizing other deployment methods were not affected. Standard App Service control plane operations and runtime were not impacted.</p><p><strong>Root Cause:</strong> As part of introducing certain resiliency measures, a configuration change was implemented to create a redundant Domain Name Resolution zone for App Service SCM endpoints. However, due to a misconfiguration, this change incorrectly affected the name resolution for App Service SCM endpoint, which resulted in a subset of our customers not being able to connect to the SCM endpoints of the service. This misconfiguration was limited in scope to the SCM endpoint and no other data plane or control plane operations experienced any failures.</p><p><strong>Mitigation:</strong> Engineering was engaged upon receiving reports of failure. In order to mitigate the issue, the misconfigured state of the zone was corrected and persisted for SCM endpoints. Most customers observed resolution within 20 - 40 minutes from when the mitigation was applied. Resolution times varied for customers depending on the Time To Live (TTL) setting of the various networking devices in their traffic pipelines.</p><p><strong>Next Steps:</strong> We apologize for the impact to affected customers. We are continuously taking steps to improve the Microsoft Azure Platform and our processes to help ensure such incidents do not occur in the future. In this case, this includes (but is not limited to):</p><ul><li>Adding automated detection for SCM endpoint related failures.</li><li>Adding improved validation for zone configuration updates.</li><li>Enhancing review measures for critical network configurations.</li></ul><p><strong>Provide Feedback:</strong> Please help us improve the Azure customer communications experience by taking our survey: <a href="https://aka.ms/AzurePIRSurvey" class="wa-link-status">https://aka.ms/AzurePIRSurvey</a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+    <input type="hidden" class="wa-historyResult-count" value="17" />
