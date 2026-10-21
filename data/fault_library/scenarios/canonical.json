@@ -1,0 +1,138 @@
+[
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/weekly-ford10",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3
+  },
+  "id": "scenario/canonical-optimistic",
+  "machines": [
+   "machine/aws-ondemand-nvme",
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/vishwanath10",
+   "machine/aws-ondemand-x0.1",
+   "machine/aws-ondemand-x10"
+  ],
+  "level": "optimistic",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "availability-only: every library machine class, no prices"
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/weekly-ford10",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3
+  },
+  "id": "scenario/canonical-central",
+  "machines": [
+   "machine/aws-ondemand-nvme",
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/vishwanath10",
+   "machine/aws-ondemand-x0.1",
+   "machine/aws-ondemand-x10"
+  ],
+  "level": "central",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "availability-only: every library machine class, no prices"
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/weekly-ford10",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3
+  },
+  "id": "scenario/canonical-pessimistic",
+  "machines": [
+   "machine/aws-ondemand-nvme",
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/vishwanath10",
+   "machine/aws-ondemand-x0.1",
+   "machine/aws-ondemand-x10"
+  ],
+  "level": "pessimistic",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "availability-only: every library machine class, no prices"
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/weekly-ford10",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3
+  },
+  "id": "scenario/reference-ford10",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min"
+  ],
+  "level": "central",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "contrasting environment: only ford10 machine classes"
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/weekly-ford10",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3
+  },
+  "id": "scenario/reference-vishwanath10",
+  "machines": [
+   "machine/vishwanath10"
+  ],
+  "level": "central",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "contrasting environment: only vishwanath10 machine classes"
+ }
+]

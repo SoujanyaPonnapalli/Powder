@@ -440,3 +440,86 @@ def test_build_prices_pipeline_on_fixtures(tmp_path=None):
     cfg = machine_node_config(lib, "machine/spot-i4i.2xlarge-us-west-1", "us-west-1", engine=True)
     assert cfg.data_loss_dist.rate > 0
     assert lib.get("price-transfer/aws-us@2026-10-21")["per_gb"]["inter_az"] == 0.01
+    # ... then machine classes, price assignments and priced scenarios
+    spec = importlib.util.spec_from_file_location(
+        "build_machines", Path(__file__).resolve().parents[1] / "scripts/fault_library/build_machines.py")
+    bm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bm)
+    bm.LIB = lib_dir
+    assert bm.main() == 0
+    lib = FaultLibrary.load(lib_dir)
+    cfgs = scenario_node_configs(lib, "scenario/canonical-central-rho1", engine=True)
+    assert all(c.cost_per_hour > 0 for c in cfgs.values())
+    assert ("machine/spot-i4i.2xlarge-us-west-1", "us-west-1") in cfgs
+    assert ("machine/spot-i4i.2xlarge-us-west-1", "us-east-1") not in cfgs  # regional spot pool
+    rho0 = [e for e in lib.query(kind="price") if e.get("price_kind") == "price_assignment" and e["rho"] == 0.0]
+    assert len(rho0) == 20
+    alt = scenario_node_configs(lib, "scenario/canonical-central-rho1", price_assignment=rho0[3]["id"])
+    assert any(alt[k].cost_per_hour != cfgs[k].cost_per_hour for k in alt)
+
+
+# -- price assignment and traces (Step G) ---------------------------------------
+
+from powder.faults.assign import assign_prices, reliability_score, stratified_prices  # noqa: E402
+from powder.faults.trace import generate  # noqa: E402
+
+
+def test_assignment_extremes_and_multiset():
+    scores = {f"m{i}": float(s) for i, s in enumerate([5.0, 0.2, 1.1, 3.3, 0.05, 2.0, 7.5])}
+    pts = np.random.default_rng(0).lognormal(math.log(0.4), 0.4, 300)
+    ranked = assign_prices(scores, pts, rho=1.0)
+    assert abs(ranked.realised_spearman - 1.0) < 1e-12
+    most_reliable = min(scores, key=scores.get)
+    assert ranked.prices[most_reliable] == max(ranked.prices.values())
+    expected = sorted(stratified_prices(pts, len(scores)))
+    rhos = []
+    for seed in range(200):
+        a = assign_prices(scores, pts, rho=0.0, seed=seed)
+        assert np.allclose(sorted(a.prices.values()), expected)
+        rhos.append(a.realised_spearman)
+    assert abs(np.mean(rhos)) < 0.1
+
+
+def test_reliability_score_units():
+    p = LIB.get("cloud/aws-ondemand-nvme", "node")
+    lam_t, rec, lam_p = transient_and_permanent(p)
+    manual = (lam_t * rec.mean + lam_p * 3600) * 8766
+    assert abs(reliability_score(p) / manual - 1) < 1e-9
+
+
+def test_trace_rates_round_trip():
+    lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
+    lib.entries["__s__"] = {"id": "__s__", "kind": "scenario", "machines": ["machine/aws-ondemand-x10"],
+                            "region_outage": "region_outage/aws-us-from-azure",
+                            "planned_downtime": "planned_downtime/weekly-ford10", "level": "central",
+                            "price_assignment": None, "price_policy": "none",
+                            "deployment": {"regions": ["us-east-1", "us-west-2"]}}
+    slots = {f"s{i}": ("machine/aws-ondemand-x10", "us-east-1" if i % 2 else "us-west-2") for i in range(40)}
+    T = days(365 * 25)
+    ev = generate(lib, "__s__", slots, T, seed=4)
+    prof = LIB.get("synthetic/aws-ondemand-x10", "node")
+    rates = node_profile_rates_ps(prof)
+    for cause, lam in rates.items():
+        if lam <= 0:
+            continue
+        n = sum(1 for e in ev if e.cause == cause)
+        mu = lam * T * len(slots)
+        assert abs(n - mu) < 4 * math.sqrt(mu) + 2, (cause, n, mu)  # downtime fraction is negligible here
+    n_planned = sum(1 for e in ev if e.kind == "planned")
+    assert abs(n_planned / (len(slots) * T / days(7)) - 1) < 0.02
+    ro = LIB.get("region_outage/aws-us-from-azure")
+    lam_r = ro["regions"]["us-east-1"]["rate_per_hour"]["central"] / 3600
+    n_r = sum(1 for e in ev if e.kind == "region" and e.region == "us-east-1")
+    assert abs(n_r - lam_r * T) < 4 * math.sqrt(lam_r * T) + 2
+
+
+def node_profile_rates_ps(profile):
+    from powder.faults.convert import node_profile_rates
+    return {c: r.rate_per_second for c, r in node_profile_rates(profile).items()}
+
+
+def test_trace_is_reproducible():
+    slots = {"a": ("machine/aws-ondemand-nvme", "us-east-1"), "b": ("machine/ford10-google-storage", "us-west-1")}
+    e1 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
+    e2 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
+    assert e1 == e2 and len(e1) > 0

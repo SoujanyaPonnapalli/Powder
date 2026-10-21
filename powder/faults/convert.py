@@ -114,10 +114,18 @@ def machine_node_config(
 
 
 def scenario_node_configs(
-    lib: FaultLibrary, scenario_id: str, *, engine: bool = False, level: str | None = None
+    lib: FaultLibrary, scenario_id: str, *, engine: bool = False, level: str | None = None,
+    price_assignment: str | None = None,
 ) -> dict[tuple[str, str], NodeConfig]:
-    """NodeConfig for every (machine, region) pair in a scenario."""
+    """NodeConfig for every (machine, region) pair in a scenario.
+
+    ``price_assignment`` overrides the scenario's assignment (e.g. to sweep
+    the 20 rho = 0 seeds without a scenario file per seed).
+    """
     s = lib.get(scenario_id, "scenario")
+    if price_assignment is not None:
+        s = {**s, "price_assignment": price_assignment,
+             "price_policy": s["price_policy"] if s.get("price_policy") != "none" else "latest"}
     lvl = level or s.get("level", "central")
     out = {}
     for mid in s["machines"]:
