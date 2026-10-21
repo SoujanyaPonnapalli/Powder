@@ -3,31 +3,31 @@
   {
    "index": 0,
    "label": "<5%",
-   "min": 0,
+   "dots": 0,
    "max": 5
   },
   {
    "index": 1,
    "label": "5-10%",
-   "min": 5,
-   "max": 10
+   "dots": 1,
+   "max": 11
   },
   {
    "index": 2,
    "label": "10-15%",
-   "min": 10,
-   "max": 15
+   "dots": 2,
+   "max": 16
   },
   {
    "index": 3,
    "label": "15-20%",
-   "min": 15,
-   "max": 20
+   "dots": 3,
+   "max": 22
   },
   {
    "index": 4,
    "label": ">20%",
-   "min": 20,
+   "dots": 4,
    "max": 100
   }
  ],
@@ -81,5 +81,17 @@
    }
   }
  },
- "instance_types": {}
+ "instance_types": {
+  "i4i.2xlarge": {
+   "emr": true,
+   "cores": 8,
+   "ram_gb": 64.0
+  },
+  "m6id.2xlarge": {
+   "emr": true,
+   "cores": 8,
+   "ram_gb": 32.0
+  }
+ },
+ "global_rate": "<10%"
 }

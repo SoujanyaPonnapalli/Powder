@@ -140,8 +140,8 @@ def validate_entry(e: dict[str, Any]) -> list[str]:
     elif kind == "planned_downtime":
         errs += validate_spec(e.get("period"), f"{eid}.period")
         errs += _dist_or_triple(e.get("duration"), f"{eid}.duration")
-        if e.get("phase") not in {"equilibrium", "uniform_first_period"}:
-            errs.append(f"{eid}: phase must be equilibrium or uniform_first_period")
+        if e.get("phase") not in {"equilibrium", "uniform_first_period", "rolling"}:
+            errs.append(f"{eid}: phase must be equilibrium, uniform_first_period or rolling")
 
     elif kind == "region_outage":
         regions = e.get("regions", {})
@@ -150,6 +150,9 @@ def validate_entry(e: dict[str, Any]) -> list[str]:
         for r, spec in regions.items():
             errs += check_triple(spec.get("rate_per_hour"), f"{eid}.regions.{r}.rate_per_hour")
         errs += _dist_or_triple(e.get("duration"), f"{eid}.duration")
+        if e.get("global") is not None:
+            errs += check_triple(e["global"].get("rate_per_hour"), f"{eid}.global.rate_per_hour")
+            errs += _dist_or_triple(e["global"].get("duration", e.get("duration")), f"{eid}.global.duration")
 
     elif kind == "price":
         if e.get("price_kind") not in PRICE_KINDS:

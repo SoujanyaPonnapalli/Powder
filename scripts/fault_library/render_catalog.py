@@ -76,6 +76,10 @@ def main() -> int:
             q = r["rate_per_hour"]
             out.append(f"| `{p['id']}` | {aws} | {r['azure_region']} | "
                        f"{q['low'] * H:.3g} / {q['central'] * H:.3g} / {q['high'] * H:.3g} | {fmt_s(d)} |")
+        if p.get("global"):
+            q = p["global"]["rate_per_hour"]
+            out.append(f"| `{p['id']}` | **all regions at once** | global process ({p['global']['n_incidents']} incident) | "
+                       f"{q['low'] * H:.3g} / {q['central'] * H:.3g} / {q['high'] * H:.3g} | {fmt_s(d)} |")
 
     machines = sorted(lib.query(kind="machine"), key=lambda m: m["id"])
     out += ["", "## Machine classes", "", "| Machine | Fault profile | Tier | Price route | Regions |", "|---|---|---|---|---|"]

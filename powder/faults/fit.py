@@ -171,8 +171,27 @@ class Pooled:
     k: int
 
 
-def random_effects_pool(rates: Sequence[float], variances: Sequence[float], z: float = 1.645) -> Pooled:
-    """DerSimonian-Laird on log rates; low/high = 90% prediction interval."""
+#: Two-sided 90% Student-t quantiles (0.95 one-sided) by degrees of freedom.
+_T95 = {1: 6.314, 2: 2.920, 3: 2.353, 4: 2.132, 5: 2.015, 6: 1.943, 7: 1.895, 8: 1.860, 9: 1.833,
+        10: 1.812, 12: 1.782, 15: 1.753, 20: 1.725, 30: 1.697, 60: 1.671}
+
+
+def t95(dof: int) -> float:
+    if dof <= 0:
+        return math.inf
+    keys = sorted(_T95)
+    for k in keys:
+        if dof <= k:
+            return _T95[k]
+    return 1.645
+
+
+def random_effects_pool(rates: Sequence[float], variances: Sequence[float], z: float | None = None) -> Pooled:
+    """DerSimonian-Laird on log rates; low/high = 90% prediction interval.
+
+    The prediction interval uses Student-t with k - 2 degrees of freedom
+    (Higgins, Thompson & Spiegelhalter 2009) unless ``z`` is given.
+    """
     y = np.log(np.asarray(rates, float))
     v = np.asarray(variances, float)
     w = 1.0 / v
@@ -184,7 +203,8 @@ def random_effects_pool(rates: Sequence[float], variances: Sequence[float], z: f
     ws = 1.0 / (v + tau2)
     mu = float(np.sum(ws * y) / np.sum(ws))
     se = float(1.0 / math.sqrt(np.sum(ws)))
-    half = z * math.sqrt(se**2 + tau2)
+    crit = z if z is not None else (t95(k - 2) if k >= 3 else 1.645)
+    half = crit * math.sqrt(se**2 + tau2)
     return Pooled(math.exp(mu), math.exp(mu - half), math.exp(mu + half), tau2, se, k)
 
 

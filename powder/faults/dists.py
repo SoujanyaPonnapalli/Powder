@@ -127,8 +127,8 @@ def weibull_from_mean_median(mean: float, med: float) -> Weibull | Exponential:
 
     For Weibull, median/mean = ln(2)^(1/k) / Gamma(1 + 1/k), which increases
     monotonically with k (0.0 as k -> 0, about 1.0 near k = 3.4). If the
-    requested ratio is out of range, fall back to an exponential with the
-    same mean.
+    requested ratio is outside [k=0.05, k=3], the shape is clamped and only
+    the mean is matched.
     """
     if mean <= 0 or med <= 0:
         raise SpecError("mean and median must be positive")
@@ -138,8 +138,10 @@ def weibull_from_mean_median(mean: float, med: float) -> Weibull | Exponential:
         return math.log(2.0) ** (1.0 / k) / math.gamma(1.0 + 1.0 / k)
 
     lo, hi = 0.05, 3.0
-    if not (ratio(lo) <= r <= ratio(hi)):
-        return Exponential(1.0 / mean)
+    if r <= ratio(lo):  # heavier-tailed than any Weibull in range: clamp the shape, keep the mean
+        return Weibull(lo, mean / math.gamma(1.0 + 1.0 / lo))
+    if r >= ratio(hi):
+        return Weibull(hi, mean / math.gamma(1.0 + 1.0 / hi))
     for _ in range(200):
         mid = 0.5 * (lo + hi)
         if ratio(mid) < r:

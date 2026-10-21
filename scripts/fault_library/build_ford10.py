@@ -187,6 +187,42 @@ def fig3_bars(page, bbox):
     return rows, xmap, ymap
 
 
+# -- bootstrap -------------------------------------------------------------------
+
+BOOT = 2000
+
+
+def min_events(sc: StepCurve, f_quantum: float) -> int:
+    """Lower bound on the events behind an ECDF drawn with coordinate quantum f_quantum (in F).
+
+    Jump heights are rounded to whole quanta. The smallest observed jump is one
+    quantum, so a single event's true height is below 1.5 quanta, i.e.
+    N > 1 / (1.5 * f_quantum). (N cannot be pinned down further from the PDF.)
+    """
+    smallest = float(np.min(sc.F_after - sc.F_before))
+    return int(math.ceil(1.0 / (1.5 * max(smallest, f_quantum))))
+
+
+def bootstrap_curve(sc: StepCurve, seed: int, n_events: int, B: int = BOOT) -> dict[str, np.ndarray]:
+    """Resample the digitized ECDF with ``n_events`` draws (a lower bound on the
+    true event count, see min_events), so the intervals are conservative.
+    Returns arrays of E[D], P(D >= 15 min), E[D 1{D >= 15 min}], E[D | D >= 15 min].
+    """
+    rng = np.random.default_rng(seed)
+    w = (sc.F_after - sc.F_before)
+    w = w / w.sum()
+    n = int(n_events)
+    idx = rng.choice(len(sc.x), size=(B, n), p=w)
+    x = sc.x[idx]
+    ge = x >= 900.0
+    mean = x.mean(axis=1)
+    p15 = ge.mean(axis=1)
+    m15 = (x * ge).mean(axis=1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        c15 = np.where(p15 > 0, m15 / np.maximum(p15, 1e-300), np.nan)
+    return {"mean": mean, "p15": p15, "m15": m15, "c15": c15}
+
+
 # -- raster cross-check --------------------------------------------------------
 
 def raster_check(page_no, bbox_pt, colors, step_curves, exclude_pt=()):
@@ -308,23 +344,42 @@ def main():
     #   lambda_ge15 = U / E[D | D >= 15 min]   and   lambda_all = lambda_ge15 / P(D >= 15 min)
     # with E[D | D >= 15 min] and P(D >= 15 min) from Fig 2.
     rates = {}
-    for c in ("node_restart", "planned_reboot", "unplanned_reboot"):
+    boots = {}
+    for i, c in enumerate(("node_restart", "planned_reboot", "unplanned_reboot")):
         sc = fig2[c]
         dF = sc.F_after - sc.F_before
         ge = sc.x >= 900.0
         p15 = float(dF[ge].sum())
-        ed15_h = float((sc.x[ge] * dF[ge]).sum() / p15) / H
-        avg, lo, hi = (v / 100.0 / ed15_h for v in TABLE1[c])
+        m15 = float((sc.x[ge] * dF[ge]).sum())  # E[D 1{D >= 15 min}], seconds
+        ed15_h = m15 / p15 / H
+        n_ev = min_events(sc, 0.052086 / (y2m.b * -1 if y2m.b < 0 else y2m.b))
+        bt = bootstrap_curve(sc, seed=100 + i, n_events=n_ev)
+        boots[c] = bt
+        qt = lambda a, p: float(np.nanquantile(a, p))  # noqa: E731
+        U_avg, U_min, U_max = (v / 100.0 for v in TABLE1[c])
+        # central: point estimate; low/high: Table 1 cell range x bootstrap duration uncertainty
+        ge15 = {"low": U_min / (qt(bt["c15"], 0.95) / H), "central": U_avg / ed15_h,
+                "high": U_max / (qt(bt["c15"], 0.05) / H)}
+        allv = {"low": U_min / (qt(bt["m15"], 0.95) / H), "central": U_avg / (m15 / H),
+                "high": U_max / (max(qt(bt["m15"], 0.05), 1e-9) / H)}
         fig3_rate = fig3_avg[c] / 1000.0 / 24.0
         stats[c]["P_ge_15min"] = p15
         stats[c]["mean_ge_15min_s"] = ed15_h * H
-        rates[c] = {"ge15min": {"low": lo, "central": avg, "high": hi},
-                    "all_events": {"low": lo / p15, "central": avg / p15, "high": hi / p15},
+        stats[c]["bootstrap"] = {"N_events_assumed": n_ev, "N_rule": "smallest jump = 1 quantum -> N > 1/(1.5 quantum)",
+                                 "B": BOOT,
+                                 "mean_s_5_95": [qt(bt["mean"], 0.05), qt(bt["mean"], 0.95)],
+                                 "P_ge_15min_5_95": [qt(bt["p15"], 0.05), qt(bt["p15"], 0.95)],
+                                 "mean_ge_15min_s_5_95": [qt(bt["c15"], 0.05), qt(bt["c15"], 0.95)],
+                                 "n_jumps_ge_15min": int(ge.sum())}
+        rates[c] = {"ge15min": ge15, "all_events": allv,
                     "fig3_one_cell_ge15min": fig3_rate,
-                    "fig3_over_table1": fig3_rate / avg,
-                    "fig3_within_table1_range": lo <= fig3_rate <= hi}
+                    "fig3_over_table1": fig3_rate / ge15["central"],
+                    "fig3_within_table1_range": ge15["low"] <= fig3_rate <= ge15["high"]}
+    # Table 2 check with bootstrap uncertainty (causes resampled independently)
+    node_rate = 1.0 / (TABLE2["node_months"] * MONTH_DAYS * 24)
+    ratio_draws = sum(TABLE1[c][0] / 100.0 / (boots[c]["c15"] / H) for c in boots) / node_rate
     ge15 = sum(rates[c]["ge15min"]["central"] for c in rates)
-    node_mttf_rate = 1.0 / (TABLE2["node_months"] * MONTH_DAYS * 24)
+    node_mttf_rate = node_rate
 
     checks = {
         "fig1_F_15min_gt_0.90": stats["all_causes_fig1"]["F_15min"] > 0.90,
@@ -336,6 +391,9 @@ def main():
         "sum_ge15min_rates_table1_per_node_hour": ge15,
         "table2_node_mttf_rate_per_node_hour": node_mttf_rate,
         "ratio_sum_ge15min_to_table2_node_mttf": ge15 / node_mttf_rate,
+        "ratio_bootstrap_5_95": [float(np.nanquantile(ratio_draws, 0.05)), float(np.nanquantile(ratio_draws, 0.95))],
+        "ratio_note": ("node-restart E[D | D >= 15 min] rests on few jumps (one ~25 h event dominates); "
+                       "treat the Table 2 agreement as weak evidence"),
     }
     write_entries(stats, rates, fig3_avg, fig3_sd, calib, checks, q)
     print(json.dumps(_round({"stats": {c: {k: v for k, v in s.items() if k not in ("fits", "best_fit_spec")}
@@ -425,10 +483,18 @@ def write_entries(stats, rates, fig3_avg, fig3_sd, calib, checks, q):
         return StepCurve(sc.x[keep], (sc.F_before[keep] - f0) / scale, (sc.F_after[keep] - f0) / scale)
 
     def dur_triple(c, ge15=False):
+        """central = digitized curve; low/high = curve rescaled in time so its mean sits at the
+        bootstrap 5th/95th percentile of the mean (or at least the digitization band)."""
         sc = load_steps(c)
+        b = stats[c]["bootstrap"]
         if ge15:
             sc = conditional_ge15(sc)
-        return tri(empirical_spec(sc, q, -band), empirical_spec(sc, q, 0.0), empirical_spec(sc, q, +band))
+            m, (lo_m, hi_m) = stats[c]["mean_ge_15min_s"], b["mean_ge_15min_s_5_95"]
+        else:
+            m, (lo_m, hi_m) = stats[c]["mean_s"], b["mean_s_5_95"]
+        lo_shift = min(-band, math.log10(lo_m / m))
+        hi_shift = max(band, math.log10(hi_m / m))
+        return tri(empirical_spec(sc, q, lo_shift), empirical_spec(sc, q, 0.0), empirical_spec(sc, q, hi_shift))
 
     disk_rate = tri(1 / (50 * 8766), 1 / (math.sqrt(10 * 50) * 8766), 1 / (10 * 8766))
     common_notes = ("Rates: Table 1 (all cells) gives unavailability from events >= 15 min, so "
@@ -469,6 +535,13 @@ def write_entries(stats, rates, fig3_avg, fig3_sd, calib, checks, q):
          "period": {"type": "normal", "mean": 7 * DAY, "std": 12 * H, "min_val": 1 * DAY},
          "duration": dur_triple("planned_reboot"), "phase": "equilibrium", "graceful": False,
          "notes": "Decision 2026-10-20: weekly gap N(7 d, 12 h); duration = Ford Fig 2 planned-reboot CDF."},
+        {"id": "planned_downtime/weekly-ford10-rolling", "kind": "planned_downtime", "version": 1,
+         "tags": ["sensitivity", "rolling"], "derived_from": ["ford10#digitized-planned_reboot"],
+         "built_by": "scripts/fault_library/build_ford10.py",
+         "period": {"type": "normal", "mean": 7 * DAY, "std": 12 * H, "min_val": 1 * DAY},
+         "duration": dur_triple("planned_reboot"), "phase": "rolling", "graceful": False,
+         "notes": ("Rolling variant (decision 2026-10-21: independent phases stay the default): all nodes in one "
+                   "AZ (or region, if slots carry no AZ) go down together; groups staggered evenly through the week.")},
         {"id": "planned_downtime/ford10-rate", "kind": "planned_downtime", "version": 1,
          "tags": ["sensitivity"], "derived_from": ["ford10#table1-planned_reboot", "ford10#digitized-planned_reboot"],
          "built_by": "scripts/fault_library/build_ford10.py",

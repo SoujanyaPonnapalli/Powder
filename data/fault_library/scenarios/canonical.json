@@ -17,6 +17,8 @@
   "id": "scenario/canonical-optimistic",
   "machines": [
    "machine/aws-ondemand-nvme",
+   "machine/aws-ondemand-nvme-loss0.2",
+   "machine/aws-ondemand-nvme-loss0.8",
    "machine/ford10-google-storage",
    "machine/ford10-google-storage-ge15min",
    "machine/vishwanath10",
@@ -46,6 +48,8 @@
   "id": "scenario/canonical-central",
   "machines": [
    "machine/aws-ondemand-nvme",
+   "machine/aws-ondemand-nvme-loss0.2",
+   "machine/aws-ondemand-nvme-loss0.8",
    "machine/ford10-google-storage",
    "machine/ford10-google-storage-ge15min",
    "machine/vishwanath10",
@@ -75,6 +79,8 @@
   "id": "scenario/canonical-pessimistic",
   "machines": [
    "machine/aws-ondemand-nvme",
+   "machine/aws-ondemand-nvme-loss0.2",
+   "machine/aws-ondemand-nvme-loss0.8",
    "machine/ford10-google-storage",
    "machine/ford10-google-storage-ge15min",
    "machine/vishwanath10",

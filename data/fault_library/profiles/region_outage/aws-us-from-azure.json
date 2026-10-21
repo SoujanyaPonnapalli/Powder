@@ -24,20 +24,20 @@
     "counting_rule": "default; scopes counted: multi_az, region_wide",
     "rate_model": {
       "method": "empirical-Bayes Gamma-Poisson over Azure US regions",
-      "alpha": 1740600000.0,
-      "beta_years": 4579130000.0,
+      "alpha": 44060900000.0,
+      "beta_years": 376353000000.0,
       "heterogeneous": false,
-      "pooled_per_year": 0.380103,
+      "pooled_per_year": 0.116955,
       "azure_counts": {
-        "eastus": 2,
-        "eastus2": 1,
-        "centralus": 2,
-        "northcentralus": 1,
-        "southcentralus": 1,
-        "westcentralus": 1,
-        "westus": 2,
-        "westus2": 2,
-        "westus3": 1
+        "eastus": 1,
+        "eastus2": 0,
+        "centralus": 1,
+        "northcentralus": 0,
+        "southcentralus": 0,
+        "westcentralus": 0,
+        "westus": 1,
+        "westus2": 1,
+        "westus3": 0
       },
       "high_rule": "2 x posterior 95th percentile (under-reporting)"
     },
@@ -47,29 +47,26 @@
         "distance_km": 275.3,
         "rule": "tie with eastus (both Virginia); fixed to eastus2 by decision 2026-10-20",
         "rate_per_hour": {
-          "low": 2.69362e-05,
-          "central": 4.50288e-05,
-          "high": 0.000133797
+          "low": 5.5454e-06,
+          "central": 1.50096e-05,
+          "high": 5.64327e-05
         },
-        "n_incidents": 1,
+        "n_incidents": 0,
         "exposure_years": 3.80014,
-        "incidents": [
-          "2023-01-25-wan"
-        ]
+        "incidents": []
       },
       "us-east-2": {
         "azure_region": "eastus",
         "distance_km": 399.0,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 2.69362e-05,
-          "central": 4.50288e-05,
-          "high": 0.000133797
+          "low": 5.5454e-06,
+          "central": 1.50096e-05,
+          "high": 5.64327e-05
         },
-        "n_incidents": 2,
+        "n_incidents": 1,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2026-04-24-eus-pubsub"
         ]
       },
@@ -78,14 +75,13 @@
         "distance_km": 67.7,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 2.69362e-05,
-          "central": 4.50288e-05,
-          "high": 0.000133797
+          "low": 5.5454e-06,
+          "central": 1.50096e-05,
+          "high": 5.64327e-05
         },
-        "n_incidents": 2,
+        "n_incidents": 1,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2026-07-23-wus-wan"
         ]
       },
@@ -94,17 +90,30 @@
         "distance_km": 155.3,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 2.69362e-05,
-          "central": 4.50288e-05,
-          "high": 0.000133797
+          "low": 5.5454e-06,
+          "central": 1.50096e-05,
+          "high": 5.64327e-05
         },
-        "n_incidents": 2,
+        "n_incidents": 1,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2026-05-29-wus2-storm"
         ]
       }
+    },
+    "global": {
+      "rate_per_hour": {
+        "low": 5.28107e-06,
+        "central": 4.50288e-05,
+        "high": 0.000234592
+      },
+      "n_incidents": 1,
+      "exposure_years": 3.80014,
+      "incidents": [
+        "2023-01-25-wan"
+      ],
+      "method": "Jeffreys Gamma(n + 1/2, T); low = q05, high = 2 x q95",
+      "duration_note": "same duration distribution as regional outages (too few global events to fit)"
     },
     "duration": {
       "low": {
@@ -151,7 +160,7 @@
     "multi_region_incidents": [
       "2023-01-25-wan"
     ],
-    "notes": "Modelling assumption: an AWS region fails like its mapped Azure region. Rates are per region; multi_region_incidents lists events that hit every region at once (input for exec #3 correlated failures)."
+    "notes": "Modelling assumption: an AWS region fails like its mapped Azure region. 'regions' are independent per-region processes from region-specific incidents; 'global' is a separate process of outages that hit every region at once (decision 2026-10-21)."
   },
   {
     "id": "region_outage/aws-us-from-azure-incl-single-az",
@@ -183,20 +192,20 @@
     "counting_rule": "pessimistic: single-datacenter / single-AZ VM outages and unknown-scope events also count as region outages; scopes counted: multi_az, region_wide, single_az, unknown",
     "rate_model": {
       "method": "empirical-Bayes Gamma-Poisson over Azure US regions",
-      "alpha": 89605400.0,
-      "beta_years": 170262000.0,
+      "alpha": 24801100.0,
+      "beta_years": 94248900.0,
       "heterogeneous": false,
-      "pooled_per_year": 0.526297,
+      "pooled_per_year": 0.263148,
       "azure_counts": {
-        "eastus": 4,
-        "eastus2": 2,
-        "centralus": 2,
-        "northcentralus": 1,
-        "southcentralus": 2,
-        "westcentralus": 1,
-        "westus": 3,
-        "westus2": 2,
-        "westus3": 1
+        "eastus": 3,
+        "eastus2": 1,
+        "centralus": 1,
+        "northcentralus": 0,
+        "southcentralus": 1,
+        "westcentralus": 0,
+        "westus": 2,
+        "westus2": 1,
+        "westus3": 0
       },
       "high_rule": "2 x posterior 95th percentile (under-reporting)"
     },
@@ -206,14 +215,13 @@
         "distance_km": 275.3,
         "rule": "tie with eastus (both Virginia); fixed to eastus2 by decision 2026-10-20",
         "rate_per_hour": {
-          "low": 4.01506e-05,
-          "central": 6.17062e-05,
-          "high": 0.000174086
+          "low": 1.68725e-05,
+          "central": 3.16869e-05,
+          "high": 0.000100543
         },
-        "n_incidents": 2,
+        "n_incidents": 1,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2025-01-08-eus2-net"
         ]
       },
@@ -222,14 +230,13 @@
         "distance_km": 399.0,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 4.01506e-05,
-          "central": 6.17062e-05,
-          "high": 0.000174086
+          "low": 1.68725e-05,
+          "central": 3.16869e-05,
+          "high": 0.000100543
         },
-        "n_incidents": 4,
+        "n_incidents": 3,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2023-09-16-eus-power",
           "2025-03-18-eus-fiber",
           "2026-04-24-eus-pubsub"
@@ -240,14 +247,13 @@
         "distance_km": 67.7,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 4.01506e-05,
-          "central": 6.17062e-05,
-          "high": 0.000174086
+          "low": 1.68725e-05,
+          "central": 3.16869e-05,
+          "high": 0.000100543
         },
-        "n_incidents": 3,
+        "n_incidents": 2,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2026-02-07-wus-power",
           "2026-07-23-wus-wan"
         ]
@@ -257,17 +263,30 @@
         "distance_km": 155.3,
         "rule": "nearest",
         "rate_per_hour": {
-          "low": 4.01506e-05,
-          "central": 6.17062e-05,
-          "high": 0.000174086
+          "low": 1.68725e-05,
+          "central": 3.16869e-05,
+          "high": 0.000100543
         },
-        "n_incidents": 2,
+        "n_incidents": 1,
         "exposure_years": 3.80014,
         "incidents": [
-          "2023-01-25-wan",
           "2026-05-29-wus2-storm"
         ]
       }
+    },
+    "global": {
+      "rate_per_hour": {
+        "low": 5.28107e-06,
+        "central": 4.50288e-05,
+        "high": 0.000234592
+      },
+      "n_incidents": 1,
+      "exposure_years": 3.80014,
+      "incidents": [
+        "2023-01-25-wan"
+      ],
+      "method": "Jeffreys Gamma(n + 1/2, T); low = q05, high = 2 x q95",
+      "duration_note": "same duration distribution as regional outages (too few global events to fit)"
     },
     "duration": {
       "low": {
@@ -314,6 +333,6 @@
     "multi_region_incidents": [
       "2023-01-25-wan"
     ],
-    "notes": "Modelling assumption: an AWS region fails like its mapped Azure region. Rates are per region; multi_region_incidents lists events that hit every region at once (input for exec #3 correlated failures)."
+    "notes": "Modelling assumption: an AWS region fails like its mapped Azure region. 'regions' are independent per-region processes from region-specific incidents; 'global' is a separate process of outages that hit every region at once (decision 2026-10-21)."
   }
 ]

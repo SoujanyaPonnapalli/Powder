@@ -172,7 +172,8 @@ def disk_profiles():
                                    "disk/schroeder-gibson-fast07", "disk/ford10"],
                   "built_by": "scripts/fault_library/build_literature.py",
                   "rate_per_hour": tri(pooled.low / YEAR_H, pooled.central / YEAR_H, pooled.high / YEAR_H),
-                  "pool": {"method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval",
+                  "pool": {"method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval "
+                                     "with Student-t, k-2 dof (Higgins et al. 2009)",
                            "tau2": pooled.tau2, "se": pooled.se, "k": pooled.k,
                            "per_year": {"low": pooled.low, "central": pooled.central, "high": pooled.high}},
                   "notes": ("Datacentre NVMe on i4i/m6id may differ from these HDD/boot-SSD fleets; the between-source "
@@ -200,12 +201,16 @@ def main():
             "frailty_a": a, "shape": {"type": "exponential"}}
 
     # cloud/aws-ondemand-nvme (plan §7.4, §7.9)
-    host_yr = 0.08  # Vishwanath server repair rate (S), upper anchor for VM-visible host faults
+    # Host repair rate per server-year: central = P(>=1 repair) form (-ln(1-0.09) x 12/14 = 0.081,
+    # the slide's "AFR 8%"); high = repair-event rate including repeats (20 per 100 servers per
+    # 14 months = 0.171). Both include disk repairs, so they over-count non-disk host faults:
+    # conservative.
+    host_yr = tri(0.08, 0.08, 0.20 * 12 / 14)
     f_lm = tri(0.5, 0.25, 0.0)     # share hidden by live migration / live update
-    f_loss = tri(0.2, 0.5, 0.8)    # share of instance-visible host faults that lose the host
-    inst = {k: host_yr * (1 - f_lm[k]) for k in ("low", "central", "high")}
-    host_loss = {k: inst[k] * f_loss[k] / YEAR_H for k in inst}
-    reboot = {k: inst[k] * f_loss[k] / YEAR_H for k in inst}  # (1 - f_loss) bracket mirrors f_loss: 0.2/0.5/0.8
+    f_loss_central = 0.5           # share of instance-visible host faults that lose the host
+    inst = {k: host_yr[k] * (1 - f_lm[k]) for k in ("low", "central", "high")}  # low <= central <= high
+    host_loss = {k: inst[k] * f_loss_central / YEAR_H for k in inst}
+    reboot = {k: inst[k] * (1 - f_loss_central) / YEAR_H for k in inst}
     sw_ratio = tri(1.0, 2.35, 4.49)  # Ford >=15-min node-restart : unplanned-reboot (avg ratio; max/max ratio)
     sw = {k: reboot[k] * sw_ratio[k] for k in reboot}
     pause = tri(0.0, 0.0, 1.0 / (18 * 30.4375 * 24))  # Azure bound, used only at the pessimistic end
@@ -220,16 +225,18 @@ def main():
                             "ford10#digitized-unplanned_reboot", "ford10#digitized-node_restart", "disk/pooled"],
            "built_by": "scripts/fault_library/build_literature.py",
            "notes": ("No public source gives a modern on-demand VM interruption rate (plan §7.13); this profile is "
-                     "derived. Host faults: server repair rate 8%/yr (Vishwanath, S) x (1 - f_LM) with f_LM in "
-                     "{0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split between "
-                     "in-place reboot and host loss with f_loss in {0.2, 0.5, 0.8}. Software: Ford's >=15-min "
+                     "derived. Host faults: server repair rate (Vishwanath, S: 0.08/yr as P(>=1 repair), 0.171/yr as "
+                     "repair events at the high end) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live "
+                     "migration and prediction hide a large share), split 50/50 between in-place reboot and host "
+                     "loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min "
                      "node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations "
                      "conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 "
                      "measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than "
                      "TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF "
                      "(hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2."),
-           "assumptions": {"host_repair_rate_per_year": host_yr, "f_LM": f_lm, "f_loss": f_loss,
-                           "sw_ratio": sw_ratio},
+           "assumptions": {"host_repair_rate_per_year": host_yr, "f_LM": f_lm, "f_loss": f_loss_central,
+                           "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8", "sw_ratio": sw_ratio,
+                           "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"},
            "causes": {
                "hw_reboot": {"rate_per_hour": reboot, "duration": ford_all["causes"]["hw_reboot"]["duration"]},
                "hw_host_loss": {"rate_per_hour": host_loss},
@@ -241,7 +248,19 @@ def main():
            "shape_variant": {"type": "weibull", "k": tri(0.7, 0.75, 0.8),
                              "source": ["schroeder-gibson-fast07#weibull-k", "lanl-dsn06#weibull-k"]}}
     (LIB / "profiles/node/host-reference.json").write_text(json.dumps(r8([vish]), indent=2) + "\n")
-    (LIB / "profiles/node/aws-ondemand.json").write_text(json.dumps(r8([aws]), indent=2) + "\n")
+    variants = []
+    for fl in (0.2, 0.8):
+        v = json.loads(json.dumps(aws))
+        v["id"] = f"cloud/aws-ondemand-nvme-loss{fl:g}"
+        v["tags"] = aws["tags"] + ["sensitivity"]
+        v["derived_from"] = aws["derived_from"]
+        v["assumptions"] = {**aws["assumptions"], "f_loss": fl}
+        v["notes"] = aws["notes"] + f" Variant: f_loss = {fl:g} (share of host faults that lose the host)."
+        v["causes"]["hw_host_loss"]["rate_per_hour"] = {k: inst[k] * fl / YEAR_H for k in inst}
+        v["causes"]["hw_reboot"]["rate_per_hour"] = {k: inst[k] * (1 - fl) / YEAR_H for k in inst}
+        v["causes"]["sw"]["rate_per_hour"] = {k: inst[k] * (1 - fl) / YEAR_H * sw_ratio[k] for k in inst}
+        variants.append(v)
+    (LIB / "profiles/node/aws-ondemand.json").write_text(json.dumps(r8([aws] + variants), indent=2) + "\n")
 
     # SLA cap check (pessimistic end)
     from powder.faults.dists import from_spec

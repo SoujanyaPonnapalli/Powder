@@ -43,23 +43,49 @@ def newest(path: Path, pattern: str):
     return found[-1] if found else None
 
 
+def _time_weighted(points, t_end):
+    """Time-weighted mean of a step price series [(t, price)] up to t_end."""
+    tot = acc = 0.0
+    for (t0, p0), (t1, _) in zip(points, points[1:] + [(t_end, None)]):
+        dt = max(0.0, t1 - t0)
+        acc += p0 * dt
+        tot += dt
+    return acc / tot if tot > 0 else points[-1][1]
+
+
 def spot_history_summary(date_dir: Path | None):
-    """{(type, region): {"latest", "summary", "points"}} from describe-spot-price-history dumps."""
+    """{(type, region): {"latest", "summary", ...}} from describe-spot-price-history dumps.
+
+    Spot prices are step functions per AZ: each AZ series is time-weighted,
+    then summarised across AZs (median of AZ means / latest values).
+    """
+    from datetime import datetime
     out = {}
     if date_dir is None:
         return out
+    ts = lambda s: datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()  # noqa: E731
     for f in sorted(date_dir.glob("*.json")):
         region = f.stem
         hist = json.loads(f.read_text()).get("SpotPriceHistory", [])
-        by_type: dict[str, list] = {}
+        series: dict[str, dict[str, list]] = {}
         for h in hist:
-            by_type.setdefault(h["InstanceType"], []).append((h["Timestamp"], float(h["SpotPrice"]), h["AvailabilityZone"]))
-        for itype, pts in by_type.items():
-            pts.sort()
-            prices = [p for _, p, _ in pts]
-            out[(itype, region)] = {"latest": pts[-1][1], "window": [pts[0][0], pts[-1][0]], "n": len(pts),
-                                    "summary": {"mean": statistics.fmean(prices), "min": min(prices),
-                                                "max": max(prices), "median": statistics.median(prices)}}
+            series.setdefault(h["InstanceType"], {}).setdefault(h["AvailabilityZone"], []).append(
+                (ts(h["Timestamp"]), float(h["SpotPrice"])))
+        for itype, by_az in series.items():
+            t_end = max(t for pts in by_az.values() for t, _ in pts)
+            az_mean, az_latest = {}, {}
+            for az, pts in by_az.items():
+                pts.sort()
+                az_mean[az] = _time_weighted(pts, t_end)
+                az_latest[az] = pts[-1][1]
+            t0 = min(t for pts in by_az.values() for t, _ in pts)
+            out[(itype, region)] = {
+                "latest": statistics.median(az_latest.values()),
+                "window": [datetime.utcfromtimestamp(t0).isoformat() + "Z", datetime.utcfromtimestamp(t_end).isoformat() + "Z"],
+                "n": sum(len(p) for p in by_az.values()),
+                "summary": {"mean": statistics.median(az_mean.values()), "az_time_weighted_mean": az_mean,
+                            "az_latest": az_latest, "min_az_mean": min(az_mean.values()),
+                            "max_az_mean": max(az_mean.values())}}
     return out
 
 

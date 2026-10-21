@@ -142,8 +142,10 @@ class FaultLibrary:
                 price = e.get("price", {})
                 if price.get("route") == "native":
                     for region, key in price.get("pool_keys", {}).items():
-                        if key not in self.entries:
+                        if key not in self.entries or self.entries[key].get("kind") != "price":
                             out.append(f"{eid}: native price {key!r} for {region} missing")
+                        elif self.entries[key].get("price_kind") not in ("compute_ondemand", "compute_spot_series"):
+                            out.append(f"{eid}: native price {key!r} is not a compute price")
             if kind == "scenario":
                 for m in e.get("machines", []):
                     if m not in self.entries or self.entries[m]["kind"] != "machine":
@@ -154,6 +156,14 @@ class FaultLibrary:
                     ref = e.get(field)
                     if ref is not None and (ref not in self.entries or self.entries[ref]["kind"] != k):
                         out.append(f"{eid}: {field} {ref!r} must be an existing {k} entry")
+                    elif field == "price_assignment" and ref is not None and \
+                            self.entries[ref].get("price_kind") != "price_assignment":
+                        out.append(f"{eid}: {ref!r} is not a price_assignment")
+                ro = self.entries.get(e.get("region_outage") or "")
+                if ro:
+                    missing = [r for r in e.get("deployment", {}).get("regions", []) if r not in ro.get("regions", {})]
+                    if missing:
+                        out.append(f"{eid}: region_outage {ro['id']} has no rate for {missing}")
                 out += self._check_scenario_prices(e)
         return out
 

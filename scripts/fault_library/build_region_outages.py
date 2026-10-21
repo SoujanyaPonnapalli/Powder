@@ -17,9 +17,13 @@ Method (plan §7.8, with two recorded deviations):
   the 2021-22 search found no confirmable VM outages.
 * Count an incident for an Azure region if VMs there lost connectivity
   region-wide or across >= 2 AZs (scope region_wide / multi_az, compute
-  affected, confidence high/medium). "global" incidents count for every
-  region and are tagged multi_region. Single-AZ datacenter events go into the
+  affected, confidence high/medium). Single-AZ datacenter events go into the
   `-incl-single-az` variant (and exec #3).
+* Global incidents (every region at once, e.g. the Jan 2023 WAN outage) form a
+  separate correlated process (decision 2026-10-21) with its own Jeffreys
+  Gamma(n + 1/2, T) rate; they are NOT counted per region. Traces inject them
+  as one event hitting every region; engines without correlation add the
+  global rate to each region's rate.
 * Rates: empirical-Bayes Gamma-Poisson over the nine Azure **US** regions
   (deviation: the plan said all regions worldwide, but the incident search was
   thorough only for US regions; a worldwide hyperprior would be biased low).
@@ -81,12 +85,14 @@ def counts_for(rows, scopes):
     sel = [r for r in rows if r["in_window"] and r["compute"] and r["usable"] and r["scope"] in scopes]
     n = {reg: 0 for reg in US}
     used = {reg: [] for reg in US}
+    glob = [r for r in sel if "global" in r["regions"]]
     for r in sel:
-        targets = US if "global" in r["regions"] else [x for x in r["regions"] if x in n]
-        for reg in targets:
+        if "global" in r["regions"]:
+            continue  # separate correlated process
+        for reg in [x for x in r["regions"] if x in n]:
             n[reg] += 1
             used[reg].append(r["incident_id"])
-    return n, used, sel
+    return n, used, sel, glob
 
 
 def duration_model(events):
@@ -176,8 +182,13 @@ def main():
                      and r["scope"] in ("region_wide", "multi_az")]
     dur_triple, dur_info = duration_model(region_events)
     for suffix, (scopes, label) in variants.items():
-        n, used, sel = counts_for(rows, scopes)
+        n, used, sel, glob = counts_for(rows, scopes)
         rr, eb = rates(n)
+        from powder.faults.fit import gamma_ppf
+        g_n = len(glob)
+        g_shape = g_n + 0.5
+        g_rate = {"low": gamma_ppf(0.05, g_shape, YEARS) / H_PER_YEAR, "central": g_shape / YEARS / H_PER_YEAR,
+                  "high": 2.0 * gamma_ppf(0.95, g_shape, YEARS) / H_PER_YEAR}
         regions = {}
         for aws, m in rmap.items():
             az = m["azure_region"]
@@ -185,7 +196,7 @@ def main():
                             "rate_per_hour": {k: rr[az][k] for k in ("low", "central", "high")},
                             "n_incidents": n[az], "exposure_years": YEARS,
                             "incidents": used[az]}
-        cited = sorted({iid for reg in US for iid in used[reg]} |
+        cited = sorted({iid for reg in US for iid in used[reg]} | {r["incident_id"] for r in glob} |
                        {r["incident_id"] for r in region_events if r["dur_min"]})
         profiles.append({
             "id": f"region_outage/aws-us-from-azure{suffix}", "kind": "region_outage", "version": 1,
@@ -199,13 +210,18 @@ def main():
                            "pooled_per_year": eb.pooled_rate,
                            "azure_counts": n, "high_rule": "2 x posterior 95th percentile (under-reporting)"},
             "regions": regions,
+            "global": {"rate_per_hour": g_rate, "n_incidents": g_n, "exposure_years": YEARS,
+                       "incidents": [r["incident_id"] for r in glob],
+                       "method": "Jeffreys Gamma(n + 1/2, T); low = q05, high = 2 x q95",
+                       "duration_note": "same duration distribution as regional outages (too few global events to fit)"},
             "duration": dur_triple, "duration_fit": dur_info,
             "multi_region_incidents": [r["incident_id"] for r in sel if "global" in r["regions"]
                                        or sum(x in US for x in r["regions"]) > 1],
-            "notes": ("Modelling assumption: an AWS region fails like its mapped Azure region. Rates are per "
-                      "region; multi_region_incidents lists events that hit every region at once (input for "
-                      "exec #3 correlated failures).")})
+            "notes": ("Modelling assumption: an AWS region fails like its mapped Azure region. 'regions' are "
+                      "independent per-region processes from region-specific incidents; 'global' is a separate "
+                      "process of outages that hit every region at once (decision 2026-10-21).")})
         report[suffix or "default"] = {"azure_counts": n, "eb": eb.__dict__,
+                                       "global_per_year": {k: v * H_PER_YEAR for k, v in g_rate.items()},
                                        "aws_rates_per_year": {a: {k: v * H_PER_YEAR for k, v in d["rate_per_hour"].items()}
                                                               for a, d in regions.items()}}
     (LIB / "profiles/region_outage/aws-us-from-azure.json").write_text(json.dumps(r6(profiles), indent=2) + "\n")

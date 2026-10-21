@@ -75,19 +75,19 @@
     ],
     "built_by": "scripts/fault_library/build_literature.py",
     "rate_per_hour": {
-      "low": 9.2388864e-07,
+      "low": 5.3174611e-07,
       "central": 1.884332e-06,
-      "high": 3.8432196e-06
+      "high": 6.6774479e-06
     },
     "pool": {
-      "method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval",
+      "method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval with Student-t, k-2 dof (Higgins et al. 2009)",
       "tau2": 0.13194059,
       "se": 0.23619163,
       "k": 4,
       "per_year": {
-        "low": 0.0080988078,
+        "low": 0.0046612864,
         "central": 0.016518054,
-        "high": 0.033689663
+        "high": 0.058534508
       }
     },
     "notes": "Datacentre NVMe on i4i/m6id may differ from these HDD/boot-SSD fleets; the between-source spread (tau2) widens the band accordingly."

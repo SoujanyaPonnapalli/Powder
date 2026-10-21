@@ -16,6 +16,38 @@
   }
  },
  {
+  "id": "machine/aws-ondemand-nvme-loss0.2",
+  "kind": "machine",
+  "fault_profile": "cloud/aws-ondemand-nvme-loss0.2",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/aws-ondemand-nvme-loss0.8",
+  "kind": "machine",
+  "fault_profile": "cloud/aws-ondemand-nvme-loss0.8",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
   "id": "machine/ford10-google-storage",
   "kind": "machine",
   "fault_profile": "cluster/ford10-google-storage",

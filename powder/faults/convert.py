@@ -69,10 +69,18 @@ def _hazard(rate: float, shape: dict[str, Any], level: str) -> Distribution:
     return Exponential(rate)
 
 
-def transient_and_permanent(profile: dict[str, Any], level: str = "central"):
-    """(lambda_T, recovery distribution, lambda_P), rates per second."""
+def transient_and_permanent(profile: dict[str, Any], level: str = "central",
+                            rate_multiplier: float = 1.0, extra_transient: list[CauseRate] | None = None):
+    """(lambda_T, recovery distribution, lambda_P), rates per second.
+
+    ``rate_multiplier`` scales the profile's own rates (frailty);
+    ``extra_transient`` adds scenario-level transient processes (planned
+    downtime folded in as an exponential cause), which are not scaled.
+    """
     rates = node_profile_rates(profile, level)
+    rates = {c: CauseRate(c, r.rate_per_second * rate_multiplier, r.duration) for c, r in rates.items()}
     transient = [r for c, r in rates.items() if c in TRANSIENT_CAUSES and r.rate_per_second > 0]
+    transient += [r for r in (extra_transient or []) if r.rate_per_second > 0]
     lam_t = sum(r.rate_per_second for r in transient)
     lam_p = sum(r.rate_per_second for c, r in rates.items() if c in PERMANENT_CAUSES)
     if not transient:
@@ -93,12 +101,18 @@ def machine_node_config(
     cost_per_hour: float = 0.0,
     system: dict[str, Any] | None = None,
     engine: bool = False,
+    rate_multiplier: float = 1.0,
+    extra_transient: list[CauseRate] | None = None,
 ) -> NodeConfig:
-    """Build the NodeConfig for one machine class in one region."""
+    """Build the NodeConfig for one machine class in one region.
+
+    ``rate_multiplier``: per-node frailty Z (see trace.frailty_draws).
+    ``extra_transient``: scenario-level transient processes (planned downtime).
+    """
     machine = lib.get(machine_id, "machine")
     profile = lib.get(machine["fault_profile"], "node")
     sysd = {**DEFAULT_SYSTEM, **(system or {})}
-    lam_t, recovery, lam_p = transient_and_permanent(profile, level)
+    lam_t, recovery, lam_p = transient_and_permanent(profile, level, rate_multiplier, extra_transient)
     spawn = from_spec(profile.get("spawn", sysd["spawn"]))
     fix = engine_compatible if engine else (lambda d: d)
     return NodeConfig(
@@ -113,14 +127,31 @@ def machine_node_config(
     )
 
 
+def planned_as_cause(lib: FaultLibrary, scenario: dict[str, Any], level: str) -> list[CauseRate]:
+    """The scenario's planned downtime as an exponential transient cause.
+
+    Rate 1/E[W], duration = the planned-duration distribution. This is the
+    Markov/ILP/engine approximation of the (quasi-periodic) planned process
+    that traces inject exactly; long-run downtime matches E[D]/E[W].
+    """
+    if not scenario.get("planned_downtime"):
+        return []
+    pd = lib.get(scenario["planned_downtime"], "planned_downtime")
+    period = from_spec(pd["period"])
+    return [CauseRate("planned", 1.0 / period.mean, from_spec(pick(pd["duration"], level, "duration")))]
+
+
 def scenario_node_configs(
     lib: FaultLibrary, scenario_id: str, *, engine: bool = False, level: str | None = None,
-    price_assignment: str | None = None,
+    price_assignment: str | None = None, include_planned: bool = True,
 ) -> dict[tuple[str, str], NodeConfig]:
     """NodeConfig for every (machine, region) pair in a scenario.
 
     ``price_assignment`` overrides the scenario's assignment (e.g. to sweep
     the 20 rho = 0 seeds without a scenario file per seed).
+    ``include_planned`` folds the scenario's planned downtime into each node's
+    transient process (default), so simulation sees the planned downtime that
+    emulation traces inject.
     """
     s = lib.get(scenario_id, "scenario")
     if price_assignment is not None:
@@ -137,17 +168,21 @@ def scenario_node_configs(
             out[(mid, region)] = machine_node_config(
                 lib, mid, region, level=lvl, cost_per_hour=price,
                 system=s.get("system"), engine=engine,
+                extra_transient=planned_as_cause(lib, s, lvl) if include_planned else None,
             )
     return out
 
 
 @dataclass(frozen=True)
 class RegionOutageModel:
-    """Per-region outage hazards plus one shared duration distribution."""
+    """Per-region outage hazards, one shared duration distribution, and a
+    separate global process (outages that hit every region at once)."""
 
     rate_per_second: dict[str, float]
     duration: Distribution
     source_regions: dict[str, str]
+    global_rate_per_second: float = 0.0
+    global_duration: Distribution | None = None
 
     def as_network_config(self, rule: str = "max", engine: bool = False) -> NetworkConfig:
         """Collapse to today's single-distribution NetworkConfig.
@@ -158,7 +193,10 @@ class RegionOutageModel:
         the engines are a planned follow-up (plan Step F).
         """
         rates = list(self.rate_per_second.values())
-        rate = max(rates) if rule == "max" else sum(rates) / len(rates)
+        # The engines have no correlated (all-region) outages: the global
+        # process is added to the per-region rate, which keeps each region's
+        # marginal outage rate right but loses the correlation.
+        rate = (max(rates) if rule == "max" else sum(rates) / len(rates)) + self.global_rate_per_second
         dur = engine_compatible(self.duration) if engine else self.duration
         return NetworkConfig(
             outage_dist=Exponential(rate) if rate > 0 else NEVER,
@@ -180,4 +218,8 @@ def scenario_network_config(lib: FaultLibrary, scenario_id: str, level: str | No
         r = ro["regions"][region]
         rates[region] = float(pick(r["rate_per_hour"], lvl, "rate")) / SECONDS_PER_HOUR
         src[region] = r.get("azure_region", region)
-    return RegionOutageModel(rates, from_spec(pick(ro["duration"], lvl, "duration")), src)
+    dur = from_spec(pick(ro["duration"], lvl, "duration"))
+    g = ro.get("global")
+    g_rate = float(pick(g["rate_per_hour"], lvl, "rate")) / SECONDS_PER_HOUR if g else 0.0
+    g_dur = from_spec(pick(g.get("duration", ro["duration"]), lvl, "duration")) if g else None
+    return RegionOutageModel(rates, dur, src, g_rate, g_dur)

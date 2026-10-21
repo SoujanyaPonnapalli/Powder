@@ -886,8 +886,24 @@ Remaining:
 - [ ] Trace replay mode in powder-mc (Goal 2.2: simulator and deployment see the same faults). Optional for exec #1.
 - [ ] (exec #10) Replace placeholder durations (`hw_reboot`, `sw`, `spawn`, rebuild `R`) with measured AWS timings as `@v2` profiles.
 
+- [x] Independent review (2026-10-21): every number re-derived from the source records matches; fixes applied:
+  Spot Advisor parser now matches the real file layout (`{index, label, dots, max}`); the trace uses one transient
+  clock at lambda_T plus a separate exponential data-loss clock (same process as the simulator); frailty is opt-in on
+  both sides; scenario planned downtime is folded into NodeConfigs (`include_planned`); per-slot/per-layer RNG
+  streams; AWS host faults consistent per level (f_loss split into -loss0.2/-loss0.8 variants); inter-AZ transfer
+  counted on both sides; time-weighted spot price summaries; t-based pooling interval; validation gaps closed.
+- [x] Decisions 2026-10-21: global incidents are a separate all-regions process (per-region rates now from
+  region-specific incidents only); planned downtime keeps independent phases by default, with a
+  `planned_downtime/weekly-ford10-rolling` variant (AZ/region waves).
+- [x] Ford uncertainty: bootstrap over each digitized curve with N >= 1146 events (smallest jump = one PDF quantum);
+  rate low/high = Table 1 cell range x bootstrap duration uncertainty; duration low/high = curve rescaled to the
+  bootstrap 5th/95th percentile mean. Table 2 check ratio 1.05 (bootstrap 0.75-2.0): weak evidence only.
+
 Recorded deviations from §7 (and why):
 
+- Global outages: the one global incident in the window (2023-01-25 WAN) gives a global rate of 0.39/yr (Jeffreys,
+  band 0.05-2.1); per-region rates fall to 0.13/yr. With n = 1 the global rate is the least certain number in the
+  region model.
 - Region outage EB uses the nine Azure US regions, not all regions worldwide: the incident search was thorough only for US regions. Window 2023-01-01 to 2026-10-20: PIRs older than ~5 years are gone, and since mid-2022 Microsoft publishes only broad incidents.
 - The software cause in `cloud/aws-ondemand-nvme` uses Ford's >=15-min node-restart : unplanned-reboot ratio (1 / 2.35 / 4.49) with >=15-min durations. Short automatic restarts are left to planned downtime and exec #10, because Ford's all-events node-restart rate (~57 per node-year) reflects Google's rollout practice.
 - Rust-side changes (new distributions, planned-downtime events, per-region outages) are not done: the sandbox has no Rust toolchain. Until then, `engine=True` maps new distributions to a Weibull with the same mean and median, and region outages collapse to the max regional rate.

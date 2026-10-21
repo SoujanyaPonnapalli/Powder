@@ -382,7 +382,8 @@ def test_parse_ondemand_filters():
 def test_transfer_merge_and_validation():
     parts = [parse_transfer_offer(_offers()[reg], US) for reg in US]
     t = merge_transfer(parts, US)
-    assert t["inter_region"]["us-east-1"]["us-west-2"] == 0.02 and t["inter_az"] == 0.01
+    assert t["inter_region"]["us-east-1"]["us-west-2"] == 0.02
+    assert t["inter_az_per_side"] == 0.01 and t["inter_az"] == 0.02  # billed on both sides
     assert t["internet_egress"] == 0.09  # first paid tier
     try:
         merge_transfer(parts[:2], US)
@@ -401,7 +402,15 @@ def test_price_distribution_and_factors():
 
 
 def test_spot_advisor_and_band_rates():
-    bands = parse_spot_advisor(json.loads((FIX / "spot_advisor_sample.json").read_text()), US)
+    doc = json.loads((FIX / "spot_advisor_sample.json").read_text())
+    assert all("min" not in r and "dots" in r for r in doc["ranges"])  # real layout
+    bands = parse_spot_advisor(doc, US)
+    bad = {**doc, "ranges": [dict(r, label="?") if r["index"] == 2 else r for r in doc["ranges"]]}
+    try:
+        parse_spot_advisor(bad, US)
+        raise AssertionError("changed band labels must fail")
+    except ValueError:
+        pass
     assert bands[("us-east-1", "i4i.2xlarge")]["band"] == 0
     r = band_rates(1)
     assert r["low"] < r["central"] < r["high"]
@@ -439,7 +448,7 @@ def test_build_prices_pipeline_on_fixtures(tmp_path=None):
     assert "spot_interrupt" in spot["causes"]
     cfg = machine_node_config(lib, "machine/spot-i4i.2xlarge-us-west-1", "us-west-1", engine=True)
     assert cfg.data_loss_dist.rate > 0
-    assert lib.get("price-transfer/aws-us@2026-10-21")["per_gb"]["inter_az"] == 0.01
+    assert lib.get("price-transfer/aws-us@2026-10-21")["per_gb"]["inter_az"] == 0.02
     # ... then machine classes, price assignments and priced scenarios
     spec = importlib.util.spec_from_file_location(
         "build_machines", Path(__file__).resolve().parents[1] / "scripts/fault_library/build_machines.py")
@@ -533,3 +542,110 @@ def test_scenario_machine_types_for_ilp():
     from powder.faults.ilp import scenario_machine_types
     types = scenario_machine_types(LIB, "scenario/canonical-central", copies=4)
     assert types and all(t.copies == 4 and "@" in t.type_id for t in types)
+
+
+# -- review fixes: trace/simulator consistency, global outages, rolling planned ---
+
+def _scenario(lib, sid, **kw):
+    base = {"id": sid, "kind": "scenario", "machines": ["machine/aws-ondemand-x10"], "region_outage": None,
+            "planned_downtime": None, "level": "central", "price_assignment": None, "price_policy": "none",
+            "deployment": {"regions": ["us-east-1", "us-west-2"]}}
+    base.update(kw)
+    lib.entries[sid] = base
+    return sid
+
+
+def test_trace_weibull_uses_single_transient_clock():
+    """With a Weibull shape the trace must fire transients at lambda_T (one clock), like the simulator."""
+    lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
+    prof = json.loads(json.dumps(LIB.get("synthetic/aws-ondemand-x10")))
+    prof["id"] = "__weib__"
+    prof["shape"] = {"type": "weibull", "k": {"low": 0.7, "central": 0.7, "high": 0.7}}
+    # no permanent causes: replacements restart the clock and (for k < 1) legitimately raise
+    # the transient rate in both the trace and the simulator, so isolate the renewal process
+    for c in ("disk", "hw_host_loss"):
+        prof["causes"].pop(c, None)
+    lib.entries["__weib__"] = prof
+    lib.entries["__m__"] = {"id": "__m__", "kind": "machine", "fault_profile": "__weib__", "price": {"route": "none"}}
+    sid = _scenario(lib, "__sw__", machines=["__m__"])
+    slots = {f"s{i}": ("__m__", "us-east-1") for i in range(200)}
+    T = days(365 * 20)
+    ev = generate(lib, sid, slots, T, seed=1)
+    lam_t, _, _ = transient_and_permanent(prof)
+    n = sum(e.kind == "transient" for e in ev)
+    mu = lam_t * T * len(slots)
+    assert abs(n / mu - 1) < 0.05, (n, mu)
+
+
+def test_trace_slot_streams_are_independent():
+    lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
+    sid = _scenario(lib, "__ind__", planned_downtime="planned_downtime/weekly-ford10")
+    a = {"x": ("machine/aws-ondemand-x10", "us-east-1"), "y": ("machine/aws-ondemand-x10", "us-west-2")}
+    b = {**a, "z": ("machine/aws-ondemand-x10", "us-west-2")}
+    b2 = {"a0": ("machine/aws-ondemand-x10", "us-east-1"), **b}  # sorts before x as well
+    ea = [e for e in generate(lib, sid, a, days(4000), seed=3) if e.slot == "x"]
+    eb = [e for e in generate(lib, sid, b2, days(4000), seed=3) if e.slot == "x"]
+    assert ea == eb and any(e.kind != "planned" for e in ea)
+
+
+def test_frailty_is_opt_in_and_matches_draws():
+    from powder.faults.trace import frailty_draws
+    lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
+    # transient-only profile with strong frailty: same host, repeated faults (lemons)
+    prof = json.loads(json.dumps(LIB.get("synthetic/aws-ondemand-x10")))
+    prof.update({"id": "__frail__", "frailty_a": 0.1})
+    for c in ("disk", "hw_host_loss"):
+        prof["causes"].pop(c, None)
+    lib.entries["__frail__"] = prof
+    lib.entries["__mf__"] = {"id": "__mf__", "kind": "machine", "fault_profile": "__frail__", "price": {"route": "none"}}
+    sid = _scenario(lib, "__fr__", machines=["__mf__"])
+    slots = {f"s{i}": ("__mf__", "us-east-1") for i in range(300)}
+    T = days(365 * 30)
+    plain = generate(lib, sid, slots, T, seed=2)
+    frail = generate(lib, sid, slots, T, seed=2, use_frailty=True)
+    per_slot = lambda ev: np.array([sum(e.slot == s for e in ev) for s in slots])  # noqa: E731
+    assert per_slot(frail).var() > 3 * per_slot(plain).var()  # lemons appear only with frailty
+    z = frailty_draws(lib, slots, seed=2)
+    assert abs(np.mean(list(z.values())) - 1) < 0.5 and len(z) == len(slots)
+
+
+def test_planned_downtime_folded_into_node_configs():
+    lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
+    sid = _scenario(lib, "__pl__", machines=["machine/aws-ondemand-nvme"], planned_downtime="planned_downtime/weekly-ford10")
+    with_p = scenario_node_configs(lib, sid)[("machine/aws-ondemand-nvme", "us-east-1")]
+    without = scenario_node_configs(lib, sid, include_planned=False)[("machine/aws-ondemand-nvme", "us-east-1")]
+    assert math.isclose(1 / with_p.failure_dist.mean - 1 / without.failure_dist.mean, 1 / days(7), rel_tol=1e-9)
+
+
+def test_rolling_planned_groups_go_down_together():
+    pd = LIB.get("planned_downtime/weekly-ford10-rolling", "planned_downtime")
+    nodes = ["a1", "a2", "b1", "b2"]
+    groups = {"a1": "az-a", "a2": "az-a", "b1": "az-b", "b2": "az-b"}
+    ev = schedule(nodes, days(70), pd, np.random.default_rng(0), groups=groups)
+    starts = {}
+    for e in ev:
+        starts.setdefault(e.node, []).append(round(e.start, 6))
+    assert starts["a1"] == starts["a2"] and starts["b1"] == starts["b2"] and starts["a1"] != starts["b1"]
+
+
+def test_global_outage_process():
+    from powder.faults.convert import scenario_network_config
+    ro = LIB.get("region_outage/aws-us-from-azure")
+    assert ro["global"]["n_incidents"] >= 1 and "2023-01-25-wan" in ro["global"]["incidents"]
+    for r in ro["regions"].values():  # the global event is not counted per region
+        assert "2023-01-25-wan" not in r["incidents"]
+    m = scenario_network_config(LIB, "scenario/canonical-central")
+    nc = m.as_network_config()
+    assert math.isclose(nc.outage_dist.rate, max(m.rate_per_second.values()) + m.global_rate_per_second)
+    lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
+    sid = _scenario(lib, "__gl__", region_outage="region_outage/aws-us-from-azure")
+    ev = generate(lib, sid, {"x": ("machine/aws-ondemand-nvme", "us-east-1")}, days(365 * 200), seed=5)
+    assert any(e.kind == "global" and e.region == "*" for e in ev)
+
+
+def test_aws_host_faults_consistent_per_level():
+    p = LIB.get("cloud/aws-ondemand-nvme", "node")
+    a = p["assumptions"]
+    for lvl in ("low", "central", "high"):
+        total = (p["causes"]["hw_reboot"]["rate_per_hour"][lvl] + p["causes"]["hw_host_loss"]["rate_per_hour"][lvl]) * 8766
+        assert math.isclose(total, a["host_repair_rate_per_year"][lvl] * (1 - a["f_LM"][lvl]), rel_tol=1e-6)

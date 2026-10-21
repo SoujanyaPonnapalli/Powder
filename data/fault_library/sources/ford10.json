@@ -237,7 +237,12 @@
       },
       "sum_ge15min_rates_table1_per_node_hour": 0.00033332187,
       "table2_node_mttf_rate_per_node_hour": 0.00031835474,
-      "ratio_sum_ge15min_to_table2_node_mttf": 1.047014
+      "ratio_sum_ge15min_to_table2_node_mttf": 1.047014,
+      "ratio_bootstrap_5_95": [
+        0.75425105,
+        2.0044148
+      ],
+      "ratio_note": "node-restart E[D | D >= 15 min] rests on few jumps (one ~25 h event dominates); treat the Table 2 agreement as weak evidence"
     },
     "coordinate_quantum_decades": 0.0020840539
   },
@@ -514,14 +519,14 @@
       "metric_verbatim": "Derived node restart rate per node-hour (>=15 min and all events)",
       "value": {
         "ge15min": {
-          "low": 1.7570209e-06,
+          "low": 6.6802057e-07,
           "central": 6.1056476e-05,
-          "high": 0.00056883551
+          "high": 0.0026255543
         },
         "all_events": {
-          "low": 0.00018847211,
+          "low": 7.563979e-05,
           "central": 0.0065494057,
-          "high": 0.061017844
+          "high": 0.41140098
         },
         "fig3_one_cell_ge15min": 3.6216523e-05,
         "fig3_over_table1": 0.59316431,
@@ -541,14 +546,14 @@
       "metric_verbatim": "Derived planned reboot rate per node-hour (>=15 min and all events)",
       "value": {
         "ge15min": {
-          "low": 7.9973118e-05,
+          "low": 4.9090119e-05,
           "central": 0.0002463172,
-          "high": 0.00090049731
+          "high": 0.0013796817
         },
         "all_events": {
-          "low": 0.00018879903,
+          "low": 0.00011578964,
           "central": 0.00058150101,
-          "high": 0.0021258771
+          "high": 0.0033069444
         },
         "fig3_one_cell_ge15min": 0.00027765821,
         "fig3_over_table1": 1.1272384,
@@ -570,12 +575,12 @@
         "ge15min": {
           "low": 0.0,
           "central": 2.5948185e-05,
-          "high": 0.00012662714
+          "high": 0.00021111792
         },
         "all_events": {
           "low": 0.0,
           "central": 3.3160503e-05,
-          "high": 0.00016182326
+          "high": 0.00026994063
         },
         "fig3_one_cell_ge15min": 4.4381885e-05,
         "fig3_over_table1": 1.7104042,

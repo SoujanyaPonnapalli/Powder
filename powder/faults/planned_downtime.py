@@ -12,6 +12,10 @@ Each node runs an independent renewal process of planned-downtime starts:
   instead uses U * W_0 with an ordinary first gap.
 * if a downtime would still be running at the next scheduled start, that
   start is deferred to the end of the current downtime (no overlap).
+* phase ``rolling`` (variant): nodes are grouped (by AZ when the slot gives
+  one, else by region) and each group goes down together; group phases are
+  staggered evenly through the mean period from an equilibrium-drawn offset,
+  and each node in a group draws its own duration.
 
 The same schedule feeds the trace generator (emulation) and Goal 5's
 software-update scheduling, which can later replace the random phase.
@@ -67,19 +71,39 @@ def schedule(
     rng: np.random.Generator,
     level: str = "central",
     start_time: float = 0.0,
+    groups: dict[str, str] | None = None,
 ) -> list[PlannedEvent]:
-    """All planned-downtime events that start in ``[start_time, start_time + horizon)``."""
+    """All planned-downtime events that start in ``[start_time, start_time + horizon)``.
+
+    ``groups`` maps node -> group key (AZ or region); used by ``rolling`` phases.
+    """
     period = from_spec(profile["period"])
     duration = from_spec(pick(profile["duration"], level, "duration"))
     phase = profile.get("phase", "equilibrium")
     end_time = start_time + horizon
+    nodes = list(node_ids)
     out: list[PlannedEvent] = []
-    for node in node_ids:
-        t = start_time + _first_start(period, phase, rng)
-        while t < end_time:
-            d = float(duration.sample(rng))
-            out.append(PlannedEvent(node, t, t + d))
-            t = max(t + float(period.sample(rng)), t + d)
+    if phase == "rolling":
+        groups = groups or {n: n for n in nodes}
+        keys = sorted(set(groups[n] for n in nodes))
+        base = _first_start(period, "equilibrium", rng)
+        for i, key in enumerate(keys):
+            members = [n for n in nodes if groups[n] == key]
+            t = start_time + (base + i * period.mean / len(keys)) % period.mean
+            while t < end_time:
+                ends = []
+                for n in members:
+                    d = float(duration.sample(rng))
+                    out.append(PlannedEvent(n, t, t + d))
+                    ends.append(t + d)
+                t = max(t + float(period.sample(rng)), max(ends))
+    else:
+        for node in nodes:
+            t = start_time + _first_start(period, phase, rng)
+            while t < end_time:
+                d = float(duration.sample(rng))
+                out.append(PlannedEvent(node, t, t + d))
+                t = max(t + float(period.sample(rng)), t + d)
     out.sort(key=lambda e: (e.start, e.node))
     return out
 

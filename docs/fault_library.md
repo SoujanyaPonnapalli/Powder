@@ -8,6 +8,8 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (R=1h) | Node availability |
 |---|---|---|---|---|---|---|
 | `cloud/aws-ondemand-nvme` | cloud | 9.95 y | 110 min | 21.5 y | 0.231 | 0.999974 |
+| `cloud/aws-ondemand-nvme-loss0.2` | cloud | 6.22 y | 110 min | 35.1 y | 0.323 | 0.999963 |
+| `cloud/aws-ondemand-nvme-loss0.8` | cloud | 24.9 y | 110 min | 15.5 y | 0.138 | 0.999984 |
 | `legacy/vm-spot` | cloud | 30 d | 20 min | 1 d | 369 | 0.957870 |
 | `legacy/vm-standard` | cloud | 30 d | 20 min | 3 y | 4.39 | 0.999499 |
 | `legacy/vm-unreliable` | cloud | 30 d | 20 min | 365 d | 5.06 | 0.999423 |
@@ -24,7 +26,7 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `disk/backblaze-hdd-2025` | 0.0136 / 0.0136 / 0.0136 |
 | `disk/backblaze-ssd-2023` | 0.01 / 0.01 / 0.01 |
 | `disk/ford10` | 0.02 / 0.0447 / 0.1 |
-| `disk/pooled` | 0.0081 / 0.0165 / 0.0337 |
+| `disk/pooled` | 0.00466 / 0.0165 / 0.0585 |
 | `disk/schroeder-gibson-fast07` | 0.0283 / 0.0283 / 0.0283 |
 
 ## Planned downtime
@@ -33,25 +35,30 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 |---|---|---|---|---|
 | `planned_downtime/ford10-rate` | 71.7 d | 20.6 min | 0.0200% | 1.75 |
 | `planned_downtime/weekly-ford10` | 7 d | 20.6 min | 0.2047% | 17.9 |
+| `planned_downtime/weekly-ford10-rolling` | 7 d | 20.6 min | 0.2047% | 17.9 |
 
 ## Region outages (per AWS region)
 
 | Profile | AWS region | Azure region | Outages per year (low / central / high) | Mean duration |
 |---|---|---|---|---|
-| `region_outage/aws-us-from-azure` | us-east-1 | eastus2 | 0.236 / 0.395 / 1.17 | 9.33 h |
-| `region_outage/aws-us-from-azure` | us-east-2 | eastus | 0.236 / 0.395 / 1.17 | 9.33 h |
-| `region_outage/aws-us-from-azure` | us-west-1 | westus | 0.236 / 0.395 / 1.17 | 9.33 h |
-| `region_outage/aws-us-from-azure` | us-west-2 | westus2 | 0.236 / 0.395 / 1.17 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-east-1 | eastus2 | 0.352 / 0.541 / 1.53 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-east-2 | eastus | 0.352 / 0.541 / 1.53 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-west-1 | westus | 0.352 / 0.541 / 1.53 | 9.33 h |
-| `region_outage/aws-us-from-azure-incl-single-az` | us-west-2 | westus2 | 0.352 / 0.541 / 1.53 | 9.33 h |
+| `region_outage/aws-us-from-azure` | us-east-1 | eastus2 | 0.0486 / 0.132 / 0.495 | 9.33 h |
+| `region_outage/aws-us-from-azure` | us-east-2 | eastus | 0.0486 / 0.132 / 0.495 | 9.33 h |
+| `region_outage/aws-us-from-azure` | us-west-1 | westus | 0.0486 / 0.132 / 0.495 | 9.33 h |
+| `region_outage/aws-us-from-azure` | us-west-2 | westus2 | 0.0486 / 0.132 / 0.495 | 9.33 h |
+| `region_outage/aws-us-from-azure` | **all regions at once** | global process (1 incident) | 0.0463 / 0.395 / 2.06 | 9.33 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-east-1 | eastus2 | 0.148 / 0.278 / 0.881 | 9.33 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-east-2 | eastus | 0.148 / 0.278 / 0.881 | 9.33 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-west-1 | westus | 0.148 / 0.278 / 0.881 | 9.33 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | us-west-2 | westus2 | 0.148 / 0.278 / 0.881 | 9.33 h |
+| `region_outage/aws-us-from-azure-incl-single-az` | **all regions at once** | global process (1 incident) | 0.0463 / 0.395 / 2.06 | 9.33 h |
 
 ## Machine classes
 
 | Machine | Fault profile | Tier | Price route | Regions |
 |---|---|---|---|---|
 | `machine/aws-ondemand-nvme` | `cloud/aws-ondemand-nvme` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
+| `machine/aws-ondemand-nvme-loss0.2` | `cloud/aws-ondemand-nvme-loss0.2` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
+| `machine/aws-ondemand-nvme-loss0.8` | `cloud/aws-ondemand-nvme-loss0.8` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/aws-ondemand-x0.1` | `synthetic/aws-ondemand-x0.1` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/aws-ondemand-x10` | `synthetic/aws-ondemand-x10` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/ford10-google-storage` | `cluster/ford10-google-storage` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
@@ -69,5 +76,5 @@ No AWS prices fetched yet: run `fetch_aws_prices.py`, `fetch_spot.py advisor|his
 ## Coverage
 
 - Node profiles without a machine class: none
-- Machine classes with assigned (not native) prices: 6
+- Machine classes with assigned (not native) prices: 8
 - Scenarios: `scenario/canonical-central`, `scenario/canonical-optimistic`, `scenario/canonical-pessimistic`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-vishwanath10`

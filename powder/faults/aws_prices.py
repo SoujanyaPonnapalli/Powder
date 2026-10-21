@@ -112,9 +112,11 @@ def parse_transfer_offer(offer: dict[str, Any], regions: Iterable[str]) -> dict[
         if not paid or src not in regions:
             continue
         usd = paid[0][2]
-        if dst in regions and dst != src and "interregion" in ttype:
+        if "peering" in ttype:
+            continue
+        if dst in regions and dst != src and ttype.startswith("interregion") and "inbound" not in ttype:
             inter.setdefault(src, {})[dst] = usd
-        elif "intraregion" in ttype:
+        elif ttype.startswith("intraregion"):
             intra.append(usd)
         elif a.get("toLocation") == "External" or ("awsoutbound" in ttype and dst in (None, "")):
             egress.append(usd)
@@ -137,8 +139,12 @@ def merge_transfer(parts: Iterable[dict[str, Any]], regions: Iterable[str]) -> d
         raise ValueError(f"inter-region transfer prices missing for {missing}; check offer attribute names")
     if not intra:
         raise ValueError("no intra-region (inter-AZ) transfer price found; check transferType values")
-    return {"inter_region": inter, "inter_az": min(intra), "intra_az": 0.0,
-            "internet_egress": min(egress) if egress else None}
+    per_side = min(intra)
+    return {"inter_region": inter,
+            "inter_az": 2.0 * per_side,  # AWS bills cross-AZ transfer on both the sending and receiving side
+            "inter_az_per_side": per_side, "intra_az": 0.0,
+            "internet_egress": min(egress) if egress else None,
+            "notes": "inter_az is the effective $/GB moved (out + in); inter_region is billed once, at the source"}
 
 
 def price_distribution(rows: list[dict[str, Any]], **filters: bool) -> dict[str, Any]:
@@ -166,20 +172,25 @@ def region_factors(rows: list[dict[str, Any]], instance_type: str, base_region: 
 
 # -- spot ---------------------------------------------------------------------
 
+#: Spot Advisor band labels by index (the file's ``ranges`` entries are
+#: ``{"index", "label", "dots", "max"}``; ``max`` is a display value such as
+#: 5/11/16/22/100, so bands are identified by index + label, not by max).
+SPOT_BAND_LABELS = {0: "<5%", 1: "5-10%", 2: "10-15%", 3: "15-20%", 4: ">20%"}
+
+
 def parse_spot_advisor(doc: dict[str, Any], regions: Iterable[str], os: str = "Linux") -> dict[tuple[str, str], dict]:
     """{(region, instance_type): {"band": i, "savings_pct": s}} from spot-advisor-data.json.
 
-    Expected layout: ``{"ranges": [{"index", "label", "min", "max"}...],
-    "spot_advisor": {region: {os: {instance_type: {"r": i, "s": s}}}}}``.
+    Layout: ``{"ranges": [{"index", "label", "dots", "max"}...],
+    "spot_advisor": {region: {os: {instance_type: {"r": i, "s": s}}}}, ...}``.
+    Fails loudly if the band labels change.
     """
     if "spot_advisor" not in doc or "ranges" not in doc:
         raise ValueError("unexpected spot advisor format (missing 'spot_advisor' or 'ranges')")
-    labels = {r["index"]: r for r in doc["ranges"]}
-    for i, (lo, hi) in SPOT_BANDS.items():
-        if i not in labels:
-            raise ValueError(f"spot advisor band {i} missing")
-        if i < 4 and (abs(labels[i]["min"] / 100 - lo) > 1e-9 or abs(labels[i]["max"] / 100 - hi) > 1e-9):
-            raise ValueError(f"spot advisor band {i} changed: {labels[i]}")
+    labels = {int(r["index"]): str(r["label"]).replace(" ", "") for r in doc["ranges"]}
+    for i, lab in SPOT_BAND_LABELS.items():
+        if labels.get(i) != lab:
+            raise ValueError(f"spot advisor band {i} label changed: expected {lab!r}, got {labels.get(i)!r}")
     out = {}
     for reg in regions:
         for itype, v in doc["spot_advisor"].get(reg, {}).get(os, {}).items():
