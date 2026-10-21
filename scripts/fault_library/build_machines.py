@@ -36,7 +36,9 @@ from powder.faults.library import FaultLibrary  # noqa: E402
 LIB = ROOT / "data/fault_library"
 US_REGIONS = ["us-east-1", "us-east-2", "us-west-1", "us-west-2"]
 DEPLOYMENT = {"instance_type": "i4i.2xlarge", "fallback_instance_type": "m6id.2xlarge",
-              "regions": US_REGIONS, "azs_per_region": 3}
+              "regions": US_REGIONS, "azs_per_region": 3,
+              # from the AWS price list (2026-10-21): offered in all four US regions
+              "vcpu": 8, "mem_gb": 64, "storage_gb": 1875, "storage": "1 x 1875 NVMe SSD (instance store)"}
 LEVELS = ("optimistic", "central", "pessimistic")
 RHO0_SEEDS = range(20)
 

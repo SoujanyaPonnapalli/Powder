@@ -197,6 +197,12 @@ class Uniform(Distribution):
         """Sample a value uniformly from [low, high)."""
         return rng.uniform(self.low, self.high)
 
+    def cdf(self, x: float) -> float:
+        return min(1.0, max(0.0, (x - self.low) / (self.high - self.low)))
+
+    def ppf(self, p: float) -> float:
+        return self.low + p * (self.high - self.low)
+
     def __repr__(self) -> str:
         return f"Uniform(low={self.low}, high={self.high})"
 
@@ -455,6 +461,12 @@ class Constant(Distribution):
 
     def sample(self, rng: np.random.Generator) -> float:
         """Return the constant value."""
+        return self.value
+
+    def cdf(self, x: float) -> float:
+        return 1.0 if x >= self.value else 0.0
+
+    def ppf(self, p: float) -> float:
         return self.value
 
     def __repr__(self) -> str:

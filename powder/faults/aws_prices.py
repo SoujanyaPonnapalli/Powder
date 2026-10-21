@@ -118,8 +118,8 @@ def parse_transfer_offer(offer: dict[str, Any], regions: Iterable[str]) -> dict[
             inter.setdefault(src, {})[dst] = usd
         elif ttype.startswith("intraregion"):
             intra.append(usd)
-        elif a.get("toLocation") == "External" or ("awsoutbound" in ttype and dst in (None, "")):
-            egress.append(usd)
+        elif ttype == "awsoutbound" and a.get("toLocation") == "External":
+            egress.append(usd)  # first paid tier of standard internet egress (not Global Accelerator)
     return {"inter_region": inter, "inter_az": intra, "internet_egress": egress}
 
 
@@ -143,7 +143,7 @@ def merge_transfer(parts: Iterable[dict[str, Any]], regions: Iterable[str]) -> d
     return {"inter_region": inter,
             "inter_az": 2.0 * per_side,  # AWS bills cross-AZ transfer on both the sending and receiving side
             "inter_az_per_side": per_side, "intra_az": 0.0,
-            "internet_egress": min(egress) if egress else None,
+            "internet_egress": max(egress) if egress else None,  # same first-tier price in each region
             "notes": "inter_az is the effective $/GB moved (out + in); inter_region is billed once, at the source"}
 
 
@@ -207,3 +207,53 @@ def band_rates(band: int) -> dict[str, float]:
     lo, hi = SPOT_BANDS[band]
     f = lambda q: -math.log1p(-q) / HOURS_PER_MONTH  # noqa: E731
     return {"low": f(lo), "central": f(0.5 * (lo + hi)), "high": f(hi)}
+
+
+# -- CSV offer files (streamed: the JSON files are ~270 MB per region) ----------
+
+#: CSV column -> offer-JSON attribute name used by the parsers above.
+CSV_ATTRS = {
+    "Instance Type": "instanceType", "Region Code": "regionCode", "vCPU": "vcpu",
+    "Physical Processor": "physicalProcessor", "Instance Family": "instanceFamily",
+    "Operating System": "operatingSystem", "Tenancy": "tenancy", "Pre Installed S/W": "preInstalledSw",
+    "CapacityStatus": "capacitystatus", "License Model": "licenseModel",
+    "Current Generation": "currentGeneration", "Storage": "storage", "Memory": "memory", "GPU": "gpu",
+    "Transfer Type": "transferType", "From Region Code": "fromRegionCode", "To Region Code": "toRegionCode",
+    "To Location": "toLocation", "From Location": "fromLocation",
+}
+KEEP_FAMILIES = {"Compute Instance", "Data Transfer"}
+
+
+def offer_from_csv(lines) -> dict[str, Any]:
+    """Build a reduced offer dict (products + OnDemand terms) from a streamed CSV offer file.
+
+    Keeps only OnDemand rows of the Compute Instance and Data Transfer product
+    families, so memory stays small. The result feeds parse_ondemand_offer /
+    parse_transfer_offer unchanged.
+    """
+    import csv
+    it = iter(lines)
+    meta = {}
+    for _ in range(5):  # FormatVersion, Disclaimer, Publication Date, Version, OfferCode
+        row = next(csv.reader([next(it)]))
+        meta[row[0]] = row[1] if len(row) > 1 else None
+    reader = csv.DictReader(it)
+    missing = [c for c in ("SKU", "TermType", "Product Family", "Unit", "PricePerUnit", "StartingRange", "EndingRange",
+                           ) if c not in reader.fieldnames]
+    if missing:
+        raise ValueError(f"unexpected CSV offer format, missing columns {missing}")
+    products: dict[str, Any] = {}
+    terms: dict[str, Any] = {}
+    for row in reader:
+        if row["TermType"] != "OnDemand" or row["Product Family"] not in KEEP_FAMILIES:
+            continue
+        sku = row["SKU"]
+        if sku not in products:
+            products[sku] = {"sku": sku, "productFamily": row["Product Family"],
+                             "attributes": {v: row[k] for k, v in CSV_ATTRS.items() if row.get(k)}}
+        term = terms.setdefault(sku, {}).setdefault(row["OfferTermCode"], {"priceDimensions": {}})
+        term["priceDimensions"][row["RateCode"]] = {
+            "unit": row["Unit"], "pricePerUnit": {"USD": row["PricePerUnit"]},
+            "beginRange": row["StartingRange"], "endRange": row["EndingRange"]}
+    return {"publicationDate": meta.get("Publication Date"), "version": meta.get("Version"),
+            "products": products, "terms": {"OnDemand": terms}}

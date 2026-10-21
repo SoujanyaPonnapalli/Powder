@@ -1,0 +1,6139 @@
+[
+ {
+  "id": "aws:c1.xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c1",
+   "instance_family": "Compute optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "4 x 420 SSD",
+   "memory": "7 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:c3.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.42,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c3",
+   "instance_family": "Compute optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 80 SSD",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:c4.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.398,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c4",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2666 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:c5.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.34,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c5",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.308,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c5a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5ad.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.344,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c5ad",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5d.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c5d",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 200 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5n.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c5n",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "21 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c6a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.306,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c6a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:c6i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.34,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c6i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6id.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c6id",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6in.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4536,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c6in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c7a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.41056,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c7a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:c7i-flex.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.33915,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c7i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c7i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.357,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c7i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.43108,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:c8i-flex.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.35608,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.37484,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8ib.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.54432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8ib",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8id.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.44352,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8id",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8in.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.54432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8ine.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6804,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "c8ine",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:d2.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.38,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "d2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:d3.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.999,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "d3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:d3en.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.051,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "d3en",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "4 x 14000 HDD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:h1.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.468,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "h1",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 2000 HDD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i2.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.705,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "i2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 800 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:i3.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.624,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "i3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1900 NVMe SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i3en.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.904,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "i3en",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.686,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "i4i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:i7i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.755,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "i7i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:i7ie.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.0396,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "i7ie",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:m2.4xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.98,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m2",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 840 SSD",
+   "memory": "68.4 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:m3.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m3",
+   "instance_family": "General purpose",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 80 SSD",
+   "memory": "30 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)"
+  }
+ },
+ {
+  "id": "aws:m4.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m4",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:m5.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.344,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5ad.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.412,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5ad",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5d.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5d",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5dn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.544,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5dn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:m5n.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.476,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5n",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:m5zn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6607,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m5zn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8252"
+  }
+ },
+ {
+  "id": "aws:m6a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3456,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m6a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:m6i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m6i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4746,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m6id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6idn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.63648,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m6idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6in.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.55692,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m6in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m7a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.46368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m7a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:m7i-flex.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.38304,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m7i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m7i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m7i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.48688,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:m8i-flex.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4022,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.42336,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8ib.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66832,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8ib",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8id.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52208,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8idb.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.76376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8idb",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8idn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.76376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8in.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66832,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8ine.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8354,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "m8ine",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r3.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.665,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r3",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 160 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:r4.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r4",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:r5.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5ad.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.524,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5ad",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5b.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.596,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5b",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r5d.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.576,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5dn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5dn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r5n.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.596,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r5n",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r6a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4536,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r6a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:r6i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r6i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6id.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6048,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r6id",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6idn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.78156,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r6idn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6in.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.69732,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r6in",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r7a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6086,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r7a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:r7i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.5292,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r7i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r7iz.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r7iz",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.63904,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:r8i-flex.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8i-flex",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.55568,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8ib.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8ib",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8id.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66528,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8id",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8idb.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.93788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8idb",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8idn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.93788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8idn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8in.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "r8in",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:t2.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3712,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "t2",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:t3.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3328,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "t3",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Skylake E5 2686 v5"
+  }
+ },
+ {
+  "id": "aws:t3a.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3008,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "t3a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:x1e.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "x1e",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 240 SSD",
+   "memory": "244 GiB",
+   "processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:x2iedn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.66725,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "x2iedn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 237 NVMe SSD",
+   "memory": "256 GiB",
+   "processor": "Intel Xeon Scalable (Icelake)"
+  }
+ },
+ {
+  "id": "aws:x2iezn.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "x2iezn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "256 GiB",
+   "processor": "Intel Xeon Platinum 8252"
+  }
+ },
+ {
+  "id": "aws:x8i.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.87532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "x8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "128 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:z1d.2xlarge:us-east-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+  "attributes": {
+   "family": "z1d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8151"
+  }
+ },
+ {
+  "id": "aws:c4.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.398,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c4",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2666 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:c5.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.34,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c5",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.308,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c5a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5ad.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.344,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c5ad",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5d.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c5d",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 200 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5n.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c5n",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "21 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c6a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.306,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c6a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:c6i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.34,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c6i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6id.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c6id",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6in.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4536,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c6in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c7a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.41056,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c7a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:c7i-flex.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.33915,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c7i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c7i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.357,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c7i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.43108,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c8a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:c8i-flex.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.35608,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c8i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.37484,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c8i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8id.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.44352,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c8id",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8in.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.54432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "c8in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:d2.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.38,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "d2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:d3.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.999,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "d3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:h1.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.468,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "h1",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 2000 HDD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i2.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.705,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "i2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 800 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:i3.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.624,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "i3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1900 NVMe SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i3en.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.904,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "i3en",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.686,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "i4i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:i7i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.755,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "i7i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:i7ie.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.0396,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "i7ie",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:m4.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m4",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:m5.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.344,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5ad.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.412,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5ad",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5d.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5d",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5dn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.544,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5dn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:m5n.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.476,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5n",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:m5zn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6607,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m5zn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8252"
+  }
+ },
+ {
+  "id": "aws:m6a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3456,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m6a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:m6i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m6i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4746,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m6id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6idn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.63648,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m6idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6in.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.55692,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m6in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m7a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.46368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m7a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:m7i-flex.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.38304,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m7i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m7i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m7i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.48688,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:m8i-flex.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4022,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.42336,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8ib.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66832,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8ib",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8id.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52208,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8idb.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.76376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8idb",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8idn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.76376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8in.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66832,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "m8in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r3.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.664,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r3",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 160 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:r4.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r4",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:r5.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5ad.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.524,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5ad",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5b.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.596,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5b",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r5d.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.576,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5dn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5dn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r5n.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.596,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r5n",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r6a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4536,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r6a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:r6i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r6i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6id.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6048,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r6id",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6idn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.78156,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r6idn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6in.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.69732,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r6in",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r7a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6086,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r7a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:r7i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.5292,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r7i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r7iz.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r7iz",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.63904,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:r8i-flex.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8i-flex",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.55568,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8ib.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8ib",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8id.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66528,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8id",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8idb.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.93788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8idb",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8idn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.93788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8idn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8in.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "r8in",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:t2.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3712,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "t2",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:t3.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3328,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "t3",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Skylake E5 2686 v5"
+  }
+ },
+ {
+  "id": "aws:t3a.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3008,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "t3a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:x1e.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "x1e",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 240 SSD",
+   "memory": "244 GiB",
+   "processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:x2iedn.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.66725,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "x2iedn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 237 NVMe SSD",
+   "memory": "256 GiB",
+   "processor": "Intel Xeon Scalable (Icelake)"
+  }
+ },
+ {
+  "id": "aws:x8i.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.87532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "x8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "128 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:z1d.2xlarge:us-east-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+  "attributes": {
+   "family": "z1d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8151"
+  }
+ },
+ {
+  "id": "aws:c1.xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.592,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c1",
+   "instance_family": "Compute optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "4 x 420 SSD",
+   "memory": "7 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:c3.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.478,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c3",
+   "instance_family": "Compute optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 80 SSD",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:c4.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.498,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c4",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2666 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:c5.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.424,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c5",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.38,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c5a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5d.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.48,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c5d",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 200 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5n.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.54,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c5n",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "21 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c6a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3816,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c6a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:c6i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.424,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c6i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6in.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.567,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c6in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c7a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.51196,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c7a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:c7i-flex.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.42294,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c7i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c7i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c7i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8i-flex.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.44408,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c8i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.46744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "c8i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:d2.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.563,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "d2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:i2.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.876,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "i2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 800 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:i3.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.688,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "i3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1900 NVMe SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i3en.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.0,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "i3en",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.757,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "i4i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:i7i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8325,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "i7i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:i7ie.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.15,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "i7ie",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:m2.4xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.1,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m2",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 840 SSD",
+   "memory": "68.4 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:m3.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.616,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m3",
+   "instance_family": "General purpose",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 80 SSD",
+   "memory": "30 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)"
+  }
+ },
+ {
+  "id": "aws:m4.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.468,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m4",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:m5.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.448,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m5",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.404,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m5a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5ad.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.488,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m5ad",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5d.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m5d",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5zn.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.7708,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m5zn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8252"
+  }
+ },
+ {
+  "id": "aws:m6a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m6a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:m6i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.448,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m6i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.5586,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m6id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6idn.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.73376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m6idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6in.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.64976,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m6in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m7i-flex.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.44688,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m7i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m7i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4704,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m7i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8i-flex.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.46924,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m8i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.49392,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "m8i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r3.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.741,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r3",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 160 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:r4.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.5928,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r4",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:r5.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.56,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r5",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r5a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5ad.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.592,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r5ad",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5d.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.648,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r5d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5n.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.676,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r5n",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r6a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r6a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:r6i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.56,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r6i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r7i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.588,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r7i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8i-flex.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.58652,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r8i-flex",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8i.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6174,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "r8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:t2.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4416,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "t2",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:t3.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3968,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "t3",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Skylake E5 2686 v5"
+  }
+ },
+ {
+  "id": "aws:t3a.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3571,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "t3a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:x2iedn.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 2.1675,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "x2iedn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 237 NVMe SSD",
+   "memory": "256 GiB",
+   "processor": "Intel Xeon Scalable (Icelake)"
+  }
+ },
+ {
+  "id": "aws:z1d.2xlarge:us-west-1:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.844,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+  "attributes": {
+   "family": "z1d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8151"
+  }
+ },
+ {
+  "id": "aws:c1.xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c1",
+   "instance_family": "Compute optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "4 x 420 SSD",
+   "memory": "7 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:c3.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.42,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c3",
+   "instance_family": "Compute optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 80 SSD",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2680 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:c4.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.398,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c4",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "15 GiB",
+   "processor": "Intel Xeon E5-2666 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:c5.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.34,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c5",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.308,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c5a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5ad.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.344,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c5ad",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R32"
+  }
+ },
+ {
+  "id": "aws:c5d.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c5d",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 200 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c5n.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c5n",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "21 GiB",
+   "processor": "Intel Xeon Platinum 8124M"
+  }
+ },
+ {
+  "id": "aws:c6a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.306,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c6a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:c6i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.34,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c6i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6id.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c6id",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c6in.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4536,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c6in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:c7a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.41056,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c7a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:c7i-flex.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.33915,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c7i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c7i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.357,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c7i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.43108,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8a",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:c8i-flex.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.35608,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8i-flex",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.37484,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8i",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8ib.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.54432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8ib",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8id.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.44352,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8id",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8in.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.54432,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8in",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:c8ine.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6804,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "c8ine",
+   "instance_family": "Compute optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "16 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:d2.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.38,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "d2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:d3.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.999,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "d3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "6 x 2000 HDD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:d3en.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.051,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "d3en",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "4 x 14000 HDD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:h1.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.468,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "h1",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 2000 HDD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i2.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.705,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "i2",
+   "instance_family": "Storage optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 800 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:i3.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.624,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "i3",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1900 NVMe SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:i3en.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.904,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "i3en",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.686,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "i4i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:i7i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.755,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "i7i",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 1875 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:i7ie.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.0396,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "i7ie",
+   "instance_family": "Storage optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "2 x 2500 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Emerald Rapids)"
+  }
+ },
+ {
+  "id": "aws:m2.4xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.98,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m2",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 840 SSD",
+   "memory": "68.4 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:m3.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m3",
+   "instance_family": "General purpose",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "2 x 80 SSD",
+   "memory": "30 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge/Sandy Bridge)"
+  }
+ },
+ {
+  "id": "aws:m4.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m4",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon E5-2676 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:m5.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.344,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5ad.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.412,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5ad",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:m5d.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5d",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:m5dn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.544,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5dn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:m5n.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.476,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5n",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:m5zn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6607,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m5zn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Platinum 8252"
+  }
+ },
+ {
+  "id": "aws:m6a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3456,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m6a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:m6i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.384,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m6i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4746,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m6id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6idn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.63648,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m6idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m6in.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.55692,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m6in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:m7a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.46368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m7a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:m7i-flex.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.38304,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m7i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m7i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4032,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m7i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.48688,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:m8i-flex.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4022,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8i-flex",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.42336,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8i",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8ib.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66832,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8ib",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8id.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52208,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8id",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8idb.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.76376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8idb",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8idn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.76376,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8idn",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8in.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66832,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8in",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:m8ine.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8354,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "m8ine",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r3.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.665,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r3",
+   "instance_family": "Memory optimized",
+   "current_generation": false,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 160 SSD",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2670 v2 (Ivy Bridge)"
+  }
+ },
+ {
+  "id": "aws:r4.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r4",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "61 GiB",
+   "processor": "Intel Xeon E5-2686 v4 (Broadwell)"
+  }
+ },
+ {
+  "id": "aws:r5.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.452,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5ad.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.524,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5ad",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:r5b.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.596,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5b",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r5d.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.576,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8175"
+  }
+ },
+ {
+  "id": "aws:r5dn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5dn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r5n.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.596,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r5n",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8259 (Cascade Lake)"
+  }
+ },
+ {
+  "id": "aws:r6a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.4536,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r6a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 7R13 Processor"
+  }
+ },
+ {
+  "id": "aws:r6i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.504,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r6i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6id.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6048,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r6id",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6idn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.78156,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r6idn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r6in.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.69732,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r6in",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon 8375C (Ice Lake)"
+  }
+ },
+ {
+  "id": "aws:r7a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.6086,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r7a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 9R14 Processor"
+  }
+ },
+ {
+  "id": "aws:r7i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.5292,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r7i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r7iz.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r7iz",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Sapphire Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.63904,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8a",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "AMD EPYC 9R45 Processor"
+  }
+ },
+ {
+  "id": "aws:r8i-flex.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.52788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8i-flex",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.55568,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8ib.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8ib",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8id.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.66528,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8id",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8idb.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.93788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8idb",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8idn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.93788,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8idn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 474 NVMe SSD",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:r8in.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.8368,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "r8in",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "64.0 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:t2.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3712,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "t2",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Xeon Family"
+  }
+ },
+ {
+  "id": "aws:t3.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3328,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "t3",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "Intel Skylake E5 2686 v5"
+  }
+ },
+ {
+  "id": "aws:t3a.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.3008,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "t3a",
+   "instance_family": "General purpose",
+   "current_generation": true,
+   "burstable": true,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "32 GiB",
+   "processor": "AMD EPYC 7571"
+  }
+ },
+ {
+  "id": "aws:x1e.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "x1e",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": false,
+   "storage": "1 x 240 SSD",
+   "memory": "244 GiB",
+   "processor": "High Frequency Intel Xeon E7-8880 v3 (Haswell)"
+  }
+ },
+ {
+  "id": "aws:x2iedn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.66725,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "x2iedn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 237 NVMe SSD",
+   "memory": "256 GiB",
+   "processor": "Intel Xeon Scalable (Icelake)"
+  }
+ },
+ {
+  "id": "aws:x2iezn.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 1.668,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "x2iezn",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "256 GiB",
+   "processor": "Intel Xeon Platinum 8252"
+  }
+ },
+ {
+  "id": "aws:x8i.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.87532,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "x8i",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": false,
+   "nvme": false,
+   "storage": "EBS only",
+   "memory": "128 GiB",
+   "processor": "Intel Xeon Scalable (Granite Rapids)"
+  }
+ },
+ {
+  "id": "aws:z1d.2xlarge:us-west-2:ondemand:linux",
+  "kind": "price",
+  "price_kind": "compute_ondemand",
+  "price_per_hour": 0.744,
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+  "attributes": {
+   "family": "z1d",
+   "instance_family": "Memory optimized",
+   "current_generation": true,
+   "burstable": false,
+   "instance_store": true,
+   "nvme": true,
+   "storage": "1 x 300 NVMe SSD",
+   "memory": "64 GiB",
+   "processor": "Intel Xeon Platinum 8151"
+  }
+ }
+]

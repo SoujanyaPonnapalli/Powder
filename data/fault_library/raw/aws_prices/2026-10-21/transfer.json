@@ -1,0 +1,29 @@
+{
+ "inter_region": {
+  "us-east-1": {
+   "us-west-1": 0.02,
+   "us-west-2": 0.02,
+   "us-east-2": 0.01
+  },
+  "us-west-2": {
+   "us-east-1": 0.02,
+   "us-west-1": 0.02,
+   "us-east-2": 0.02
+  },
+  "us-west-1": {
+   "us-east-1": 0.02,
+   "us-west-2": 0.02,
+   "us-east-2": 0.02
+  },
+  "us-east-2": {
+   "us-east-1": 0.01,
+   "us-west-2": 0.02,
+   "us-west-1": 0.02
+  }
+ },
+ "inter_az": 0.02,
+ "inter_az_per_side": 0.01,
+ "intra_az": 0.0,
+ "internet_egress": 0.09,
+ "notes": "inter_az is the effective $/GB moved (out + in); inter_region is billed once, at the source"
+}

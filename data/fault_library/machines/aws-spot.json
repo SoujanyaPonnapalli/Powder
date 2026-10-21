@@ -1,0 +1,130 @@
+[
+ {
+  "id": "machine/spot-i4i.2xlarge-us-east-1",
+  "kind": "machine",
+  "fault_profile": "spot/aws-i4i.2xlarge-us-east-1",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-east-1": "aws:i4i.2xlarge:us-east-1:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-i4i.2xlarge-us-east-2",
+  "kind": "machine",
+  "fault_profile": "spot/aws-i4i.2xlarge-us-east-2",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-2"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-east-2": "aws:i4i.2xlarge:us-east-2:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-i4i.2xlarge-us-west-1",
+  "kind": "machine",
+  "fault_profile": "spot/aws-i4i.2xlarge-us-west-1",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-west-1"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-west-1": "aws:i4i.2xlarge:us-west-1:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-i4i.2xlarge-us-west-2",
+  "kind": "machine",
+  "fault_profile": "spot/aws-i4i.2xlarge-us-west-2",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-west-2"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-west-2": "aws:i4i.2xlarge:us-west-2:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-m6id.2xlarge-us-east-1",
+  "kind": "machine",
+  "fault_profile": "spot/aws-m6id.2xlarge-us-east-1",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-east-1": "aws:m6id.2xlarge:us-east-1:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-m6id.2xlarge-us-east-2",
+  "kind": "machine",
+  "fault_profile": "spot/aws-m6id.2xlarge-us-east-2",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-2"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-east-2": "aws:m6id.2xlarge:us-east-2:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-m6id.2xlarge-us-west-1",
+  "kind": "machine",
+  "fault_profile": "spot/aws-m6id.2xlarge-us-west-1",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-west-1"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-west-1": "aws:m6id.2xlarge:us-west-1:spot:linux"
+   }
+  }
+ },
+ {
+  "id": "machine/spot-m6id.2xlarge-us-west-2",
+  "kind": "machine",
+  "fault_profile": "spot/aws-m6id.2xlarge-us-west-2",
+  "tier": "spot",
+  "storage_mode": "local",
+  "regions": [
+   "us-west-2"
+  ],
+  "price": {
+   "route": "native",
+   "pool_keys": {
+    "us-west-2": "aws:m6id.2xlarge:us-west-2:spot:linux"
+   }
+  }
+ }
+]

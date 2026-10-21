@@ -110,7 +110,8 @@ def to_spec(dist: Distribution) -> dict[str, Any]:
 
 def median(dist: Distribution, rng_seed: int = 0) -> float:
     """Median: exact where a ppf exists, else estimated from 200k samples."""
-    if hasattr(dist, "ppf") and (not isinstance(dist, Mixture) or all(hasattr(c, "cdf") for c in dist.components)):
+    if hasattr(dist, "ppf") and (not isinstance(dist, Mixture) or all(hasattr(c, "cdf") and hasattr(c, "ppf")
+                                                                     for c in dist.components)):
         return float(dist.ppf(0.5))
     if isinstance(dist, Constant):
         return dist.value
@@ -153,8 +154,22 @@ def weibull_from_mean_median(mean: float, med: float) -> Weibull | Exponential:
     return Weibull(k, scale)
 
 
+_ENGINE_CACHE: dict[int, tuple] = {}
+
+
 def engine_compatible(dist: Distribution) -> Distribution:
-    """Return a distribution the Rust engine accepts (same mean, same median)."""
+    """Return a distribution the Rust engine accepts (same mean, same median).
+
+    Memoised per distribution object (from_spec memoises those)."""
+    hit = _ENGINE_CACHE.get(id(dist))
+    if hit is not None and hit[0] is dist:
+        return hit[1]
+    out = _engine_compatible(dist)
+    _ENGINE_CACHE[id(dist)] = (dist, out)
+    return out
+
+
+def _engine_compatible(dist: Distribution) -> Distribution:
     if type(dist).__name__ in {"Exponential", "Weibull", "Normal", "Uniform", "Constant"}:
         return dist
     if isinstance(dist, Mixture) and len(dist.components) == 1:

@@ -1,0 +1,114 @@
+[
+ {
+  "id": "aws:i4i.2xlarge:us-east-1:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.3087,
+  "summary": {
+   "mean": 0.3087
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-east-2:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.20580000000000004,
+  "summary": {
+   "mean": 0.20580000000000004
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-west-1:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.20439000000000002,
+  "summary": {
+   "mean": 0.20439000000000002
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:i4i.2xlarge:us-west-2:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.32928,
+  "summary": {
+   "mean": 0.32928
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-east-1:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.175602,
+  "summary": {
+   "mean": 0.175602
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-east-2:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.13763400000000003,
+  "summary": {
+   "mean": 0.13763400000000003
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-west-1:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.17875199999999997,
+  "summary": {
+   "mean": 0.17875199999999997
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ },
+ {
+  "id": "aws:m6id.2xlarge:us-west-2:spot:linux",
+  "kind": "price",
+  "price_kind": "compute_spot_series",
+  "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+  "latest": 0.16611,
+  "summary": {
+   "mean": 0.16611
+  },
+  "window": null,
+  "n": 0,
+  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
+  "notes": "estimate until describe-spot-price-history is fetched"
+ }
+]

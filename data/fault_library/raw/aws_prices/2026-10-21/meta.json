@@ -1,0 +1,47 @@
+{
+ "fetched_at": "2026-10-21T21:49:00.769122+00:00",
+ "index": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/current/region_index.json",
+ "offers": {
+  "us-east-1": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-1/index.csv",
+   "publicationDate": "2026-10-15T19:13:16Z",
+   "version": "20261015191316"
+  },
+  "us-east-2": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-east-2/index.csv",
+   "publicationDate": "2026-10-15T19:13:16Z",
+   "version": "20261015191316"
+  },
+  "us-west-1": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-1/index.csv",
+   "publicationDate": "2026-10-15T19:13:16Z",
+   "version": "20261015191316"
+  },
+  "us-west-2": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261015191316/us-west-2/index.csv",
+   "publicationDate": "2026-10-15T19:13:16Z",
+   "version": "20261015191316"
+  },
+  "us-east-1-datatransfer": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/20260916132208/us-east-1/index.csv",
+   "publicationDate": "2026-09-16T13:22:08Z",
+   "version": "20260916132208"
+  },
+  "us-east-2-datatransfer": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/20260916132208/us-east-2/index.csv",
+   "publicationDate": "2026-09-16T13:22:08Z",
+   "version": "20260916132208"
+  },
+  "us-west-1-datatransfer": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/20260916132208/us-west-1/index.csv",
+   "publicationDate": "2026-09-16T13:22:08Z",
+   "version": "20260916132208"
+  },
+  "us-west-2-datatransfer": {
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/20260916132208/us-west-2/index.csv",
+   "publicationDate": "2026-09-16T13:22:08Z",
+   "version": "20260916132208"
+  }
+ },
+ "filters": "Linux, shared tenancy, no pre-installed SW, capacitystatus Used, 8 vCPU, x86 (Intel/AMD), no GPU/accelerator/FPGA/Mac families"
+}

@@ -13,6 +13,14 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `legacy/vm-spot` | cloud | 30 d | 20 min | 1 d | 369 | 0.957870 |
 | `legacy/vm-standard` | cloud | 30 d | 20 min | 3 y | 4.39 | 0.999499 |
 | `legacy/vm-unreliable` | cloud | 30 d | 20 min | 365 d | 5.06 | 0.999423 |
+| `spot/aws-i4i.2xlarge-us-east-1` | cloud | 9.95 y | 110 min | 1.02 y | 1.17 | 0.999867 |
+| `spot/aws-i4i.2xlarge-us-east-2` | cloud | 9.95 y | 110 min | 221 d | 1.83 | 0.999791 |
+| `spot/aws-i4i.2xlarge-us-west-1` | cloud | 9.95 y | 110 min | 221 d | 1.83 | 0.999791 |
+| `spot/aws-i4i.2xlarge-us-west-2` | cloud | 9.95 y | 110 min | 221 d | 1.83 | 0.999791 |
+| `spot/aws-m6id.2xlarge-us-east-1` | cloud | 9.95 y | 110 min | 84.4 d | 4.51 | 0.999485 |
+| `spot/aws-m6id.2xlarge-us-east-2` | cloud | 9.95 y | 110 min | 84.4 d | 4.51 | 0.999485 |
+| `spot/aws-m6id.2xlarge-us-west-1` | cloud | 9.95 y | 110 min | 221 d | 1.83 | 0.999791 |
+| `spot/aws-m6id.2xlarge-us-west-2` | cloud | 9.95 y | 110 min | 84.4 d | 4.51 | 0.999485 |
 | `cluster/ford10-google-storage` | reference | 6.33 d | 3.18 min | 22.4 y | 3.1 | 0.999646 |
 | `cluster/ford10-google-storage-ge15min` | reference | 1.31 y | 113 min | 22.4 y | 1.48 | 0.999831 |
 | `host/vishwanath10` | reference | never | 0 s | 5.83 y | 0.171 | 0.999980 |
@@ -66,15 +74,27 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `machine/legacy-spot` | `legacy/vm-spot` | spot | native | us-east |
 | `machine/legacy-standard` | `legacy/vm-standard` | ondemand | native | us-east |
 | `machine/legacy-unreliable` | `legacy/vm-unreliable` | ondemand | native | us-east |
+| `machine/spot-i4i.2xlarge-us-east-1` | `spot/aws-i4i.2xlarge-us-east-1` | spot | native | us-east-1 |
+| `machine/spot-i4i.2xlarge-us-east-2` | `spot/aws-i4i.2xlarge-us-east-2` | spot | native | us-east-2 |
+| `machine/spot-i4i.2xlarge-us-west-1` | `spot/aws-i4i.2xlarge-us-west-1` | spot | native | us-west-1 |
+| `machine/spot-i4i.2xlarge-us-west-2` | `spot/aws-i4i.2xlarge-us-west-2` | spot | native | us-west-2 |
+| `machine/spot-m6id.2xlarge-us-east-1` | `spot/aws-m6id.2xlarge-us-east-1` | spot | native | us-east-1 |
+| `machine/spot-m6id.2xlarge-us-east-2` | `spot/aws-m6id.2xlarge-us-east-2` | spot | native | us-east-2 |
+| `machine/spot-m6id.2xlarge-us-west-1` | `spot/aws-m6id.2xlarge-us-west-1` | spot | native | us-west-1 |
+| `machine/spot-m6id.2xlarge-us-west-2` | `spot/aws-m6id.2xlarge-us-west-2` | spot | native | us-west-2 |
 | `machine/vishwanath10` | `host/vishwanath10` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 
 ## Prices
 
-No AWS prices fetched yet: run `fetch_aws_prices.py`, `fetch_spot.py advisor|history`, `build_prices.py`, then `build_machines.py` (see `infra/aws/README.md`).
+- `price-dist/aws-us-8vcpu-x86/all@2026-10-21`: n=323, $/h min 0.301, median 0.529, max 2.167
+- `price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21`: n=287, $/h min 0.306, median 0.529, max 2.167
+- `price-dist/aws-us-8vcpu-x86/current-gen@2026-10-21`: n=299, $/h min 0.301, median 0.524, max 2.167
+- `price-dist/aws-us-8vcpu-x86/instance-store@2026-10-21`: n=106, $/h min 0.344, median 0.665, max 2.167
 
+24 price assignments (rho = 0 over 20 seeds, rho = 0.5, rho = 1).
 
 ## Coverage
 
 - Node profiles without a machine class: none
 - Machine classes with assigned (not native) prices: 8
-- Scenarios: `scenario/canonical-central`, `scenario/canonical-optimistic`, `scenario/canonical-pessimistic`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-vishwanath10`
+- Scenarios: `scenario/canonical-central`, `scenario/canonical-central-rho0`, `scenario/canonical-central-rho0.5`, `scenario/canonical-central-rho1`, `scenario/canonical-optimistic`, `scenario/canonical-optimistic-rho0`, `scenario/canonical-optimistic-rho0.5`, `scenario/canonical-optimistic-rho1`, `scenario/canonical-pessimistic`, `scenario/canonical-pessimistic-rho0`, `scenario/canonical-pessimistic-rho0.5`, `scenario/canonical-pessimistic-rho1`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-vishwanath10`
