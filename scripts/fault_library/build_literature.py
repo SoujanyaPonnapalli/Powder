@@ -90,17 +90,29 @@ SOURCES = [
            notes="storage subsystem, not a single drive: recorded, not pooled into disk/pooled")]},
     {"id": "vishwanath-nagappan-socc10", "kind": "source", "title": "Characterizing Cloud Computing Hardware Reliability",
      "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2010/06/socc088-vishwanath.pdf",
-     "accessed": "2026-10-20", "population": ">100,000 Microsoft servers, 14 months of part replacements (2010)",
+     "local_path": "docs/reading/Characterizing Cloud Computing Hardware Reliability.pdf",
+     "accessed": "2026-10-21", "population": ">100,000 Microsoft servers, 14 months of part replacements (2010)",
      "measurements": [
-         M("disk-top-failure", "hard disks are the number one failing component", True, "text", "V", "SoCC'10"),
+         M("disk-top-failure", "hard disks are the number one failing component", True, "text", "V", "SoCC'10 §3"),
          M("disk-events-top5", "between 11% and 25% of all servers see at least 1 disk event in the given period (14 months, largest clusters)",
-           [0.11, 0.25], "fraction of servers / 14 months", "V", "SoCC'10", ["disk"],
+           [0.11, 0.25], "fraction of servers / 14 months", "V", "SoCC'10 §3", ["disk"],
            notes="per server (multi-disk), not per drive: not pooled into disk/pooled"),
-         M("afr-8pct", "20 replacements in 14 months contained in around 9 machines (per 100 servers) ... AFR of 8%",
-           {"replacements_per_100": 20, "machines_per_100": 9, "afr": 0.08}, "per 100 servers / 14 months", "S",
-           "slide summary of SoCC'10 (SlideServe)", ["hw_host_loss", "disk"]),
-         M("repeat-78-20", "78% of replacements are disks; 20% chance of failing again within a year", None, "text", "U",
-           "recalled, not confirmed by search", notes="rejected: unconfirmed"),
+         M("afr-8pct", "We saw a total of 20 replacements in the 14 month period. However, these replacements were all "
+           "contained in around 9 machines. 9 machine failures in 14 months translates to an annual failure rate (AFR) "
+           "of around 8%", {"replacements_per_100": 20, "machines_per_100": 9, "afr": 0.08},
+           "per 100 servers / 14 months", "V", "SoCC'10 §2.2 (PDF read 2026-10-21)", ["hw_host_loss", "disk"]),
+         M("repairs-per-repaired", "The average number of repairs seen by a repaired machine is 2 ... around 5 machines "
+           "failed only once. Thus, around 4 machines had more than 1 failure", {"mean": 2, "once": 5, "repeat": 4},
+           "per 100 servers / 14 months", "V", "SoCC'10 §2.2, §4.2"),
+         M("disk-share", "a majority (78%) were for hard disks ... 5% due to memory and the rest (18%)",
+           {"disk": 0.78, "memory": 0.05, "raid": 0.04, "other": 0.18}, "share of replacements", "V", "SoCC'10 §3",
+           notes="RAID share by subtraction of the quoted shares (raid ~4%)"),
+         M("disk-afr", "hard disks are the number one failing component with an AFR for 2.7%", 0.027,
+           "failures per disk-year", "V", "SoCC'10 §3", ["disk"]),
+         M("raid-afr", "For overall RAID controllers the failure rate was 0.7% AFR", 0.007, "per controller-year", "V", "SoCC'10 §3"),
+         M("repeat-timing", "20% of all repeat failures happen within a day of the first failure, and 50% of all repeat "
+           "failures happen within 2 weeks", {"within_day": 0.2, "within_2_weeks": 0.5}, "fraction of repeat failures",
+           "V", "SoCC'10 §4.2"),
      ]},
     {"id": "aws-ec2-sla", "kind": "source", "title": "Amazon Compute Service Level Agreement",
      "url": "https://aws.amazon.com/compute/sla/", "accessed": "2026-10-20", "population": "EC2 SLA",
@@ -126,11 +138,29 @@ SOURCES = [
            "relative reduction", "V", "Narya OSDI'20 abstract"),
          M("afpd-reduction", "improving hardware-related VM interruption prevention by 36%", 0.36, "relative", "V", "AFPD (IEEE 2025) abstract"),
      ]},
-    {"id": "birke-dsn14", "kind": "source", "title": "Failure Analysis of Virtual and Physical Machines (DSN'14)",
-     "url": "https://ieeexplore.ieee.org/document/6903562/", "accessed": "2026-10-20",
-     "population": "10K VMs and PMs, five commercial data centres, one year", "measurements": [
+    {"id": "birke-dsn14", "kind": "source", "title": "Failure Analysis of Virtual and Physical Machines: Patterns, Causes and Characteristics (DSN'14)",
+     "url": "https://ieeexplore.ieee.org/document/6903562/",
+     "local_path": "docs/reading/Failure_Analysis_of_Virtual_and_Physical_Machines_Patterns_Causes_and_Characteristics.pdf",
+     "accessed": "2026-10-21", "population": "4292 VMs and 5129 PMs, five commercial (IBM) datacenter subsystems, one year; 2759 crash tickets",
+     "measurements": [
+         M("population", "Our dataset consists of 2759 crash tickets spread across 4292 VMs and 5129 PMs", {"vms": 4292, "pms": 5129, "crash_tickets": 2759}, "count", "V", "DSN'14 §III"),
+         M("weekly-rate", "PMs have higher failure rates than VMs roughly by 40%, i.e., 0.005 vs. 0.003", {"pm": 0.005, "vm": 0.003},
+           "failures per server-week", "V", "DSN'14 §IV-A, Fig 2", ["hw_reboot", "sw"], "rate_per_hour = value / 168"),
+         M("weekly-random-prob", "Table V random weekly failure probability: PM .0062, VM .0038 (all systems)", {"pm": 0.0062, "vm": 0.0038},
+           "P(fail at least once in a week)", "V", "DSN'14 Table V", ["hw_reboot", "sw"], "rate_per_hour = -ln(1-p)/168"),
+         M("recurrent-week", "Table V recurrent failure probability within a week: PM .22 (35.5x), VM .16 (42.1x)",
+           {"pm": 0.22, "vm": 0.16, "pm_ratio": 35.5, "vm_ratio": 42.1}, "P(fail again within a week | failure)", "V", "DSN'14 Table V"),
+         M("interfailure-gamma", "inter-failure times ... Gamma: PM alpha=0.29 beta=119.60; VM alpha=0.44 beta=84.28 (days); VM mean 37.22 days",
+           {"pm": {"alpha": 0.29, "beta_days": 119.6}, "vm": {"alpha": 0.44, "beta_days": 84.28}}, "days", "V", "DSN'14 Fig 3"),
+         M("repair-lognormal", "repair times ... Log-normal: VM mu=1.14 sigma=2.88, PM mu=1.80 sigma=2.07 (hours); mean repair times 38.5 (PM) and 19.6 (VM) hours",
+           {"vm": {"mu_h": 1.14, "sigma": 2.88, "mean_h": 19.6}, "pm": {"mu_h": 1.80, "sigma": 2.07, "mean_h": 38.5}}, "hours", "V", "DSN'14 Fig 4"),
+         M("repair-by-class", "Table IV mean/median repair hours: HW 80.1/8.28, Net 67.6/8.97, Power 12.17/0.83, Reboot 18.03/2.27, SW 30.0/22.37",
+           {"hw": [80.1, 8.28], "net": [67.6, 8.97], "power": [12.17, 0.83], "reboot": [18.03, 2.27], "sw": [30.0, 22.37]}, "hours (mean, median)", "V", "DSN'14 Table IV"),
+         M("vm-reboot-share", "a significant percentage of VM failures, i.e., roughly 35%, are caused by unexpected reboots", 0.35,
+           "fraction of VM failures", "V", "DSN'14 §IV-C"),
          M("vm-lower", "VMs have lower failure rates and lower probability of failure recurrences than PMs", True, "text", "V",
-           "as summarised by a citing paper; numbers need the PDF", notes="qualitative only until the PDF is read")]},
+           "as summarised by a citing paper; consistent with Table V absolute values"),
+     ]},
     {"id": "lanl-dsn06", "kind": "source", "title": "A large-scale study of failures in high-performance computing systems (DSN'06)",
      "url": "https://www.pdl.cmu.edu/PDL-FTP/associated/dsn06.pdf", "accessed": "2026-10-20",
      "population": "22 LANL HPC systems, 1996-2005, ~23,000 failures", "measurements": [
@@ -155,6 +185,8 @@ def disk_profiles():
          "SSD boot drives, mean of Q1/Q2 2023 AFR; closest public proxy for datacentre NVMe."),
         ("disk/schroeder-gibson-fast07", math.sqrt(0.02 * 0.04), 0.25, ["schroeder-gibson-fast07#arr-2-4pct"],
          "Field ARR 2-4% (via Ford et al.); event count unknown -> log-variance 0.25."),
+        ("disk/vishwanath10", 0.027, 0.25, ["vishwanath-nagappan-socc10#disk-afr"],
+         "Microsoft fleet disk AFR 2.7% (2010); event count not given -> log-variance 0.25."),
         ("disk/ford10-table2", 1 / math.sqrt(10 * 50), 0.25, ["ford10#table2-disk-mttf"],
          "Google disk MTTF 10-50 years (application-visible); event count unknown -> log-variance 0.25."),
     ]
@@ -169,7 +201,7 @@ def disk_profiles():
     pooled = random_effects_pool([e[1] for e in entries_], [e[2] for e in entries_])
     comps.append({"id": "disk/pooled", "kind": "component", "component": "disk", "version": 1,
                   "derived_from": ["disk/backblaze-hdd-2025", "disk/backblaze-ssd-2023",
-                                   "disk/schroeder-gibson-fast07", "disk/ford10"],
+                                   "disk/schroeder-gibson-fast07", "disk/vishwanath10", "disk/ford10"],
                   "built_by": "scripts/fault_library/build_literature.py",
                   "rate_per_hour": tri(pooled.low / YEAR_H, pooled.central / YEAR_H, pooled.high / YEAR_H),
                   "pool": {"method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval "
@@ -191,10 +223,10 @@ def main():
     rate_yr = mu14 * 12 / 14
     vish = {"id": "host/vishwanath10", "kind": "node", "version": 1, "tier": "reference",
             "tags": ["microsoft", "2010", "bare-metal", "frailty"],
-            "derived_from": ["vishwanath-nagappan-socc10#afr-8pct", "vishwanath-nagappan-socc10#disk-top-failure"],
+            "derived_from": ["vishwanath-nagappan-socc10#afr-8pct", "vishwanath-nagappan-socc10#repairs-per-repaired"],
             "built_by": "scripts/fault_library/build_literature.py",
             "notes": ("Physical server hardware repairs (2010, HDD-heavy servers): 20 replacements on ~9 of 100 servers per "
-                      "14 months (slide-summary numbers, status S). All repairs are treated as host loss (data lost on "
+                      "14 months (PDF, status V). All repairs are treated as host loss (data lost on "
                       "local disks): pessimistic. frailty_a from P(N>=1)=0.09 and E[N|N>=1]=2.22 via a gamma-Poisson "
                       "model: strong lemon effect."),
             "causes": {"hw_host_loss": {"rate_per_hour": tri(rate_yr / YEAR_H, rate_yr / YEAR_H, rate_yr / YEAR_H)}},
@@ -205,7 +237,11 @@ def main():
     # the slide's "AFR 8%"); high = repair-event rate including repeats (20 per 100 servers per
     # 14 months = 0.171). Both include disk repairs, so they over-count non-disk host faults:
     # conservative.
-    host_yr = tri(0.08, 0.08, 0.20 * 12 / 14)
+    # Non-disk host repairs (Vishwanath, PDF): 22% of 20 replacements per 100 servers per 14 months
+    # = 0.0377 per server-year (disks are the separate `disk` cause). High end: 0.08/yr, the paper's
+    # all-repairs AFR (machines with >= 1 repair), as a conservative bound.
+    nondisk_yr = 0.20 * 12 / 14 * (1 - 0.78)
+    host_yr = tri(nondisk_yr, nondisk_yr, 0.08)
     f_lm = tri(0.5, 0.25, 0.0)     # share hidden by live migration / live update
     f_loss_central = 0.5           # share of instance-visible host faults that lose the host
     inst = {k: host_yr[k] * (1 - f_lm[k]) for k in ("low", "central", "high")}  # low <= central <= high
@@ -219,14 +255,15 @@ def main():
     ford_ge15 = next(p for p in ford if p["id"] == "cluster/ford10-google-storage-ge15min")
     aws = {"id": "cloud/aws-ondemand-nvme", "kind": "node", "version": 1, "tier": "cloud",
            "tags": ["aws", "on-demand", "local-nvme", "derived"],
-           "derived_from": ["vishwanath-nagappan-socc10#afr-8pct", "aws-ec2-sla#instance-level",
+           "derived_from": ["vishwanath-nagappan-socc10#afr-8pct", "vishwanath-nagappan-socc10#disk-share",
+                            "birke-dsn14#weekly-rate", "aws-ec2-sla#instance-level",
                             "azure-vm-docs#pause-18mo", "narya-afpd#narya-reduction", "narya-afpd#afpd-reduction",
                             "ford10#derived-rate-node_restart", "ford10#derived-rate-unplanned_reboot",
                             "ford10#digitized-unplanned_reboot", "ford10#digitized-node_restart", "disk/pooled"],
            "built_by": "scripts/fault_library/build_literature.py",
            "notes": ("No public source gives a modern on-demand VM interruption rate (plan §7.13); this profile is "
-                     "derived. Host faults: server repair rate (Vishwanath, S: 0.08/yr as P(>=1 repair), 0.171/yr as "
-                     "repair events at the high end) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live "
+                     "derived. Host faults: non-disk server repair events (Vishwanath, V: 22% of 0.171 repairs per "
+                     "server-year = 0.038/yr; high end 0.08/yr, the paper's all-repairs AFR) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live "
                      "migration and prediction hide a large share), split 50/50 between in-place reboot and host "
                      "loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min "
                      "node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations "
@@ -247,7 +284,33 @@ def main():
            "shape": {"type": "exponential"},
            "shape_variant": {"type": "weibull", "k": tri(0.7, 0.75, 0.8),
                              "source": ["schroeder-gibson-fast07#weibull-k", "lanl-dsn06#weibull-k"]}}
-    (LIB / "profiles/node/host-reference.json").write_text(json.dumps(r8([vish]), indent=2) + "\n")
+    # vm/birke14-*: enterprise VM / PM crash tickets (IBM datacenters, 1 year)
+    def birke(kind, wk_rate, wk_prob, med_h, mean_h, ratio, gamma_a):
+        c = wk_rate / 168.0                    # failures per server-hour (Fig 2 mean weekly rate)
+        h = -math.log1p(-wk_prob) / 168.0      # Table V P(>=1 failure in a week) -> rate
+        sigma = math.sqrt(2 * math.log(mean_h / med_h))  # lognormal matching the reported median and mean
+        mu = math.log(med_h * 3600.0)
+        return {"id": f"vm/birke14-{kind}", "kind": "node", "version": 1, "tier": "reference",
+                "tags": ["ibm", "enterprise", "2012-2013", kind],
+                "derived_from": ["birke-dsn14#weekly-rate", "birke-dsn14#weekly-random-prob", "birke-dsn14#repair-lognormal",
+                                 "birke-dsn14#recurrent-week", "birke-dsn14#interfailure-gamma"],
+                "built_by": "scripts/fault_library/build_literature.py",
+                "notes": (f"{kind.upper()} crash tickets (server unresponsive/unreachable), all causes, as one transient cause "
+                          "(the paper gives no data-loss rate). Rate central = mean weekly failure rate (Fig 2), high = "
+                          "Table V weekly failure probability. Duration: lognormal matched to the reported median "
+                          f"({med_h:.2f} h) and mean ({mean_h} h); the paper's own fit (sigma ~2-2.9) has a much larger mean "
+                          "than the data, so it is not used. Repair = ticket open to close, including queueing. "
+                          f"Recurrence within a week is {ratio}x the random weekly probability; frailty_a = 1/(ratio - 1) "
+                          "(gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape "
+                          f"{gamma_a} (bursty) is recorded in shape_variant."),
+                "causes": {"hw_reboot": {"rate_per_hour": tri(c, c, h),
+                                         "duration": {"type": "lognormal", "mu": mu, "sigma": sigma}}},
+                "frailty_a": 1.0 / (ratio - 1.0),
+                "shape": {"type": "exponential"},
+                "shape_variant": {"type": "gamma", "alpha": gamma_a, "source": "birke-dsn14#interfailure-gamma"}}
+    birke_vm = birke("vm", 0.003, 0.0038, math.exp(1.14), 19.6, 42.1, 0.44)
+    birke_pm = birke("pm", 0.005, 0.0062, math.exp(1.80), 38.5, 35.5, 0.29)
+    (LIB / "profiles/node/host-reference.json").write_text(json.dumps(r8([vish, birke_vm, birke_pm]), indent=2) + "\n")
     variants = []
     for fl in (0.2, 0.8):
         v = json.loads(json.dumps(aws))

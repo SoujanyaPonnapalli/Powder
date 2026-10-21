@@ -147,7 +147,8 @@
     "kind": "source",
     "title": "Characterizing Cloud Computing Hardware Reliability",
     "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2010/06/socc088-vishwanath.pdf",
-    "accessed": "2026-10-20",
+    "local_path": "docs/reading/Characterizing Cloud Computing Hardware Reliability.pdf",
+    "accessed": "2026-10-21",
     "population": ">100,000 Microsoft servers, 14 months of part replacements (2010)",
     "measurements": [
       {
@@ -156,7 +157,7 @@
         "value": true,
         "unit": "text",
         "status": "V",
-        "location": "SoCC'10",
+        "location": "SoCC'10 \u00a73",
         "covers": []
       },
       {
@@ -168,7 +169,7 @@
         ],
         "unit": "fraction of servers / 14 months",
         "status": "V",
-        "location": "SoCC'10",
+        "location": "SoCC'10 \u00a73",
         "covers": [
           "disk"
         ],
@@ -176,29 +177,79 @@
       },
       {
         "id": "afr-8pct",
-        "metric_verbatim": "20 replacements in 14 months contained in around 9 machines (per 100 servers) ... AFR of 8%",
+        "metric_verbatim": "We saw a total of 20 replacements in the 14 month period. However, these replacements were all contained in around 9 machines. 9 machine failures in 14 months translates to an annual failure rate (AFR) of around 8%",
         "value": {
           "replacements_per_100": 20,
           "machines_per_100": 9,
           "afr": 0.08
         },
         "unit": "per 100 servers / 14 months",
-        "status": "S",
-        "location": "slide summary of SoCC'10 (SlideServe)",
+        "status": "V",
+        "location": "SoCC'10 \u00a72.2 (PDF read 2026-10-21)",
         "covers": [
           "hw_host_loss",
           "disk"
         ]
       },
       {
-        "id": "repeat-78-20",
-        "metric_verbatim": "78% of replacements are disks; 20% chance of failing again within a year",
-        "value": null,
-        "unit": "text",
-        "status": "U",
-        "location": "recalled, not confirmed by search",
+        "id": "repairs-per-repaired",
+        "metric_verbatim": "The average number of repairs seen by a repaired machine is 2 ... around 5 machines failed only once. Thus, around 4 machines had more than 1 failure",
+        "value": {
+          "mean": 2,
+          "once": 5,
+          "repeat": 4
+        },
+        "unit": "per 100 servers / 14 months",
+        "status": "V",
+        "location": "SoCC'10 \u00a72.2, \u00a74.2",
+        "covers": []
+      },
+      {
+        "id": "disk-share",
+        "metric_verbatim": "a majority (78%) were for hard disks ... 5% due to memory and the rest (18%)",
+        "value": {
+          "disk": 0.78,
+          "memory": 0.05,
+          "raid": 0.04,
+          "other": 0.18
+        },
+        "unit": "share of replacements",
+        "status": "V",
+        "location": "SoCC'10 \u00a73",
         "covers": [],
-        "notes": "rejected: unconfirmed"
+        "notes": "RAID share by subtraction of the quoted shares (raid ~4%)"
+      },
+      {
+        "id": "disk-afr",
+        "metric_verbatim": "hard disks are the number one failing component with an AFR for 2.7%",
+        "value": 0.027,
+        "unit": "failures per disk-year",
+        "status": "V",
+        "location": "SoCC'10 \u00a73",
+        "covers": [
+          "disk"
+        ]
+      },
+      {
+        "id": "raid-afr",
+        "metric_verbatim": "For overall RAID controllers the failure rate was 0.7% AFR",
+        "value": 0.007,
+        "unit": "per controller-year",
+        "status": "V",
+        "location": "SoCC'10 \u00a73",
+        "covers": []
+      },
+      {
+        "id": "repeat-timing",
+        "metric_verbatim": "20% of all repeat failures happen within a day of the first failure, and 50% of all repeat failures happen within 2 weeks",
+        "value": {
+          "within_day": 0.2,
+          "within_2_weeks": 0.5
+        },
+        "unit": "fraction of repeat failures",
+        "status": "V",
+        "location": "SoCC'10 \u00a74.2",
+        "covers": []
       }
     ]
   },
@@ -312,20 +363,156 @@
   {
     "id": "birke-dsn14",
     "kind": "source",
-    "title": "Failure Analysis of Virtual and Physical Machines (DSN'14)",
+    "title": "Failure Analysis of Virtual and Physical Machines: Patterns, Causes and Characteristics (DSN'14)",
     "url": "https://ieeexplore.ieee.org/document/6903562/",
-    "accessed": "2026-10-20",
-    "population": "10K VMs and PMs, five commercial data centres, one year",
+    "local_path": "docs/reading/Failure_Analysis_of_Virtual_and_Physical_Machines_Patterns_Causes_and_Characteristics.pdf",
+    "accessed": "2026-10-21",
+    "population": "4292 VMs and 5129 PMs, five commercial (IBM) datacenter subsystems, one year; 2759 crash tickets",
     "measurements": [
+      {
+        "id": "population",
+        "metric_verbatim": "Our dataset consists of 2759 crash tickets spread across 4292 VMs and 5129 PMs",
+        "value": {
+          "vms": 4292,
+          "pms": 5129,
+          "crash_tickets": 2759
+        },
+        "unit": "count",
+        "status": "V",
+        "location": "DSN'14 \u00a7III",
+        "covers": []
+      },
+      {
+        "id": "weekly-rate",
+        "metric_verbatim": "PMs have higher failure rates than VMs roughly by 40%, i.e., 0.005 vs. 0.003",
+        "value": {
+          "pm": 0.005,
+          "vm": 0.003
+        },
+        "unit": "failures per server-week",
+        "status": "V",
+        "location": "DSN'14 \u00a7IV-A, Fig 2",
+        "covers": [
+          "hw_reboot",
+          "sw"
+        ],
+        "conversion": "rate_per_hour = value / 168"
+      },
+      {
+        "id": "weekly-random-prob",
+        "metric_verbatim": "Table V random weekly failure probability: PM .0062, VM .0038 (all systems)",
+        "value": {
+          "pm": 0.0062,
+          "vm": 0.0038
+        },
+        "unit": "P(fail at least once in a week)",
+        "status": "V",
+        "location": "DSN'14 Table V",
+        "covers": [
+          "hw_reboot",
+          "sw"
+        ],
+        "conversion": "rate_per_hour = -ln(1-p)/168"
+      },
+      {
+        "id": "recurrent-week",
+        "metric_verbatim": "Table V recurrent failure probability within a week: PM .22 (35.5x), VM .16 (42.1x)",
+        "value": {
+          "pm": 0.22,
+          "vm": 0.16,
+          "pm_ratio": 35.5,
+          "vm_ratio": 42.1
+        },
+        "unit": "P(fail again within a week | failure)",
+        "status": "V",
+        "location": "DSN'14 Table V",
+        "covers": []
+      },
+      {
+        "id": "interfailure-gamma",
+        "metric_verbatim": "inter-failure times ... Gamma: PM alpha=0.29 beta=119.60; VM alpha=0.44 beta=84.28 (days); VM mean 37.22 days",
+        "value": {
+          "pm": {
+            "alpha": 0.29,
+            "beta_days": 119.6
+          },
+          "vm": {
+            "alpha": 0.44,
+            "beta_days": 84.28
+          }
+        },
+        "unit": "days",
+        "status": "V",
+        "location": "DSN'14 Fig 3",
+        "covers": []
+      },
+      {
+        "id": "repair-lognormal",
+        "metric_verbatim": "repair times ... Log-normal: VM mu=1.14 sigma=2.88, PM mu=1.80 sigma=2.07 (hours); mean repair times 38.5 (PM) and 19.6 (VM) hours",
+        "value": {
+          "vm": {
+            "mu_h": 1.14,
+            "sigma": 2.88,
+            "mean_h": 19.6
+          },
+          "pm": {
+            "mu_h": 1.8,
+            "sigma": 2.07,
+            "mean_h": 38.5
+          }
+        },
+        "unit": "hours",
+        "status": "V",
+        "location": "DSN'14 Fig 4",
+        "covers": []
+      },
+      {
+        "id": "repair-by-class",
+        "metric_verbatim": "Table IV mean/median repair hours: HW 80.1/8.28, Net 67.6/8.97, Power 12.17/0.83, Reboot 18.03/2.27, SW 30.0/22.37",
+        "value": {
+          "hw": [
+            80.1,
+            8.28
+          ],
+          "net": [
+            67.6,
+            8.97
+          ],
+          "power": [
+            12.17,
+            0.83
+          ],
+          "reboot": [
+            18.03,
+            2.27
+          ],
+          "sw": [
+            30.0,
+            22.37
+          ]
+        },
+        "unit": "hours (mean, median)",
+        "status": "V",
+        "location": "DSN'14 Table IV",
+        "covers": []
+      },
+      {
+        "id": "vm-reboot-share",
+        "metric_verbatim": "a significant percentage of VM failures, i.e., roughly 35%, are caused by unexpected reboots",
+        "value": 0.35,
+        "unit": "fraction of VM failures",
+        "status": "V",
+        "location": "DSN'14 \u00a7IV-C",
+        "covers": []
+      },
       {
         "id": "vm-lower",
         "metric_verbatim": "VMs have lower failure rates and lower probability of failure recurrences than PMs",
         "value": true,
         "unit": "text",
         "status": "V",
-        "location": "as summarised by a citing paper; numbers need the PDF",
-        "covers": [],
-        "notes": "qualitative only until the PDF is read"
+        "location": "as summarised by a citing paper; consistent with Table V absolute values",
+        "covers": []
       }
     ]
   },

@@ -12,6 +12,8 @@
     ],
     "derived_from": [
       "vishwanath-nagappan-socc10#afr-8pct",
+      "vishwanath-nagappan-socc10#disk-share",
+      "birke-dsn14#weekly-rate",
       "aws-ec2-sla#instance-level",
       "azure-vm-docs#pause-18mo",
       "narya-afpd#narya-reduction",
@@ -23,12 +25,12 @@
       "disk/pooled"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
-    "notes": "No public source gives a modern on-demand VM interruption rate (plan \u00a77.13); this profile is derived. Host faults: server repair rate (Vishwanath, S: 0.08/yr as P(>=1 repair), 0.171/yr as repair events at the high end) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split 50/50 between in-place reboot and host loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2.",
+    "notes": "No public source gives a modern on-demand VM interruption rate (plan \u00a77.13); this profile is derived. Host faults: non-disk server repair events (Vishwanath, V: 22% of 0.171 repairs per server-year = 0.038/yr; high end 0.08/yr, the paper's all-repairs AFR) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split 50/50 between in-place reboot and host loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2.",
     "assumptions": {
       "host_repair_rate_per_year": {
-        "low": 0.08,
-        "central": 0.08,
-        "high": 0.17142857
+        "low": 0.037714286,
+        "central": 0.037714286,
+        "high": 0.08
       },
       "f_LM": {
         "low": 0.5,
@@ -47,9 +49,9 @@
     "causes": {
       "hw_reboot": {
         "rate_per_hour": {
-          "low": 2.2815423e-06,
-          "central": 3.4223135e-06,
-          "high": 9.7780385e-06
+          "low": 1.0755842e-06,
+          "central": 1.6133764e-06,
+          "high": 4.5630846e-06
         },
         "duration": {
           "low": {
@@ -4257,16 +4259,16 @@
       },
       "hw_host_loss": {
         "rate_per_hour": {
-          "low": 2.2815423e-06,
-          "central": 3.4223135e-06,
-          "high": 9.7780385e-06
+          "low": 1.0755842e-06,
+          "central": 1.6133764e-06,
+          "high": 4.5630846e-06
         }
       },
       "sw": {
         "rate_per_hour": {
-          "low": 2.2815423e-06,
-          "central": 8.0424367e-06,
-          "high": 4.3903393e-05
+          "low": 1.0755842e-06,
+          "central": 3.7914344e-06,
+          "high": 2.048825e-05
         },
         "duration": {
           "low": {
@@ -4503,9 +4505,9 @@
       },
       "disk": {
         "rate_per_hour": {
-          "low": 5.3174611e-07,
-          "central": 1.884332e-06,
-          "high": 6.6774479e-06
+          "low": 7.4413189e-07,
+          "central": 2.0009198e-06,
+          "high": 5.3803364e-06
         }
       }
     },
@@ -4539,6 +4541,8 @@
     ],
     "derived_from": [
       "vishwanath-nagappan-socc10#afr-8pct",
+      "vishwanath-nagappan-socc10#disk-share",
+      "birke-dsn14#weekly-rate",
       "aws-ec2-sla#instance-level",
       "azure-vm-docs#pause-18mo",
       "narya-afpd#narya-reduction",
@@ -4550,12 +4554,12 @@
       "disk/pooled"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
-    "notes": "No public source gives a modern on-demand VM interruption rate (plan \u00a77.13); this profile is derived. Host faults: server repair rate (Vishwanath, S: 0.08/yr as P(>=1 repair), 0.171/yr as repair events at the high end) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split 50/50 between in-place reboot and host loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2. Variant: f_loss = 0.2 (share of host faults that lose the host).",
+    "notes": "No public source gives a modern on-demand VM interruption rate (plan \u00a77.13); this profile is derived. Host faults: non-disk server repair events (Vishwanath, V: 22% of 0.171 repairs per server-year = 0.038/yr; high end 0.08/yr, the paper's all-repairs AFR) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split 50/50 between in-place reboot and host loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2. Variant: f_loss = 0.2 (share of host faults that lose the host).",
     "assumptions": {
       "host_repair_rate_per_year": {
-        "low": 0.08,
-        "central": 0.08,
-        "high": 0.17142857
+        "low": 0.037714286,
+        "central": 0.037714286,
+        "high": 0.08
       },
       "f_LM": {
         "low": 0.5,
@@ -4574,9 +4578,9 @@
     "causes": {
       "hw_reboot": {
         "rate_per_hour": {
-          "low": 3.6504677e-06,
-          "central": 5.4757016e-06,
-          "high": 1.5644862e-05
+          "low": 1.7209348e-06,
+          "central": 2.5814022e-06,
+          "high": 7.3009354e-06
         },
         "duration": {
           "low": {
@@ -8784,16 +8788,16 @@
       },
       "hw_host_loss": {
         "rate_per_hour": {
-          "low": 9.1261693e-07,
-          "central": 1.3689254e-06,
-          "high": 3.9112154e-06
+          "low": 4.302337e-07,
+          "central": 6.4535054e-07,
+          "high": 1.8252339e-06
         }
       },
       "sw": {
         "rate_per_hour": {
-          "low": 3.6504677e-06,
-          "central": 1.2867899e-05,
-          "high": 7.0245429e-05
+          "low": 1.7209348e-06,
+          "central": 6.0662951e-06,
+          "high": 3.27812e-05
         },
         "duration": {
           "low": {
@@ -9030,9 +9034,9 @@
       },
       "disk": {
         "rate_per_hour": {
-          "low": 5.3174611e-07,
-          "central": 1.884332e-06,
-          "high": 6.6774479e-06
+          "low": 7.4413189e-07,
+          "central": 2.0009198e-06,
+          "high": 5.3803364e-06
         }
       }
     },
@@ -9066,6 +9070,8 @@
     ],
     "derived_from": [
       "vishwanath-nagappan-socc10#afr-8pct",
+      "vishwanath-nagappan-socc10#disk-share",
+      "birke-dsn14#weekly-rate",
       "aws-ec2-sla#instance-level",
       "azure-vm-docs#pause-18mo",
       "narya-afpd#narya-reduction",
@@ -9077,12 +9083,12 @@
       "disk/pooled"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
-    "notes": "No public source gives a modern on-demand VM interruption rate (plan \u00a77.13); this profile is derived. Host faults: server repair rate (Vishwanath, S: 0.08/yr as P(>=1 repair), 0.171/yr as repair events at the high end) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split 50/50 between in-place reboot and host loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2. Variant: f_loss = 0.8 (share of host faults that lose the host).",
+    "notes": "No public source gives a modern on-demand VM interruption rate (plan \u00a77.13); this profile is derived. Host faults: non-disk server repair events (Vishwanath, V: 22% of 0.171 repairs per server-year = 0.038/yr; high end 0.08/yr, the paper's all-repairs AFR) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live migration and prediction hide a large share), split 50/50 between in-place reboot and host loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). Replace with exec #10 measurements as @v2. Variant: f_loss = 0.8 (share of host faults that lose the host).",
     "assumptions": {
       "host_repair_rate_per_year": {
-        "low": 0.08,
-        "central": 0.08,
-        "high": 0.17142857
+        "low": 0.037714286,
+        "central": 0.037714286,
+        "high": 0.08
       },
       "f_LM": {
         "low": 0.5,
@@ -9101,9 +9107,9 @@
     "causes": {
       "hw_reboot": {
         "rate_per_hour": {
-          "low": 9.1261693e-07,
-          "central": 1.3689254e-06,
-          "high": 3.9112154e-06
+          "low": 4.302337e-07,
+          "central": 6.4535054e-07,
+          "high": 1.8252339e-06
         },
         "duration": {
           "low": {
@@ -13311,16 +13317,16 @@
       },
       "hw_host_loss": {
         "rate_per_hour": {
-          "low": 3.6504677e-06,
-          "central": 5.4757016e-06,
-          "high": 1.5644862e-05
+          "low": 1.7209348e-06,
+          "central": 2.5814022e-06,
+          "high": 7.3009354e-06
         }
       },
       "sw": {
         "rate_per_hour": {
-          "low": 9.1261693e-07,
-          "central": 3.2169747e-06,
-          "high": 1.7561357e-05
+          "low": 4.302337e-07,
+          "central": 1.5165738e-06,
+          "high": 8.1953e-06
         },
         "duration": {
           "low": {
@@ -13557,9 +13563,9 @@
       },
       "disk": {
         "rate_per_hour": {
-          "low": 5.3174611e-07,
-          "central": 1.884332e-06,
-          "high": 6.6774479e-06
+          "low": 7.4413189e-07,
+          "central": 2.0009198e-06,
+          "high": 5.3803364e-06
         }
       }
     },

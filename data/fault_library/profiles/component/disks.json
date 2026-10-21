@@ -63,6 +63,26 @@
     "notes": "Field ARR 2-4% (via Ford et al.); event count unknown -> log-variance 0.25."
   },
   {
+    "id": "disk/vishwanath10",
+    "kind": "component",
+    "component": "disk",
+    "version": 1,
+    "derived_from": [
+      "vishwanath-nagappan-socc10#disk-afr"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "rate_per_hour": {
+      "low": 3.0800821e-06,
+      "central": 3.0800821e-06,
+      "high": 3.0800821e-06
+    },
+    "pool_input": {
+      "rate_per_year": 0.027,
+      "log_variance": 0.25
+    },
+    "notes": "Microsoft fleet disk AFR 2.7% (2010); event count not given -> log-variance 0.25."
+  },
+  {
     "id": "disk/pooled",
     "kind": "component",
     "component": "disk",
@@ -71,23 +91,24 @@
       "disk/backblaze-hdd-2025",
       "disk/backblaze-ssd-2023",
       "disk/schroeder-gibson-fast07",
+      "disk/vishwanath10",
       "disk/ford10"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
     "rate_per_hour": {
-      "low": 5.3174611e-07,
-      "central": 1.884332e-06,
-      "high": 6.6774479e-06
+      "low": 7.4413189e-07,
+      "central": 2.0009198e-06,
+      "high": 5.3803364e-06
     },
     "pool": {
       "method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval with Student-t, k-2 dof (Higgins et al. 2009)",
-      "tau2": 0.13194059,
-      "se": 0.23619163,
-      "k": 4,
+      "tau2": 0.12881247,
+      "se": 0.21886805,
+      "k": 5,
       "per_year": {
-        "low": 0.0046612864,
-        "central": 0.016518054,
-        "high": 0.058534508
+        "low": 0.0065230601,
+        "central": 0.017540063,
+        "high": 0.047164028
       }
     },
     "notes": "Datacentre NVMe on i4i/m6id may differ from these HDD/boot-SSD fleets; the between-source spread (tau2) widens the band accordingly."

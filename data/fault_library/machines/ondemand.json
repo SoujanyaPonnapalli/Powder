@@ -126,5 +126,37 @@
   "price": {
    "route": "assigned"
   }
+ },
+ {
+  "id": "machine/birke14-pm",
+  "kind": "machine",
+  "fault_profile": "vm/birke14-pm",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/birke14-vm",
+  "kind": "machine",
+  "fault_profile": "vm/birke14-vm",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
  }
 ]

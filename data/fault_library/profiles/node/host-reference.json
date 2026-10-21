@@ -12,10 +12,10 @@
     ],
     "derived_from": [
       "vishwanath-nagappan-socc10#afr-8pct",
-      "vishwanath-nagappan-socc10#disk-top-failure"
+      "vishwanath-nagappan-socc10#repairs-per-repaired"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
-    "notes": "Physical server hardware repairs (2010, HDD-heavy servers): 20 replacements on ~9 of 100 servers per 14 months (slide-summary numbers, status S). All repairs are treated as host loss (data lost on local disks): pessimistic. frailty_a from P(N>=1)=0.09 and E[N|N>=1]=2.22 via a gamma-Poisson model: strong lemon effect.",
+    "notes": "Physical server hardware repairs (2010, HDD-heavy servers): 20 replacements on ~9 of 100 servers per 14 months (PDF, status V). All repairs are treated as host loss (data lost on local disks): pessimistic. frailty_a from P(N>=1)=0.09 and E[N|N>=1]=2.22 via a gamma-Poisson model: strong lemon effect.",
     "causes": {
       "hw_host_loss": {
         "rate_per_hour": {
@@ -28,6 +28,94 @@
     "frailty_a": 0.069698232,
     "shape": {
       "type": "exponential"
+    }
+  },
+  {
+    "id": "vm/birke14-vm",
+    "kind": "node",
+    "version": 1,
+    "tier": "reference",
+    "tags": [
+      "ibm",
+      "enterprise",
+      "2012-2013",
+      "vm"
+    ],
+    "derived_from": [
+      "birke-dsn14#weekly-rate",
+      "birke-dsn14#weekly-random-prob",
+      "birke-dsn14#repair-lognormal",
+      "birke-dsn14#recurrent-week",
+      "birke-dsn14#interfailure-gamma"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "notes": "VM crash tickets (server unresponsive/unreachable), all causes, as one transient cause (the paper gives no data-loss rate). Rate central = mean weekly failure rate (Fig 2), high = Table V weekly failure probability. Duration: lognormal matched to the reported median (3.13 h) and mean (19.6 h); the paper's own fit (sigma ~2-2.9) has a much larger mean than the data, so it is not used. Repair = ticket open to close, including queueing. Recurrence within a week is 42.1x the random weekly probability; frailty_a = 1/(ratio - 1) (gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape 0.44 (bursty) is recorded in shape_variant.",
+    "causes": {
+      "hw_reboot": {
+        "rate_per_hour": {
+          "low": 1.7857143e-05,
+          "central": 1.7857143e-05,
+          "high": 2.2662133e-05
+        },
+        "duration": {
+          "type": "lognormal",
+          "mu": 9.3286891,
+          "sigma": 1.9160008
+        }
+      }
+    },
+    "frailty_a": 0.0243309,
+    "shape": {
+      "type": "exponential"
+    },
+    "shape_variant": {
+      "type": "gamma",
+      "alpha": 0.44,
+      "source": "birke-dsn14#interfailure-gamma"
+    }
+  },
+  {
+    "id": "vm/birke14-pm",
+    "kind": "node",
+    "version": 1,
+    "tier": "reference",
+    "tags": [
+      "ibm",
+      "enterprise",
+      "2012-2013",
+      "pm"
+    ],
+    "derived_from": [
+      "birke-dsn14#weekly-rate",
+      "birke-dsn14#weekly-random-prob",
+      "birke-dsn14#repair-lognormal",
+      "birke-dsn14#recurrent-week",
+      "birke-dsn14#interfailure-gamma"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "notes": "PM crash tickets (server unresponsive/unreachable), all causes, as one transient cause (the paper gives no data-loss rate). Rate central = mean weekly failure rate (Fig 2), high = Table V weekly failure probability. Duration: lognormal matched to the reported median (6.05 h) and mean (38.5 h); the paper's own fit (sigma ~2-2.9) has a much larger mean than the data, so it is not used. Repair = ticket open to close, including queueing. Recurrence within a week is 35.5x the random weekly probability; frailty_a = 1/(ratio - 1) (gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape 0.29 (bursty) is recorded in shape_variant.",
+    "causes": {
+      "hw_reboot": {
+        "rate_per_hour": {
+          "low": 2.9761905e-05,
+          "central": 2.9761905e-05,
+          "high": 3.7019642e-05
+        },
+        "duration": {
+          "type": "lognormal",
+          "mu": 9.9886891,
+          "sigma": 1.9238806
+        }
+      }
+    },
+    "frailty_a": 0.028985507,
+    "shape": {
+      "type": "exponential"
+    },
+    "shape_variant": {
+      "type": "gamma",
+      "alpha": 0.29,
+      "source": "birke-dsn14#interfailure-gamma"
     }
   }
 ]

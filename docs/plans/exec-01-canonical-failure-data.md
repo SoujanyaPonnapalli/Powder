@@ -882,7 +882,7 @@ Remaining:
 - [ ] Azure reference: `az login --use-device-code`; run `azure_locations.py` to confirm coordinates (mapping decisions stay fixed).
 - [ ] LANL failure data (CFDR/FTA `lanl05`): download, extract per-system cause counts, Weibull/lognormal fits, frailty; add `hpc/lanl05-*` profiles; pool `rho_SW` with Ford's ratio.
 - [ ] Google ClusterData2019 `machine_events` (BigQuery; likely needs a Google login -> may be blocked): `cluster/google2019-*` + `planned_downtime/google2019`.
-- [ ] Birke et al. DSN'14 numbers (needs the PDF; drop it in `docs/reading/`): `vm/birke14-*` profiles.
+- [x] Birke et al. DSN'14 (PDF read 2026-10-21): `vm/birke14-vm` (0.16 crashes/VM-yr, lognormal repair median 3.1 h / mean 19.6 h, recurrence 42x -> frailty a = 0.024) and `vm/birke14-pm`. Vishwanath & Nagappan PDF confirms 20 repairs on 9/100 servers per 14 months, 78% disks, disk AFR 2.7%: all citations now V; AWS host faults now use non-disk repairs only (0.038/yr central), and the disk pool gains Vishwanath's 2.7%.
 - [ ] Trace replay mode in powder-mc (Goal 2.2: simulator and deployment see the same faults). Optional for exec #1.
 - [ ] (exec #10) Replace placeholder durations (`hw_reboot`, `sw`, `spawn`, rebuild `R`) with measured AWS timings as `@v2` profiles.
 

@@ -11,6 +11,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -26,9 +28,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -47,9 +49,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -4257,16 +4259,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -4503,9 +4505,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -4552,6 +4554,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -4567,9 +4571,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -4588,9 +4592,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -8798,16 +8802,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -9044,9 +9048,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -9093,6 +9097,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -9108,9 +9114,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -9129,9 +9135,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -13339,16 +13345,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -13585,9 +13591,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -13634,6 +13640,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -13649,9 +13657,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -13670,9 +13678,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -17880,16 +17888,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -18126,9 +18134,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -18175,6 +18183,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -18190,9 +18200,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -18211,9 +18221,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -22421,16 +22431,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -22667,9 +22677,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -22716,6 +22726,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -22731,9 +22743,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -22752,9 +22764,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -26962,16 +26974,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -27208,9 +27220,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -27257,6 +27269,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -27272,9 +27286,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -27293,9 +27307,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -31503,16 +31517,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -31749,9 +31763,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {
@@ -31798,6 +31812,8 @@
   ],
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
+   "vishwanath-nagappan-socc10#disk-share",
+   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -31813,9 +31829,9 @@
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data.",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -31834,9 +31850,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     },
     "duration": {
      "low": {
@@ -36044,16 +36060,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 3.4223135e-06,
-     "high": 9.7780385e-06
+     "low": 1.0755842e-06,
+     "central": 1.6133764e-06,
+     "high": 4.5630846e-06
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815423e-06,
-     "central": 8.0424367e-06,
-     "high": 4.3903393e-05
+     "low": 1.0755842e-06,
+     "central": 3.7914344e-06,
+     "high": 2.048825e-05
     },
     "duration": {
      "low": {
@@ -36290,9 +36306,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-07,
-     "central": 1.884332e-06,
-     "high": 6.6774479e-06
+     "low": 7.4413189e-07,
+     "central": 2.0009198e-06,
+     "high": 5.3803364e-06
     }
    },
    "spot_interrupt": {

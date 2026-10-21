@@ -15,9 +15,9 @@
   "notes": "cloud/aws-ondemand-nvme with every cause rate multiplied by 10.0 (stress / heterogeneity).",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -36,9 +36,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815422999999998e-05,
-     "central": 3.4223135000000003e-05,
-     "high": 9.778038500000001e-05
+     "low": 1.0755842e-05,
+     "central": 1.6133764e-05,
+     "high": 4.5630845999999996e-05
     },
     "duration": {
      "low": {
@@ -4246,16 +4246,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815422999999998e-05,
-     "central": 3.4223135000000003e-05,
-     "high": 9.778038500000001e-05
+     "low": 1.0755842e-05,
+     "central": 1.6133764e-05,
+     "high": 4.5630845999999996e-05
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815422999999998e-05,
-     "central": 8.0424367e-05,
-     "high": 0.00043903393
+     "low": 1.0755842e-05,
+     "central": 3.7914344e-05,
+     "high": 0.00020488250000000002
     },
     "duration": {
      "low": {
@@ -4492,9 +4492,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-06,
-     "central": 1.8843319999999998e-05,
-     "high": 6.6774479e-05
+     "low": 7.4413189e-06,
+     "central": 2.0009198e-05,
+     "high": 5.3803363999999995e-05
     }
    }
   },
@@ -4530,9 +4530,9 @@
   "notes": "cloud/aws-ondemand-nvme with every cause rate multiplied by 0.1 (stress / heterogeneity).",
   "assumptions": {
    "host_repair_rate_per_year": {
-    "low": 0.08,
-    "central": 0.08,
-    "high": 0.17142857
+    "low": 0.037714286,
+    "central": 0.037714286,
+    "high": 0.08
    },
    "f_LM": {
     "low": 0.5,
@@ -4551,9 +4551,9 @@
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 2.2815422999999998e-07,
-     "central": 3.4223135000000004e-07,
-     "high": 9.778038500000002e-07
+     "low": 1.0755842e-07,
+     "central": 1.6133764e-07,
+     "high": 4.5630845999999996e-07
     },
     "duration": {
      "low": {
@@ -8761,16 +8761,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 2.2815422999999998e-07,
-     "central": 3.4223135000000004e-07,
-     "high": 9.778038500000002e-07
+     "low": 1.0755842e-07,
+     "central": 1.6133764e-07,
+     "high": 4.5630845999999996e-07
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 2.2815422999999998e-07,
-     "central": 8.0424367e-07,
-     "high": 4.3903393e-06
+     "low": 1.0755842e-07,
+     "central": 3.7914344000000003e-07,
+     "high": 2.0488250000000002e-06
     },
     "duration": {
      "low": {
@@ -9007,9 +9007,9 @@
    },
    "disk": {
     "rate_per_hour": {
-     "low": 5.3174611e-08,
-     "central": 1.8843320000000001e-07,
-     "high": 6.6774479e-07
+     "low": 7.4413189e-08,
+     "central": 2.0009198000000002e-07,
+     "high": 5.3803364e-07
     }
    }
   },
