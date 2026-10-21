@@ -27,8 +27,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -4253,8 +4253,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-05,
-     "central": 3.7914344e-05,
+     "low": 1.2608371000000002e-06,
+     "central": 1.1226592e-05,
      "high": 0.00020488250000000002
     },
     "duration": {
@@ -4542,8 +4542,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -8768,8 +8768,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-07,
-     "central": 3.7914344000000003e-07,
+     "low": 1.2608371000000002e-08,
+     "central": 1.1226592000000001e-07,
      "high": 2.0488250000000002e-06
     },
     "duration": {

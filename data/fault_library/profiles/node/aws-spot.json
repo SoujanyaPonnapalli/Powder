@@ -22,6 +22,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -40,8 +41,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -4266,8 +4267,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -4565,6 +4566,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -4583,8 +4585,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -8809,8 +8811,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -9108,6 +9110,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -9126,8 +9129,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -13352,8 +13355,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -13651,6 +13654,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -13669,8 +13673,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -17895,8 +17899,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -18194,6 +18198,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -18212,8 +18217,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -22438,8 +22443,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -22737,6 +22742,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -22755,8 +22761,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -26981,8 +26987,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -27280,6 +27286,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -27298,8 +27305,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -31524,8 +31531,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {
@@ -31823,6 +31830,7 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
+   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
@@ -31841,8 +31849,8 @@
    "f_loss": 0.5,
    "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
    "sw_ratio": {
-    "low": 1.0,
-    "central": 2.35,
+    "low": 0.11722346,
+    "central": 0.69584461,
     "high": 4.49
    },
    "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
@@ -36067,8 +36075,8 @@
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 3.7914344e-06,
+     "low": 1.2608371e-07,
+     "central": 1.1226592e-06,
      "high": 2.048825e-05
     },
     "duration": {

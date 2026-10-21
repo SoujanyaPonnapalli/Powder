@@ -247,7 +247,16 @@ def main():
     inst = {k: host_yr[k] * (1 - f_lm[k]) for k in ("low", "central", "high")}  # low <= central <= high
     host_loss = {k: inst[k] * f_loss_central / YEAR_H for k in inst}
     reboot = {k: inst[k] * (1 - f_loss_central) / YEAR_H for k in inst}
-    sw_ratio = tri(1.0, 2.35, 4.49)  # Ford >=15-min node-restart : unplanned-reboot (avg ratio; max/max ratio)
+    # SW : HW-reboot ratio. Ford (>=15-min node restarts : unplanned reboots, Google storage) = 2.35, high
+    # 4.49; LANL (software : hardware failures needing an administrator, pooled small-node clusters) = 0.21,
+    # low 0.12. The two definitions differ ~10x, so the band spans both: low = LANL low, central = geometric
+    # mean of the two point estimates, high = Ford high.
+    lanl_path = LIB / "derived/lanl05_systems.json"
+    lanl_rho = json.loads(lanl_path.read_text())["summary"]["rho_sw_pool"] if lanl_path.exists() else None
+    if lanl_rho:
+        sw_ratio = tri(lanl_rho["low"], math.sqrt(lanl_rho["central"] * 2.35), 4.49)
+    else:
+        sw_ratio = tri(1.0, 2.35, 4.49)
     sw = {k: reboot[k] * sw_ratio[k] for k in reboot}
     pause = tri(0.0, 0.0, 1.0 / (18 * 30.4375 * 24))  # Azure bound, used only at the pessimistic end
     ford = json.loads((LIB / "profiles/node/ford10.json").read_text())
@@ -259,14 +268,15 @@ def main():
                             "birke-dsn14#weekly-rate", "aws-ec2-sla#instance-level",
                             "azure-vm-docs#pause-18mo", "narya-afpd#narya-reduction", "narya-afpd#afpd-reduction",
                             "ford10#derived-rate-node_restart", "ford10#derived-rate-unplanned_reboot",
-                            "ford10#digitized-unplanned_reboot", "ford10#digitized-node_restart", "disk/pooled"],
+                            "ford10#digitized-unplanned_reboot", "ford10#digitized-node_restart", "disk/pooled"]
+                           + (["lanl05#pooled-small"] if lanl_rho else []),
            "built_by": "scripts/fault_library/build_literature.py",
            "notes": ("No public source gives a modern on-demand VM interruption rate (plan §7.13); this profile is "
                      "derived. Host faults: non-disk server repair events (Vishwanath, V: 22% of 0.171 repairs per "
                      "server-year = 0.038/yr; high end 0.08/yr, the paper's all-repairs AFR) x (1 - f_LM) with f_LM in {0.5, 0.25, 0} (Narya/AFPD show live "
                      "migration and prediction hide a large share), split 50/50 between in-place reboot and host "
-                     "loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: Ford's >=15-min "
-                     "node-restart : unplanned-reboot ratio {1, 2.35, 4.49} times the reboot rate, with durations "
+                     "loss; the split is a separate sensitivity axis (profiles -loss0.2 / -loss0.8). Software: SW:HW ratio band "
+                     "{LANL low 0.12, geometric mean of LANL 0.21 and Ford 2.35, Ford high 4.49} x the reboot rate, with Ford node-restart durations "
                      "conditioned on >=15 min; short automatic restarts are left to planned downtime and exec #10 "
                      "measurements. Pause: Azure's 30 s at most once per 18 months, pessimistic end only (longer than "
                      "TiKV's 10 s election timeout). Disk: disk/pooled. Durations: Ford unplanned-reboot CDF "

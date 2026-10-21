@@ -565,6 +565,10 @@ def test_trace_weibull_uses_single_transient_clock():
     # the transient rate in both the trace and the simulator, so isolate the renewal process
     for c in ("disk", "hw_host_loss"):
         prof["causes"].pop(c, None)
+    # many renewals per slot: an ordinary renewal process with k < 1 front-loads events after t = 0, a
+    # fixed per-slot excess over lambda*T; with ~hundreds of renewals per slot it is negligible
+    for c in prof["causes"].values():
+        c["rate_per_hour"] = {k: v * 50 for k, v in c["rate_per_hour"].items()}
     lib.entries["__weib__"] = prof
     lib.entries["__m__"] = {"id": "__m__", "kind": "machine", "fault_profile": "__weib__", "price": {"route": "none"}}
     sid = _scenario(lib, "__sw__", machines=["__m__"])
@@ -649,3 +653,20 @@ def test_aws_host_faults_consistent_per_level():
     for lvl in ("low", "central", "high"):
         total = (p["causes"]["hw_reboot"]["rate_per_hour"][lvl] + p["causes"]["hw_host_loss"]["rate_per_hour"][lvl]) * 8766
         assert math.isclose(total, a["host_repair_rate_per_year"][lvl] * (1 - a["f_LM"][lvl]), rel_tol=1e-6)
+
+
+# -- LANL (raw data) -------------------------------------------------------------
+
+def test_lanl_pooled_profile_and_shapes():
+    if "hpc/lanl05-pooled" not in LIB.entries:
+        return  # raw LANL data not fetched
+    p = LIB.get("hpc/lanl05-pooled", "node")
+    hw = p["causes"]["hw_reboot"]["rate_per_hour"]
+    assert 0.05 < hw["central"] * 8766 < 5  # failures needing an administrator, per node-year
+    k = p["shape_variant"]["k"]
+    assert 0.4 < k["central"] < 0.9  # decreasing hazard, consistent with DSN'06 (0.7-0.8)
+    summ = LIB.measurement("lanl05#pooled-small")["value"]
+    assert 0.05 < summ["rho_sw_pool"]["central"] < 1.0
+    assert summ["cofail_inflation_small"]["median"] > 1  # failures cluster in time across nodes
+    aws = LIB.get("cloud/aws-ondemand-nvme", "node")["assumptions"]["sw_ratio"]
+    assert aws["low"] < 0.5 < aws["central"] < aws["high"]

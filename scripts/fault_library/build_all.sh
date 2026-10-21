@@ -8,6 +8,9 @@ cd "$(git rev-parse --show-toplevel)"
 PY=${PYTHON:-python3}
 
 $PY scripts/fault_library/build_ford10.py > /dev/null
+if [ -f data/fault_library/raw/lanl/LA-UR-05-7318-failure-data-1996-2005.tar.gz ]; then
+  $PY scripts/fault_library/extract_lanl.py > /dev/null
+fi
 $PY scripts/fault_library/build_literature.py > /dev/null
 $PY scripts/fault_library/build_region_outages.py > /dev/null
 if $PY scripts/fault_library/build_prices.py; then :; else

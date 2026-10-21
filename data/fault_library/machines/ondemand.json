@@ -96,6 +96,102 @@
   }
  },
  {
+  "id": "machine/lanl05-pooled",
+  "kind": "machine",
+  "fault_profile": "hpc/lanl05-pooled",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/lanl05-sys16",
+  "kind": "machine",
+  "fault_profile": "hpc/lanl05-sys16",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/lanl05-sys18",
+  "kind": "machine",
+  "fault_profile": "hpc/lanl05-sys18",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/lanl05-sys19",
+  "kind": "machine",
+  "fault_profile": "hpc/lanl05-sys19",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/lanl05-sys2",
+  "kind": "machine",
+  "fault_profile": "hpc/lanl05-sys2",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
+  "id": "machine/lanl05-sys20",
+  "kind": "machine",
+  "fault_profile": "hpc/lanl05-sys20",
+  "tier": "ondemand",
+  "storage_mode": "local",
+  "regions": [
+   "us-east-1",
+   "us-east-2",
+   "us-west-1",
+   "us-west-2"
+  ],
+  "price": {
+   "route": "assigned"
+  }
+ },
+ {
   "id": "machine/aws-ondemand-x0.1",
   "kind": "machine",
   "fault_profile": "synthetic/aws-ondemand-x0.1",

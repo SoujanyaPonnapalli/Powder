@@ -1,0 +1,334 @@
+[
+ {
+  "id": "hpc/lanl05-pooled",
+  "kind": "node",
+  "version": 1,
+  "tier": "reference",
+  "tags": [
+   "hpc",
+   "bare-metal",
+   "1996-2005",
+   "pooled",
+   "small-node"
+  ],
+  "derived_from": [
+   "lanl05#pooled-small",
+   "lanl05#dataset"
+  ],
+  "built_by": "scripts/fault_library/extract_lanl.py",
+  "notes": "Random-effects pool over 15 LANL small-node clusters (<= 4 procs/node). All failures needing an administrator, hardware-class (hw/network/facilities/human/undetermined) as hw_reboot and software as sw, both transient (LANL does not record data loss). Durations: lognormal MLE of LANL down time. Absolute rates are 1996-2005 bare metal: use for ratios and shapes, not as a cloud VM rate.",
+  "causes": {
+   "hw_reboot": {
+    "rate_per_hour": {
+     "low": 3.2800223241280894e-05,
+     "central": 6.761822165622835e-05,
+     "high": 0.00013939612137140684
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.385032923669977,
+     "sigma": 1.474412869583379
+    }
+   },
+   "sw": {
+    "rate_per_hour": {
+     "low": 5.487506119405207e-06,
+     "central": 1.3668479367462388e-05,
+     "high": 3.4045944396868444e-05
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.157734936287929,
+     "sigma": 1.5815589101909033
+    }
+   }
+  },
+  "frailty_a": 0.8870330411858185,
+  "shape": {
+   "type": "exponential"
+  },
+  "shape_variant": {
+   "type": "weibull",
+   "k": {
+    "low": 0.4337102193699871,
+    "central": 0.6873015120583128,
+    "high": 0.8699489186325428
+   }
+  }
+ },
+ {
+  "id": "hpc/lanl05-sys2",
+  "kind": "node",
+  "version": 1,
+  "tier": "reference",
+  "tags": [
+   "hpc",
+   "bare-metal",
+   "1996-2005",
+   "cluster"
+  ],
+  "derived_from": [
+   "lanl05#system-2"
+  ],
+  "built_by": "scripts/fault_library/extract_lanl.py",
+  "notes": "LANL system 2: 49 nodes x 80 processors, 437 node-years, 7104 failures.",
+  "causes": {
+   "hw_reboot": {
+    "rate_per_hour": {
+     "low": 0.0013681202127548407,
+     "central": 0.0013681202127548407,
+     "high": 0.0013681202127548407
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.184692849887954,
+     "sigma": 1.1637516360840174
+    }
+   },
+   "sw": {
+    "rate_per_hour": {
+     "low": 0.00048773733763858844,
+     "central": 0.00048773733763858844,
+     "high": 0.00048773733763858844
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 7.917035741774132,
+     "sigma": 1.3060387407145246
+    }
+   }
+  },
+  "frailty_a": 3.5035760648203897,
+  "shape": {
+   "type": "exponential"
+  },
+  "shape_variant": {
+   "type": "weibull",
+   "k": {
+    "low": 0.5664702851110655,
+    "central": 0.5664702851110655,
+    "high": 0.5664702851110655
+   }
+  }
+ },
+ {
+  "id": "hpc/lanl05-sys16",
+  "kind": "node",
+  "version": 1,
+  "tier": "reference",
+  "tags": [
+   "hpc",
+   "bare-metal",
+   "1996-2005",
+   "cluster"
+  ],
+  "derived_from": [
+   "lanl05#system-16"
+  ],
+  "built_by": "scripts/fault_library/extract_lanl.py",
+  "notes": "LANL system 16: 16 nodes x 128 processors, 93 node-years, 2680 failures.",
+  "causes": {
+   "hw_reboot": {
+    "rate_per_hour": {
+     "low": 0.0019168535568146049,
+     "central": 0.0019168535568146049,
+     "high": 0.0019168535568146049
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.276182850499564,
+     "sigma": 1.395228089780869
+    }
+   },
+   "sw": {
+    "rate_per_hour": {
+     "low": 0.000979943736229147,
+     "central": 0.000979943736229147,
+     "high": 0.000979943736229147
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 7.5260854035688105,
+     "sigma": 1.4188187225056674
+    }
+   }
+  },
+  "frailty_a": 2.0607778241923045,
+  "shape": {
+   "type": "exponential"
+  },
+  "shape_variant": {
+   "type": "weibull",
+   "k": {
+    "low": 0.5852914454331941,
+    "central": 0.5852914454331941,
+    "high": 0.5852914454331941
+   }
+  }
+ },
+ {
+  "id": "hpc/lanl05-sys18",
+  "kind": "node",
+  "version": 1,
+  "tier": "reference",
+  "tags": [
+   "hpc",
+   "bare-metal",
+   "1996-2005",
+   "cluster"
+  ],
+  "derived_from": [
+   "lanl05#system-18"
+  ],
+  "built_by": "scripts/fault_library/extract_lanl.py",
+  "notes": "LANL system 18: 1024 nodes x 4 processors, 3670 node-years, 3997 failures.",
+  "causes": {
+   "hw_reboot": {
+    "rate_per_hour": {
+     "low": 0.00010289094330914183,
+     "central": 0.00010289094330914183,
+     "high": 0.00010289094330914183
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.293968921607044,
+     "sigma": 1.1896520770148815
+    }
+   },
+   "sw": {
+    "rate_per_hour": {
+     "low": 2.1355310590145147e-05,
+     "central": 2.1355310590145147e-05,
+     "high": 2.1355310590145147e-05
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.259238222465841,
+     "sigma": 1.3599099670626995
+    }
+   }
+  },
+  "frailty_a": 2.341303926717374,
+  "shape": {
+   "type": "exponential"
+  },
+  "shape_variant": {
+   "type": "weibull",
+   "k": {
+    "low": 0.6862764229151512,
+    "central": 0.6862764229151512,
+    "high": 0.6862764229151512
+   }
+  }
+ },
+ {
+  "id": "hpc/lanl05-sys19",
+  "kind": "node",
+  "version": 1,
+  "tier": "reference",
+  "tags": [
+   "hpc",
+   "bare-metal",
+   "1996-2005",
+   "cluster"
+  ],
+  "derived_from": [
+   "lanl05#system-19"
+  ],
+  "built_by": "scripts/fault_library/extract_lanl.py",
+  "notes": "LANL system 19: 1024 nodes x 4 processors, 3241 node-years, 3284 failures.",
+  "causes": {
+   "hw_reboot": {
+    "rate_per_hour": {
+     "low": 9.461505190311419e-05,
+     "central": 9.461505190311419e-05,
+     "high": 9.461505190311419e-05
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.320472727145654,
+     "sigma": 1.102893534670177
+    }
+   },
+   "sw": {
+    "rate_per_hour": {
+     "low": 2.0978635020184543e-05,
+     "central": 2.0978635020184543e-05,
+     "high": 2.0978635020184543e-05
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.510440686291826,
+     "sigma": 1.2597857943802915
+    }
+   }
+  },
+  "frailty_a": 2.0325467243409943,
+  "shape": {
+   "type": "exponential"
+  },
+  "shape_variant": {
+   "type": "weibull",
+   "k": {
+    "low": 0.7264468075444637,
+    "central": 0.7264468075444637,
+    "high": 0.7264468075444637
+   }
+  }
+ },
+ {
+  "id": "hpc/lanl05-sys20",
+  "kind": "node",
+  "version": 1,
+  "tier": "reference",
+  "tags": [
+   "hpc",
+   "bare-metal",
+   "1996-2005",
+   "cluster"
+  ],
+  "derived_from": [
+   "lanl05#system-20"
+  ],
+  "built_by": "scripts/fault_library/extract_lanl.py",
+  "notes": "LANL system 20: 512 nodes x 4 processors, 2047 node-years, 2478 failures.",
+  "causes": {
+   "hw_reboot": {
+    "rate_per_hour": {
+     "low": 0.00010211543949771689,
+     "central": 0.00010211543949771689,
+     "high": 0.00010211543949771689
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.570828347565099,
+     "sigma": 1.007792747573046
+    }
+   },
+   "sw": {
+    "rate_per_hour": {
+     "low": 3.600795519406393e-05,
+     "central": 3.600795519406393e-05,
+     "high": 3.600795519406393e-05
+    },
+    "duration": {
+     "type": "lognormal",
+     "mu": 8.056115004697412,
+     "sigma": 1.3376083717550005
+    }
+   }
+  },
+  "frailty_a": 0.7683193555808969,
+  "shape": {
+   "type": "exponential"
+  },
+  "shape_variant": {
+   "type": "weibull",
+   "k": {
+    "low": 0.4337102193699871,
+    "central": 0.4337102193699871,
+    "high": 0.4337102193699871
+   }
+  }
+ }
+]
