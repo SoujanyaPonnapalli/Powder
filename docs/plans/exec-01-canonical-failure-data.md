@@ -3,7 +3,7 @@
 Scope: October Goals, execution order #1, subtasks 1.1 (planned weekly downtime)
 and 1.2 (region outage frequency/duration).
 
-Status: PLAN v2.1 (not implemented). Created 2026-10-19, rewritten 2026-10-20
+Status: v2.1, implementation in progress (see §8). Created 2026-10-19, rewritten 2026-10-20
 after the decisions in §0. v2.1 changes: region outages from the nearest Azure
 region only; planned-downtime and recovery durations from Ford et al. OSDI'10;
 8 vCPU; `i4i.2xlarge`; AWS credentials available; σ_W = 12 h.
@@ -852,3 +852,42 @@ with `pdfplumber` + numpy):
 is the best public per-cause duration data. Our own exec #10 timings will
 later replace the `hw_reboot`/`sw` durations as `@v2` profiles, while planned
 downtime stays Ford-based unless you decide otherwise.
+
+## 8. Progress checklist (implementation)
+
+Unattended VM sessions (`infra/aws/run_claude.sh`) take the first unchecked
+item, finish it, tick it with a one-line note, and commit. Run
+`bash scripts/fault_library/build_all.sh` before ticking anything.
+
+Done (2026-10-21, branch `exec01-fault-library`):
+
+- [x] Step A: `powder/faults` (schema, library, convert); LogNormal/Mixture/Empirical distributions; legacy scenario reproduces `VM_PROFILES` exactly.
+- [x] Step C2: Ford et al. digitized from vector paths (Figs 1-3, Tables 1-2); raster cross-check 100% within 0.02; Table 1/Fig 3 read as >=15-min events (summed rate matches Table 2 node MTTF within 5%); `cluster/ford10-*`, `disk/ford10`, `planned_downtime/{weekly-ford10,ford10-rate}`.
+- [x] Step E (Python): planned-downtime renewal schedule with equilibrium phase; folded into Markov/ILP via `as_transient`.
+- [x] Step F: Azure PIR incident list (2021-2026, by web search), AWS->nearest-Azure map (us-east-1 -> eastus2 fixed), EB rates, lognormal durations; `region_outage/aws-us-from-azure` (+ `-incl-single-az`).
+- [x] Step D: literature sources, `disk/pooled` (random effects), `host/vishwanath10` (frailty), `cloud/aws-ondemand-nvme` (within AWS SLA cap).
+- [x] Steps B/C (code): price/spot fetchers, parsers, `build_prices.py`; tested on format fixtures (no network in the sandbox).
+- [x] Step G: reliability-score copula price assignment (rho 0 x20 seeds, 0.5, 1; extra R = 0.25 h / 4 h ranked variants because Kendall tau = 0.73), machine classes incl. synthetic x10/x0.1, canonical/reference scenarios, `trace.py` + `make_trace.py`, `ilp.py` adapter, catalogue.
+- [x] AWS work VM: `infra/aws/` bootstrap, cron data refresh, unattended runner.
+
+Remaining:
+
+- [ ] Run the real price fetch on the VM (`fetch_aws_prices.py`, `build_prices.py`, `build_machines.py`); fix any parser failure against the real offer files (attribute names are checked and fail loudly). Confirm `i4i.2xlarge` exists in all four US regions (else switch scenarios to `m6id.2xlarge`) and record its vCPU/memory/NVMe size in the scenario `deployment` block (exec #6 needs `storage_gb`).
+- [ ] Spot: Spot Advisor snapshot + `describe-spot-price-history`; build `spot/aws-*` profiles and machines; confirm the Spot Advisor JSON layout matches `parse_spot_advisor`.
+- [ ] SpotLake 2025: sync the public bucket for the deployment types, inspect the file format, write `parse_spotlake` + tests, and add band/price history statistics to spot profiles (input for exec #4.2).
+- [ ] Rust engine: add `lognormal`, `empirical` and `mixture` `DistributionSpec`s to powder-mc (and `mc_jobs.distribution_spec`), so `engine=True` no longer approximates; `cargo test`.
+- [ ] Rust engine: `PlannedDowntimeSpec` + `PLANNED_DOWNTIME_START/END` events; replacement must ignore planned downtime; cross-check against `planned_downtime.schedule` statistics.
+- [ ] Rust engine + Python `NetworkConfig`: per-region outage rates (`per_region` map); make `RegionOutageModel.as_network_config` exact instead of max/mean.
+- [ ] Refine `region_incidents_azure.csv` from azure.status.microsoft directly (the sandbox could only read search snippets): verify times/scopes of S rows, add missed US incidents, rebuild region outages.
+- [ ] Azure reference: `az login --use-device-code`; run `azure_locations.py` to confirm coordinates (mapping decisions stay fixed).
+- [ ] LANL failure data (CFDR/FTA `lanl05`): download, extract per-system cause counts, Weibull/lognormal fits, frailty; add `hpc/lanl05-*` profiles; pool `rho_SW` with Ford's ratio.
+- [ ] Google ClusterData2019 `machine_events` (BigQuery; likely needs a Google login -> may be blocked): `cluster/google2019-*` + `planned_downtime/google2019`.
+- [ ] Birke et al. DSN'14 numbers (needs the PDF; drop it in `docs/reading/`): `vm/birke14-*` profiles.
+- [ ] Trace replay mode in powder-mc (Goal 2.2: simulator and deployment see the same faults). Optional for exec #1.
+- [ ] (exec #10) Replace placeholder durations (`hw_reboot`, `sw`, `spawn`, rebuild `R`) with measured AWS timings as `@v2` profiles.
+
+Recorded deviations from §7 (and why):
+
+- Region outage EB uses the nine Azure US regions, not all regions worldwide: the incident search was thorough only for US regions. Window 2023-01-01 to 2026-10-20: PIRs older than ~5 years are gone, and since mid-2022 Microsoft publishes only broad incidents.
+- The software cause in `cloud/aws-ondemand-nvme` uses Ford's >=15-min node-restart : unplanned-reboot ratio (1 / 2.35 / 4.49) with >=15-min durations. Short automatic restarts are left to planned downtime and exec #10, because Ford's all-events node-restart rate (~57 per node-year) reflects Google's rollout practice.
+- Rust-side changes (new distributions, planned-downtime events, per-region outages) are not done: the sandbox has no Rust toolchain. Until then, `engine=True` maps new distributions to a Weibull with the same mean and median, and region outages collapse to the max regional rate.

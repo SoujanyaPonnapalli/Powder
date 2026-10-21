@@ -1,0 +1,9 @@
+# Powder work VM data refresh (installed by vm_setup.sh; times are UTC)
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+# Spot Advisor band snapshot: daily (history cannot be fetched retroactively)
+17 3 * * *  cd $HOME/Powder && bash infra/aws/refresh_data.sh advisor
+# On-demand + transfer prices: weekly (Mondays)
+37 4 * * 1  cd $HOME/Powder && bash infra/aws/refresh_data.sh prices
+# Spot price history (90-day window): weekly (Tuesdays)
+47 4 * * 2  cd $HOME/Powder && bash infra/aws/refresh_data.sh history

@@ -523,3 +523,13 @@ def test_trace_is_reproducible():
     e1 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
     e2 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
     assert e1 == e2 and len(e1) > 0
+
+
+def test_scenario_machine_types_for_ilp():
+    try:
+        import powder.placement_optimizer  # noqa: F401  (needs SciPy)
+    except Exception:
+        return
+    from powder.faults.ilp import scenario_machine_types
+    types = scenario_machine_types(LIB, "scenario/canonical-central", copies=4)
+    assert types and all(t.copies == 4 and "@" in t.type_id for t in types)

@@ -1,0 +1,11 @@
+[Unit]
+Description=Powder unattended Claude Code work session
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Powder
+ExecStart=/bin/bash /home/ubuntu/Powder/infra/aws/run_claude.sh
+TimeoutStartSec=4h

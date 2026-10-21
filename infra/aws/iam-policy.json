@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyEc2PricingAndSpot",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeSpotPriceHistory",
+        "ec2:DescribeRegions",
+        "ec2:DescribeAvailabilityZones",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeInstanceTypeOfferings",
+        "ec2:GetSpotPlacementScores",
+        "pricing:GetProducts",
+        "pricing:DescribeServices",
+        "health:DescribeEvents",
+        "health:DescribeEventDetails"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ClaudeCodeViaBedrockOptional",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream",
+        "bedrock:ListInferenceProfiles",
+        "bedrock:GetInferenceProfile"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
