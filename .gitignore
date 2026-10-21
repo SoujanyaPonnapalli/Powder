@@ -119,3 +119,4 @@ notebooks/*.html
 # Fault library: large raw downloads are re-fetched by scripts, not committed
 data/fault_library/raw/spot/spotlake/
 data/fault_library/raw/azure_locations.json
+aws-*.zip

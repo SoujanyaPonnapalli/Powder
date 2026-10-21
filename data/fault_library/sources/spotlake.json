@@ -1,0 +1,36 @@
+{
+  "id": "spotlake-aws",
+  "kind": "source",
+  "title": "SpotLake AWS spot archive (10-minute snapshots), aws-2025-03 .. aws-2026-03",
+  "url": "https://github.com/ddps-lab/spotlake",
+  "accessed": "2026-10-21",
+  "population": "289 US (region, 8 vCPU x86 type) pools, daily aggregates of 10-minute rows",
+  "notes": "Downloaded by the user; extracted with scripts/fault_library/extract_spotlake.py. IF (3.0..1.0) mapped to Spot Advisor band = (3 - IF) * 2, verified against an advisor snapshot (3962/3962 US pools agree). Citation: Lee, Hwang, Lee, SpotLake, IISWC 2022.",
+  "measurements": [
+    {
+      "id": "pools",
+      "metric_verbatim": "per-pool band shares, band changes and spot price statistics",
+      "value": "derived/spotlake_summary.json",
+      "unit": "see file",
+      "status": "V",
+      "location": "derived/spotlake_summary.json",
+      "covers": [
+        "spot_interrupt"
+      ]
+    },
+    {
+      "id": "price-band-correlation",
+      "metric_verbatim": "cross-pool correlation of spot/on-demand ratio with mean band (exec #4.2)",
+      "value": {
+        "n_pools": 289,
+        "pearson_ratio_vs_mean_band": -0.09737115877501391,
+        "spearman_ratio_vs_mean_band": -0.10605934057192856,
+        "note": "ratio = spot/on-demand price (lower = cheaper); band 0 = <5% ... 4 = >20% interrupted per month"
+      },
+      "unit": "correlation",
+      "status": "V",
+      "location": "derived/spotlake_summary.json",
+      "covers": []
+    }
+  ]
+}

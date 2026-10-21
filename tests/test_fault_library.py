@@ -780,7 +780,7 @@ def test_engine_global_outages_take_quorum_down():
 
 def test_exec10_simple_system_timings():
     from powder.faults.system import REBUILD_S, SNAPSHOT_S
-    assert abs(SNAPSHOT_S - 2.147483648) < 1e-9  # 256 MiB over 1 Gbps
+    assert abs(SNAPSHOT_S - 8.589934592) < 1e-9  # 256 MiB over 1 Gbps
     assert abs(REBUILD_S - (120 + SNAPSHOT_S)) < 1e-9
     s = LIB.get("scenario/canonical-central", "scenario")
     assert s["system"]["source"] == "exec10-simple-estimate"
@@ -789,3 +789,11 @@ def test_exec10_simple_system_timings():
     assert (cfg.spawn_dist.low, cfg.spawn_dist.high) == (60.0, 180.0)
     legacy = scenario_node_configs(LIB, "scenario/legacy")[("machine/legacy-standard", "us-east")]
     assert legacy.spawn_dist.mean == 60.0  # legacy profiles keep their own timings
+
+
+def test_spot_rates_from_band_history():
+    from powder.faults.aws_prices import band_rates, band_rates_from_history
+    r = band_rates_from_history({"0": 0.5, "2": 0.5})
+    assert r["low"] == band_rates(0)["low"] and r["high"] == band_rates(2)["high"]
+    assert abs(r["central"] - 0.5 * (band_rates(0)["central"] + band_rates(2)["central"])) < 1e-15
+    assert band_rates_from_history({"3": 1.0}) == band_rates(3)

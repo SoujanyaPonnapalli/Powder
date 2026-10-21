@@ -18,6 +18,7 @@ from powder.faults.convert import transient_and_permanent  # noqa: E402
 from powder.faults.dists import from_spec  # noqa: E402
 from powder.faults.planned_downtime import as_transient, long_run_fraction  # noqa: E402
 from powder.faults.schema import pick  # noqa: E402
+from powder.faults.system import REBUILD_S  # noqa: E402
 
 H = 8766.0
 
@@ -45,7 +46,7 @@ def main() -> int:
            "(planned downtime and region outages are scenario-level and listed separately).", ""]
 
     out += ["## Node fault profiles", "",
-            "| Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (rebuild 122 s) | Node availability |",
+            f"| Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (rebuild {REBUILD_S:.0f} s) | Node availability |",
             "|---|---|---|---|---|---|---|"]
     for p in sorted(lib.query(kind="node"), key=lambda p: (p["tier"], p["id"])):
         lam_t, rec, lam_p = transient_and_permanent(p)

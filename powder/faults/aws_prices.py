@@ -257,3 +257,16 @@ def offer_from_csv(lines) -> dict[str, Any]:
             "beginRange": row["StartingRange"], "endRange": row["EndingRange"]}
     return {"publicationDate": meta.get("Publication Date"), "version": meta.get("Version"),
             "products": products, "terms": {"OnDemand": terms}}
+
+
+
+def band_rates_from_history(band_share: dict) -> dict[str, float]:
+    """Spot interruption rate triple from a band history (SpotLake).
+
+    central = time-weighted mean of the band-midpoint rates; low / high = the low end of
+    the best band seen and the high end of the worst band seen.
+    """
+    shares = {int(b): float(s) for b, s in band_share.items()}
+    total = sum(shares.values())
+    central = sum(s * band_rates(b)["central"] for b, s in shares.items()) / total
+    return {"low": band_rates(min(shares))["low"], "central": central, "high": band_rates(max(shares))["high"]}

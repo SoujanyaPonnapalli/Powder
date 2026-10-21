@@ -4,111 +4,175 @@
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.3087,
+  "latest": 0.2948221445221445,
   "summary": {
-   "mean": 0.3087
+   "mean": 0.2941390464684417,
+   "p5": 0.24324288194444443,
+   "median": 0.2948221445221445,
+   "p95": 0.3371672743055556,
+   "cv": 0.08402189512471973
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:i4i.2xlarge:us-east-2:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.20580000000000004,
+  "latest": 0.23802777777777778,
   "summary": {
-   "mean": 0.20580000000000004
+   "mean": 0.2422261398335085,
+   "p5": 0.20294600694444445,
+   "median": 0.23802777777777778,
+   "p95": 0.2989246503496504,
+   "cv": 0.10896693211300132
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:i4i.2xlarge:us-west-1:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.20439000000000002,
+  "latest": 0.22588038194444443,
   "summary": {
-   "mean": 0.20439000000000002
+   "mean": 0.22379393281926094,
+   "p5": 0.19790590277777775,
+   "median": 0.22588038194444443,
+   "p95": 0.24794131944444445,
+   "cv": 0.07725351089489209
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:i4i.2xlarge:us-west-2:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.32928,
+  "latest": 0.3262486293220668,
   "summary": {
-   "mean": 0.32928
+   "mean": 0.3258307070663005,
+   "p5": 0.2826418402777778,
+   "median": 0.3262486293220668,
+   "p95": 0.3672345486111111,
+   "cv": 0.08834373599185799
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:m6id.2xlarge:us-east-1:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.175602,
+  "latest": 0.20953683226495728,
   "summary": {
-   "mean": 0.175602
+   "mean": 0.20893177867335705,
+   "p5": 0.1682605034722222,
+   "median": 0.20953683226495728,
+   "p95": 0.23528321678321668,
+   "cv": 0.0879945633865905
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:m6id.2xlarge:us-east-2:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.13763400000000003,
+  "latest": 0.17796076388888887,
   "summary": {
-   "mean": 0.13763400000000003
+   "mean": 0.17296943830140374,
+   "p5": 0.13535538194444444,
+   "median": 0.17796076388888887,
+   "p95": 0.18916510416666668,
+   "cv": 0.09343760846603297
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:m6id.2xlarge:us-west-1:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.17875199999999997,
+  "latest": 0.17938064782439783,
   "summary": {
-   "mean": 0.17875199999999997
+   "mean": 0.17307358345285953,
+   "p5": 0.12918411458333334,
+   "median": 0.17938064782439783,
+   "p95": 0.19153463541666663,
+   "cv": 0.13330995710428797
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-04-10",
+   "2026-03-31"
+  ],
+  "n": 356,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  },
  {
   "id": "aws:m6id.2xlarge:us-west-2:spot:linux",
   "kind": "price",
   "price_kind": "compute_spot_series",
   "fetched_at": "2026-10-21T21:49:00.769122+00:00",
-  "latest": 0.16611,
+  "latest": 0.16709791666666668,
   "summary": {
-   "mean": 0.16611
+   "mean": 0.1681208799340353,
+   "p5": 0.1427650173611111,
+   "median": 0.16709791666666668,
+   "p95": 0.19144852430555553,
+   "cv": 0.09919861639611047
   },
-  "window": null,
-  "n": 0,
-  "source": "on-demand x (1 - Spot Advisor 30-day average savings)",
-  "notes": "estimate until describe-spot-price-history is fetched"
+  "window": [
+   "2025-03-01",
+   "2026-03-31"
+  ],
+  "n": 396,
+  "series": "derived/spotlake_daily_us.csv.gz",
+  "source": "SpotLake AWS archive (aws-20261021T231209Z-1-001.zip): daily mean of the AZ-median spot price",
+  "notes": "latest = median of the daily series (archive ends 2026-03)"
  }
 ]

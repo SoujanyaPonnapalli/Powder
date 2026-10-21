@@ -5,25 +5,25 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 
 ## Node fault profiles
 
-| Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (rebuild 122 s) | Node availability |
+| Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (rebuild 129 s) | Node availability |
 |---|---|---|---|---|---|---|
 | `cloud/aws-ondemand-nvme` | cloud | 41.7 y | 84.2 min | 31.6 y | 0.0348 | 0.999996 |
 | `cloud/aws-ondemand-nvme-loss0.2` | cloud | 26.1 y | 84.2 min | 43.1 y | 0.0547 | 0.999994 |
-| `cloud/aws-ondemand-nvme-loss0.8` | cloud | 104 y | 84.2 min | 24.9 y | 0.0148 | 0.999998 |
-| `legacy/vm-spot` | cloud | 30 d | 20 min | 1 d | 16.5 | 0.998123 |
+| `cloud/aws-ondemand-nvme-loss0.8` | cloud | 104 y | 84.2 min | 24.9 y | 0.0149 | 0.999998 |
+| `legacy/vm-spot` | cloud | 30 d | 20 min | 1 d | 17.1 | 0.998049 |
 | `legacy/vm-standard` | cloud | 30 d | 20 min | 3 y | 4.07 | 0.999536 |
 | `legacy/vm-unreliable` | cloud | 30 d | 20 min | 365 d | 4.09 | 0.999533 |
-| `spot/aws-i4i.2xlarge-us-east-1` | cloud | 41.7 y | 84.2 min | 1.03 y | 0.0665 | 0.999992 |
-| `spot/aws-i4i.2xlarge-us-east-2` | cloud | 41.7 y | 84.2 min | 223 d | 0.0892 | 0.999990 |
-| `spot/aws-i4i.2xlarge-us-west-1` | cloud | 41.7 y | 84.2 min | 223 d | 0.0892 | 0.999990 |
-| `spot/aws-i4i.2xlarge-us-west-2` | cloud | 41.7 y | 84.2 min | 223 d | 0.0892 | 0.999990 |
-| `spot/aws-m6id.2xlarge-us-east-1` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.18 | 0.999979 |
-| `spot/aws-m6id.2xlarge-us-east-2` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.18 | 0.999979 |
-| `spot/aws-m6id.2xlarge-us-west-1` | cloud | 41.7 y | 84.2 min | 223 d | 0.0892 | 0.999990 |
-| `spot/aws-m6id.2xlarge-us-west-2` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.18 | 0.999979 |
+| `spot/aws-i4i.2xlarge-us-east-1` | cloud | 41.7 y | 84.2 min | 308 d | 0.0761 | 0.999991 |
+| `spot/aws-i4i.2xlarge-us-east-2` | cloud | 41.7 y | 84.2 min | 1.31 y | 0.061 | 0.999993 |
+| `spot/aws-i4i.2xlarge-us-west-1` | cloud | 41.7 y | 84.2 min | 1.92 y | 0.0523 | 0.999994 |
+| `spot/aws-i4i.2xlarge-us-west-2` | cloud | 41.7 y | 84.2 min | 201 d | 0.0984 | 0.999989 |
+| `spot/aws-m6id.2xlarge-us-east-1` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.188 | 0.999979 |
+| `spot/aws-m6id.2xlarge-us-east-2` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.188 | 0.999979 |
+| `spot/aws-m6id.2xlarge-us-west-1` | cloud | 41.7 y | 84.2 min | 91.8 d | 0.176 | 0.999980 |
+| `spot/aws-m6id.2xlarge-us-west-2` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.188 | 0.999979 |
 | `cluster/ford10-google-storage` | reference | 6.33 d | 3.18 min | 22.4 y | 3.06 | 0.999651 |
 | `cluster/ford10-google-storage-ge15min` | reference | 1.31 y | 113 min | 22.4 y | 1.44 | 0.999836 |
-| `host/vishwanath10` | reference | never | 0 s | 5.83 y | 0.00582 | 0.999999 |
+| `host/vishwanath10` | reference | never | 0 s | 5.83 y | 0.00612 | 0.999999 |
 | `hpc/lanl05-pooled` | reference | 1.4 y | 3.57 h | never | 2.54 | 0.999710 |
 | `hpc/lanl05-sys16` | reference | 14.4 d | 2.39 h | never | 60.7 | 0.993081 |
 | `hpc/lanl05-sys18` | reference | 335 d | 2.33 h | never | 2.54 | 0.999710 |

@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from powder.faults.aws_prices import band_rates, parse_spot_advisor, price_distribution, region_factors  # noqa: E402
+from powder.faults.aws_prices import band_rates, band_rates_from_history, parse_spot_advisor, price_distribution, region_factors  # noqa: E402
 from powder.faults.prices import pool_key  # noqa: E402
 
 LIB = ROOT / "data/fault_library"
@@ -138,6 +138,8 @@ def main() -> int:
     hist = spot_history_summary(newest(RAW / "spot" / "history", "*"))
     base = next(p for p in json.loads((LIB / "profiles/node/aws-ondemand.json").read_text())
                 if p["id"] == "cloud/aws-ondemand-nvme")
+    sl_path = LIB / "derived/spotlake_summary.json"
+    spotlake = json.loads(sl_path.read_text()) if sl_path.exists() else None
     spot_prices, profiles, machines = [], [], []
     for itype in DEPLOYMENT_TYPES:
         pool_keys = {}
@@ -155,12 +157,30 @@ def main() -> int:
                          "notes": ("Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the "
                                    "AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; "
                                    "band low/mid/high). Interruption loses local NVMe data.")})
-            prof["causes"]["spot_interrupt"] = {"rate_per_hour": band_rates(b["band"])}
+            sl = spotlake["pools"].get(f"{reg}:{itype}") if spotlake else None
+            if sl and sl["band_share"]:
+                prof["causes"]["spot_interrupt"] = {"rate_per_hour": band_rates_from_history(sl["band_share"])}
+                prof["spot"]["spotlake"] = {k: sl[k] for k in ("first", "last", "days", "band_share", "band_changes")}
+                prof["derived_from"] = prof["derived_from"] + ["spotlake-aws#pools"]
+                prof["notes"] += (f" Rate from the SpotLake band history {sl['first']}..{sl['last']} (time-weighted "
+                                  "band midpoints; low/high = best/worst band seen); the current advisor band is recorded "
+                                  "in spot.band_index.")
+            else:
+                prof["causes"]["spot_interrupt"] = {"rate_per_hour": band_rates(b["band"])}
             profiles.append(prof)
             key = pool_key(itype, reg, tier="spot")
             h = hist.get((itype, reg))
             od = next((r["price_per_hour"] for r in rows if r["instance_type"] == itype and r["region"] == reg), None)
-            if h is not None:
+            if sl is not None:
+                spot_prices.append({"id": key, "kind": "price", "price_kind": "compute_spot_series", "fetched_at": fetched,
+                                    "latest": sl["spot_p50"], "summary": {"mean": sl["spot_mean"], "p5": sl["spot_p5"],
+                                                                          "median": sl["spot_p50"], "p95": sl["spot_p95"],
+                                                                          "cv": sl["spot_cv"]},
+                                    "window": [sl["first"], sl["last"]], "n": sl["days"],
+                                    "series": "derived/spotlake_daily_us.csv.gz",
+                                    "source": f"SpotLake AWS archive ({spotlake['source_zip']}): daily mean of the AZ-median spot price",
+                                    "notes": "latest = median of the daily series (archive ends 2026-03)"})
+            elif h is not None:
                 spot_prices.append({"id": key, "kind": "price", "price_kind": "compute_spot_series", "fetched_at": fetched,
                                     "latest": h["latest"], "summary": h["summary"], "window": h["window"], "n": h["n"],
                                     "source": "aws ec2 describe-spot-price-history"})

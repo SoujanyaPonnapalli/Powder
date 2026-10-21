@@ -8,8 +8,8 @@
   "measurements": [
     {
       "id": "partition-size",
-      "metric_verbatim": "one partition is 256 MiB",
-      "value": 268435456,
+      "metric_verbatim": "one partition is 1 GiB",
+      "value": 1073741824,
       "unit": "bytes",
       "status": "V",
       "location": "user decision 2026-10-21",
@@ -23,7 +23,7 @@
       "status": "V",
       "location": "user decision 2026-10-21",
       "covers": [],
-      "conversion": "snapshot download = 256 MiB x 8 / 1 Gbps = 2.147 s (constant; no protocol overhead modelled)"
+      "conversion": "snapshot download = 1 GiB x 8 / 1 Gbps = 8.59 s (constant; no protocol overhead modelled)"
     },
     {
       "id": "spawn",
