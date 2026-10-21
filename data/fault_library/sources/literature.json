@@ -1,0 +1,379 @@
+[
+  {
+    "id": "backblaze-drive-stats",
+    "kind": "source",
+    "title": "Backblaze Drive Stats (2025 annual; SSD edition mid-2023)",
+    "url": "https://www.backblaze.com/blog/backblaze-drive-stats-for-2025/",
+    "accessed": "2026-10-20",
+    "population": "Backblaze data-centre drives (HDD data drives; SSD boot drives)",
+    "measurements": [
+      {
+        "id": "hdd-2025-afr",
+        "metric_verbatim": "2025 annual AFR declined to 1.36%",
+        "value": 0.0136,
+        "unit": "failures per drive-year",
+        "status": "V",
+        "location": "Drive Stats for 2025",
+        "covers": [
+          "disk"
+        ],
+        "conversion": "AFR = failures / drive-days x 365, a rate: lambda = AFR / 8766 per hour"
+      },
+      {
+        "id": "hdd-2025-drives",
+        "metric_verbatim": "349,462 hard drives used to store data",
+        "value": 349462,
+        "unit": "drives",
+        "status": "V",
+        "location": "Drive Stats for 2025",
+        "covers": []
+      },
+      {
+        "id": "hdd-lifetime-afr",
+        "metric_verbatim": "lifetime AFR held steady at 1.30%",
+        "value": 0.013,
+        "unit": "failures per drive-year",
+        "status": "V",
+        "location": "Drive Stats for 2025",
+        "covers": [
+          "disk"
+        ]
+      },
+      {
+        "id": "ssd-2023-q1-afr",
+        "metric_verbatim": "SSD boot drives Q1 2023 AFR 0.96%",
+        "value": 0.0096,
+        "unit": "failures per drive-year",
+        "status": "V",
+        "location": "https://www.backblaze.com/blog/ssd-edition-2023-mid-year-drive-stats-review/",
+        "covers": [
+          "disk"
+        ]
+      },
+      {
+        "id": "ssd-2023-q2-afr",
+        "metric_verbatim": "SSD boot drives Q2 2023 AFR 1.05%",
+        "value": 0.0105,
+        "unit": "failures per drive-year",
+        "status": "V",
+        "location": "https://www.backblaze.com/blog/ssd-edition-2023-mid-year-drive-stats-review/",
+        "covers": [
+          "disk"
+        ]
+      },
+      {
+        "id": "ssd-2023-drives",
+        "metric_verbatim": "3,144 SSDs in the storage servers (June 30, 2023)",
+        "value": 3144,
+        "unit": "drives",
+        "status": "V",
+        "location": "https://www.backblaze.com/blog/ssd-edition-2023-mid-year-drive-stats-review/",
+        "covers": []
+      }
+    ]
+  },
+  {
+    "id": "schroeder-gibson-fast07",
+    "kind": "source",
+    "title": "Disk failures in the real world: What does an MTTF of 1,000,000 hours mean to you?",
+    "url": "https://www.usenix.org/legacy/events/fast07/tech/schroeder/schroeder.pdf",
+    "accessed": "2026-10-20",
+    "population": ">100,000 drives, several large production systems",
+    "measurements": [
+      {
+        "id": "weibull-k",
+        "metric_verbatim": "time between replacements ... Weibull distribution with a shape parameter between 0.7 and 0.8",
+        "value": [
+          0.7,
+          0.8
+        ],
+        "unit": "shape",
+        "status": "V",
+        "location": "FAST'07 \u00a75",
+        "covers": [
+          "disk",
+          "hw_reboot",
+          "hw_host_loss"
+        ]
+      },
+      {
+        "id": "arr-2-4pct",
+        "metric_verbatim": "One study [29] reports ARR (annual replacement rate) for disks between 2% and 4%",
+        "value": [
+          0.02,
+          0.04
+        ],
+        "unit": "replacements per disk-year",
+        "status": "V",
+        "location": "quoted in Ford et al. OSDI'10 p.3 ([29] = Schroeder & Gibson)",
+        "covers": [
+          "disk"
+        ],
+        "conversion": "rate; central = geometric mean 2.83%"
+      }
+    ]
+  },
+  {
+    "id": "jiang-fast08",
+    "kind": "source",
+    "title": "Are disks the dominant contributor for storage failures?",
+    "url": "https://www.usenix.org/legacy/event/fast08/tech/jiang.html",
+    "accessed": "2026-10-21",
+    "population": "storage subsystems (shelves, enclosures, interconnects, disks)",
+    "measurements": [
+      {
+        "id": "subsystem-afr",
+        "metric_verbatim": "AFR generally between 2% and 4%, but for some storage systems values ranging between 3.9% and 8.3%",
+        "value": {
+          "typical": [
+            0.02,
+            0.04
+          ],
+          "some_systems": [
+            0.039,
+            0.083
+          ]
+        },
+        "unit": "failures per subsystem-year",
+        "status": "V",
+        "location": "quoted in Ford et al. OSDI'10 p.3 ([19] = Jiang et al.)",
+        "covers": [],
+        "notes": "storage subsystem, not a single drive: recorded, not pooled into disk/pooled"
+      }
+    ]
+  },
+  {
+    "id": "vishwanath-nagappan-socc10",
+    "kind": "source",
+    "title": "Characterizing Cloud Computing Hardware Reliability",
+    "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2010/06/socc088-vishwanath.pdf",
+    "accessed": "2026-10-20",
+    "population": ">100,000 Microsoft servers, 14 months of part replacements (2010)",
+    "measurements": [
+      {
+        "id": "disk-top-failure",
+        "metric_verbatim": "hard disks are the number one failing component",
+        "value": true,
+        "unit": "text",
+        "status": "V",
+        "location": "SoCC'10",
+        "covers": []
+      },
+      {
+        "id": "disk-events-top5",
+        "metric_verbatim": "between 11% and 25% of all servers see at least 1 disk event in the given period (14 months, largest clusters)",
+        "value": [
+          0.11,
+          0.25
+        ],
+        "unit": "fraction of servers / 14 months",
+        "status": "V",
+        "location": "SoCC'10",
+        "covers": [
+          "disk"
+        ],
+        "notes": "per server (multi-disk), not per drive: not pooled into disk/pooled"
+      },
+      {
+        "id": "afr-8pct",
+        "metric_verbatim": "20 replacements in 14 months contained in around 9 machines (per 100 servers) ... AFR of 8%",
+        "value": {
+          "replacements_per_100": 20,
+          "machines_per_100": 9,
+          "afr": 0.08
+        },
+        "unit": "per 100 servers / 14 months",
+        "status": "S",
+        "location": "slide summary of SoCC'10 (SlideServe)",
+        "covers": [
+          "hw_host_loss",
+          "disk"
+        ]
+      },
+      {
+        "id": "repeat-78-20",
+        "metric_verbatim": "78% of replacements are disks; 20% chance of failing again within a year",
+        "value": null,
+        "unit": "text",
+        "status": "U",
+        "location": "recalled, not confirmed by search",
+        "covers": [],
+        "notes": "rejected: unconfirmed"
+      }
+    ]
+  },
+  {
+    "id": "aws-ec2-sla",
+    "kind": "source",
+    "title": "Amazon Compute Service Level Agreement",
+    "url": "https://aws.amazon.com/compute/sla/",
+    "accessed": "2026-10-20",
+    "population": "EC2 SLA",
+    "measurements": [
+      {
+        "id": "instance-level",
+        "metric_verbatim": "Instance-Level Uptime Percentage of at least 99.5%",
+        "value": 0.995,
+        "unit": "monthly uptime",
+        "status": "V",
+        "location": "Compute SLA",
+        "covers": [
+          "hw_reboot",
+          "hw_host_loss",
+          "sw"
+        ],
+        "conversion": "cap: unplanned downtime <= 0.005 x 8766 = 43.8 h per instance-year"
+      },
+      {
+        "id": "region-level",
+        "metric_verbatim": "Monthly Uptime Percentage of at least 99.99% (multi-AZ)",
+        "value": 0.9999,
+        "unit": "monthly uptime",
+        "status": "V",
+        "location": "Compute SLA",
+        "covers": []
+      }
+    ]
+  },
+  {
+    "id": "azure-vm-docs",
+    "kind": "source",
+    "title": "Azure: Understand VM reboots; VM SLA",
+    "url": "https://learn.microsoft.com/en-us/azure/virtual-machines/understand-vm-reboots",
+    "accessed": "2026-10-20",
+    "population": "Azure VMs",
+    "measurements": [
+      {
+        "id": "pause-18mo",
+        "metric_verbatim": "no more than once every 18 months for general purpose VM sizes ... pause the VM for about 30 seconds",
+        "value": {
+          "max_rate_per_18_months": 1,
+          "pause_s": 30
+        },
+        "unit": "events",
+        "status": "V",
+        "location": "Understand VM reboots",
+        "covers": [
+          "pause"
+        ]
+      },
+      {
+        "id": "single-vm-sla",
+        "metric_verbatim": "Single Instance Virtual Machine using Premium SSD ... at least 99.9%",
+        "value": 0.999,
+        "unit": "monthly uptime",
+        "status": "V",
+        "location": "https://www.azure.cn/en-us/support/sla/virtual-machines/",
+        "covers": []
+      }
+    ]
+  },
+  {
+    "id": "narya-afpd",
+    "kind": "source",
+    "title": "Narya (OSDI'20), AIR KPI (arXiv 1910.12200), AFPD (2025)",
+    "url": "https://www.usenix.org/conference/osdi20/presentation/levy",
+    "accessed": "2026-10-20",
+    "population": "Azure fleet",
+    "measurements": [
+      {
+        "id": "air-definition",
+        "metric_verbatim": "AIR = interruptions in T / total VM uptime in T x 365 x 100 (interruptions per 100 VM-years)",
+        "value": "definition",
+        "unit": "text",
+        "status": "V",
+        "location": "Narya OSDI'20 slides",
+        "covers": [],
+        "conversion": "lambda = AIR / (100 x 8766) per hour"
+      },
+      {
+        "id": "narya-reduction",
+        "metric_verbatim": "Narya on average reduces VM interruptions by 26% ... oracle 35%",
+        "value": {
+          "narya": 0.26,
+          "oracle": 0.35
+        },
+        "unit": "relative reduction",
+        "status": "V",
+        "location": "Narya OSDI'20 abstract",
+        "covers": []
+      },
+      {
+        "id": "afpd-reduction",
+        "metric_verbatim": "improving hardware-related VM interruption prevention by 36%",
+        "value": 0.36,
+        "unit": "relative",
+        "status": "V",
+        "location": "AFPD (IEEE 2025) abstract",
+        "covers": []
+      }
+    ]
+  },
+  {
+    "id": "birke-dsn14",
+    "kind": "source",
+    "title": "Failure Analysis of Virtual and Physical Machines (DSN'14)",
+    "url": "https://ieeexplore.ieee.org/document/6903562/",
+    "accessed": "2026-10-20",
+    "population": "10K VMs and PMs, five commercial data centres, one year",
+    "measurements": [
+      {
+        "id": "vm-lower",
+        "metric_verbatim": "VMs have lower failure rates and lower probability of failure recurrences than PMs",
+        "value": true,
+        "unit": "text",
+        "status": "V",
+        "location": "as summarised by a citing paper; numbers need the PDF",
+        "covers": [],
+        "notes": "qualitative only until the PDF is read"
+      }
+    ]
+  },
+  {
+    "id": "lanl-dsn06",
+    "kind": "source",
+    "title": "A large-scale study of failures in high-performance computing systems (DSN'06)",
+    "url": "https://www.pdl.cmu.edu/PDL-FTP/associated/dsn06.pdf",
+    "accessed": "2026-10-20",
+    "population": "22 LANL HPC systems, 1996-2005, ~23,000 failures",
+    "measurements": [
+      {
+        "id": "weibull-k",
+        "metric_verbatim": "decreasing hazard rates with Weibull shape parameter of 0.7-0.8",
+        "value": [
+          0.7,
+          0.8
+        ],
+        "unit": "shape",
+        "status": "V",
+        "location": "DSN'06 abstract",
+        "covers": [
+          "hw_reboot",
+          "hw_host_loss",
+          "sw"
+        ]
+      },
+      {
+        "id": "repair-lognormal",
+        "metric_verbatim": "repair times are well modeled by a lognormal distribution",
+        "value": true,
+        "unit": "text",
+        "status": "V",
+        "location": "TDSC'09 abstract",
+        "covers": []
+      },
+      {
+        "id": "rates",
+        "metric_verbatim": "failure rates ... ranging from 20-1000 failures per year",
+        "value": [
+          20,
+          1000
+        ],
+        "unit": "failures per system-year",
+        "status": "V",
+        "location": "TDSC'09 abstract",
+        "covers": []
+      }
+    ]
+  }
+]

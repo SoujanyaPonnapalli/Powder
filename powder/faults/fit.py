@@ -355,3 +355,29 @@ def parametric_bootstrap_ks(fit: MleFit, x: Sequence[float], reps: int = 1000, s
         refit = next(f for f in mle_duration_fits(sim) if f.family == fit.family)
         exceed += ks_statistic(refit.dist, sim) >= d0
     return (exceed + 1) / (reps + 1)
+
+
+# -- frailty (negative binomial) ----------------------------------------------
+
+def nb_frailty_from_p_and_conditional_mean(p_any: float, mean_given_any: float) -> tuple[float, float]:
+    """Gamma-Poisson (NB) parameters from P(N>=1) and E[N | N>=1].
+
+    N ~ Poisson(Z mu), Z ~ Gamma(a, 1/a) (mean 1). Then
+    P0 = (1 + mu/a)^-a and E[N | N>=1] = mu / (1 - P0).
+    Returns (mu, a). ``a`` -> infinity means no heterogeneity.
+    """
+    mu = mean_given_any * p_any
+    # Under pure Poisson, E[N | N>=1] = mu / (1 - exp(-mu)); larger observed
+    # conditional means imply overdispersion (finite a).
+    poisson_p = 1 - math.exp(-mu)
+    if p_any >= poisson_p:
+        return mu, math.inf
+    lo, hi = 1e-6, 1e6
+    for _ in range(300):  # P(N>=1) increases with a toward the Poisson value
+        mid = math.sqrt(lo * hi)
+        p_mid = 1 - (1 + mu / mid) ** (-mid)
+        if p_mid < p_any:
+            lo = mid
+        else:
+            hi = mid
+    return mu, math.sqrt(lo * hi)

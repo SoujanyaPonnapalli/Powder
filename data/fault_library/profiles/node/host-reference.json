@@ -1,0 +1,33 @@
+[
+  {
+    "id": "host/vishwanath10",
+    "kind": "node",
+    "version": 1,
+    "tier": "reference",
+    "tags": [
+      "microsoft",
+      "2010",
+      "bare-metal",
+      "frailty"
+    ],
+    "derived_from": [
+      "vishwanath-nagappan-socc10#afr-8pct",
+      "vishwanath-nagappan-socc10#disk-top-failure"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "notes": "Physical server hardware repairs (2010, HDD-heavy servers): 20 replacements on ~9 of 100 servers per 14 months (slide-summary numbers, status S). All repairs are treated as host loss (data lost on local disks): pessimistic. frailty_a from P(N>=1)=0.09 and E[N|N>=1]=2.22 via a gamma-Poisson model: strong lemon effect.",
+    "causes": {
+      "hw_host_loss": {
+        "rate_per_hour": {
+          "low": 1.9556077e-05,
+          "central": 1.9556077e-05,
+          "high": 1.9556077e-05
+        }
+      }
+    },
+    "frailty_a": 0.069698232,
+    "shape": {
+      "type": "exponential"
+    }
+  }
+]

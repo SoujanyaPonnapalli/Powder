@@ -1,0 +1,95 @@
+[
+  {
+    "id": "disk/backblaze-hdd-2025",
+    "kind": "component",
+    "component": "disk",
+    "version": 1,
+    "derived_from": [
+      "backblaze-drive-stats#hdd-2025-afr",
+      "backblaze-drive-stats#hdd-2025-drives"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "rate_per_hour": {
+      "low": 1.5514488e-06,
+      "central": 1.5514488e-06,
+      "high": 1.5514488e-06
+    },
+    "pool_input": {
+      "rate_per_year": 0.0136,
+      "log_variance": 0.00021040746
+    },
+    "notes": "HDD data drives, 2025 annual AFR (a rate)."
+  },
+  {
+    "id": "disk/backblaze-ssd-2023",
+    "kind": "component",
+    "component": "disk",
+    "version": 1,
+    "derived_from": [
+      "backblaze-drive-stats#ssd-2023-q1-afr",
+      "backblaze-drive-stats#ssd-2023-q2-afr",
+      "backblaze-drive-stats#ssd-2023-drives"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "rate_per_hour": {
+      "low": 1.146475e-06,
+      "central": 1.146475e-06,
+      "high": 1.146475e-06
+    },
+    "pool_input": {
+      "rate_per_year": 0.01005,
+      "log_variance": 0.063296748
+    },
+    "notes": "SSD boot drives, mean of Q1/Q2 2023 AFR; closest public proxy for datacentre NVMe."
+  },
+  {
+    "id": "disk/schroeder-gibson-fast07",
+    "kind": "component",
+    "component": "disk",
+    "version": 1,
+    "derived_from": [
+      "schroeder-gibson-fast07#arr-2-4pct"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "rate_per_hour": {
+      "low": 3.2265881e-06,
+      "central": 3.2265881e-06,
+      "high": 3.2265881e-06
+    },
+    "pool_input": {
+      "rate_per_year": 0.028284271,
+      "log_variance": 0.25
+    },
+    "notes": "Field ARR 2-4% (via Ford et al.); event count unknown -> log-variance 0.25."
+  },
+  {
+    "id": "disk/pooled",
+    "kind": "component",
+    "component": "disk",
+    "version": 1,
+    "derived_from": [
+      "disk/backblaze-hdd-2025",
+      "disk/backblaze-ssd-2023",
+      "disk/schroeder-gibson-fast07",
+      "disk/ford10"
+    ],
+    "built_by": "scripts/fault_library/build_literature.py",
+    "rate_per_hour": {
+      "low": 9.2388864e-07,
+      "central": 1.884332e-06,
+      "high": 3.8432196e-06
+    },
+    "pool": {
+      "method": "DerSimonian-Laird random effects on log rates; low/high = 90% prediction interval",
+      "tau2": 0.13194059,
+      "se": 0.23619163,
+      "k": 4,
+      "per_year": {
+        "low": 0.0080988078,
+        "central": 0.016518054,
+        "high": 0.033689663
+      }
+    },
+    "notes": "Datacentre NVMe on i4i/m6id may differ from these HDD/boot-SSD fleets; the between-source spread (tau2) widens the band accordingly."
+  }
+]

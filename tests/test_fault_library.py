@@ -318,3 +318,32 @@ def test_region_incident_citations_are_confirmed():
     ro = LIB.get("region_outage/aws-us-from-azure", "region_outage")
     for ref in ro["derived_from"]:
         assert LIB.measurement(ref)["status"] in ("V", "S")
+
+
+# -- literature profiles (Step D) ----------------------------------------------
+
+def test_disk_pool_brackets_inputs():
+    pooled = LIB.get("disk/pooled", "component")["rate_per_hour"]
+    inputs = [LIB.get(c, "component")["rate_per_hour"]["central"]
+              for c in ("disk/backblaze-hdd-2025", "disk/backblaze-ssd-2023", "disk/schroeder-gibson-fast07", "disk/ford10")]
+    assert pooled["low"] < min(inputs) * 1.5 and pooled["high"] > max(inputs) * 0.5
+    assert min(inputs) <= pooled["central"] <= max(inputs)
+
+
+def test_aws_ondemand_within_sla_and_sensible():
+    from powder.faults.schema import pick
+    p = LIB.get("cloud/aws-ondemand-nvme", "node")
+    down_h = 0.0
+    for c in ("hw_reboot", "sw", "pause"):
+        spec = p["causes"][c]
+        down_h += spec["rate_per_hour"]["high"] * 8766 * from_spec(pick(spec["duration"], "high", "duration")).mean / 3600
+    assert down_h < 0.005 * 8766  # AWS instance-level SLA 99.5%
+    lam_t, rec, lam_p = transient_and_permanent(p, "central")
+    assert 0.01 < lam_t * 3600 * 8766 < 2.0 and 0.005 < lam_p * 3600 * 8766 < 1.0  # per node-year
+
+
+def test_vishwanath_frailty_reproduces_inputs():
+    a = LIB.get("host/vishwanath10", "node")["frailty_a"]
+    mu = 0.2  # per 14 months
+    p0 = (1 + mu / a) ** (-a)
+    assert abs((1 - p0) - 0.09) < 1e-6 and abs(mu / (1 - p0) - 20 / 9) < 1e-6
