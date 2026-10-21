@@ -169,8 +169,9 @@ class FaultLibrary:
             if m is None:
                 continue
             route = m.get("price", {}).get("route")
+            m_regions = [r for r in regions if not m.get("regions") or r in m["regions"]]
             if route == "native":
-                missing = [r for r in regions if r not in m["price"].get("pool_keys", {})]
+                missing = [r for r in m_regions if r not in m["price"].get("pool_keys", {})]
                 if missing:
                     out.append(f"{s['id']}: machine {mid} has no native price in {missing}")
             elif route == "assigned":

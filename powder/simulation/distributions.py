@@ -305,6 +305,26 @@ class Mixture(Distribution):
         i = min(i, len(self.components) - 1)
         return self.components[i].sample(rng)
 
+    def cdf(self, x: float) -> float:
+        """Weighted component CDFs (components must provide ``cdf``)."""
+        return sum(w * c.cdf(x) for w, c in zip(self.weights, self.components))
+
+    def ppf(self, p: float) -> float:
+        """Quantile by bisection between the component quantiles."""
+        lo = min(c.ppf(p) for c in self.components)
+        hi = max(c.ppf(p) for c in self.components)
+        if lo == hi:
+            return lo
+        for _ in range(200):
+            mid = 0.5 * (lo + hi) if lo <= 0 else math.sqrt(lo * hi)
+            if self.cdf(mid) < p:
+                lo = mid
+            else:
+                hi = mid
+            if hi - lo <= 1e-12 * max(1.0, hi):
+                break
+        return 0.5 * (lo + hi)
+
     def __repr__(self) -> str:
         return f"Mixture(weights={self.weights}, components={self.components})"
 

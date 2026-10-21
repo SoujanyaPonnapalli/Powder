@@ -48,7 +48,9 @@ def test_every_node_profile_converts_for_both_engines():
 def test_every_scenario_builds():
     for s in LIB.query(kind="scenario"):
         cfgs = scenario_node_configs(LIB, s["id"], engine=True)
-        assert len(cfgs) == len(s["machines"]) * len(s["deployment"]["regions"])
+        expected = sum(len([r for r in s["deployment"]["regions"]
+                            if not LIB.get(m)["regions"] or r in LIB.get(m)["regions"]]) for m in s["machines"])
+        assert len(cfgs) == expected
 
 
 def test_no_unconfirmed_citations():
@@ -347,3 +349,94 @@ def test_vishwanath_frailty_reproduces_inputs():
     mu = 0.2  # per 14 months
     p0 = (1 + mu / a) ** (-a)
     assert abs((1 - p0) - 0.09) < 1e-6 and abs(mu / (1 - p0) - 20 / 9) < 1e-6
+
+
+# -- AWS price / spot ingestion (Steps B and C), on format fixtures -------------
+
+from pathlib import Path  # noqa: E402
+
+from powder.faults.aws_prices import (  # noqa: E402
+    band_rates, merge_transfer, parse_ondemand_offer, parse_spot_advisor, parse_transfer_offer, price_distribution,
+    region_factors,
+)
+
+FIX = Path(__file__).parent / "fixtures" / "fault_library"
+US = ["us-east-1", "us-east-2", "us-west-1", "us-west-2"]
+
+
+def _offers():
+    return json.loads((FIX / "aws_offers_sample.json").read_text())
+
+
+def test_parse_ondemand_filters():
+    rows = [r for reg in US for r in parse_ondemand_offer(_offers()[reg])]
+    types = {r["instance_type"] for r in rows}
+    assert "m7g.2xlarge" not in types and "g4dn.2xlarge" not in types and "m6i.xlarge" not in types
+    m6i = [r for r in rows if r["instance_type"] == "m6i.2xlarge" and r["region"] == "us-east-1"]
+    assert len(m6i) == 1 and m6i[0]["price_per_hour"] == 0.384  # Windows / dedicated variants dropped
+    i4i = next(r for r in rows if r["instance_type"] == "i4i.2xlarge" and r["region"] == "us-east-1")
+    assert i4i["instance_store"] and i4i["nvme"]
+    assert next(r for r in rows if r["instance_type"] == "t3.2xlarge")["burstable"]
+
+
+def test_transfer_merge_and_validation():
+    parts = [parse_transfer_offer(_offers()[reg], US) for reg in US]
+    t = merge_transfer(parts, US)
+    assert t["inter_region"]["us-east-1"]["us-west-2"] == 0.02 and t["inter_az"] == 0.01
+    assert t["internet_egress"] == 0.09  # first paid tier
+    try:
+        merge_transfer(parts[:2], US)
+        raise AssertionError("incomplete transfer table must fail")
+    except ValueError:
+        pass
+
+
+def test_price_distribution_and_factors():
+    rows = [r for reg in US for r in parse_ondemand_offer(_offers()[reg])]
+    d = price_distribution(rows, current_generation=True, burstable=False)
+    assert d["n"] == len([r for r in rows if r["current_generation"] and not r["burstable"]])
+    assert d["summary"]["min"] <= d["summary"]["p50"] <= d["summary"]["max"]
+    f = region_factors(rows, "i4i.2xlarge")
+    assert f["us-east-1"] == 1.0 and f["us-west-1"] > 1.0
+
+
+def test_spot_advisor_and_band_rates():
+    bands = parse_spot_advisor(json.loads((FIX / "spot_advisor_sample.json").read_text()), US)
+    assert bands[("us-east-1", "i4i.2xlarge")]["band"] == 0
+    r = band_rates(1)
+    assert r["low"] < r["central"] < r["high"]
+    assert abs(r["central"] - (-math.log(1 - 0.075) / 730)) < 1e-15
+
+
+def test_build_prices_pipeline_on_fixtures(tmp_path=None):
+    import importlib.util
+    import shutil
+    import tempfile
+    tmp = Path(tmp_path or tempfile.mkdtemp())
+    lib_dir = tmp / "fault_library"
+    shutil.copytree(LIB.root, lib_dir, ignore=shutil.ignore_patterns("raw"))
+    rows, parts = [], []
+    for reg in US:
+        rows += parse_ondemand_offer(_offers()[reg])
+        parts.append(parse_transfer_offer(_offers()[reg], US))
+    pdir = lib_dir / "raw/aws_prices/2026-10-21"
+    pdir.mkdir(parents=True)
+    (pdir / "ondemand_8vcpu_x86.json").write_text(json.dumps(rows))
+    (pdir / "transfer.json").write_text(json.dumps(merge_transfer(parts, US)))
+    (pdir / "meta.json").write_text(json.dumps({"fetched_at": "2026-10-21T00:00:00Z",
+                                                "offers": {r: {"url": "fixture"} for r in US}}))
+    adir = lib_dir / "raw/spot/advisor"
+    adir.mkdir(parents=True)
+    shutil.copy(FIX / "spot_advisor_sample.json", adir / "2026-10-21.json")
+    spec = importlib.util.spec_from_file_location(
+        "build_prices", Path(__file__).resolve().parents[1] / "scripts/fault_library/build_prices.py")
+    bp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bp)
+    bp.LIB, bp.RAW = lib_dir, lib_dir / "raw"
+    assert bp.main() == 0
+    lib = FaultLibrary.load(lib_dir)
+    spot = lib.get("spot/aws-i4i.2xlarge-us-west-1", "node")
+    assert "spot_interrupt" in spot["causes"]
+    cfg = machine_node_config(lib, "machine/spot-i4i.2xlarge-us-west-1", "us-west-1", engine=True)
+    assert cfg.data_loss_dist.rate > 0
+    assert lib.get("price-transfer/aws-us@2026-10-21")["per_gb"]["inter_az"] == 0.01

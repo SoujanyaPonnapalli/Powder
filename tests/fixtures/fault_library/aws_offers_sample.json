@@ -1,0 +1,1688 @@
+{
+ "us-east-1": {
+  "formatVersion": "v1.0",
+  "publicationDate": "2026-10-01T00:00:00Z",
+  "version": "fixture",
+  "products": {
+   "us-east-1-1": {
+    "sku": "us-east-1-1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "i4i.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "Storage optimized",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 1875 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-2": {
+    "sku": "us-east-1-2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6id.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 474 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-3": {
+    "sku": "us-east-1-3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-4": {
+    "sku": "us-east-1-4",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "c6a.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "AMD EPYC",
+     "instanceFamily": "Compute optimized",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-5": {
+    "sku": "us-east-1-5",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "t3.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Skylake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-x0": {
+    "sku": "us-east-1-x0",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m7g.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "AWS Graviton3",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-x1": {
+    "sku": "us-east-1-x1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "g4dn.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon",
+     "instanceFamily": "GPU instance",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB",
+     "gpu": "1"
+    }
+   },
+   "us-east-1-x2": {
+    "sku": "us-east-1-x2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Windows",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-x3": {
+    "sku": "us-east-1-x3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "4",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-x4": {
+    "sku": "us-east-1-x4",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-east-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Dedicated",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-1-dt0": {
+    "sku": "us-east-1-dt0",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-east-1",
+     "toRegionCode": "us-east-2",
+     "fromLocation": "us-east-1",
+     "toLocation": "us-east-2"
+    }
+   },
+   "us-east-1-dt1": {
+    "sku": "us-east-1-dt1",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-east-1",
+     "toRegionCode": "us-west-1",
+     "fromLocation": "us-east-1",
+     "toLocation": "us-west-1"
+    }
+   },
+   "us-east-1-dt2": {
+    "sku": "us-east-1-dt2",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-east-1",
+     "toRegionCode": "us-west-2",
+     "fromLocation": "us-east-1",
+     "toLocation": "us-west-2"
+    }
+   },
+   "us-east-1-intra": {
+    "sku": "us-east-1-intra",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "IntraRegion",
+     "fromRegionCode": "us-east-1",
+     "toRegionCode": "us-east-1"
+    }
+   },
+   "us-east-1-egress": {
+    "sku": "us-east-1-egress",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "AWS Outbound",
+     "fromRegionCode": "us-east-1",
+     "toLocation": "External"
+    }
+   }
+  },
+  "terms": {
+   "OnDemand": {
+    "us-east-1-1": {
+     "us-east-1-1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.686"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-2": {
+     "us-east-1-2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.4746"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-3": {
+     "us-east-1-3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.384"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-4": {
+     "us-east-1-4.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-4.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.306"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-5": {
+     "us-east-1-5.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-5.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.3328"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-x0": {
+     "us-east-1-x0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-x0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-x1": {
+     "us-east-1-x1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-x1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-x2": {
+     "us-east-1-x2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-x2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-x3": {
+     "us-east-1-x3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-x3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-x4": {
+     "us-east-1-x4.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-x4.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-dt0": {
+     "us-east-1-dt0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-dt0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-dt1": {
+     "us-east-1-dt1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-dt1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-dt2": {
+     "us-east-1-dt2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-dt2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-intra": {
+     "us-east-1-intra.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-1-intra.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.01"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-1-egress": {
+     "us-east-1-egress.T": {
+      "priceDimensions": {
+       "a": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0"
+        },
+        "beginRange": "0",
+        "endRange": "100"
+       },
+       "b": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.09"
+        },
+        "beginRange": "100",
+        "endRange": "Inf"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "us-east-2": {
+  "formatVersion": "v1.0",
+  "publicationDate": "2026-10-01T00:00:00Z",
+  "version": "fixture",
+  "products": {
+   "us-east-2-1": {
+    "sku": "us-east-2-1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "i4i.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "Storage optimized",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 1875 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-2": {
+    "sku": "us-east-2-2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6id.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 474 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-3": {
+    "sku": "us-east-2-3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-x0": {
+    "sku": "us-east-2-x0",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m7g.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "AWS Graviton3",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-x1": {
+    "sku": "us-east-2-x1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "g4dn.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon",
+     "instanceFamily": "GPU instance",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB",
+     "gpu": "1"
+    }
+   },
+   "us-east-2-x2": {
+    "sku": "us-east-2-x2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Windows",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-x3": {
+    "sku": "us-east-2-x3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "4",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-x4": {
+    "sku": "us-east-2-x4",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-east-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Dedicated",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-east-2-dt0": {
+    "sku": "us-east-2-dt0",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-east-2",
+     "toRegionCode": "us-east-1",
+     "fromLocation": "us-east-2",
+     "toLocation": "us-east-1"
+    }
+   },
+   "us-east-2-dt1": {
+    "sku": "us-east-2-dt1",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-east-2",
+     "toRegionCode": "us-west-1",
+     "fromLocation": "us-east-2",
+     "toLocation": "us-west-1"
+    }
+   },
+   "us-east-2-dt2": {
+    "sku": "us-east-2-dt2",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-east-2",
+     "toRegionCode": "us-west-2",
+     "fromLocation": "us-east-2",
+     "toLocation": "us-west-2"
+    }
+   },
+   "us-east-2-intra": {
+    "sku": "us-east-2-intra",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "IntraRegion",
+     "fromRegionCode": "us-east-2",
+     "toRegionCode": "us-east-2"
+    }
+   },
+   "us-east-2-egress": {
+    "sku": "us-east-2-egress",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "AWS Outbound",
+     "fromRegionCode": "us-east-2",
+     "toLocation": "External"
+    }
+   }
+  },
+  "terms": {
+   "OnDemand": {
+    "us-east-2-1": {
+     "us-east-2-1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.686"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-2": {
+     "us-east-2-2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.4746"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-3": {
+     "us-east-2-3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.384"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-x0": {
+     "us-east-2-x0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-x0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-x1": {
+     "us-east-2-x1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-x1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-x2": {
+     "us-east-2-x2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-x2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-x3": {
+     "us-east-2-x3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-x3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-x4": {
+     "us-east-2-x4.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-x4.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-dt0": {
+     "us-east-2-dt0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-dt0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-dt1": {
+     "us-east-2-dt1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-dt1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-dt2": {
+     "us-east-2-dt2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-dt2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-intra": {
+     "us-east-2-intra.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-east-2-intra.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.01"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-east-2-egress": {
+     "us-east-2-egress.T": {
+      "priceDimensions": {
+       "a": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0"
+        },
+        "beginRange": "0",
+        "endRange": "100"
+       },
+       "b": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.09"
+        },
+        "beginRange": "100",
+        "endRange": "Inf"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "us-west-1": {
+  "formatVersion": "v1.0",
+  "publicationDate": "2026-10-01T00:00:00Z",
+  "version": "fixture",
+  "products": {
+   "us-west-1-1": {
+    "sku": "us-west-1-1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "i4i.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "Storage optimized",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 1875 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-2": {
+    "sku": "us-west-1-2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6id.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 474 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-3": {
+    "sku": "us-west-1-3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m5.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Platinum",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "No",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-x0": {
+    "sku": "us-west-1-x0",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m7g.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "AWS Graviton3",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-x1": {
+    "sku": "us-west-1-x1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "g4dn.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon",
+     "instanceFamily": "GPU instance",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB",
+     "gpu": "1"
+    }
+   },
+   "us-west-1-x2": {
+    "sku": "us-west-1-x2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Windows",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-x3": {
+    "sku": "us-west-1-x3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "4",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-x4": {
+    "sku": "us-west-1-x4",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-west-1",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Dedicated",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-1-dt0": {
+    "sku": "us-west-1-dt0",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-west-1",
+     "toRegionCode": "us-east-1",
+     "fromLocation": "us-west-1",
+     "toLocation": "us-east-1"
+    }
+   },
+   "us-west-1-dt1": {
+    "sku": "us-west-1-dt1",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-west-1",
+     "toRegionCode": "us-east-2",
+     "fromLocation": "us-west-1",
+     "toLocation": "us-east-2"
+    }
+   },
+   "us-west-1-dt2": {
+    "sku": "us-west-1-dt2",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-west-1",
+     "toRegionCode": "us-west-2",
+     "fromLocation": "us-west-1",
+     "toLocation": "us-west-2"
+    }
+   },
+   "us-west-1-intra": {
+    "sku": "us-west-1-intra",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "IntraRegion",
+     "fromRegionCode": "us-west-1",
+     "toRegionCode": "us-west-1"
+    }
+   },
+   "us-west-1-egress": {
+    "sku": "us-west-1-egress",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "AWS Outbound",
+     "fromRegionCode": "us-west-1",
+     "toLocation": "External"
+    }
+   }
+  },
+  "terms": {
+   "OnDemand": {
+    "us-west-1-1": {
+     "us-west-1-1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.77"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-2": {
+     "us-west-1-2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.5616"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-3": {
+     "us-west-1-3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.448"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-x0": {
+     "us-west-1-x0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-x0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-x1": {
+     "us-west-1-x1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-x1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-x2": {
+     "us-west-1-x2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-x2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-x3": {
+     "us-west-1-x3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-x3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-x4": {
+     "us-west-1-x4.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-x4.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-dt0": {
+     "us-west-1-dt0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-dt0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-dt1": {
+     "us-west-1-dt1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-dt1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-dt2": {
+     "us-west-1-dt2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-dt2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-intra": {
+     "us-west-1-intra.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-1-intra.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.01"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-1-egress": {
+     "us-west-1-egress.T": {
+      "priceDimensions": {
+       "a": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0"
+        },
+        "beginRange": "0",
+        "endRange": "100"
+       },
+       "b": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.09"
+        },
+        "beginRange": "100",
+        "endRange": "Inf"
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "us-west-2": {
+  "formatVersion": "v1.0",
+  "publicationDate": "2026-10-01T00:00:00Z",
+  "version": "fixture",
+  "products": {
+   "us-west-2-1": {
+    "sku": "us-west-2-1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "i4i.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "Storage optimized",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 1875 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-2": {
+    "sku": "us-west-2-2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6id.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "1 x 474 NVMe SSD",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-3": {
+    "sku": "us-west-2-3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "r5.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Platinum",
+     "instanceFamily": "Memory optimized",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-x0": {
+    "sku": "us-west-2-x0",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m7g.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "AWS Graviton3",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-x1": {
+    "sku": "us-west-2-x1",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "g4dn.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon",
+     "instanceFamily": "GPU instance",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB",
+     "gpu": "1"
+    }
+   },
+   "us-west-2-x2": {
+    "sku": "us-west-2-x2",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Windows",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-x3": {
+    "sku": "us-west-2-x3",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "4",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Shared",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-x4": {
+    "sku": "us-west-2-x4",
+    "productFamily": "Compute Instance",
+    "attributes": {
+     "instanceType": "m6i.2xlarge",
+     "regionCode": "us-west-2",
+     "vcpu": "8",
+     "physicalProcessor": "Intel Xeon Ice Lake",
+     "instanceFamily": "General purpose",
+     "operatingSystem": "Linux",
+     "tenancy": "Dedicated",
+     "preInstalledSw": "NA",
+     "capacitystatus": "Used",
+     "licenseModel": "No License required",
+     "currentGeneration": "Yes",
+     "storage": "EBS only",
+     "memory": "32 GiB"
+    }
+   },
+   "us-west-2-dt0": {
+    "sku": "us-west-2-dt0",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-west-2",
+     "toRegionCode": "us-east-1",
+     "fromLocation": "us-west-2",
+     "toLocation": "us-east-1"
+    }
+   },
+   "us-west-2-dt1": {
+    "sku": "us-west-2-dt1",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-west-2",
+     "toRegionCode": "us-east-2",
+     "fromLocation": "us-west-2",
+     "toLocation": "us-east-2"
+    }
+   },
+   "us-west-2-dt2": {
+    "sku": "us-west-2-dt2",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "InterRegion Outbound",
+     "fromRegionCode": "us-west-2",
+     "toRegionCode": "us-west-1",
+     "fromLocation": "us-west-2",
+     "toLocation": "us-west-1"
+    }
+   },
+   "us-west-2-intra": {
+    "sku": "us-west-2-intra",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "IntraRegion",
+     "fromRegionCode": "us-west-2",
+     "toRegionCode": "us-west-2"
+    }
+   },
+   "us-west-2-egress": {
+    "sku": "us-west-2-egress",
+    "productFamily": "Data Transfer",
+    "attributes": {
+     "transferType": "AWS Outbound",
+     "fromRegionCode": "us-west-2",
+     "toLocation": "External"
+    }
+   }
+  },
+  "terms": {
+   "OnDemand": {
+    "us-west-2-1": {
+     "us-west-2-1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.686"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-2": {
+     "us-west-2-2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.4746"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-3": {
+     "us-west-2-3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.504"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-x0": {
+     "us-west-2-x0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-x0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-x1": {
+     "us-west-2-x1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-x1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-x2": {
+     "us-west-2-x2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-x2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-x3": {
+     "us-west-2-x3.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-x3.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-x4": {
+     "us-west-2-x4.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-x4.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "Hrs",
+        "pricePerUnit": {
+         "USD": "0.1"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-dt0": {
+     "us-west-2-dt0.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-dt0.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-dt1": {
+     "us-west-2-dt1.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-dt1.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-dt2": {
+     "us-west-2-dt2.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-dt2.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.02"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-intra": {
+     "us-west-2-intra.JRTCKXETXF": {
+      "priceDimensions": {
+       "us-west-2-intra.JRTCKXETXF.6YS6EN2CT7": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.01"
+        },
+        "beginRange": "0",
+        "endRange": "Inf"
+       }
+      }
+     }
+    },
+    "us-west-2-egress": {
+     "us-west-2-egress.T": {
+      "priceDimensions": {
+       "a": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0"
+        },
+        "beginRange": "0",
+        "endRange": "100"
+       },
+       "b": {
+        "unit": "GB",
+        "pricePerUnit": {
+         "USD": "0.09"
+        },
+        "beginRange": "100",
+        "endRange": "Inf"
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

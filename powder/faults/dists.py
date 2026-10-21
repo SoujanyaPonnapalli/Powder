@@ -16,6 +16,7 @@ Weibull fits), which is what ``convert`` uses when emitting powder-mc jobs.
 
 from __future__ import annotations
 
+import json
 import math
 from typing import Any
 
@@ -41,8 +42,22 @@ class SpecError(ValueError):
     pass
 
 
+_CACHE: dict[str, Distribution] = {}
+
+
 def from_spec(spec: dict[str, Any]) -> Distribution:
-    """Build a Distribution from its JSON spec."""
+    """Build a Distribution from its JSON spec (memoised: specs are immutable,
+    and empirical distributions precompute their mean on construction)."""
+    key = json.dumps(spec, sort_keys=True) if isinstance(spec, dict) else None
+    if key is not None and key in _CACHE:
+        return _CACHE[key]
+    dist = _build(spec)
+    if key is not None and len(_CACHE) < 10_000:
+        _CACHE[key] = dist
+    return dist
+
+
+def _build(spec: dict[str, Any]) -> Distribution:
     if not isinstance(spec, dict) or "type" not in spec:
         raise SpecError(f"distribution spec must be an object with 'type': {spec!r}")
     t = spec["type"]
@@ -95,7 +110,7 @@ def to_spec(dist: Distribution) -> dict[str, Any]:
 
 def median(dist: Distribution, rng_seed: int = 0) -> float:
     """Median: exact where a ppf exists, else estimated from 200k samples."""
-    if hasattr(dist, "ppf"):
+    if hasattr(dist, "ppf") and (not isinstance(dist, Mixture) or all(hasattr(c, "cdf") for c in dist.components)):
         return float(dist.ppf(0.5))
     if isinstance(dist, Constant):
         return dist.value

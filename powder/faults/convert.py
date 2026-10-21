@@ -121,7 +121,10 @@ def scenario_node_configs(
     lvl = level or s.get("level", "central")
     out = {}
     for mid in s["machines"]:
+        m_regions = lib.get(mid, "machine").get("regions")
         for region in s["deployment"]["regions"]:
+            if m_regions and region not in m_regions:
+                continue  # machine class not offered in this region (e.g. a regional spot pool)
             price = prices.price_per_hour(lib, s, mid, region)
             out[(mid, region)] = machine_node_config(
                 lib, mid, region, level=lvl, cost_per_hour=price,
