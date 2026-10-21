@@ -21,7 +21,10 @@ from .simulation.cluster import ClusterState
 from .simulation.distributions import (
     Constant,
     Distribution,
+    Empirical,
     Exponential,
+    LogNormal,
+    Mixture,
     Normal,
     Uniform,
     Weibull,
@@ -129,6 +132,17 @@ def distribution_spec(dist: Distribution) -> dict[str, Any]:
     if isinstance(dist, Constant):
         value = dist.value
         return {"type": "constant", "value": _NEVER if value == float("inf") else value}
+    if isinstance(dist, LogNormal):
+        return {"type": "lognormal", "mu": dist.mu, "sigma": dist.sigma}
+    if isinstance(dist, Mixture):
+        return {"type": "mixture", "components": [
+            {"weight": w, "dist": distribution_spec(c)} for w, c in zip(dist.weights, dist.components)]}
+    if isinstance(dist, Empirical):
+        if dist.F[0] != 0.0 or dist.F[-1] < 1.0 - 1e-9:
+            raise TypeError("the engine needs empirical distributions spanning F = 0..1 (no parametric tails); "
+                            "use powder.faults.dists.engine_compatible to approximate")
+        return {"type": "empirical", "x": [float(v) for v in dist.x], "F": [float(v) for v in dist.F],
+                "log_x": dist.log_x, "tail": None}
     raise TypeError(f"no JSON form for distribution {type(dist).__name__}")
 
 

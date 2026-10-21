@@ -144,8 +144,8 @@ pub fn poisson_axes(
     }
 
     let rate_of = |kind: FailureKind, dist: &Distribution| -> Result<f64, String> {
-        match *dist {
-            Distribution::Exponential { rate } => Ok(rate),
+        match dist {
+            &Distribution::Exponential { rate } => Ok(rate),
             other => Err(format!(
                 "stratified sampling needs exponential {} failures, got {other}",
                 kind.as_str()

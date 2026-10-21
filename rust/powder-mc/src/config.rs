@@ -88,21 +88,71 @@ pub enum DistributionSpec {
         /// The fixed value.
         value: f64,
     },
+    /// `{"type": "lognormal", "mu": 6.0, "sigma": 1.2}` (ln X ~ Normal(mu, sigma))
+    Lognormal {
+        /// Mean of ln X.
+        mu: f64,
+        /// Standard deviation of ln X.
+        sigma: f64,
+    },
+    /// `{"type": "empirical", "x": [...], "F": [...], "log_x": true, "tail": null}`:
+    /// digitized CDF; F must run from 0 to 1 (parametric tails are Python-only).
+    Empirical {
+        /// Support points, strictly increasing.
+        x: Vec<f64>,
+        /// CDF values at `x`.
+        #[serde(rename = "F")]
+        f: Vec<f64>,
+        /// Interpolate the inverse CDF in log space.
+        #[serde(default = "default_true")]
+        log_x: bool,
+        /// Must be null/absent in the engine.
+        #[serde(default)]
+        tail: Option<serde_json::Value>,
+    },
+    /// `{"type": "mixture", "components": [{"weight": 0.3, "dist": {...}}, ...]}`
+    Mixture {
+        /// Weighted components (weights are normalised).
+        components: Vec<MixtureComponentSpec>,
+    },
+}
+
+/// One component of a mixture spec.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MixtureComponentSpec {
+    /// Non-negative weight.
+    pub weight: f64,
+    /// Component distribution.
+    pub dist: DistributionSpec,
 }
 
 impl DistributionSpec {
     /// Build the engine distribution, validating parameters.
     pub fn build(&self) -> Result<Distribution> {
-        Ok(match *self {
-            DistributionSpec::Exponential { rate } => Distribution::exponential(rate)?,
-            DistributionSpec::Weibull { shape, scale } => Distribution::weibull(shape, scale)?,
-            DistributionSpec::Normal {
+        Ok(match self {
+            &DistributionSpec::Exponential { rate } => Distribution::exponential(rate)?,
+            &DistributionSpec::Weibull { shape, scale } => Distribution::weibull(shape, scale)?,
+            &DistributionSpec::Normal {
                 mean,
                 std,
                 min_val,
             } => Distribution::normal(mean, std, min_val)?,
-            DistributionSpec::Uniform { low, high } => Distribution::uniform(low, high)?,
-            DistributionSpec::Constant { value } => Distribution::constant(value),
+            &DistributionSpec::Uniform { low, high } => Distribution::uniform(low, high)?,
+            &DistributionSpec::Constant { value } => Distribution::constant(value),
+            &DistributionSpec::Lognormal { mu, sigma } => Distribution::lognormal(mu, sigma)?,
+            DistributionSpec::Empirical { x, f, log_x, tail } => {
+                if tail.as_ref().is_some_and(|t| !t.is_null()) {
+                    return Err(ConfigError(
+                        "empirical distributions with parametric tails are not supported by the engine".into(),
+                    ));
+                }
+                Distribution::empirical(x, f, *log_x)?
+            }
+            DistributionSpec::Mixture { components } => {
+                let weights: Vec<f64> = components.iter().map(|c| c.weight).collect();
+                let dists = components.iter().map(|c| c.dist.build()).collect::<Result<Vec<_>>>()?;
+                Distribution::mixture(&weights, dists)?
+            }
         })
     }
 }
@@ -948,5 +998,24 @@ mod tests {
         assert_eq!(job.run.parallel_workers, Some(16));
         // It has no effect on the resolved engine configuration.
         assert!(job.resolve().is_ok());
+    }
+
+    #[test]
+    fn new_distribution_specs_parse_and_build() {
+        let specs = [
+            r#"{"type": "lognormal", "mu": 6.0, "sigma": 1.0}"#,
+            r#"{"type": "empirical", "x": [10, 100, 1000], "F": [0, 0.4, 1], "log_x": true, "tail": null}"#,
+            r#"{"type": "mixture", "components": [{"weight": 0.5, "dist": {"type": "constant", "value": 5}},
+                {"weight": 0.5, "dist": {"type": "lognormal", "mu": 1.0, "sigma": 0.5}}]}"#,
+        ];
+        for s in specs {
+            let spec: DistributionSpec = serde_json::from_str(s).unwrap();
+            assert!(spec.build().is_ok(), "{s}");
+        }
+        let with_tail: DistributionSpec = serde_json::from_str(
+            r#"{"type": "empirical", "x": [10, 100], "F": [0.1, 1], "tail": {"type": "lognormal", "mu": 1, "sigma": 1}}"#,
+        )
+        .unwrap();
+        assert!(with_tail.build().is_err());
     }
 }

@@ -155,12 +155,15 @@ def test_weibull_from_mean_median():
     assert isinstance(fit, Weibull) and abs(fit.shape - 0.75) < 1e-6 and abs(fit.scale / 1000 - 1) < 1e-6
 
 
-def test_engine_compatible_preserves_mean_and_median():
+def test_engine_compatible_native_and_fallback():
     ln = LogNormal(math.log(900), 1.0)
-    fit = engine_compatible(ln)
+    assert engine_compatible(ln) is ln  # native in powder-mc
+    distribution_spec(ln)
+    tailed = Empirical([60.0, 600.0], [0.2, 0.9], tail=ln)  # tails are Python-only -> Weibull fallback
+    fit = engine_compatible(tailed)
     distribution_spec(fit)
-    assert abs(fit.mean / ln.mean - 1) < 1e-9
-    assert abs(fit.ppf(0.5) / ln.ppf(0.5) - 1) < 1e-6
+    assert abs(fit.mean / tailed.mean - 1) < 1e-6
+    assert abs(fit.ppf(0.5) / tailed.ppf(0.5) - 1) < 1e-4
 
 
 def test_mixture_recovery_is_rate_weighted():
@@ -670,3 +673,30 @@ def test_lanl_pooled_profile_and_shapes():
     assert summ["cofail_inflation_small"]["median"] > 1  # failures cluster in time across nodes
     aws = LIB.get("cloud/aws-ondemand-nvme", "node")["assumptions"]["sw_ratio"]
     assert aws["low"] < 0.5 < aws["central"] < aws["high"]
+
+
+
+def test_engine_runs_library_scenario_natively():
+    """End to end: library scenario -> powder-mc job with native lognormal/empirical/mixture -> run."""
+    import os
+    import subprocess
+    from powder.mc_jobs import binary_path, build_job, EngineNotFound
+    from powder.simulation import ClusterState, NetworkState, NodeState, NodeReplacementStrategy, RaftLikeProtocol
+    try:
+        binary = binary_path()
+        subprocess.run([str(binary), "--help"], capture_output=True, check=True, timeout=30)
+    except (EngineNotFound, OSError, subprocess.SubprocessError):
+        return  # no runnable engine here (e.g. a Mac binary on Linux)
+    cfgs = scenario_node_configs(LIB, "scenario/canonical-central", engine=True)
+    cfg = cfgs[("machine/ford10-google-storage", "us-east-1")]
+    kinds = {distribution_spec(cfg.recovery_dist)["type"]}
+    assert kinds & {"mixture", "empirical", "lognormal"}  # not approximated
+    nodes = {f"n{i}": NodeState(node_id=f"n{i}", config=cfg) for i in range(3)}
+    cluster = ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=3)
+    job = build_job(cluster, NodeReplacementStrategy(failure_timeout=300.0, default_node_config=cfg),
+                    RaftLikeProtocol(election_time_dist=Exponential(0.2)), num_simulations=20,
+                    max_time=days(30), stop_on_data_loss=False, base_seed=1)
+    out = subprocess.run([str(binary), "--stream"], input=json.dumps(job) + "\n", capture_output=True,
+                         text=True, timeout=120)
+    assert out.returncode == 0, out.stderr[-2000:]
+    assert out.stdout.strip()

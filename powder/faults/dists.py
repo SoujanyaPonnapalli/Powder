@@ -8,10 +8,10 @@ weibull, normal, uniform, constant) plus three library-only families:
      "tail": <spec>}``  -- digitized CDF with a parametric tail
 * ``{"type": "mixture", "components": [{"weight": w, "dist": <spec>}, ...]}``
 
-The Rust engine does not (yet) understand the three new families.
-``engine_compatible`` maps any distribution to one it does understand by
-matching the mean and the median with a Weibull (or an exponential when no
-Weibull fits), which is what ``convert`` uses when emitting powder-mc jobs.
+powder-mc samples all of these natively (since 2026-10-21), except empirical
+distributions with parametric tails; ``engine_compatible`` returns supported
+distributions unchanged and maps the rest to a Weibull with the same mean and
+median.
 """
 
 from __future__ import annotations
@@ -169,8 +169,20 @@ def engine_compatible(dist: Distribution) -> Distribution:
     return out
 
 
+def _engine_native(dist: Distribution) -> bool:
+    """True if powder-mc can sample ``dist`` exactly (it supports lognormal,
+    tail-free empirical and mixtures of supported families since 2026-10-21)."""
+    if type(dist).__name__ in {"Exponential", "Weibull", "Normal", "Uniform", "Constant", "LogNormal"}:
+        return True
+    if isinstance(dist, Empirical):
+        return dist.F[0] == 0.0 and dist.F[-1] >= 1.0 - 1e-9
+    if isinstance(dist, Mixture):
+        return all(_engine_native(c) for c in dist.components)
+    return False
+
+
 def _engine_compatible(dist: Distribution) -> Distribution:
-    if type(dist).__name__ in {"Exponential", "Weibull", "Normal", "Uniform", "Constant"}:
+    if _engine_native(dist):
         return dist
     if isinstance(dist, Mixture) and len(dist.components) == 1:
         return engine_compatible(dist.components[0])

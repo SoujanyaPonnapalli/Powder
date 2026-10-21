@@ -22,7 +22,7 @@ use super::protocol::Protocol;
 ///
 /// Python types `reconfiguration_dist` as `Seconds` but then checks
 /// `hasattr(delay, "sample")`, so both forms are accepted at runtime.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Delay {
     /// A constant number of seconds.
     Fixed(Seconds),
@@ -715,7 +715,7 @@ impl AdaptiveReplacementStrategy {
         if new_target != current_target && !self.pending_reconfigurations.contains(&new_target) {
             self.pending_reconfigurations.push(new_target);
             out.push(Action::ScheduleReconfiguration {
-                delay: self.reconfiguration_dist,
+                delay: self.reconfiguration_dist.clone(),
                 target_size: new_target,
             });
         }

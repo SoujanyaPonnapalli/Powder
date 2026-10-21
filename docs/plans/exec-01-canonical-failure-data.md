@@ -876,7 +876,7 @@ Remaining:
 - [x] Spot Advisor snapshot (2026-10-21; real layout parsed) -> `spot/aws-*` profiles and machines. Spot prices are on-demand x (1 - advisor savings) until:
 - [ ] `describe-spot-price-history` (blocked: needs AWS credentials and `ec2.<region>.amazonaws.com` + `sts.amazonaws.com` in the allowlist).
 - [ ] SpotLake 2025 (blocked 2026-10-21: S3 reports `NoSuchBucket` for `spotlake-open-data` although its README documents it; retry later or ask the authors). Until then, daily Spot Advisor snapshots build the band history.
-- [ ] Rust engine: add `lognormal`, `empirical` and `mixture` `DistributionSpec`s to powder-mc (and `mc_jobs.distribution_spec`), so `engine=True` no longer approximates; `cargo test`.
+- [x] Rust engine (2026-10-21): native `lognormal`, `empirical` (tail-free, log-time inverse CDF, exact mean) and `mixture` distributions in powder-mc + `DistributionSpec`; `mc_jobs.distribution_spec` emits them; `engine_compatible` now approximates only empirical distributions with parametric tails. `cargo test` all green (185 lib tests + integration suites).
 - [ ] Rust engine: `PlannedDowntimeSpec` + `PLANNED_DOWNTIME_START/END` events; replacement must ignore planned downtime; cross-check against `planned_downtime.schedule` statistics.
 - [ ] Rust engine + Python `NetworkConfig`: per-region outage rates (`per_region` map); make `RegionOutageModel.as_network_config` exact instead of max/mean.
 - [x] Refine `region_incidents_azure.csv` from azure.status.microsoft directly (2026-10-21): all 79 public PIRs fetched (`fetch_azure_pirs.py`) and classified from their full text; window moved to 2022-06-01 (PIR policy change); added missed US VM incidents (East US 2 cooling 2022-06, West US 2 power 2022-08, South Central US networking 2023-01, WAN surge 2022-07); 5GP8-W0G and others reclassified as control-plane only. Result: per-region 0.09-0.13/yr (heterogeneity now detected), global 0.57/yr (2 incidents), durations lognormal, median 5.1 h.
@@ -907,7 +907,7 @@ Recorded deviations from §7 (and why):
   region model.
 - Region outage EB uses the nine Azure US regions, not all regions worldwide: the incident search was thorough only for US regions. Window 2023-01-01 to 2026-10-20: PIRs older than ~5 years are gone, and since mid-2022 Microsoft publishes only broad incidents.
 - The software cause in `cloud/aws-ondemand-nvme` uses Ford's >=15-min node-restart : unplanned-reboot ratio (1 / 2.35 / 4.49) with >=15-min durations. Short automatic restarts are left to planned downtime and exec #10, because Ford's all-events node-restart rate (~57 per node-year) reflects Google's rollout practice.
-- Rust-side changes (new distributions, planned-downtime events, per-region outages) are not done: the sandbox has no Rust toolchain. Until then, `engine=True` maps new distributions to a Weibull with the same mean and median, and region outages collapse to the max regional rate.
+- Rust-side planned-downtime events and per-region outages are not done yet: in the engine, planned downtime is folded into the transient hazard and region outages collapse to the max regional rate (+ global rate).
 
 Known caveats to state in the paper (from the independent review, 2026-10-21):
 
