@@ -229,3 +229,57 @@ def test_ford_fig3_rates_inside_table1_range():
     for c in ("node_restart", "planned_reboot", "unplanned_reboot"):
         m = next(x for x in LIB.get("ford10")["measurements"] if x["id"] == f"derived-rate-{c}")["value"]
         assert m["ge15min"]["low"] <= m["fig3_one_cell_ge15min"] <= m["ge15min"]["high"], c
+
+
+# -- planned downtime (subtask 1.1) -------------------------------------------
+
+from powder.faults.planned_downtime import as_transient, long_run_fraction, schedule  # noqa: E402
+
+
+def _planned():
+    return LIB.get("planned_downtime/weekly-ford10", "planned_downtime")
+
+
+def test_planned_schedule_no_overlap_and_gap_distribution():
+    p = _planned()
+    ev = schedule([f"n{i}" for i in range(300)], days(7 * 30), p, np.random.default_rng(3))
+    by_node = {}
+    for e in ev:
+        by_node.setdefault(e.node, []).append(e)
+    gaps = []
+    for evs in by_node.values():
+        for a, b in zip(evs, evs[1:]):
+            assert b.start >= a.end  # no overlapping downtime on one node
+            gaps.append(b.start - a.start)
+    g = np.sort(np.array(gaps))
+    model = np.array([normal_cdf((v - days(7)) / (12 * 3600.0)) for v in g])
+    ks = np.max(np.abs(model - np.arange(1, len(g) + 1) / len(g)))
+    assert ks < 1.63 / math.sqrt(len(g))  # KS at alpha = 0.01
+
+
+def test_planned_equilibrium_phase():
+    p = _planned()
+    rng = np.random.default_rng(11)
+    firsts = [schedule(["x"], days(30), p, rng)[0].start for _ in range(4000)]
+    mu, sd = days(7), 12 * 3600.0
+    expected = (mu**2 + sd**2) / (2 * mu)  # mean residual life of the renewal process
+    assert abs(np.mean(firsts) / expected - 1) < 0.03
+    assert max(firsts) < days(7) + 8 * sd
+
+
+def test_planned_long_run_fraction():
+    p = _planned()
+    horizon = days(7 * 52)
+    ev = schedule([f"n{i}" for i in range(400)], horizon, p, np.random.default_rng(5))
+    down = sum(min(e.end, horizon) - e.start for e in ev)
+    frac = down / (400 * horizon)
+    assert abs(frac / long_run_fraction(p) - 1) < 0.06
+    rate, mean_d = as_transient(p)
+    assert math.isclose(rate, 1 / days(7)) and 600 < mean_d < 3600
+
+
+def test_planned_events_per_day_matches_n_over_7():
+    p = _planned()
+    rng = np.random.default_rng(9)
+    counts = [len(schedule([f"n{i}" for i in range(9)], days(1), p, rng)) for _ in range(3000)]
+    assert abs(np.mean(counts) - 9 / 7) < 0.06

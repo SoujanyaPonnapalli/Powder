@@ -125,23 +125,36 @@ def save_steps(path: Path, sc: StepCurve):
 
 
 def empirical_spec(sc: StepCurve, quantum_decades: float, shift_decades: float = 0.0) -> dict:
-    """Continuous ECDF through the jump tops, starting at F=0 one quantum left."""
+    """ECDF as an `empirical` spec, each jump spread over one coordinate quantum.
+
+    The PDF stores x to one coordinate quantum (~0.002 decades), so a jump at
+    x_j is only known to lie in [x_j 10^-q, x_j]. Each jump's mass is spread
+    log-uniformly over that interval: F rises from F_before to F_after across
+    it and is flat between jumps. This keeps the ECDF's mean and quantiles
+    (unlike interpolating across the gaps between jumps, which drags tail mass
+    toward shorter durations).
+    """
     x = sc.x * 10**shift_decades
-    F = np.clip(sc.F_after, 0, 1)
-    if F[-1] > 0.999:
-        F[-1] = 1.0
-    xs = [float(x[0] * 10 ** (-quantum_decades))] + [float(v) for v in x]
-    Fs = [0.0] + [float(v) for v in F]
-    # enforce strictly increasing x (merge duplicates, keep max F)
+    Fb = np.clip(sc.F_before, 0, 1)
+    Fa = np.clip(sc.F_after, 0, 1)
+    if Fa[-1] > 0.999:  # curve ends on the top frame: normalise, don't snap
+        Fb, Fa = Fb / Fa[-1], Fa / Fa[-1]
+    r8 = lambda v: float(f"{v:.8g}")  # noqa: E731  (round before comparing)
     out_x, out_F = [], []
-    for xv, fv in zip(xs, Fs):
-        if out_x and xv <= out_x[-1]:
-            out_F[-1] = max(out_F[-1], fv)
+    for xj, fb, fa in zip(x, Fb, Fa):
+        lo, hi = r8(xj * 10 ** (-quantum_decades)), r8(xj)
+        if not out_x or lo > out_x[-1]:
+            out_x.append(lo)
+            out_F.append(max(round(float(fb), 6), out_F[-1] if out_F else 0.0))
+        if hi > out_x[-1]:
+            out_x.append(hi)
+            out_F.append(max(round(float(fa), 6), out_F[-1]))
         else:
-            out_x.append(xv)
-            out_F.append(max(fv, out_F[-1] if out_F else 0.0))
-    return {"type": "empirical", "x": [float(f"{v:.6g}") for v in out_x],
-            "F": [round(v, 6) for v in out_F], "log_x": True, "tail": None}
+            out_F[-1] = max(out_F[-1], round(float(fa), 6))
+    if out_F[0] != 0.0:  # distribution must start at F = 0
+        out_x.insert(0, r8(out_x[0] * 10 ** (-quantum_decades)))
+        out_F.insert(0, 0.0)
+    return {"type": "empirical", "x": out_x, "F": out_F, "log_x": True, "tail": None}
 
 
 def fig3_bars(page, bbox):
@@ -401,10 +414,11 @@ def write_entries(stats, rates, fig3_avg, fig3_sd, calib, checks, q):
 
         The curves end on the top frame (F = 1); the raw final value is
         ~0.9999 from axis-fit rounding, which renormalising a 1% tail would
-        amplify, so it is snapped to 1 first.
+        amplify, so the curve is normalised by its final value first.
         """
         if sc.F_after[-1] > 0.999:
-            sc.F_after[-1] = 1.0
+            top = sc.F_after[-1]
+            sc = StepCurve(sc.x, sc.F_before / top, sc.F_after / top)
         keep = sc.x >= 900.0
         f0 = sc.F_before[keep][0]
         scale = 1.0 - f0

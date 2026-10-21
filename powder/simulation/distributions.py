@@ -351,10 +351,11 @@ class Empirical(Distribution):
         self.tail = tail
         self.log_x = log_x
         self._t = np.log(x) if log_x else x
-        # Collapse flat stretches of F so the inverse is well defined.
-        keep = np.concatenate(([True], np.diff(F) > 0))
-        self._Fk = F[keep]
-        self._tk = self._t[keep]
+        # Flat stretches of F (no mass) are kept: np.interp brackets a tied
+        # xp value from the right, so for u inside a rise it interpolates
+        # between that rise's own endpoints, which is the correct inverse.
+        self._Fk = F
+        self._tk = self._t
         u = (np.arange(self._MEAN_GRID) + 0.5) / self._MEAN_GRID
         self._mean = float(np.mean(self._ppf_array(u)))
 
@@ -363,11 +364,8 @@ class Empirical(Distribution):
         lo = u < self._Fk[0]
         hi = u > self._Fk[-1]
         mid = ~(lo | hi)
-        if len(self._Fk) == 1:
-            out[mid] = np.exp(self._tk[0]) if self.log_x else self._tk[0]
-        else:
-            t = np.interp(u[mid], self._Fk, self._tk)
-            out[mid] = np.exp(t) if self.log_x else t
+        t = np.interp(u[mid], self._Fk, self._tk)
+        out[mid] = np.exp(t) if self.log_x else t
         if lo.any():
             c0 = self.tail.cdf(float(self.x[0]))
             out[lo] = [self.tail.ppf(v / self._Fk[0] * c0) for v in u[lo]]
