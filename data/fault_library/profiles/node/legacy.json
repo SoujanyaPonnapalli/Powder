@@ -1,0 +1,131 @@
+[
+  {
+    "id": "legacy/vm-standard",
+    "kind": "node",
+    "version": 1,
+    "tier": "cloud",
+    "tags": [
+      "legacy"
+    ],
+    "derived_from": [
+      "legacy-vm-profiles#standard-mtbf-s",
+      "legacy-vm-profiles#standard-recovery-s",
+      "legacy-vm-profiles#standard-mttdl-s"
+    ],
+    "built_by": "hand-written (mirrors VM_PROFILES exactly)",
+    "notes": "Legacy 'Standard' profile. The single transient cause stands in for all transient failures; the permanent cause for all data loss.",
+    "causes": {
+      "hw_reboot": {
+        "rate_per_hour": {
+          "low": 0.001388888888888889,
+          "central": 0.001388888888888889,
+          "high": 0.001388888888888889
+        },
+        "duration": {
+          "type": "exponential",
+          "rate": 0.0008333333333333334
+        }
+      },
+      "disk": {
+        "rate_per_hour": {
+          "low": 3.805175038051751e-05,
+          "central": 3.805175038051751e-05,
+          "high": 3.805175038051751e-05
+        }
+      }
+    },
+    "shape": {
+      "type": "exponential"
+    },
+    "spawn": {
+      "type": "exponential",
+      "rate": 0.016666666666666666
+    }
+  },
+  {
+    "id": "legacy/vm-spot",
+    "kind": "node",
+    "version": 1,
+    "tier": "cloud",
+    "tags": [
+      "legacy"
+    ],
+    "derived_from": [
+      "legacy-vm-profiles#spot-mtbf-s",
+      "legacy-vm-profiles#spot-recovery-s",
+      "legacy-vm-profiles#spot-mttdl-s"
+    ],
+    "built_by": "hand-written (mirrors VM_PROFILES exactly)",
+    "notes": "Legacy 'Spot' profile. The single transient cause stands in for all transient failures; the permanent cause for all data loss.",
+    "causes": {
+      "hw_reboot": {
+        "rate_per_hour": {
+          "low": 0.001388888888888889,
+          "central": 0.001388888888888889,
+          "high": 0.001388888888888889
+        },
+        "duration": {
+          "type": "exponential",
+          "rate": 0.0008333333333333334
+        }
+      },
+      "disk": {
+        "rate_per_hour": {
+          "low": 0.041666666666666664,
+          "central": 0.041666666666666664,
+          "high": 0.041666666666666664
+        }
+      }
+    },
+    "shape": {
+      "type": "exponential"
+    },
+    "spawn": {
+      "type": "exponential",
+      "rate": 0.016666666666666666
+    }
+  },
+  {
+    "id": "legacy/vm-unreliable",
+    "kind": "node",
+    "version": 1,
+    "tier": "cloud",
+    "tags": [
+      "legacy"
+    ],
+    "derived_from": [
+      "legacy-vm-profiles#unreliable-mtbf-s",
+      "legacy-vm-profiles#unreliable-recovery-s",
+      "legacy-vm-profiles#unreliable-mttdl-s"
+    ],
+    "built_by": "hand-written (mirrors VM_PROFILES exactly)",
+    "notes": "Legacy 'Unreliable' profile. The single transient cause stands in for all transient failures; the permanent cause for all data loss.",
+    "causes": {
+      "hw_reboot": {
+        "rate_per_hour": {
+          "low": 0.001388888888888889,
+          "central": 0.001388888888888889,
+          "high": 0.001388888888888889
+        },
+        "duration": {
+          "type": "exponential",
+          "rate": 0.0008333333333333334
+        }
+      },
+      "disk": {
+        "rate_per_hour": {
+          "low": 0.00011415525114155251,
+          "central": 0.00011415525114155251,
+          "high": 0.00011415525114155251
+        }
+      }
+    },
+    "shape": {
+      "type": "exponential"
+    },
+    "spawn": {
+      "type": "exponential",
+      "rate": 0.016666666666666666
+    }
+  }
+]

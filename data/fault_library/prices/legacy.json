@@ -1,0 +1,32 @@
+[
+  {
+    "id": "legacy:vm-standard:us-east:ondemand:linux",
+    "kind": "price",
+    "price_kind": "compute_ondemand",
+    "price_per_hour": 0.1,
+    "fetched_at": "n/a (constant from notebooks/raft_markov_quality_benchmark.py)",
+    "derived_from": [
+      "legacy-vm-profiles#standard-cost"
+    ]
+  },
+  {
+    "id": "legacy:vm-spot:us-east:ondemand:linux",
+    "kind": "price",
+    "price_kind": "compute_ondemand",
+    "price_per_hour": 0.03,
+    "fetched_at": "n/a (constant from notebooks/raft_markov_quality_benchmark.py)",
+    "derived_from": [
+      "legacy-vm-profiles#spot-cost"
+    ]
+  },
+  {
+    "id": "legacy:vm-unreliable:us-east:ondemand:linux",
+    "kind": "price",
+    "price_kind": "compute_ondemand",
+    "price_per_hour": 0.05,
+    "fetched_at": "n/a (constant from notebooks/raft_markov_quality_benchmark.py)",
+    "derived_from": [
+      "legacy-vm-profiles#unreliable-cost"
+    ]
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "id": "scenario/legacy",
+  "kind": "scenario",
+  "machines": [
+    "machine/legacy-standard",
+    "machine/legacy-spot",
+    "machine/legacy-unreliable"
+  ],
+  "region_outage": null,
+  "planned_downtime": null,
+  "level": "central",
+  "price_assignment": null,
+  "price_policy": "latest",
+  "deployment": {
+    "instance_type": "n/a",
+    "regions": [
+      "us-east"
+    ]
+  },
+  "notes": "Reproduces the pre-library VM_PROFILES NodeConfigs exactly (tested)."
+}

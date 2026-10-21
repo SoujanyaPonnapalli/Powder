@@ -96,6 +96,12 @@ class Exponential(Distribution):
         # NumPy's exponential takes scale = 1/rate
         return rng.exponential(1.0 / self.rate)
 
+    def cdf(self, x: float) -> float:
+        return 0.0 if x <= 0 else 1.0 - math.exp(-self.rate * x)
+
+    def ppf(self, p: float) -> float:
+        return math.inf if p >= 1.0 else -math.log1p(-p) / self.rate
+
     def __repr__(self) -> str:
         return f"Exponential(rate={self.rate})"
 
@@ -129,6 +135,12 @@ class Weibull(Distribution):
     def sample(self, rng: np.random.Generator) -> float:
         """Sample a value from the Weibull distribution."""
         return self.scale * rng.weibull(self.shape)
+
+    def cdf(self, x: float) -> float:
+        return weibull_cdf(self.shape, self.scale, x)
+
+    def ppf(self, p: float) -> float:
+        return weibull_ppf(self.shape, self.scale, p)
 
     def __repr__(self) -> str:
         return f"Weibull(shape={self.shape}, scale={self.scale})"
@@ -187,6 +199,223 @@ class Uniform(Distribution):
 
     def __repr__(self) -> str:
         return f"Uniform(low={self.low}, high={self.high})"
+
+
+def normal_ppf(p: float) -> float:
+    """Standard normal quantile (inverse CDF), Acklam's rational approximation.
+
+    Relative error below 1.2e-9 over (0, 1); avoids a SciPy dependency so
+    the fault library can run with NumPy alone.
+    """
+    if not 0.0 < p < 1.0:
+        if p == 0.0:
+            return -math.inf
+        if p == 1.0:
+            return math.inf
+        raise ValueError(f"p must be in [0, 1], got {p}")
+    a = (-3.969683028665376e01, 2.209460984245205e02, -2.759285104469687e02,
+         1.383577518672690e02, -3.066479806614716e01, 2.506628277459239e00)
+    b = (-5.447609879822406e01, 1.615858368580409e02, -1.556989798598866e02,
+         6.680131188771972e01, -1.328068155288572e01)
+    c = (-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e00,
+         -2.549732539343734e00, 4.374664141464968e00, 2.938163982698783e00)
+    d = (7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e00,
+         3.754408661907416e00)
+    plow, phigh = 0.02425, 1 - 0.02425
+    if p < plow:
+        q = math.sqrt(-2 * math.log(p))
+        return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / \
+               ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+    if p > phigh:
+        q = math.sqrt(-2 * math.log(1 - p))
+        return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / \
+                ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
+    q = p - 0.5
+    r = q * q
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / \
+           (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+
+
+def normal_cdf(z: float) -> float:
+    """Standard normal CDF."""
+    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+
+
+class LogNormal(Distribution):
+    """Log-normal distribution: ``ln X ~ Normal(mu, sigma)``.
+
+    Args:
+        mu: Mean of ``ln X`` (X in seconds, so ``exp(mu)`` is the median).
+        sigma: Standard deviation of ``ln X``. Must be positive.
+    """
+
+    def __init__(self, mu: float, sigma: float):
+        if sigma <= 0:
+            raise ValueError(f"Sigma must be positive, got {sigma}")
+        self.mu = mu
+        self.sigma = sigma
+
+    @property
+    def mean(self) -> float:
+        return math.exp(self.mu + 0.5 * self.sigma**2)
+
+    def cdf(self, x: float) -> float:
+        if x <= 0:
+            return 0.0
+        return normal_cdf((math.log(x) - self.mu) / self.sigma)
+
+    def ppf(self, p: float) -> float:
+        return math.exp(self.mu + self.sigma * normal_ppf(p))
+
+    def sample(self, rng: np.random.Generator) -> float:
+        return float(rng.lognormal(self.mu, self.sigma))
+
+    def __repr__(self) -> str:
+        return f"LogNormal(mu={self.mu}, sigma={self.sigma})"
+
+
+class Mixture(Distribution):
+    """Finite mixture: pick component i with probability ``weights[i]``.
+
+    For competing exponential risks this is exact for the recovery time of
+    "a failure of any cause": cause i occurs with probability
+    ``lambda_i / sum(lambda)``.
+
+    Args:
+        weights: Non-negative weights (normalised internally).
+        components: One Distribution per weight.
+    """
+
+    def __init__(self, weights: list[float], components: list[Distribution]):
+        if len(weights) != len(components) or not weights:
+            raise ValueError("weights and components must be non-empty and equal length")
+        if any(w < 0 for w in weights) or sum(weights) <= 0:
+            raise ValueError(f"weights must be non-negative with positive sum, got {weights}")
+        total = float(sum(weights))
+        self.weights = [w / total for w in weights]
+        self.components = list(components)
+        self._cum = np.cumsum(self.weights)
+
+    @property
+    def mean(self) -> float:
+        return sum(w * c.mean for w, c in zip(self.weights, self.components))
+
+    def sample(self, rng: np.random.Generator) -> float:
+        i = int(np.searchsorted(self._cum, rng.random(), side="right"))
+        i = min(i, len(self.components) - 1)
+        return self.components[i].sample(rng)
+
+    def __repr__(self) -> str:
+        return f"Mixture(weights={self.weights}, components={self.components})"
+
+
+class Empirical(Distribution):
+    """Distribution defined by digitized CDF points, with parametric tails.
+
+    Between the points, F is interpolated linearly in ``log x`` (when
+    ``log_x``) or in ``x``. Outside ``[x[0], x[-1]]`` the ``tail``
+    distribution (any object with ``cdf``/``ppf``, e.g. LogNormal or
+    Weibull fitted to the same points) supplies the shape, rescaled so the
+    quantile function is continuous at both joins:
+
+    * ``u < F[0]``:  ``x = tail.ppf(u / F[0] * tail.cdf(x[0]))``
+    * ``u > F[-1]``: ``x = tail.ppf(tail.cdf(x[-1]) + (u - F[-1]) / (1 - F[-1])
+      * (1 - tail.cdf(x[-1])))``
+
+    If ``F[0] == 0`` / ``F[-1] == 1`` the corresponding tail is unused.
+
+    Args:
+        x: Strictly increasing support points (seconds), all > 0 if log_x.
+        F: Non-decreasing CDF values in [0, 1] at those points.
+        tail: Parametric distribution used beyond the digitized range.
+        log_x: Interpolate in log-space (default True).
+    """
+
+    _MEAN_GRID = 200_000
+
+    def __init__(self, x, F, tail=None, log_x: bool = True):
+        x = np.asarray(x, dtype=float)
+        F = np.asarray(F, dtype=float)
+        if x.ndim != 1 or x.shape != F.shape or len(x) < 2:
+            raise ValueError("x and F must be 1-D arrays of equal length >= 2")
+        if np.any(np.diff(x) <= 0):
+            raise ValueError("x must be strictly increasing")
+        if np.any(np.diff(F) < 0) or F[0] < 0 or F[-1] > 1:
+            raise ValueError("F must be non-decreasing within [0, 1]")
+        if log_x and x[0] <= 0:
+            raise ValueError("log_x requires x > 0")
+        if (F[0] > 0 or F[-1] < 1) and tail is None:
+            raise ValueError("a tail distribution is required when F does not span [0, 1]")
+        self.x = x
+        self.F = F
+        self.tail = tail
+        self.log_x = log_x
+        self._t = np.log(x) if log_x else x
+        # Collapse flat stretches of F so the inverse is well defined.
+        keep = np.concatenate(([True], np.diff(F) > 0))
+        self._Fk = F[keep]
+        self._tk = self._t[keep]
+        u = (np.arange(self._MEAN_GRID) + 0.5) / self._MEAN_GRID
+        self._mean = float(np.mean(self._ppf_array(u)))
+
+    def _ppf_array(self, u: np.ndarray) -> np.ndarray:
+        out = np.empty_like(u, dtype=float)
+        lo = u < self._Fk[0]
+        hi = u > self._Fk[-1]
+        mid = ~(lo | hi)
+        if len(self._Fk) == 1:
+            out[mid] = np.exp(self._tk[0]) if self.log_x else self._tk[0]
+        else:
+            t = np.interp(u[mid], self._Fk, self._tk)
+            out[mid] = np.exp(t) if self.log_x else t
+        if lo.any():
+            c0 = self.tail.cdf(float(self.x[0]))
+            out[lo] = [self.tail.ppf(v / self._Fk[0] * c0) for v in u[lo]]
+        if hi.any():
+            c1 = self.tail.cdf(float(self.x[-1]))
+            out[hi] = [
+                self.tail.ppf(c1 + (v - self._Fk[-1]) / (1 - self._Fk[-1]) * (1 - c1))
+                for v in u[hi]
+            ]
+        return out
+
+    def ppf(self, p: float) -> float:
+        return float(self._ppf_array(np.array([p]))[0])
+
+    def cdf(self, x: float) -> float:
+        if x < self.x[0]:
+            if self._Fk[0] == 0:
+                return 0.0
+            c0 = self.tail.cdf(float(self.x[0]))
+            return 0.0 if c0 <= 0 else self.tail.cdf(x) / c0 * self._Fk[0]
+        if x > self.x[-1]:
+            if self._Fk[-1] == 1:
+                return 1.0
+            c1 = self.tail.cdf(float(self.x[-1]))
+            return self._Fk[-1] + (self.tail.cdf(x) - c1) / (1 - c1) * (1 - self._Fk[-1])
+        t = math.log(x) if self.log_x else x
+        return float(np.interp(t, self._t, self.F))
+
+    @property
+    def mean(self) -> float:
+        return self._mean
+
+    def sample(self, rng: np.random.Generator) -> float:
+        return float(self._ppf_array(np.array([rng.random()]))[0])
+
+    def __repr__(self) -> str:
+        return (f"Empirical(n={len(self.x)}, x=[{self.x[0]:.3g}..{self.x[-1]:.3g}], "
+                f"F=[{self.F[0]:.3f}..{self.F[-1]:.3f}], tail={self.tail!r})")
+
+
+def weibull_cdf(shape: float, scale: float, x: float) -> float:
+    return 0.0 if x <= 0 else 1.0 - math.exp(-((x / scale) ** shape))
+
+
+def weibull_ppf(shape: float, scale: float, p: float) -> float:
+    if p >= 1.0:
+        return math.inf
+    return scale * (-math.log1p(-p)) ** (1.0 / shape)
 
 
 class Constant(Distribution):

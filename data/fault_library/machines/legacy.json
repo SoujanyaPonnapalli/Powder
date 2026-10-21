@@ -1,0 +1,50 @@
+[
+  {
+    "id": "machine/legacy-standard",
+    "kind": "machine",
+    "fault_profile": "legacy/vm-standard",
+    "tier": "ondemand",
+    "storage_mode": "legacy",
+    "regions": [
+      "us-east"
+    ],
+    "price": {
+      "route": "native",
+      "pool_keys": {
+        "us-east": "legacy:vm-standard:us-east:ondemand:linux"
+      }
+    }
+  },
+  {
+    "id": "machine/legacy-spot",
+    "kind": "machine",
+    "fault_profile": "legacy/vm-spot",
+    "tier": "spot",
+    "storage_mode": "legacy",
+    "regions": [
+      "us-east"
+    ],
+    "price": {
+      "route": "native",
+      "pool_keys": {
+        "us-east": "legacy:vm-spot:us-east:ondemand:linux"
+      }
+    }
+  },
+  {
+    "id": "machine/legacy-unreliable",
+    "kind": "machine",
+    "fault_profile": "legacy/vm-unreliable",
+    "tier": "ondemand",
+    "storage_mode": "legacy",
+    "regions": [
+      "us-east"
+    ],
+    "price": {
+      "route": "native",
+      "pool_keys": {
+        "us-east": "legacy:vm-unreliable:us-east:ondemand:linux"
+      }
+    }
+  }
+]

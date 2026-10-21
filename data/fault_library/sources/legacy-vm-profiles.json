@@ -1,0 +1,133 @@
+{
+  "id": "legacy-vm-profiles",
+  "kind": "source",
+  "title": "Hand-picked VM_PROFILES in notebooks/raft_markov_quality_benchmark.py",
+  "url": "notebooks/raft_markov_quality_benchmark.py",
+  "population": "none (placeholder assumptions, not measurements)",
+  "accessed": "2026-10-21",
+  "measurements": [
+    {
+      "id": "standard-mtbf-s",
+      "metric_verbatim": "Standard: mean_time_between_failures_s",
+      "value": 2592000.0,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "rate_per_hour = 3600 / value"
+    },
+    {
+      "id": "standard-recovery-s",
+      "metric_verbatim": "Standard: mean_recovery_time_s",
+      "value": 1200,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "exponential duration with this mean"
+    },
+    {
+      "id": "standard-mttdl-s",
+      "metric_verbatim": "Standard: mean_time_between_data_loss_s",
+      "value": 94608000.0,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "disk"
+      ],
+      "conversion": "rate_per_hour = 3600 / value"
+    },
+    {
+      "id": "standard-cost",
+      "metric_verbatim": "Standard: cost_per_hour",
+      "value": 0.1,
+      "unit": "USD/h",
+      "status": "V",
+      "covers": []
+    },
+    {
+      "id": "spot-mtbf-s",
+      "metric_verbatim": "Spot: mean_time_between_failures_s",
+      "value": 2592000.0,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "rate_per_hour = 3600 / value"
+    },
+    {
+      "id": "spot-recovery-s",
+      "metric_verbatim": "Spot: mean_recovery_time_s",
+      "value": 1200,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "exponential duration with this mean"
+    },
+    {
+      "id": "spot-mttdl-s",
+      "metric_verbatim": "Spot: mean_time_between_data_loss_s",
+      "value": 86400.0,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "disk"
+      ],
+      "conversion": "rate_per_hour = 3600 / value"
+    },
+    {
+      "id": "spot-cost",
+      "metric_verbatim": "Spot: cost_per_hour",
+      "value": 0.03,
+      "unit": "USD/h",
+      "status": "V",
+      "covers": []
+    },
+    {
+      "id": "unreliable-mtbf-s",
+      "metric_verbatim": "Unreliable: mean_time_between_failures_s",
+      "value": 2592000.0,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "rate_per_hour = 3600 / value"
+    },
+    {
+      "id": "unreliable-recovery-s",
+      "metric_verbatim": "Unreliable: mean_recovery_time_s",
+      "value": 1200,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "hw_reboot"
+      ],
+      "conversion": "exponential duration with this mean"
+    },
+    {
+      "id": "unreliable-mttdl-s",
+      "metric_verbatim": "Unreliable: mean_time_between_data_loss_s",
+      "value": 31536000.0,
+      "unit": "s",
+      "status": "V",
+      "covers": [
+        "disk"
+      ],
+      "conversion": "rate_per_hour = 3600 / value"
+    },
+    {
+      "id": "unreliable-cost",
+      "metric_verbatim": "Unreliable: cost_per_hour",
+      "value": 0.05,
+      "unit": "USD/h",
+      "status": "V",
+      "covers": []
+    }
+  ]
+}
