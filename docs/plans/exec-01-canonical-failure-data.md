@@ -907,3 +907,17 @@ Recorded deviations from §7 (and why):
 - Region outage EB uses the nine Azure US regions, not all regions worldwide: the incident search was thorough only for US regions. Window 2023-01-01 to 2026-10-20: PIRs older than ~5 years are gone, and since mid-2022 Microsoft publishes only broad incidents.
 - The software cause in `cloud/aws-ondemand-nvme` uses Ford's >=15-min node-restart : unplanned-reboot ratio (1 / 2.35 / 4.49) with >=15-min durations. Short automatic restarts are left to planned downtime and exec #10, because Ford's all-events node-restart rate (~57 per node-year) reflects Google's rollout practice.
 - Rust-side changes (new distributions, planned-downtime events, per-region outages) are not done: the sandbox has no Rust toolchain. Until then, `engine=True` maps new distributions to a Weibull with the same mean and median, and region outages collapse to the max regional rate.
+
+Known caveats to state in the paper (from the independent review, 2026-10-21):
+
+- `cloud/aws-ondemand-nvme` pairs a host-repair *rate* (Vishwanath, 2010, includes disk repairs) with Ford's
+  unplanned-reboot *durations* (Google, 2010): different fleets and event definitions. f_LM and the sw-ratio low
+  end (1.0) are assumptions, not measurements; the tornado sweep should show their effect.
+- The disk pool mixes application-visible disk errors (Ford), replacement rates (Schroeder & Gibson) and AFRs
+  (Backblaze HDD and boot SSD); the wide t-based interval is the honest summary.
+- `engine=True` matches the mean and median of non-native distributions but not the tails (e.g. p99 of the
+  Ford recovery mixture is about 1.7k s vs 1.2k s). Results that depend on tails should use the Python
+  simulator or wait for native engine support (§8).
+- `planned_downtime/ford10-rate` treats Google's planned reboots as quasi-periodic (sigma 12 h on a ~72-day gap);
+  Ford's data may be closer to random arrivals. It is a sensitivity variant only.
+- Independent planned-downtime phases ignore coordinated maintenance; the rolling variant brackets it.
