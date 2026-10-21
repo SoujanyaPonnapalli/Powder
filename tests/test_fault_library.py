@@ -642,8 +642,12 @@ def test_global_outage_process():
     for r in ro["regions"].values():  # the global event is not counted per region
         assert "2023-01-25-wan" not in r["incidents"]
     m = scenario_network_config(LIB, "scenario/canonical-central")
-    nc = m.as_network_config()
+    nc = m.as_network_config("max")
     assert math.isclose(nc.outage_dist.rate, max(m.rate_per_second.values()) + m.global_rate_per_second)
+    exact = m.as_network_config()
+    for r, rate in m.rate_per_second.items():
+        assert math.isclose(exact.outage_for(r).rate, rate)
+    assert math.isclose(exact.global_outage_dist.rate, m.global_rate_per_second)
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
     sid = _scenario(lib, "__gl__", region_outage="region_outage/aws-us-from-azure")
     ev = generate(lib, sid, {"x": ("machine/aws-ondemand-nvme", "us-east-1")}, days(365 * 200), seed=5)
@@ -700,3 +704,73 @@ def test_engine_runs_library_scenario_natively():
                          text=True, timeout=120)
     assert out.returncode == 0, out.stderr[-2000:]
     assert out.stdout.strip()
+
+
+
+def test_python_simulator_per_region_and_global_outages():
+    """Python simulator: per-region rates, a global process, and overlap counting."""
+    from powder.simulation import ClusterState, NetworkConfig, NetworkState, NodeState, NoOpStrategy, Simulator
+    from powder.simulation.network import NetworkState as NS
+    ns = NS()
+    ns.add_outage("a"); ns.add_outage("a"); ns.remove_outage("a")
+    assert ns.is_region_down("a")  # overlapping outages: still down after one ends
+    ns.remove_outage("a")
+    assert not ns.is_region_down("a")
+    never = Exponential(1e-12)
+    cfg = machine_node_config(LIB, "machine/legacy-standard", "r1")
+    from dataclasses import replace
+    nodes = {}
+    for i, r in enumerate(["r1", "r2", "r3"]):
+        c = replace(cfg, region=r, failure_dist=never, data_loss_dist=never)
+        nodes[f"n{i}"] = NodeState(node_id=f"n{i}", config=c)
+    net = NetworkConfig(outage_dist=never, outage_duration_dist=Exponential(1 / 3600.0), regions=["r1", "r2", "r3"],
+                        per_region={"r1": (Exponential(1 / days(10)), None)},
+                        global_outage_dist=Exponential(1 / days(40)))
+    from powder.simulation import RaftLikeProtocol
+    sim = Simulator(ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=3), NoOpStrategy(),
+                    RaftLikeProtocol(election_time_dist=Exponential(0.2)), network_config=net, seed=3, log_events=True)
+    from powder.simulation import EventType
+    sim.run_for(days(4000))
+    starts = {"r1": 0, "r2": 0, "r3": 0, "__global__": 0}
+    for ev in sim.event_log:
+        if ev.event_type == EventType.NETWORK_OUTAGE_START:
+            starts[ev.metadata.get("region", ev.target_id)] += 1
+    assert 300 < starts["r1"] < 500 and starts["r2"] == 0  # r1 every ~10 d, r2 never
+    assert 70 < starts["__global__"] < 130  # ~100 global events in 4000 d
+
+
+def test_engine_global_outages_take_quorum_down():
+    """powder-mc: a global outage process lowers 3-region availability by ~rate x duration;
+    outages confined to one region do not break quorum."""
+    import subprocess
+    from dataclasses import replace
+    from powder.mc_jobs import EngineNotFound, binary_path, build_job
+    from powder.simulation import (ClusterState, NetworkConfig, NetworkState, NodeReplacementStrategy, NodeState,
+                                   RaftLikeProtocol)
+    try:
+        binary = binary_path()
+        subprocess.run([str(binary), "--help"], capture_output=True, check=True, timeout=30)
+    except (EngineNotFound, OSError, subprocess.SubprocessError):
+        return
+    never = Exponential(1e-12)
+    base = machine_node_config(LIB, "machine/legacy-standard", "r1")
+
+    def run(net):
+        nodes = {f"n{i}": NodeState(node_id=f"n{i}", config=replace(base, region=r, failure_dist=never,
+                                                                     data_loss_dist=never))
+                 for i, r in enumerate(["r1", "r2", "r3"])}
+        job = build_job(ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=3),
+                        NodeReplacementStrategy(1e12, None), RaftLikeProtocol(election_time_dist=Exponential(1.0)),
+                        num_simulations=300, max_time=days(365), stop_on_data_loss=False, base_seed=7, network_config=net)
+        out = subprocess.run([str(binary), "--stream"], input=json.dumps(job) + "\n", capture_output=True, text=True,
+                             timeout=150)
+        assert out.returncode == 0, out.stderr[-800:]
+        return json.loads(out.stdout.splitlines()[0])["summary"]["availability_mean"]
+
+    dur = Exponential(1 / 36000.0)  # 10 h
+    regions = ["r1", "r2", "r3"]
+    one_region = run(NetworkConfig(never, dur, regions, per_region={"r1": (Exponential(1 / days(5)), None)}))
+    glob = run(NetworkConfig(never, dur, regions, global_outage_dist=Exponential(1 / days(20))))
+    assert one_region > 0.99999
+    expected = 1 - (365 / 20) * 10 / 8760
+    assert abs(glob - expected) < 0.005, (glob, expected)

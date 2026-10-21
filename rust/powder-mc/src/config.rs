@@ -393,6 +393,23 @@ pub struct NetworkConfigSpec {
     /// Regions that can experience outages.
     #[serde(default)]
     pub regions: Vec<String>,
+    /// Optional per-region overrides of the outage (and duration) distribution.
+    #[serde(default)]
+    pub per_region: std::collections::BTreeMap<String, OutageProcessSpec>,
+    /// Optional global process: each event takes every region down at once.
+    #[serde(default)]
+    pub global: Option<OutageProcessSpec>,
+}
+
+/// One outage process: time to the next outage and (optionally) its duration;
+/// a missing duration falls back to the network-wide `outage_duration_dist`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct OutageProcessSpec {
+    /// Time until the next outage.
+    pub outage_dist: DistributionSpec,
+    /// Duration of each outage (optional).
+    #[serde(default)]
+    pub outage_duration_dist: Option<DistributionSpec>,
 }
 
 // ---------------------------------------------------------------------------
@@ -736,10 +753,36 @@ impl Job {
                     .iter()
                     .map(|r| cluster.intern(r))
                     .collect::<Vec<_>>();
+                let mut per_region = Vec::new();
+                for (name, p) in &spec.per_region {
+                    if !spec.regions.iter().any(|r| r == name) {
+                        return Err(ConfigError(format!(
+                            "network_config.per_region has region {name:?} that is not in regions"
+                        )));
+                    }
+                    let dur = match &p.outage_duration_dist {
+                        Some(d) => Some(d.build()?),
+                        None => None,
+                    };
+                    per_region.push((cluster.intern(name), p.outage_dist.build()?, dur));
+                }
+                let global = match &spec.global {
+                    Some(g) => Some((
+                        cluster.intern(crate::sim::network::GLOBAL_REGION),
+                        g.outage_dist.build()?,
+                        match &g.outage_duration_dist {
+                            Some(d) => Some(d.build()?),
+                            None => None,
+                        },
+                    )),
+                    None => None,
+                };
                 Some(NetworkConfig {
                     outage_dist: spec.outage_dist.build()?,
                     outage_duration_dist: spec.outage_duration_dist.build()?,
                     regions,
+                    per_region,
+                    global,
                 })
             }
             None => None,
@@ -1017,5 +1060,26 @@ mod tests {
         )
         .unwrap();
         assert!(with_tail.build().is_err());
+    }
+
+    #[test]
+    fn network_config_per_region_and_global_parse() {
+        let spec: NetworkConfigSpec = serde_json::from_str(
+            r#"{"outage_dist": {"type": "exponential", "rate": 1e-9},
+                "outage_duration_dist": {"type": "constant", "value": 3600},
+                "regions": ["a", "b"],
+                "per_region": {"a": {"outage_dist": {"type": "exponential", "rate": 1e-6}}},
+                "global": {"outage_dist": {"type": "exponential", "rate": 1e-7},
+                           "outage_duration_dist": {"type": "lognormal", "mu": 9.0, "sigma": 0.7}}}"#,
+        )
+        .unwrap();
+        assert_eq!(spec.per_region.len(), 1);
+        assert!(spec.global.is_some());
+        let old: NetworkConfigSpec = serde_json::from_str(
+            r#"{"outage_dist": {"type": "exponential", "rate": 1e-9},
+                "outage_duration_dist": {"type": "constant", "value": 3600}, "regions": ["a"]}"#,
+        )
+        .unwrap();
+        assert!(old.per_region.is_empty() && old.global.is_none()); // backward compatible
     }
 }

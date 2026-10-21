@@ -192,8 +192,12 @@ impl Simulator {
         }
 
         if let Some(config) = &self.network_config {
+            let global = config.global.as_ref().map(|g| g.0);
             for region in config.regions.clone() {
                 self.schedule_network_outage(region);
+            }
+            if let Some(g) = global {
+                self.schedule_network_outage(g);
             }
         }
 
@@ -280,11 +284,11 @@ impl Simulator {
         let Some(config) = &self.network_config else {
             return;
         };
-        if !config.regions.contains(&region) {
+        let Some(dist) = config.outage_for(region) else {
             return;
-        }
+        };
 
-        let outage_delay = config.outage_dist.sample(&mut self.rng);
+        let outage_delay = dist.sample(&mut self.rng);
         let current_time = self.cluster.current_time;
         self.event_queue.push(Event::with_meta(
             current_time + outage_delay,
@@ -977,9 +981,8 @@ impl Simulator {
         self.start_sync(node_index, None);
     }
 
-    /// Apply the start of a region outage.
-    fn apply_network_outage_start(&mut self, event: &Event) {
-        let region = event.metadata.region().unwrap_or(event.target_id);
+    /// Mark one region down and stop the syncs that involve its nodes.
+    fn region_goes_down(&mut self, region: Sym) {
         self.cluster.network.add_outage(region);
 
         // Clear syncs for nodes in the affected region, and deal with
@@ -1003,23 +1006,14 @@ impl Simulator {
             self.cancel_syncs_from_donor(node_id);
         }
         self.scratch_region_syms = affected;
-
-        if let Some(config) = &self.network_config {
-            let duration = config.outage_duration_dist.sample(&mut self.rng);
-            let current_time = self.cluster.current_time;
-            self.event_queue.push(Event::with_meta(
-                current_time + duration,
-                EventType::NetworkOutageEnd,
-                region,
-                EventMeta::Region(region),
-            ));
-        }
     }
 
-    /// Apply the end of a region outage.
-    fn apply_network_outage_end(&mut self, event: &Event) {
-        let region = event.metadata.region().unwrap_or(event.target_id);
+    /// End one outage of a region; restart syncs once it is reachable again.
+    fn region_comes_up(&mut self, region: Sym) {
         self.cluster.network.remove_outage(region);
+        if self.cluster.network.is_region_down(region) {
+            return; // an overlapping outage still holds it down
+        }
 
         let commit_index = self.cluster.commit_index;
         let mut recovered = std::mem::take(&mut self.scratch_region);
@@ -1044,7 +1038,42 @@ impl Simulator {
             self.start_sync(recovered[i], None);
         }
         self.scratch_region = recovered;
+    }
 
+    /// Regions affected by an outage event targeting `sym` (all regions for
+    /// the global process).
+    fn outage_targets(&self, sym: Sym) -> Vec<Sym> {
+        match &self.network_config {
+            Some(c) if c.is_global(sym) => c.regions.clone(),
+            _ => vec![sym],
+        }
+    }
+
+    /// Apply the start of a region (or global) outage.
+    fn apply_network_outage_start(&mut self, event: &Event) {
+        let region = event.metadata.region().unwrap_or(event.target_id);
+        for r in self.outage_targets(region) {
+            self.region_goes_down(r);
+        }
+
+        if let Some(config) = &self.network_config {
+            let duration = config.duration_for(region).sample(&mut self.rng);
+            let current_time = self.cluster.current_time;
+            self.event_queue.push(Event::with_meta(
+                current_time + duration,
+                EventType::NetworkOutageEnd,
+                region,
+                EventMeta::Region(region),
+            ));
+        }
+    }
+
+    /// Apply the end of a region (or global) outage.
+    fn apply_network_outage_end(&mut self, event: &Event) {
+        let region = event.metadata.region().unwrap_or(event.target_id);
+        for r in self.outage_targets(region) {
+            self.region_comes_up(r);
+        }
         self.schedule_network_outage(region);
     }
 

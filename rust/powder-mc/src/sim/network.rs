@@ -11,22 +11,68 @@
 use super::distributions::Distribution;
 use super::ids::Sym;
 
+/// Name of the pseudo-region that targets global (all-regions) outage events.
+pub const GLOBAL_REGION: &str = "__global__";
+
 /// Configuration for network outage behaviour.
 #[derive(Debug, Clone, PartialEq)]
 pub struct NetworkConfig {
-    /// Time (seconds) until the next outage in a region.
+    /// Time (seconds) until the next outage in a region (default).
     pub outage_dist: Distribution,
-    /// Duration (seconds) of each outage.
+    /// Duration (seconds) of each outage (default).
     pub outage_duration_dist: Distribution,
     /// Interned regions that can experience full outages.
     pub regions: Vec<Sym>,
+    /// Per-region overrides: `(region, time-to-outage, optional duration)`.
+    pub per_region: Vec<(Sym, Distribution, Option<Distribution>)>,
+    /// Global process: `(pseudo-region symbol, time-to-outage, optional duration)`;
+    /// each event takes every region in `regions` down at once.
+    pub global: Option<(Sym, Distribution, Option<Distribution>)>,
+}
+
+impl NetworkConfig {
+    /// Whether `sym` is the global pseudo-region.
+    pub fn is_global(&self, sym: Sym) -> bool {
+        matches!(&self.global, Some((g, _, _)) if *g == sym)
+    }
+
+    /// Time-to-outage distribution for a region (or the global process).
+    pub fn outage_for(&self, sym: Sym) -> Option<&Distribution> {
+        if let Some((g, d, _)) = &self.global {
+            if *g == sym {
+                return Some(d);
+            }
+        }
+        if let Some((_, d, _)) = self.per_region.iter().find(|(r, _, _)| *r == sym) {
+            return Some(d);
+        }
+        if self.regions.contains(&sym) {
+            Some(&self.outage_dist)
+        } else {
+            None
+        }
+    }
+
+    /// Duration distribution for a region (or the global process).
+    pub fn duration_for(&self, sym: Sym) -> &Distribution {
+        if let Some((g, _, d)) = &self.global {
+            if *g == sym {
+                return d.as_ref().unwrap_or(&self.outage_duration_dist);
+            }
+        }
+        match self.per_region.iter().find(|(r, _, _)| *r == sym) {
+            Some((_, _, Some(d))) => d,
+            _ => &self.outage_duration_dist,
+        }
+    }
 }
 
 /// Dynamic network state.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct NetworkState {
-    /// `down[r]` is true while region `r` is in an active outage.
-    down: Vec<bool>,
+    /// `down[r]` counts the active (possibly overlapping) outages of region `r`;
+    /// the region is down while it is positive.
+    down: Vec<u32>,
     /// Number of regions currently down; lets callers skip the lookup
     /// entirely in the common no-outage case.
     active_count: usize,
@@ -54,7 +100,7 @@ impl NetworkState {
     #[inline]
     pub fn is_region_down(&self, region: Sym) -> bool {
         match self.down.get(region as usize) {
-            Some(&d) => d,
+            Some(&d) => d > 0,
             None => false,
         }
     }
@@ -64,24 +110,27 @@ impl NetworkState {
         self.is_region_down(region_a) || self.is_region_down(region_b)
     }
 
-    /// Record a new network outage for a region.  Idempotent.
+    /// Record a new network outage for a region.  Outages may overlap (e.g. a
+    /// global outage during a regional one); each must be removed once.
     pub fn add_outage(&mut self, region: Sym) {
         let idx = region as usize;
         if self.down.len() <= idx {
-            self.down.resize(idx + 1, false);
+            self.down.resize(idx + 1, 0);
         }
-        if !self.down[idx] {
-            self.down[idx] = true;
+        if self.down[idx] == 0 {
             self.active_count += 1;
         }
+        self.down[idx] += 1;
     }
 
-    /// Record the end of a network outage for a region.  Idempotent.
+    /// Record the end of one network outage for a region.
     pub fn remove_outage(&mut self, region: Sym) {
         let idx = region as usize;
-        if idx < self.down.len() && self.down[idx] {
-            self.down[idx] = false;
-            self.active_count -= 1;
+        if idx < self.down.len() && self.down[idx] > 0 {
+            self.down[idx] -= 1;
+            if self.down[idx] == 0 {
+                self.active_count -= 1;
+            }
         }
     }
 
@@ -100,7 +149,7 @@ impl NetworkState {
         self.down
             .iter()
             .enumerate()
-            .filter(|(_, &d)| d)
+            .filter(|(_, &d)| d > 0)
             .map(|(i, _)| i as Sym)
             .collect()
     }

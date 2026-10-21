@@ -184,20 +184,29 @@ class RegionOutageModel:
     global_rate_per_second: float = 0.0
     global_duration: Distribution | None = None
 
-    def as_network_config(self, rule: str = "max", engine: bool = False) -> NetworkConfig:
-        """Collapse to today's single-distribution NetworkConfig.
+    def as_network_config(self, rule: str = "exact", engine: bool = False) -> NetworkConfig:
+        """NetworkConfig for both engines.
 
-        The current engines take one outage distribution for all regions.
-        ``rule='max'`` (default) uses the largest regional rate, which is
-        conservative; ``'mean'`` uses the average. Per-region outage specs in
-        the engines are a planned follow-up (plan Step F).
+        ``rule='exact'`` (default) emits one outage process per region plus the
+        separate global process (both engines support this since 2026-10-21).
+        ``'max'`` / ``'mean'`` collapse to a single rate (+ global rate) for
+        consumers that take one distribution only (e.g. the Markov builders).
         """
+        fix = engine_compatible if engine else (lambda d: d)
+        dur = fix(self.duration)
         rates = list(self.rate_per_second.values())
-        # The engines have no correlated (all-region) outages: the global
-        # process is added to the per-region rate, which keeps each region's
-        # marginal outage rate right but loses the correlation.
+        if rule == "exact":
+            base = max(rates) if rates else 0.0
+            return NetworkConfig(
+                outage_dist=Exponential(base) if base > 0 else NEVER,
+                outage_duration_dist=dur,
+                regions=sorted(self.rate_per_second),
+                per_region={r: (Exponential(v) if v > 0 else NEVER, None)
+                            for r, v in sorted(self.rate_per_second.items())},
+                global_outage_dist=Exponential(self.global_rate_per_second) if self.global_rate_per_second > 0 else None,
+                global_duration_dist=fix(self.global_duration) if self.global_duration is not None else None,
+            )
         rate = (max(rates) if rule == "max" else sum(rates) / len(rates)) + self.global_rate_per_second
-        dur = engine_compatible(self.duration) if engine else self.duration
         return NetworkConfig(
             outage_dist=Exponential(rate) if rate > 0 else NEVER,
             outage_duration_dist=dur,

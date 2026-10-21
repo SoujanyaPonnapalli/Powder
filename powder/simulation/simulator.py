@@ -14,7 +14,7 @@ from .cluster import ClusterState
 from .distributions import Seconds
 from .events import Event, EventQueue, EventType
 from .metrics import MetricsCollector, MetricsSnapshot
-from .network import NetworkConfig
+from .network import GLOBAL_REGION, NetworkConfig
 from .node import NodeConfig, NodeState, SyncState
 from .protocol import Protocol
 from .strategy import Action, ActionType, ClusterStrategy
@@ -114,6 +114,8 @@ class Simulator:
         if self.network_config:
             for region in self.network_config.regions:
                 self._schedule_network_outage(region)
+            if self.network_config.global_outage_dist is not None:
+                self._schedule_network_outage(GLOBAL_REGION)
 
         # Initialize protocol (e.g., pick initial leader)
         for event in self.protocol.on_simulation_start(self.cluster, self.rng):
@@ -162,11 +164,18 @@ class Simulator:
         Args:
             region: The region to schedule an outage for.
         """
-        if not self.network_config or region not in self.network_config.regions:
+        if not self.network_config:
+            return
+        if region == GLOBAL_REGION:
+            if self.network_config.global_outage_dist is None:
+                return
+            outage_delay = self.network_config.global_outage_dist.sample(self.rng)
+        elif region in self.network_config.regions:
+            outage_delay = self.network_config.outage_for(region).sample(self.rng)
+        else:
             return
 
         current_time = self.cluster.current_time
-        outage_delay = self.network_config.outage_dist.sample(self.rng)
 
         self.event_queue.push(
             Event(
@@ -777,29 +786,44 @@ class Simulator:
             # Start sync from a donor
             self._start_sync(new_node)
 
+    def _region_goes_down(self, region: str) -> None:
+        """Mark a region down and stop syncs that involve its nodes."""
+        self.cluster.network.add_outage(region)
+        for node in self.cluster._all_nodes:
+            if node.config.region == region:
+                self.event_queue.cancel_events_for(node.node_id, EventType.NODE_SYNC_COMPLETE)
+                node.sync = None
+                # This node may have been a donor
+                self._cancel_syncs_from_donor(node.node_id)
+
+    def _region_comes_up(self, region: str) -> None:
+        """End one outage of a region; restart syncs once it is reachable again."""
+        self.cluster.network.remove_outage(region)
+        if self.cluster.network.is_region_down(region):
+            return  # another (overlapping) outage still holds it down
+        for node in self.cluster._all_nodes:
+            if (
+                node.config.region == region
+                and node.is_available
+                and node.has_data
+                and not node.is_up_to_date(self.cluster.commit_index)
+                and node.sync is None
+            ):
+                self._start_sync(node)
+
     def _apply_network_outage_start(self, event: Event) -> None:
         """Apply start of a region network outage (all nodes in region become unavailable).
 
-        Cancels syncs for nodes in the affected region and handles donor
+        A ``GLOBAL_REGION`` target takes every configured region down at once.
+        Cancels syncs for nodes in the affected region(s) and handles donor
         failover for nodes that were syncing from them.
         """
         region = event.metadata.get("region", event.target_id)
         if region:
-            self.cluster.network.add_outage(region)
-
-            # Cancel syncs for nodes in the affected region and handle
-            # downstream syncs that used these nodes as donors.
-            for node in self.cluster._all_nodes:
-                if node.config.region == region:
-                    self.event_queue.cancel_events_for(
-                        node.node_id, EventType.NODE_SYNC_COMPLETE
-                    )
-                    node.sync = None
-                    # This node may have been a donor
-                    self._cancel_syncs_from_donor(node.node_id)
-
-            # Schedule outage end
-            duration = self.network_config.outage_duration_dist.sample(self.rng)
+            targets = self.network_config.regions if region == GLOBAL_REGION else [region]
+            for r in targets:
+                self._region_goes_down(r)
+            duration = self.network_config.duration_for(region).sample(self.rng)
             self.event_queue.push(
                 Event(
                     time=Seconds(self.cluster.current_time + duration),
@@ -810,7 +834,7 @@ class Simulator:
             )
 
     def _apply_network_outage_end(self, event: Event) -> None:
-        """Apply end of a region network outage.
+        """Apply end of a region (or global) network outage.
 
         Recovered nodes may need to sync.  They may also serve as donors,
         so pending syncs are retried (handled by the _retry_pending_syncs
@@ -818,20 +842,10 @@ class Simulator:
         """
         region = event.metadata.get("region", event.target_id)
         if region:
-            self.cluster.network.remove_outage(region)
-
-            # Start syncs for nodes in the recovered region that fell behind.
-            for node in self.cluster._all_nodes:
-                if (
-                    node.config.region == region
-                    and node.is_available
-                    and node.has_data
-                    and not node.is_up_to_date(self.cluster.commit_index)
-                    and node.sync is None
-                ):
-                    self._start_sync(node)
-
-            # Schedule next outage for this region
+            targets = self.network_config.regions if region == GLOBAL_REGION else [region]
+            for r in targets:
+                self._region_comes_up(r)
+            # Schedule next outage for this region (or the next global outage)
             self._schedule_network_outage(region)
 
     def _execute_action(self, action: Action) -> None:

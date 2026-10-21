@@ -234,12 +234,23 @@ def strategy_spec(
 
 
 def network_config_spec(network: NetworkConfig) -> dict[str, Any]:
-    """Convert a `NetworkConfig` into its JSON form."""
-    return {
+    """Convert a `NetworkConfig` into its JSON form (per-region and global
+    outage processes are optional and omitted when unused)."""
+    spec: dict[str, Any] = {
         "outage_dist": distribution_spec(network.outage_dist),
         "outage_duration_dist": distribution_spec(network.outage_duration_dist),
         "regions": list(network.regions),
     }
+    if network.per_region:
+        spec["per_region"] = {
+            r: {"outage_dist": distribution_spec(o),
+                **({"outage_duration_dist": distribution_spec(d)} if d is not None else {})}
+            for r, (o, d) in network.per_region.items()}
+    if network.global_outage_dist is not None:
+        spec["global"] = {"outage_dist": distribution_spec(network.global_outage_dist)}
+        if network.global_duration_dist is not None:
+            spec["global"]["outage_duration_dist"] = distribution_spec(network.global_duration_dist)
+    return spec
 
 
 def build_job(

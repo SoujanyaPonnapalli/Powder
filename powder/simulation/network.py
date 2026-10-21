@@ -10,19 +10,42 @@ from dataclasses import dataclass, field
 from .distributions import Distribution
 
 
+#: Pseudo-region used as the target of global (all-regions) outage events.
+GLOBAL_REGION = "__global__"
+
+
 @dataclass
 class NetworkConfig:
     """Configuration for network outage behavior.
 
     Attributes:
-        outage_dist: Distribution for time (seconds) until next outage occurs.
+        outage_dist: Distribution for time (seconds) until next outage occurs
+            (default for every region).
         outage_duration_dist: Distribution for duration (seconds) of each outage.
-        affected_regions: List of region names that can experience full outages.
+        regions: Region names that can experience full outages.
+        per_region: Optional per-region overrides, ``{region: (outage_dist,
+            duration_dist or None)}``; ``None`` keeps the default duration.
+        global_outage_dist: Optional time until the next *global* outage, which
+            takes every region in ``regions`` down at once (correlated process).
+        global_duration_dist: Duration of global outages (defaults to
+            ``outage_duration_dist``).
     """
 
     outage_dist: Distribution
     outage_duration_dist: Distribution
     regions: list[str] = field(default_factory=list)
+    per_region: dict = field(default_factory=dict)
+    global_outage_dist: Distribution | None = None
+    global_duration_dist: Distribution | None = None
+
+    def outage_for(self, region: str) -> Distribution:
+        return self.per_region.get(region, (self.outage_dist, None))[0]
+
+    def duration_for(self, region: str) -> Distribution:
+        if region == GLOBAL_REGION:
+            return self.global_duration_dist or self.outage_duration_dist
+        dur = self.per_region.get(region, (None, None))[1]
+        return dur or self.outage_duration_dist
 
 
 @dataclass
@@ -37,6 +60,9 @@ class NetworkState:
     """
 
     active_outages: set[str] = field(default_factory=set)
+    #: Overlapping outages per region (a global outage can overlap a regional
+    #: one); a region is down while its count is positive.
+    outage_counts: dict = field(default_factory=dict)
 
     def is_region_down(self, region: str) -> bool:
         """Check if a region's network is currently down.
@@ -64,12 +90,18 @@ class NetworkState:
         return self.is_region_down(region_a) or self.is_region_down(region_b)
 
     def add_outage(self, region: str) -> None:
-        """Record a new network outage for a region."""
+        """Record a new network outage for a region (outages may overlap)."""
+        self.outage_counts[region] = self.outage_counts.get(region, 0) + 1
         self.active_outages.add(region)
 
     def remove_outage(self, region: str) -> None:
-        """Record end of a network outage for a region."""
-        self.active_outages.discard(region)
+        """Record end of one network outage for a region."""
+        n = self.outage_counts.get(region, 1) - 1
+        if n <= 0:
+            self.outage_counts.pop(region, None)
+            self.active_outages.discard(region)
+        else:
+            self.outage_counts[region] = n
 
     def regions_reachable_from(self, region: str, all_regions: set[str]) -> set[str]:
         """Get all regions reachable from the given region.
