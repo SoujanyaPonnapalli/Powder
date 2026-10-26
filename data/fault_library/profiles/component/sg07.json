@@ -1,0 +1,247 @@
+[
+ {
+  "kind": "component",
+  "component": "disk",
+  "version": 1,
+  "built_by": "scripts/fault_library/build_sg07.py",
+  "id": "disk/sg07-systems",
+  "derived_from": [
+   "sg07#table1-arr"
+  ],
+  "rate_per_hour": {
+   "low": 5.718163157134704e-07,
+   "central": 3.484413888871715e-06,
+   "high": 1.6676079189833613e-05
+  },
+  "rate_model": {
+   "type": "population",
+   "members": [
+    {
+     "id": "sg07:HPC1-a",
+     "rate_per_hour": 4.656855409565952e-06,
+     "weight": 2318.0,
+     "drive": "18GB 10K SCSI",
+     "arr_pct": 4.0
+    },
+    {
+     "id": "sg07:HPC1-b",
+     "rate_per_hour": 2.5377149152771753e-06,
+     "weight": 1088.0,
+     "drive": "36GB 10K SCSI",
+     "arr_pct": 2.2
+    },
+    {
+     "id": "sg07:HPC2",
+     "rate_per_hour": 1.2618009764345127e-06,
+     "weight": 520.0,
+     "drive": "36GB 10K SCSI",
+     "arr_pct": 1.1
+    },
+    {
+     "id": "sg07:HPC3-a",
+     "rate_per_hour": 4.300920281087326e-06,
+     "weight": 3064.0,
+     "drive": "146GB 15K SCSI",
+     "arr_pct": 3.7
+    },
+    {
+     "id": "sg07:HPC3-b",
+     "rate_per_hour": 3.4746985494762202e-06,
+     "weight": 144.0,
+     "drive": "73GB 15K SCSI",
+     "arr_pct": 3.0
+    },
+    {
+     "id": "sg07:HPC3-c",
+     "rate_per_hour": 3.828061091585983e-06,
+     "weight": 11000.0,
+     "drive": "250GB 7.2K SATA",
+     "arr_pct": 3.3
+    },
+    {
+     "id": "sg07:HPC4-a",
+     "rate_per_hour": 2.5377149152771753e-06,
+     "weight": 8430.0,
+     "drive": "250GB SATA",
+     "arr_pct": 2.2
+    },
+    {
+     "id": "sg07:HPC4-b",
+     "rate_per_hour": 5.718163157134704e-07,
+     "weight": 2030.0,
+     "drive": "500GB SATA",
+     "arr_pct": 0.5
+    },
+    {
+     "id": "sg07:HPC4-c",
+     "rate_per_hour": 9.162869834889641e-07,
+     "weight": 3158.0,
+     "drive": "400GB SATA",
+     "arr_pct": 0.8
+    },
+    {
+     "id": "sg07:COM1",
+     "rate_per_hour": 3.2397301530570355e-06,
+     "weight": 26734.0,
+     "drive": "10K SCSI",
+     "arr_pct": 2.8
+    },
+    {
+     "id": "sg07:COM2",
+     "rate_per_hour": 3.5923644868093567e-06,
+     "weight": 39039.0,
+     "drive": "15K SCSI",
+     "arr_pct": 3.1
+    },
+    {
+     "id": "sg07:COM3-a",
+     "rate_per_hour": 4.1825216029650284e-06,
+     "weight": 56.0,
+     "drive": "10K FC",
+     "arr_pct": 3.6
+    },
+    {
+     "id": "sg07:COM3-b",
+     "rate_per_hour": 6.332729857433126e-06,
+     "weight": 2450.0,
+     "drive": "10K FC",
+     "arr_pct": 5.4
+    },
+    {
+     "id": "sg07:COM3-c",
+     "rate_per_hour": 1.6676079189833613e-05,
+     "weight": 796.0,
+     "drive": "10K FC",
+     "arr_pct": 13.6
+    }
+   ]
+  },
+  "notes": "Schroeder & Gibson FAST'07 Table 1: annual replacement rate per data-set row (HPC and internet-service drives, 2001-2006), weight = disk count; the 1998 COM3 drives past their nominal lifetime are excluded. Triple: min / disk-weighted mean / max."
+ },
+ {
+  "kind": "component",
+  "component": "disk",
+  "version": 1,
+  "built_by": "scripts/fault_library/build_sg07.py",
+  "id": "disk/sg07-age",
+  "derived_from": [
+   "sg07#fig3-yearly"
+  ],
+  "rate_per_hour": {
+   "low": 0.0,
+   "central": 3.530978317372829e-06,
+   "high": 8.956541737521193e-06
+  },
+  "rate_model": {
+   "type": "curve_population",
+   "clock": "age",
+   "periodic": false,
+   "members": [
+    {
+     "id": "sg07:hpc1-compute",
+     "weight": 1.0,
+     "edges_h": [
+      0.0,
+      8766.0,
+      17532.0,
+      26298.0,
+      35064.0,
+      43830.0
+     ],
+     "rate_per_hour": [
+      7.910089667955332e-07,
+      1.936257564192423e-06,
+      4.929301942263072e-06,
+      8.956541737521193e-06,
+      7.949166651591932e-06
+     ],
+     "start_h": {
+      "type": "weights",
+      "edges_h": [
+       0.0,
+       8766.0,
+       17532.0,
+       26298.0,
+       35064.0,
+       43830.0
+      ],
+      "weights": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    },
+    {
+     "id": "sg07:hpc1-filesystem",
+     "weight": 1.0,
+     "edges_h": [
+      0.0,
+      8766.0,
+      17532.0,
+      26298.0,
+      35064.0,
+      43830.0
+     ],
+     "rate_per_hour": [
+      0.0,
+      1.0543670279411999e-06,
+      2.118570110134083e-06,
+      4.164772395222793e-06,
+      6.176071880064825e-06
+     ],
+     "start_h": {
+      "type": "weights",
+      "edges_h": [
+       0.0,
+       8766.0,
+       17532.0,
+       26298.0,
+       35064.0,
+       43830.0
+      ],
+      "weights": [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    },
+    {
+     "id": "sg07:hpc4-type1",
+     "weight": 1.0,
+     "edges_h": [
+      0.0,
+      8766.0,
+      17532.0,
+      26298.0
+     ],
+     "rate_per_hour": [
+      1.6338207857125716e-06,
+      2.8063103888013577e-06,
+      3.3865286756057904e-06
+     ],
+     "start_h": {
+      "type": "weights",
+      "edges_h": [
+       0.0,
+       8766.0,
+       17532.0,
+       26298.0
+      ],
+      "weights": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     }
+    }
+   ]
+  },
+  "notes": "Schroeder & Gibson FAST'07 Fig 3: yearly replacement rate by age (rising from year 1: early wear-out, no infant-mortality dip). Age at t = 0 uniform over the observed years; past the last year the last rate continues."
+ }
+]

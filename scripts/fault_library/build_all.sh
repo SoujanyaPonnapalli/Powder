@@ -16,6 +16,7 @@ $PY scripts/fault_library/build_region_outages.py > /dev/null
 if $PY scripts/fault_library/build_prices.py; then :; else
   rc=$?; [ "$rc" -eq 2 ] || exit "$rc"   # 2 = no raw prices yet
 fi
+$PY scripts/fault_library/build_sg07.py > /dev/null
 $PY scripts/fault_library/build_rate_models.py > /dev/null
 $PY scripts/fault_library/build_machines.py > /dev/null
 $PY scripts/fault_library/build_catalogue.py > /dev/null

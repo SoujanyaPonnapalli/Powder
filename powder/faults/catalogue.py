@@ -51,8 +51,8 @@ US_REGIONS = ("us-east-1", "us-east-2", "us-west-1", "us-west-2")
 #: overlap with the weekly planned window (cluster/ford10-google-storage counts rollout restarts).
 TRANSIENT_BASES = ("cloud/aws-ondemand-nvme", "cluster/ford10-google-storage-ge15min")
 #: Disk components usable in recipes (all count drives removed as failed: permanent).
-DISK_COMPONENTS = ("disk/backblaze-models-age", "disk/backblaze-models", "disk/pooled",
-                   "disk/schroeder-gibson-fast07", "disk/vishwanath10", "disk/ford10")
+DISK_COMPONENTS = ("disk/backblaze-models-age", "disk/backblaze-models", "disk/sg07-age", "disk/sg07-systems",
+                   "disk/pooled", "disk/schroeder-gibson-fast07", "disk/vishwanath10", "disk/ford10")
 SPOT_COMPONENT = "spot/spotlake-pools"
 DEFAULT_HORIZON_H = 30 * 24.0
 

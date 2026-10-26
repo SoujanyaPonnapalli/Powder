@@ -1,0 +1,120 @@
+{
+  "id": "sg07",
+  "kind": "source",
+  "title": "Disk failures in the real world: What does an MTTF of 1,000,000 hours mean to you? (FAST'07)",
+  "authors": "B. Schroeder, G. A. Gibson",
+  "url": "https://www.usenix.org/legacy/events/fast07/tech/schroeder/schroeder.pdf",
+  "accessed": "2026-10-26",
+  "population": "~100k drives in 7 data sets (HPC sites and internet services), 2001-2006",
+  "measurements": [
+    {
+      "id": "table1-arr",
+      "metric_verbatim": "Table 1: ARR (%) and disk count per data-set row",
+      "value": [
+        {
+          "row": "HPC1-a",
+          "drive": "18GB 10K SCSI",
+          "disks": 2318,
+          "arr_pct": 4.0
+        },
+        {
+          "row": "HPC1-b",
+          "drive": "36GB 10K SCSI",
+          "disks": 1088,
+          "arr_pct": 2.2
+        },
+        {
+          "row": "HPC2",
+          "drive": "36GB 10K SCSI",
+          "disks": 520,
+          "arr_pct": 1.1
+        },
+        {
+          "row": "HPC3-a",
+          "drive": "146GB 15K SCSI",
+          "disks": 3064,
+          "arr_pct": 3.7
+        },
+        {
+          "row": "HPC3-b",
+          "drive": "73GB 15K SCSI",
+          "disks": 144,
+          "arr_pct": 3.0
+        },
+        {
+          "row": "HPC3-c",
+          "drive": "250GB 7.2K SATA",
+          "disks": 11000,
+          "arr_pct": 3.3
+        },
+        {
+          "row": "HPC4-a",
+          "drive": "250GB SATA",
+          "disks": 8430,
+          "arr_pct": 2.2
+        },
+        {
+          "row": "HPC4-b",
+          "drive": "500GB SATA",
+          "disks": 2030,
+          "arr_pct": 0.5
+        },
+        {
+          "row": "HPC4-c",
+          "drive": "400GB SATA",
+          "disks": 3158,
+          "arr_pct": 0.8
+        },
+        {
+          "row": "COM1",
+          "drive": "10K SCSI",
+          "disks": 26734,
+          "arr_pct": 2.8
+        },
+        {
+          "row": "COM2",
+          "drive": "15K SCSI",
+          "disks": 39039,
+          "arr_pct": 3.1
+        },
+        {
+          "row": "COM3-a",
+          "drive": "10K FC",
+          "disks": 56,
+          "arr_pct": 3.6
+        },
+        {
+          "row": "COM3-b",
+          "drive": "10K FC",
+          "disks": 2450,
+          "arr_pct": 5.4
+        },
+        {
+          "row": "COM3-c",
+          "drive": "10K FC",
+          "disks": 796,
+          "arr_pct": 13.6
+        }
+      ],
+      "unit": "% per year",
+      "status": "V",
+      "location": "p.2 Table 1",
+      "covers": [
+        "disk"
+      ],
+      "conversion": "hazard = -ln(1 - ARR) / 8766 h"
+    },
+    {
+      "id": "fig3-yearly",
+      "metric_verbatim": "Fig 3: ARR by year of operation (HPC1 compute, HPC1 file system) and by drive age (HPC4 type 1)",
+      "value": "digitized/sg07/fig3_yearly.csv",
+      "unit": "% per year",
+      "status": "V",
+      "location": "p.9 Fig 3",
+      "covers": [
+        "disk"
+      ],
+      "conversion": "vector bar heights, axis from tick marks (0-8 %)"
+    }
+  ]
+}

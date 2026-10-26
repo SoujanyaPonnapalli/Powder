@@ -1,0 +1,14 @@
+series,age_year,arr_pct,n_rects
+hpc1-compute,1,0.691,1
+hpc1-compute,2,1.683,1
+hpc1-compute,3,4.229,1
+hpc1-compute,4,7.551,1
+hpc1-compute,5,6.731,2
+hpc1-filesystem,1,0.0,0
+hpc1-filesystem,2,0.92,1
+hpc1-filesystem,3,1.84,1
+hpc1-filesystem,4,3.585,1
+hpc1-filesystem,5,5.27,2
+hpc4-type1,1,1.422,1
+hpc4-type1,2,2.43,1
+hpc4-type1,3,2.925,1

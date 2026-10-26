@@ -984,3 +984,19 @@ def test_catalogue_placement_ilp_binned_scorer():
     for item in sol.selected:
         ex = r["exact_availability"][item.candidate.candidate_id]
         assert abs((1 - ex) - (1 - item.candidate.availability)) <= 0.5 * (1 - ex) + 1e-9
+
+
+def test_sg07_digitization_matches_text():
+    """FAST'07 text: in HPC1's second year replacement rates are ~20% above the datasheet rate for the
+    file-system nodes and ~2x for the compute nodes (datasheet MTTF 1.2 Mh -> AFR 0.73%); no file-system
+    replacements in year 1."""
+    if "disk/sg07-age" not in LIB.entries:
+        return
+    curves = {m["id"]: m["rate_per_hour"] for m in LIB.get("disk/sg07-age")["rate_model"]["members"]}
+    afr = 8766 / 1.2e6
+    fs2 = 1 - math.exp(-curves["sg07:hpc1-filesystem"][1] * 8766)
+    cn2 = 1 - math.exp(-curves["sg07:hpc1-compute"][1] * 8766)
+    assert 1.1 < fs2 / afr < 1.4 and 1.8 < cn2 / afr < 2.6
+    assert curves["sg07:hpc1-filesystem"][0] == 0.0
+    pop = LIB.get("disk/sg07-systems")["rate_model"]["members"]
+    assert len(pop) == 14 and abs(sum(m["weight"] for m in pop) - 100827) < 1

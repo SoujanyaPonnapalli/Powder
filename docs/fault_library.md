@@ -44,6 +44,8 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `disk/ford10` | 0.02 / 0.0447 / 0.1 |
 | `disk/pooled` | 0.00652 / 0.0175 / 0.0472 |
 | `disk/schroeder-gibson-fast07` | 0.0283 / 0.0283 / 0.0283 |
+| `disk/sg07-age` | 0 / 0.031 / 0.0785 |
+| `disk/sg07-systems` | 0.00501 / 0.0305 / 0.146 |
 | `disk/vishwanath10` | 0.027 / 0.027 / 0.027 |
 | `spot/spotlake-pools` | 0.304 / 2.28 / 4.28 |
 
