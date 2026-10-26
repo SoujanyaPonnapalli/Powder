@@ -928,3 +928,38 @@ def test_catalogue_trace_follows_machine_hazards():
     assert any(e.kind == "planned" for e in ev2)
     cfg = C.node_config(m, time_varying=True)
     assert hasattr(cfg.data_loss_dist, "sample_at")
+
+
+def test_engine_time_varying_matches_python():
+    """powder-mc and the Python simulator agree on a calendar-clock hazard (availability of 3 nodes
+    whose failures only happen in the first half of every 20-day period)."""
+    import subprocess
+    from dataclasses import replace
+    from powder.mc_jobs import EngineNotFound, binary_path, build_job
+    from powder.simulation import ClusterState, NetworkState, NodeReplacementStrategy, NodeState, RaftLikeProtocol
+    from powder.simulation.distributions import PiecewiseRate, TimeVaryingHazard, Constant
+    try:
+        binary = binary_path()
+        subprocess.run([str(binary), "--help"], capture_output=True, check=True, timeout=30)
+    except (EngineNotFound, OSError, subprocess.SubprocessError):
+        return
+    day = 86400.0
+    tv = TimeVaryingHazard([PiecewiseRate([0, 10 * day, 20 * day], [2 / day, 0.0], periodic=True)])
+    base = machine_node_config(LIB, "machine/legacy-standard", "r1")
+    nodes = {f"n{i}": NodeState(node_id=f"n{i}", config=replace(base, region="r1", failure_dist=tv,
+                                                                 recovery_dist=Constant(4 * 3600.0),
+                                                                 data_loss_dist=Exponential(1e-15)))
+             for i in range(3)}
+    cluster = ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=3)
+    job = build_job(cluster, NodeReplacementStrategy(1e12, None), RaftLikeProtocol(election_time_dist=Exponential(1.0)),
+                    num_simulations=200, max_time=20 * day, stop_on_data_loss=False, base_seed=11)
+    assert '"time_varying"' in json.dumps(job)
+    out = subprocess.run([str(binary), "--stream"], input=json.dumps(job) + "\n", capture_output=True, text=True, timeout=150)
+    assert out.returncode == 0, out.stderr[-800:]
+    a_rust = json.loads(out.stdout.splitlines()[0])["summary"]["availability_mean"]
+    # analytic: in the on-phase each node is down a fraction ~ (2/day * 4h)/(1 + 2/day * 4h) = 0.25;
+    # quorum (2 of 3) lost when >= 2 down: 3 p^2 (1-p) + p^3 with p = 0.25 -> 0.156; on-phase is half the time
+    p = (2 * 4 / 24) / (1 + 2 * 4 / 24)
+    expected = 1 - 0.5 * (3 * p * p * (1 - p) + p ** 3)
+    print("rust availability", a_rust, "expected", expected)
+    assert abs(a_rust - expected) < 0.02, (a_rust, expected)

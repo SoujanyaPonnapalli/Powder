@@ -111,6 +111,151 @@ pub enum Distribution {
     Empirical(std::sync::Arc<EmpiricalTable>),
     /// Finite mixture: `(cumulative weight, component)`, last cumulative weight = 1.
     Mixture(std::sync::Arc<Vec<(f64, Distribution)>>),
+    /// Non-homogeneous Poisson clock: piecewise hazards + a constant rate.
+    /// Sampled from the current simulation time with [`Distribution::sample_at`].
+    TimeVarying(std::sync::Arc<TimeVaryingTable>),
+}
+
+/// One piecewise-constant hazard (per second) on its own clock.
+///
+/// The clock reads `offset` at simulation time 0.  Past the last edge the
+/// last rate continues, or the series repeats when `periodic`.  `age_start`
+/// (edges, cumulative weights) is the clock position of a *new* unit: a
+/// replacement node redraws it (age clocks); calendar clocks have none.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PiecewisePart {
+    pub edges: Vec<f64>,
+    pub rates: Vec<f64>,
+    cum: Vec<f64>,
+    full: f64,
+    pub periodic: bool,
+    pub offset: f64,
+    pub age_start: Option<(Vec<f64>, Vec<f64>)>,
+}
+
+impl PiecewisePart {
+    /// Validate and precompute cumulative hazards.
+    pub fn new(edges: Vec<f64>, rates: Vec<f64>, periodic: bool, offset: f64,
+               age_start: Option<(Vec<f64>, Vec<f64>)>) -> Result<Self> {
+        if edges.len() != rates.len() + 1 || edges.first() != Some(&0.0) {
+            return Err(DistributionError("piecewise hazard: edges must start at 0 and have len(rates)+1 entries".into()));
+        }
+        if edges.windows(2).any(|w| w[1] <= w[0]) || rates.iter().any(|r| !(*r >= 0.0)) {
+            return Err(DistributionError("piecewise hazard: edges must increase and rates be >= 0".into()));
+        }
+        let mut cum = vec![0.0; edges.len()];
+        for i in 0..rates.len() {
+            cum[i + 1] = cum[i] + (edges[i + 1] - edges[i]) * rates[i];
+        }
+        let full = *cum.last().unwrap();
+        let age_start = match age_start {
+            Some((e, w)) => {
+                if e.len() != w.len() + 1 || w.iter().any(|x| !(*x >= 0.0)) || w.iter().sum::<f64>() <= 0.0 {
+                    return Err(DistributionError("piecewise hazard: bad age_start".into()));
+                }
+                let tot: f64 = w.iter().sum();
+                let mut acc = 0.0;
+                let cw = w.iter().map(|x| { acc += x / tot; acc }).collect();
+                Some((e, cw))
+            }
+            None => None,
+        };
+        Ok(PiecewisePart { edges, rates, cum, full, periodic, offset, age_start })
+    }
+
+    fn span(&self) -> f64 { *self.edges.last().unwrap() }
+
+    fn cum_clock(&self, x: f64) -> f64 {
+        if x <= 0.0 { return 0.0; }
+        let span = self.span();
+        if x >= span {
+            if self.periodic {
+                let k = (x / span).floor();
+                return k * self.full + self.cum_clock(x - k * span);
+            }
+            return self.full + (x - span) * self.rates[self.rates.len() - 1];
+        }
+        let i = self.edges.partition_point(|e| *e <= x) - 1;
+        self.cum[i] + (x - self.edges[i]) * self.rates[i]
+    }
+
+    fn inv_in(&self, c: f64) -> f64 {
+        let n = self.cum.len();
+        let i = self.cum.partition_point(|v| *v < c).clamp(1, n - 1);
+        let r = self.rates[i - 1];
+        if r > 0.0 { self.edges[i - 1] + (c - self.cum[i - 1]) / r } else { self.edges[i] }
+    }
+
+    fn inv_clock(&self, c: f64) -> f64 {
+        if c <= 0.0 { return 0.0; }
+        let span = self.span();
+        if self.periodic {
+            if self.full <= 0.0 { return f64::INFINITY; }
+            let k = (c / self.full).floor();
+            return k * span + self.inv_in(c - k * self.full);
+        }
+        if c >= self.full {
+            let r = self.rates[self.rates.len() - 1];
+            return if r <= 0.0 { f64::INFINITY } else { span + (c - self.full) / r };
+        }
+        self.inv_in(c)
+    }
+
+    /// Integrated hazard over simulation time `[t0, t1]`.
+    pub fn cumulative(&self, t0: f64, t1: f64) -> f64 {
+        self.cum_clock(self.offset + t1) - self.cum_clock(self.offset + t0)
+    }
+
+    /// Simulation time of the next event after `now`.
+    pub fn next_event(&self, now: f64, rng: &mut Rng) -> f64 {
+        let e: f64 = rand_distr::Exp1.sample(rng);
+        let x = self.inv_clock(self.cum_clock(self.offset + now) + e);
+        if x.is_infinite() { f64::INFINITY } else { x - self.offset }
+    }
+
+    fn respawned(&self, now: f64, rng: &mut Rng) -> Option<PiecewisePart> {
+        let (e, cw) = self.age_start.as_ref()?;
+        let u: f64 = rng.random();
+        let i = cw.partition_point(|c| *c < u).min(cw.len() - 1);
+        let v: f64 = rng.random();
+        let age = e[i] + (e[i + 1] - e[i]) * v;
+        let mut p = self.clone();
+        p.offset = age - now;
+        Some(p)
+    }
+}
+
+/// Superposition of piecewise hazards and a constant rate.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TimeVaryingTable {
+    pub parts: Vec<PiecewisePart>,
+    pub constant_rate: f64,
+    pub mean_horizon: f64,
+    mean: f64,
+}
+
+impl TimeVaryingTable {
+    /// Build; `mean` = 1 / (average hazard over `mean_horizon` from time 0), for planning only.
+    pub fn new(parts: Vec<PiecewisePart>, constant_rate: f64, mean_horizon: f64) -> Result<Self> {
+        if !(constant_rate >= 0.0) || !(mean_horizon > 0.0) {
+            return Err(DistributionError("time-varying hazard: constant_rate >= 0 and mean_horizon > 0".into()));
+        }
+        let avg = constant_rate + parts.iter().map(|p| p.cumulative(0.0, mean_horizon)).sum::<f64>() / mean_horizon;
+        let mean = if avg > 0.0 { 1.0 / avg } else { f64::INFINITY };
+        Ok(TimeVaryingTable { parts, constant_rate, mean_horizon, mean })
+    }
+
+    fn sample_at(&self, now: f64, rng: &mut Rng) -> f64 {
+        let mut nxt = f64::INFINITY;
+        for p in &self.parts {
+            nxt = nxt.min(p.next_event(now, rng));
+        }
+        if self.constant_rate > 0.0 {
+            let e: f64 = rand_distr::Exp1.sample(rng);
+            nxt = nxt.min(now + e / self.constant_rate);
+        }
+        nxt - now
+    }
 }
 
 impl Distribution {
@@ -257,6 +402,7 @@ impl Distribution {
                 let i = parts.partition_point(|(c, _)| *c <= u).min(parts.len() - 1);
                 parts[i].1.sample(rng)
             }
+            Distribution::TimeVarying(t) => t.sample_at(0.0, rng),
             // Exp1 is the ziggurat unit-exponential sampler; dividing by the
             // rate is equivalent to NumPy's `exponential(scale=1/rate)` and
             // avoids per-call distribution setup.
@@ -313,7 +459,30 @@ impl Distribution {
                 let mut prev = 0.0;
                 parts.iter().map(|(c, d)| { let w = c - prev; prev = *c; w * d.mean() }).sum()
             }
+            Distribution::TimeVarying(t) => t.mean,
         }
+    }
+
+    /// Delay until the next event from simulation time `now` (time-aware for
+    /// [`Distribution::TimeVarying`]; every other family ignores `now`).
+    #[inline]
+    pub fn sample_at(&self, now: f64, rng: &mut Rng) -> f64 {
+        match self {
+            Distribution::TimeVarying(t) => t.sample_at(now, rng),
+            _ => self.sample(rng),
+        }
+    }
+
+    /// The clock of a replacement unit created at `now`: age clocks redraw
+    /// their position; `None` when nothing changes.
+    pub fn respawned(&self, now: f64, rng: &mut Rng) -> Option<Distribution> {
+        let Distribution::TimeVarying(t) = self else { return None; };
+        if t.parts.iter().all(|p| p.age_start.is_none()) {
+            return None;
+        }
+        let parts = t.parts.iter().map(|p| p.respawned(now, rng).unwrap_or_else(|| p.clone())).collect();
+        Some(Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable {
+            parts, constant_rate: t.constant_rate, mean_horizon: t.mean_horizon, mean: t.mean })))
     }
 
     /// Exponential rate approximation (`1 / mean`).
@@ -348,6 +517,7 @@ impl std::fmt::Display for Distribution {
             &Distribution::LogNormal { mu, sigma } => write!(f, "LogNormal(mu={mu}, sigma={sigma})"),
             Distribution::Empirical(t) => write!(f, "Empirical(n={}, log_x={})", t.t.len(), t.log_x),
             Distribution::Mixture(p) => write!(f, "Mixture(n={})", p.len()),
+            Distribution::TimeVarying(t) => write!(f, "TimeVarying(parts={}, constant_rate={})", t.parts.len(), t.constant_rate),
         }
     }
 }
@@ -504,5 +674,39 @@ mod tests {
         for _ in 0..1000 {
             assert_eq!(d.sample(&mut a), d.sample(&mut b));
         }
+    }
+
+    #[test]
+    fn time_varying_nhpp_counts_and_respawn() {
+        // rate 0.1 on [0, 10), 1.0 on [10, 20), then 1.0 onward: E[N(0, 20)] = 11
+        let p = PiecewisePart::new(vec![0.0, 10.0, 20.0], vec![0.1, 1.0], false, 0.0, None).unwrap();
+        let d = Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable::new(vec![p], 0.0, 20.0).unwrap()));
+        assert!((d.mean() - 20.0 / 11.0).abs() < 1e-12);
+        let mut rng = make_rng(Some(3));
+        let reps = 20_000;
+        let mut total = 0usize;
+        for _ in 0..reps {
+            let mut t = 0.0;
+            loop {
+                t += d.sample_at(t, &mut rng);
+                if t > 20.0 { break; }
+                total += 1;
+            }
+        }
+        assert!((total as f64 / reps as f64 - 11.0).abs() < 0.1);
+        // periodic calendar clock with offset; respawn leaves calendar clocks alone
+        let q = PiecewisePart::new(vec![0.0, 10.0, 20.0], vec![0.1, 1.0], true, 15.0, None).unwrap();
+        assert!((q.cumulative(0.0, 20.0) - 11.0).abs() < 1e-12);
+        let dq = Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable::new(vec![q], 0.0, 40.0).unwrap()));
+        assert!(dq.respawned(5.0, &mut rng).is_none());
+        // age clock: a replacement at t = 100 draws an age in [0, 1)
+        let a = PiecewisePart::new(vec![0.0, 1.0, 2.0], vec![1.0, 2.0], false, 0.0,
+                                   Some((vec![0.0, 1.0], vec![1.0]))).unwrap();
+        let da = Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable::new(vec![a], 0.0, 1.0).unwrap()));
+        match da.respawned(100.0, &mut rng) {
+            Some(Distribution::TimeVarying(t)) => assert!(t.parts[0].offset >= -100.0 && t.parts[0].offset < -99.0),
+            _ => panic!("age clock must respawn"),
+        }
+        assert!(PiecewisePart::new(vec![1.0, 2.0], vec![1.0], false, 0.0, None).is_err());
     }
 }

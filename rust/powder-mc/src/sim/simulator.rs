@@ -258,7 +258,7 @@ impl Simulator {
         };
 
         if native_failure {
-            let failure_time = config.failure_dist.sample(&mut self.rng);
+            let failure_time = config.failure_dist.sample_at(current_time, &mut self.rng);
             self.event_queue.push(Event::new(
                 current_time + failure_time,
                 EventType::NodeFailure,
@@ -267,7 +267,7 @@ impl Simulator {
         }
 
         if native_loss {
-            let data_loss_time = config.data_loss_dist.sample(&mut self.rng);
+            let data_loss_time = config.data_loss_dist.sample_at(current_time, &mut self.rng);
             self.event_queue.push(Event::new(
                 current_time + data_loss_time,
                 EventType::NodeDataLoss,
@@ -847,7 +847,9 @@ impl Simulator {
         }
 
         // The next failure is measured from the end of this outage.
-        let next_failure_time = config.failure_dist.sample(&mut self.rng);
+        let next_failure_time = config
+            .failure_dist
+            .sample_at(current_time + recovery_time, &mut self.rng);
         self.event_queue.push(Event::new(
             current_time + recovery_time + next_failure_time,
             EventType::NodeFailure,
@@ -965,6 +967,19 @@ impl Simulator {
         let standby = event.metadata.standby();
 
         self.cluster.remove_provisioning_node(node_id);
+
+        // Time-varying hazards on an age clock: the new unit draws a fresh age.
+        let now = self.cluster.current_time;
+        let fail = node_config.failure_dist.respawned(now, &mut self.rng);
+        let loss = node_config.data_loss_dist.respawned(now, &mut self.rng);
+        let node_config = if fail.is_some() || loss.is_some() {
+            let mut c = (*node_config).clone();
+            if let Some(d) = fail { c.failure_dist = d; }
+            if let Some(d) = loss { c.data_loss_dist = d; }
+            std::rc::Rc::new(c)
+        } else {
+            node_config
+        };
 
         let region = self.cluster.intern(&node_config.region);
         let new_node = NodeState::new(node_id, region, node_config);

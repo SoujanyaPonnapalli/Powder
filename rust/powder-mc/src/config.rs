@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::monte_carlo::{ConvergenceCriteria, ConvergenceMetric, MonteCarloConfig};
 use crate::sim::cluster::ClusterState;
-use crate::sim::distributions::{Distribution, Seconds};
+use crate::sim::distributions::{Distribution, PiecewisePart, Seconds, TimeVaryingTable};
 use crate::sim::network::NetworkConfig;
 use crate::sim::node::{NodeConfig, NodeConfigRef, NodeState};
 use crate::sim::protocol::{LeaderlessProtocol, Protocol, RaftLikeProtocol};
@@ -115,6 +115,49 @@ pub enum DistributionSpec {
         /// Weighted components (weights are normalised).
         components: Vec<MixtureComponentSpec>,
     },
+    /// `{"type": "time_varying", "parts": [...], "constant_rate": 0.0, "mean_horizon": 2592000}`:
+    /// a non-homogeneous Poisson clock sampled from the current simulation time.
+    TimeVarying {
+        /// Piecewise-constant hazards (per second).
+        parts: Vec<PiecewiseSpec>,
+        /// Extra constant hazard (per second).
+        #[serde(default)]
+        constant_rate: f64,
+        /// Horizon (s) over which `mean` averages the hazard (planning only).
+        #[serde(default = "default_mean_horizon")]
+        mean_horizon: f64,
+    },
+}
+
+fn default_mean_horizon() -> f64 {
+    30.0 * 86400.0
+}
+
+/// One piecewise hazard of a time-varying clock.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PiecewiseSpec {
+    /// Clock edges (s), starting at 0.
+    pub edges: Vec<f64>,
+    /// Hazard per second on each interval.
+    pub rates: Vec<f64>,
+    /// Repeat the series past the last edge.
+    #[serde(default)]
+    pub periodic: bool,
+    /// Clock position at simulation time 0 (s).
+    #[serde(default)]
+    pub offset: f64,
+    /// Age distribution of a new unit: piecewise-uniform `{"edges": [...], "weights": [...]}`.
+    #[serde(default)]
+    pub age_start: Option<AgeStartSpec>,
+}
+
+/// Piecewise-uniform age distribution.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct AgeStartSpec {
+    /// Bin edges (s).
+    pub edges: Vec<f64>,
+    /// Bin weights.
+    pub weights: Vec<f64>,
 }
 
 /// One component of a mixture spec.
@@ -152,6 +195,16 @@ impl DistributionSpec {
                 let weights: Vec<f64> = components.iter().map(|c| c.weight).collect();
                 let dists = components.iter().map(|c| c.dist.build()).collect::<Result<Vec<_>>>()?;
                 Distribution::mixture(&weights, dists)?
+            }
+            DistributionSpec::TimeVarying { parts, constant_rate, mean_horizon } => {
+                let parts = parts
+                    .iter()
+                    .map(|p| {
+                        PiecewisePart::new(p.edges.clone(), p.rates.clone(), p.periodic, p.offset,
+                                           p.age_start.as_ref().map(|a| (a.edges.clone(), a.weights.clone())))
+                    })
+                    .collect::<std::result::Result<Vec<_>, _>>()?;
+                Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable::new(parts, *constant_rate, *mean_horizon)?))
             }
         })
     }

@@ -26,6 +26,7 @@ from .simulation.distributions import (
     LogNormal,
     Mixture,
     Normal,
+    TimeVaryingHazard,
     Uniform,
     Weibull,
 )
@@ -143,6 +144,17 @@ def distribution_spec(dist: Distribution) -> dict[str, Any]:
                             "use powder.faults.dists.engine_compatible to approximate")
         return {"type": "empirical", "x": [float(v) for v in dist.x], "F": [float(v) for v in dist.F],
                 "log_x": dist.log_x, "tail": None}
+    if isinstance(dist, TimeVaryingHazard):
+        parts = []
+        for p in dist.parts:
+            spec = {"edges": [float(v) for v in p.edges], "rates": [float(v) for v in p.rates],
+                    "periodic": p.periodic, "offset": p.offset}
+            if p.age_start is not None:
+                spec["age_start"] = {"edges": [float(v) for v in p.age_start[0]],
+                                     "weights": [float(v) for v in p.age_start[1]]}
+            parts.append(spec)
+        return {"type": "time_varying", "parts": parts, "constant_rate": dist.constant_rate,
+                "mean_horizon": dist.mean_horizon}
     raise TypeError(f"no JSON form for distribution {type(dist).__name__}")
 
 
