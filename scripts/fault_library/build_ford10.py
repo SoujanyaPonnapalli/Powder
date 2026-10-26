@@ -443,6 +443,10 @@ def write_entries(stats, rates, fig3_avg, fig3_sd, calib, checks, q):
         m(f"fig3-avg-{c}", f"Fig 3 events per 1000 nodes per day ({c.replace('_', ' ')}), mean over 92 days, one cell",
           {"mean": fig3_avg[c], "sd_daily": fig3_sd[c]}, "events/1000 nodes/day", "V", "p.4 Fig 3",
           covers=[CAUSE_MAP.get(c, c)], conversion="sum of stacked-bar heights per colour, legend-mapped")
+    m("fig3-daily", "Fig 3 events per 1000 nodes per day by cause, daily series over 92 days, one cell",
+      "digitized/ford10/fig3_daily.csv", "events/1000 nodes/day", "V", "p.4 Fig 3",
+      covers=[CAUSE_MAP.get(c, c) for c in FIG3_COLORS],
+      conversion="stacked-bar heights per day and colour (vector rectangles), legend-mapped")
     for c, rr in rates.items():
         m(f"derived-rate-{c}", f"Derived {c.replace('_', ' ')} rate per node-hour (>=15 min and all events)",
           {"ge15min": rr["ge15min"], "all_events": rr["all_events"],

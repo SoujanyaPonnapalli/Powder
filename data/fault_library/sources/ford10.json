@@ -515,6 +515,21 @@
       "conversion": "sum of stacked-bar heights per colour, legend-mapped"
     },
     {
+      "id": "fig3-daily",
+      "metric_verbatim": "Fig 3 events per 1000 nodes per day by cause, daily series over 92 days, one cell",
+      "value": "digitized/ford10/fig3_daily.csv",
+      "unit": "events/1000 nodes/day",
+      "status": "V",
+      "location": "p.4 Fig 3",
+      "covers": [
+        "unknown",
+        "sw",
+        "planned_reboot",
+        "hw_reboot"
+      ],
+      "conversion": "stacked-bar heights per day and colour (vector rectangles), legend-mapped"
+    },
+    {
       "id": "derived-rate-node_restart",
       "metric_verbatim": "Derived node restart rate per node-hour (>=15 min and all events)",
       "value": {

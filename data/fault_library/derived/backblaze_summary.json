@@ -1,0 +1,3346 @@
+{
+ "quarters": [
+  "Q1_2023",
+  "Q1_2024",
+  "Q1_2025",
+  "Q2_2023",
+  "Q2_2024",
+  "Q2_2025",
+  "Q3_2023",
+  "Q3_2024",
+  "Q3_2025",
+  "Q4_2023",
+  "Q4_2024",
+  "Q4_2025"
+ ],
+ "n_models": 94,
+ "fleet": {
+  "hdd": {
+   "drive_days": 311276911,
+   "failures": 13304,
+   "afr": 0.01561081412813172
+  },
+  "ssd": {
+   "drive_days": 3180170,
+   "failures": 44,
+   "afr": 0.005053503429061968
+  }
+ },
+ "models": {
+  "CT250MX500SSD1": {
+   "ssd": true,
+   "capacity_bytes": 250059350016,
+   "drive_days": 713972,
+   "drive_years": 1954.7488021902807,
+   "failures": 9,
+   "afr": 0.004604172152409338,
+   "afr_90ci": [
+    0.0024008536781423926,
+    0.008032153830083016
+   ],
+   "rate_per_hour": 5.252306813152337e-07,
+   "age_known_share": 0.9998515347940815,
+   "age_years": {
+    "0": {
+     "drive_days": 188118,
+     "failures": 4
+    },
+    "1": {
+     "drive_days": 257193,
+     "failures": 2
+    },
+    "2": {
+     "drive_days": 181583,
+     "failures": 3
+    },
+    "3": {
+     "drive_days": 85933,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 1039,
+     "failures": 0
+    }
+   }
+  },
+  "DELLBOSS VD": {
+   "ssd": true,
+   "capacity_bytes": 480036847616,
+   "drive_days": 463368,
+   "drive_years": 1268.6324435318274,
+   "failures": 3,
+   "afr": 0.0023647511265344175,
+   "afr_90ci": [
+    0.0006387208913443918,
+    0.006104630503343077
+   ],
+   "rate_per_hour": 2.697639888814074e-07,
+   "age_known_share": 0.0,
+   "age_years": {}
+  },
+  "HGST HDS5C4040ALE630": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 9212,
+   "drive_years": 25.22108145106092,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.11769657770724239
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9996743378202345,
+   "age_years": {
+    "2": {
+     "drive_days": 132,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 118,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 1676,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 4103,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 2447,
+     "failures": 0
+    },
+    "8": {
+     "drive_days": 733,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HDS724040ALE640": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 719,
+   "drive_years": 1.9685147159479808,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    1.5079567090947386
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "5": {
+     "drive_days": 152,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 365,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 202,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HMS5C4040ALE640": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 1534575,
+   "drive_years": 4201.437371663244,
+   "failures": 16,
+   "afr": 0.0038082205170812764,
+   "afr_90ci": [
+    0.0023884693280280716,
+    0.0057833331488298945
+   ],
+   "rate_per_hour": 4.3443081417764964e-07,
+   "age_known_share": 0.9999126794063503,
+   "age_years": {
+    "0": {
+     "drive_days": 42,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 256,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 10123,
+     "failures": 1
+    },
+    "4": {
+     "drive_days": 58917,
+     "failures": 1
+    },
+    "5": {
+     "drive_days": 211405,
+     "failures": 2
+    },
+    "6": {
+     "drive_days": 596221,
+     "failures": 11
+    },
+    "7": {
+     "drive_days": 336042,
+     "failures": 1
+    },
+    "8": {
+     "drive_days": 235280,
+     "failures": 0
+    },
+    "9": {
+     "drive_days": 82263,
+     "failures": 0
+    },
+    "10": {
+     "drive_days": 3892,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HMS5C4040BLE640": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 7673474,
+   "drive_years": 21008.826830937713,
+   "failures": 67,
+   "afr": 0.0031891357161045963,
+   "afr_90ci": [
+    0.0025764573616596158,
+    0.003908218871922848
+   ],
+   "rate_per_hour": 3.6380740544200274e-07,
+   "age_known_share": 0.9998960053816563,
+   "age_years": {
+    "0": {
+     "drive_days": 8068,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 29846,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 25561,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 19788,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 21191,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 474876,
+     "failures": 11
+    },
+    "6": {
+     "drive_days": 2806908,
+     "failures": 29
+    },
+    "7": {
+     "drive_days": 3074194,
+     "failures": 19
+    },
+    "8": {
+     "drive_days": 1193294,
+     "failures": 8
+    },
+    "9": {
+     "drive_days": 18950,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HMS5C4040BLE641": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 649,
+   "drive_years": 1.7768651608487338,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    1.6706022709385469
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "4": {
+     "drive_days": 301,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 348,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HUH721010ALE600": {
+   "ssd": false,
+   "capacity_bytes": 10000831348736,
+   "drive_days": 21857,
+   "drive_years": 59.841204654346335,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.04960520079787331
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9998169922679233,
+   "age_years": {
+    "3": {
+     "drive_days": 556,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 6701,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 7298,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 6735,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 563,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HUH721212ALE600": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 2838800,
+   "drive_years": 7772.210814510609,
+   "failures": 70,
+   "afr": 0.009006446385796816,
+   "afr_90ci": [
+    0.007311913421413872,
+    0.010988330709648665
+   ],
+   "rate_per_hour": 1.0274294302757034e-06,
+   "age_known_share": 0.9999623080174722,
+   "age_years": {
+    "0": {
+     "drive_days": 20372,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 20420,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 133448,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 576354,
+     "failures": 5
+    },
+    "4": {
+     "drive_days": 934096,
+     "failures": 28
+    },
+    "5": {
+     "drive_days": 800266,
+     "failures": 23
+    },
+    "6": {
+     "drive_days": 353737,
+     "failures": 12
+    }
+   }
+  },
+  "HGST HUH721212ALE604": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 14464633,
+   "drive_years": 39602.006844626965,
+   "failures": 920,
+   "afr": 0.023231145926758043,
+   "afr_90ci": [
+    0.021985860077351885,
+    0.0245310755361095
+   ],
+   "rate_per_hour": 2.6501421317314675e-06,
+   "age_known_share": 0.9999231919676081,
+   "age_years": {
+    "0": {
+     "drive_days": 346696,
+     "failures": 35
+    },
+    "1": {
+     "drive_days": 1468812,
+     "failures": 25
+    },
+    "2": {
+     "drive_days": 4501664,
+     "failures": 142
+    },
+    "3": {
+     "drive_days": 4644364,
+     "failures": 452
+    },
+    "4": {
+     "drive_days": 3230501,
+     "failures": 251
+    },
+    "5": {
+     "drive_days": 271485,
+     "failures": 11
+    }
+   }
+  },
+  "HGST HUH721212ALN604": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 11274544,
+   "drive_years": 30868.01916495551,
+   "failures": 1370,
+   "afr": 0.04438250451636891,
+   "afr_90ci": [
+    0.04242876990027173,
+    0.04640618707229734
+   ],
+   "rate_per_hour": 5.063028121876444e-06,
+   "age_known_share": 0.9999393323579207,
+   "age_years": {
+    "0": {
+     "drive_days": 166162,
+     "failures": 15
+    },
+    "1": {
+     "drive_days": 142533,
+     "failures": 12
+    },
+    "2": {
+     "drive_days": 42212,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 1051260,
+     "failures": 99
+    },
+    "4": {
+     "drive_days": 3695492,
+     "failures": 420
+    },
+    "5": {
+     "drive_days": 3583686,
+     "failures": 568
+    },
+    "6": {
+     "drive_days": 2513586,
+     "failures": 253
+    },
+    "7": {
+     "drive_days": 78929,
+     "failures": 2
+    }
+   }
+  },
+  "HGST HUH728080ALE600": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 1191508,
+   "drive_years": 3262.171115674196,
+   "failures": 83,
+   "afr": 0.025443177888860167,
+   "afr_90ci": [
+    0.021030296664610898,
+    0.03053831925923189
+   ],
+   "rate_per_hour": 2.9024843587565787e-06,
+   "age_known_share": 0.999907680015577,
+   "age_years": {
+    "0": {
+     "drive_days": 5283,
+     "failures": 1
+    },
+    "1": {
+     "drive_days": 19447,
+     "failures": 2
+    },
+    "2": {
+     "drive_days": 44537,
+     "failures": 3
+    },
+    "3": {
+     "drive_days": 47128,
+     "failures": 2
+    },
+    "4": {
+     "drive_days": 34035,
+     "failures": 3
+    },
+    "5": {
+     "drive_days": 314922,
+     "failures": 19
+    },
+    "6": {
+     "drive_days": 348551,
+     "failures": 14
+    },
+    "7": {
+     "drive_days": 339447,
+     "failures": 39
+    },
+    "8": {
+     "drive_days": 38048,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HUH728080ALE604": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 93268,
+   "drive_years": 255.35386721423683,
+   "failures": 16,
+   "afr": 0.06265814641677746,
+   "afr_90ci": [
+    0.03929842302889178,
+    0.09515544953108927
+   ],
+   "rate_per_hour": 7.147860645308859e-06,
+   "age_known_share": 0.9998927820903204,
+   "age_years": {
+    "1": {
+     "drive_days": 1930,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 3388,
+     "failures": 2
+    },
+    "3": {
+     "drive_days": 3208,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 2816,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 5653,
+     "failures": 1
+    },
+    "6": {
+     "drive_days": 24475,
+     "failures": 3
+    },
+    "7": {
+     "drive_days": 26814,
+     "failures": 8
+    },
+    "8": {
+     "drive_days": 20846,
+     "failures": 2
+    },
+    "9": {
+     "drive_days": 4128,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HUS726040ALE610": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 19404,
+   "drive_years": 53.125256673511295,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.05587615305293326
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9997938569367141,
+   "age_years": {
+    "0": {
+     "drive_days": 1500,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 3427,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 630,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 4,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 2204,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 5210,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 5260,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 1165,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HUS726040ALN610": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 4334,
+   "drive_years": 11.865845311430528,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.2501663299121174
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 4269,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 65,
+     "failures": 0
+    }
+   }
+  },
+  "HGST HUS728T8TALE6L4": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 21268,
+   "drive_years": 58.22861054072553,
+   "failures": 1,
+   "afr": 0.017173688170020688,
+   "afr_90ci": [
+    0.0006786004300006923,
+    0.08119762648286198
+   ],
+   "rate_per_hour": 1.9591248197605165e-06,
+   "age_known_share": 0.9998589430129773,
+   "age_years": {
+    "0": {
+     "drive_days": 4893,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 7170,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 6938,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 2264,
+     "failures": 0
+    }
+   }
+  },
+  "Hitachi HDS5C4040ALE630": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 2260,
+   "drive_years": 6.187542778918549,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.4797437494863349
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9995575221238938,
+   "age_years": {
+    "6": {
+     "drive_days": 789,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 921,
+     "failures": 0
+    },
+    "8": {
+     "drive_days": 549,
+     "failures": 0
+    }
+   }
+  },
+  "MTFDDAV240TCB": {
+   "ssd": true,
+   "capacity_bytes": 240057409536,
+   "drive_days": 94468,
+   "drive_years": 258.63928815879535,
+   "failures": 2,
+   "afr": 0.007732777236736249,
+   "afr_90ci": [
+    0.001334483463120688,
+    0.0242975843050776
+   ],
+   "rate_per_hour": 8.821329268464807e-07,
+   "age_known_share": 1.0,
+   "age_years": {
+    "2": {
+     "drive_days": 28753,
+     "failures": 2
+    },
+    "3": {
+     "drive_days": 31361,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 31380,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 2974,
+     "failures": 0
+    }
+   }
+  },
+  "MTFDDAV480TCB": {
+   "ssd": true,
+   "capacity_bytes": 480103981056,
+   "drive_days": 1641,
+   "drive_years": 4.492813141683778,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.6607074185491267
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9993906154783668,
+   "age_years": {
+    "0": {
+     "drive_days": 136,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 730,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 728,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 46,
+     "failures": 0
+    }
+   }
+  },
+  "MTFDDAV480TDS": {
+   "ssd": true,
+   "capacity_bytes": 480103981056,
+   "drive_days": 12,
+   "drive_years": 0.03285420944558522,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    90.35173948659308
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 12,
+     "failures": 0
+    }
+   }
+  },
+  "Micron 5300 MTFDDAK480TDS": {
+   "ssd": true,
+   "capacity_bytes": 480103981056,
+   "drive_days": 1750,
+   "drive_years": 4.791238877481177,
+   "failures": 1,
+   "afr": 0.20871428571428574,
+   "afr_90ci": [
+    0.008247127968716985,
+    0.9868063543071479
+   ],
+   "rate_per_hour": 2.380952380952381e-05,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 240,
+     "failures": 1
+    },
+    "1": {
+     "drive_days": 1008,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 502,
+     "failures": 0
+    }
+   }
+  },
+  "SSDSCKKB240GZR": {
+   "ssd": true,
+   "capacity_bytes": 240057409536,
+   "drive_days": 1048,
+   "drive_years": 2.869267624914442,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    1.0345619025182413
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 364,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 365,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 319,
+     "failures": 0
+    }
+   }
+  },
+  "SSDSCKKB480G8R": {
+   "ssd": true,
+   "capacity_bytes": 480103981056,
+   "drive_days": 298,
+   "drive_years": 0.8158795345653662,
+   "failures": 1,
+   "afr": 1.2256711409395973,
+   "afr_90ci": [
+    0.04843112062166015,
+    5.79500375851513
+   ],
+   "rate_per_hour": 0.00013982102908277405,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 279,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 19,
+     "failures": 1
+    }
+   }
+  },
+  "ST10000NM001G": {
+   "ssd": false,
+   "capacity_bytes": 10000831348736,
+   "drive_days": 30580,
+   "drive_years": 83.72347707049965,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.0354552280522929
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9998037933289732,
+   "age_years": {
+    "0": {
+     "drive_days": 2813,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 8770,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 10189,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 7384,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 1418,
+     "failures": 0
+    }
+   }
+  },
+  "ST10000NM0086": {
+   "ssd": false,
+   "capacity_bytes": 10000831348736,
+   "drive_days": 1169563,
+   "drive_years": 3202.088980150582,
+   "failures": 189,
+   "afr": 0.05902396878150215,
+   "afr_90ci": [
+    0.05214401394152652,
+    0.06658977103273786
+   ],
+   "rate_per_hour": 6.733284141170677e-06,
+   "age_known_share": 0.999811040533943,
+   "age_years": {
+    "0": {
+     "drive_days": 8510,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 15972,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 20490,
+     "failures": 6
+    },
+    "3": {
+     "drive_days": 15103,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 11540,
+     "failures": 2
+    },
+    "5": {
+     "drive_days": 282370,
+     "failures": 54
+    },
+    "6": {
+     "drive_days": 372810,
+     "failures": 56
+    },
+    "7": {
+     "drive_days": 347435,
+     "failures": 55
+    },
+    "8": {
+     "drive_days": 95112,
+     "failures": 16
+    }
+   }
+  },
+  "ST1000LM024 HN": {
+   "ssd": false,
+   "capacity_bytes": 1000204886016,
+   "drive_days": 1094,
+   "drive_years": 2.9952087611225187,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.99106112782369
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "5": {
+     "drive_days": 78,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 363,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 653,
+     "failures": 0
+    }
+   }
+  },
+  "ST12000NM0007": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 1207667,
+   "drive_years": 3306.4120465434635,
+   "failures": 276,
+   "afr": 0.08347416961794932,
+   "afr_90ci": [
+    0.07538503900878475,
+    0.09222445597750163
+   ],
+   "rate_per_hour": 9.522492541404212e-06,
+   "age_known_share": 0.9999950317430218,
+   "age_years": {
+    "0": {
+     "drive_days": 2709,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 21995,
+     "failures": 2
+    },
+    "2": {
+     "drive_days": 39573,
+     "failures": 3
+    },
+    "3": {
+     "drive_days": 326276,
+     "failures": 72
+    },
+    "4": {
+     "drive_days": 386603,
+     "failures": 115
+    },
+    "5": {
+     "drive_days": 332332,
+     "failures": 69
+    },
+    "6": {
+     "drive_days": 93338,
+     "failures": 14
+    },
+    "7": {
+     "drive_days": 3880,
+     "failures": 1
+    },
+    "8": {
+     "drive_days": 955,
+     "failures": 0
+    }
+   }
+  },
+  "ST12000NM0008": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 21065431,
+   "drive_years": 57674.006844626965,
+   "failures": 1561,
+   "afr": 0.027065919040536127,
+   "afr_90ci": [
+    0.02594905926032585,
+    0.02822019190164746
+   ],
+   "rate_per_hour": 3.087601989566065e-06,
+   "age_known_share": 0.9999383349906299,
+   "age_years": {
+    "0": {
+     "drive_days": 134989,
+     "failures": 27
+    },
+    "1": {
+     "drive_days": 183489,
+     "failures": 12
+    },
+    "2": {
+     "drive_days": 2049266,
+     "failures": 114
+    },
+    "3": {
+     "drive_days": 6765677,
+     "failures": 537
+    },
+    "4": {
+     "drive_days": 6822125,
+     "failures": 470
+    },
+    "5": {
+     "drive_days": 4818720,
+     "failures": 373
+    },
+    "6": {
+     "drive_days": 289866,
+     "failures": 14
+    }
+   }
+  },
+  "ST12000NM000J": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 535970,
+   "drive_years": 1467.4058863791922,
+   "failures": 21,
+   "afr": 0.014310968897512922,
+   "afr_90ci": [
+    0.00958931850068641,
+    0.020606497110612302
+   ],
+   "rate_per_hour": 1.6325540608616153e-06,
+   "age_known_share": 0.9999402951657742,
+   "age_years": {
+    "0": {
+     "drive_days": 347983,
+     "failures": 19
+    },
+    "1": {
+     "drive_days": 171554,
+     "failures": 2
+    },
+    "2": {
+     "drive_days": 16371,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 30,
+     "failures": 0
+    }
+   }
+  },
+  "ST12000NM001G": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 14339480,
+   "drive_years": 39259.356605065026,
+   "failures": 446,
+   "afr": 0.01136034918978931,
+   "afr_90ci": [
+    0.010490255560877139,
+    0.01228586089116728
+   ],
+   "rate_per_hour": 1.2959558738066745e-06,
+   "age_known_share": 0.9999249624114682,
+   "age_years": {
+    "0": {
+     "drive_days": 468533,
+     "failures": 8
+    },
+    "1": {
+     "drive_days": 1124945,
+     "failures": 17
+    },
+    "2": {
+     "drive_days": 3420845,
+     "failures": 100
+    },
+    "3": {
+     "drive_days": 4429871,
+     "failures": 158
+    },
+    "4": {
+     "drive_days": 3647268,
+     "failures": 117
+    },
+    "5": {
+     "drive_days": 1246942,
+     "failures": 40
+    }
+   }
+  },
+  "ST12000NM003G": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 9660,
+   "drive_years": 26.4476386036961,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.11223818569763114
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 6695,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 1853,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 1112,
+     "failures": 0
+    }
+   }
+  },
+  "ST12000NM0117": {
+   "ssd": false,
+   "capacity_bytes": 12000138625024,
+   "drive_days": 8386,
+   "drive_years": 22.9596167008898,
+   "failures": 3,
+   "afr": 0.13066420224183165,
+   "afr_90ci": [
+    0.03529249010022277,
+    0.33731104544157825
+   ],
+   "rate_per_hour": 1.4905795373241116e-05,
+   "age_known_share": 1.0,
+   "age_years": {
+    "2": {
+     "drive_days": 1819,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 2923,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 2679,
+     "failures": 1
+    },
+    "5": {
+     "drive_days": 965,
+     "failures": 1
+    }
+   }
+  },
+  "ST14000NM000J": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 178703,
+   "drive_years": 489.2621492128679,
+   "failures": 12,
+   "afr": 0.02452672870628921,
+   "afr_90ci": [
+    0.014149366390176698,
+    0.03973129840499506
+   ],
+   "rate_per_hour": 2.7979384789287254e-06,
+   "age_known_share": 0.9999832123691265,
+   "age_years": {
+    "0": {
+     "drive_days": 117975,
+     "failures": 10
+    },
+    "1": {
+     "drive_days": 54770,
+     "failures": 2
+    },
+    "2": {
+     "drive_days": 5955,
+     "failures": 0
+    }
+   }
+  },
+  "ST14000NM0018": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 67816,
+   "drive_years": 185.67008898015058,
+   "failures": 14,
+   "afr": 0.07540255986787778,
+   "afr_90ci": [
+    0.04557960008212186,
+    0.11786129384182611
+   ],
+   "rate_per_hour": 8.601706578585191e-06,
+   "age_known_share": 0.9999557626518816,
+   "age_years": {
+    "0": {
+     "drive_days": 14820,
+     "failures": 4
+    },
+    "1": {
+     "drive_days": 19521,
+     "failures": 3
+    },
+    "2": {
+     "drive_days": 19014,
+     "failures": 5
+    },
+    "3": {
+     "drive_days": 9487,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 4864,
+     "failures": 2
+    },
+    "5": {
+     "drive_days": 107,
+     "failures": 0
+    }
+   }
+  },
+  "ST14000NM001G": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 11660836,
+   "drive_years": 31925.629021218345,
+   "failures": 510,
+   "afr": 0.015974626519059183,
+   "afr_90ci": [
+    0.014829191019018648,
+    0.017188132408976677
+   ],
+   "rate_per_hour": 1.8223393245561468e-06,
+   "age_known_share": 0.999996741228502,
+   "age_years": {
+    "0": {
+     "drive_days": 124027,
+     "failures": 10
+    },
+    "1": {
+     "drive_days": 929483,
+     "failures": 13
+    },
+    "2": {
+     "drive_days": 3409128,
+     "failures": 166
+    },
+    "3": {
+     "drive_days": 3797985,
+     "failures": 173
+    },
+    "4": {
+     "drive_days": 2917110,
+     "failures": 126
+    },
+    "5": {
+     "drive_days": 483065,
+     "failures": 21
+    }
+   }
+  },
+  "ST14000NM002J": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 4144,
+   "drive_years": 11.345653661875428,
+   "failures": 1,
+   "afr": 0.08813947876447877,
+   "afr_90ci": [
+    0.003482739851654132,
+    0.4167256563797077
+   ],
+   "rate_per_hour": 1.0054697554697554e-05,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 3954,
+     "failures": 1
+    },
+    "1": {
+     "drive_days": 190,
+     "failures": 0
+    }
+   }
+  },
+  "ST14000NM0138": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 1493792,
+   "drive_years": 4089.779603011636,
+   "failures": 257,
+   "afr": 0.06283957204215848,
+   "afr_90ci": [
+    0.056534042393197245,
+    0.06968004844523278
+   ],
+   "rate_per_hour": 7.168557157444499e-06,
+   "age_known_share": 0.9999651892632977,
+   "age_years": {
+    "0": {
+     "drive_days": 361,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 1397,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 492017,
+     "failures": 110
+    },
+    "3": {
+     "drive_days": 498439,
+     "failures": 70
+    },
+    "4": {
+     "drive_days": 468051,
+     "failures": 74
+    },
+    "5": {
+     "drive_days": 33475,
+     "failures": 0
+    }
+   }
+  },
+  "ST16000NM000G": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 1517,
+   "drive_years": 4.153319644079398,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.7147138258662602
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 1517,
+     "failures": 0
+    }
+   }
+  },
+  "ST16000NM000J": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 58029,
+   "drive_years": 158.8747433264887,
+   "failures": 3,
+   "afr": 0.018882799979320686,
+   "afr_90ci": [
+    0.005100257146951837,
+    0.04874615152894372
+   ],
+   "rate_per_hour": 2.1540953661100484e-06,
+   "age_known_share": 0.9999138361853556,
+   "age_years": {
+    "0": {
+     "drive_days": 32684,
+     "failures": 2
+    },
+    "1": {
+     "drive_days": 20952,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 4388,
+     "failures": 0
+    }
+   }
+  },
+  "ST16000NM001G": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 33279555,
+   "drive_years": 91114.45585215605,
+   "failures": 584,
+   "afr": 0.006409520800383299,
+   "afr_90ci": [
+    0.005979589306834749,
+    0.006863277685868279
+   ],
+   "rate_per_hour": 7.311796486862079e-07,
+   "age_known_share": 0.9998201598549019,
+   "age_years": {
+    "0": {
+     "drive_days": 5940619,
+     "failures": 101
+    },
+    "1": {
+     "drive_days": 9842844,
+     "failures": 115
+    },
+    "2": {
+     "drive_days": 9153062,
+     "failures": 157
+    },
+    "3": {
+     "drive_days": 6412293,
+     "failures": 136
+    },
+    "4": {
+     "drive_days": 1903083,
+     "failures": 57
+    },
+    "5": {
+     "drive_days": 19832,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 1837,
+     "failures": 0
+    }
+   }
+  },
+  "ST16000NM002J": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 460017,
+   "drive_years": 1259.457905544148,
+   "failures": 4,
+   "afr": 0.003175969583732775,
+   "afr_90ci": [
+    0.0010804180475496806,
+    0.007261767933850689
+   ],
+   "rate_per_hour": 3.623054510304329e-07,
+   "age_known_share": 0.9999847831710568,
+   "age_years": {
+    "0": {
+     "drive_days": 101480,
+     "failures": 1
+    },
+    "1": {
+     "drive_days": 167504,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 129325,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 61701,
+     "failures": 0
+    }
+   }
+  },
+  "ST16000NM005G": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 27520,
+   "drive_years": 75.34565366187543,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.03939756082264233
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "2": {
+     "drive_days": 9282,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 9053,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 9132,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 53,
+     "failures": 0
+    }
+   }
+  },
+  "ST18000NM000J": {
+   "ssd": false,
+   "capacity_bytes": 18000207937536,
+   "drive_days": 65427,
+   "drive_years": 179.129363449692,
+   "failures": 5,
+   "afr": 0.027912788298408913,
+   "afr_90ci": [
+    0.010973973497280543,
+    0.05865284457768136
+   ],
+   "rate_per_hour": 3.184210392243773e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 2253,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 2189,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 16304,
+     "failures": 3
+    },
+    "3": {
+     "drive_days": 20105,
+     "failures": 1
+    },
+    "4": {
+     "drive_days": 19421,
+     "failures": 1
+    },
+    "5": {
+     "drive_days": 5155,
+     "failures": 0
+    }
+   }
+  },
+  "ST24000NM002H": {
+   "ssd": false,
+   "capacity_bytes": 24000277250048,
+   "drive_days": 1959010,
+   "drive_years": 5363.477070499658,
+   "failures": 146,
+   "afr": 0.027221147416297005,
+   "afr_90ci": [
+    0.023624569777517777,
+    0.031228684454898445
+   ],
+   "rate_per_hour": 3.1053099950144886e-06,
+   "age_known_share": 0.9993619226037641,
+   "age_years": {
+    "0": {
+     "drive_days": 1933348,
+     "failures": 130
+    },
+    "1": {
+     "drive_days": 24412,
+     "failures": 0
+    }
+   }
+  },
+  "ST4000DM000": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 7391001,
+   "drive_years": 20235.457905544146,
+   "failures": 701,
+   "afr": 0.03464216146094419,
+   "afr_90ci": [
+    0.03251847309620087,
+    0.03687298383963596
+   ],
+   "rate_per_hour": 3.951877875991808e-06,
+   "age_known_share": 0.999929779471008,
+   "age_years": {
+    "0": {
+     "drive_days": 874,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 1318,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 3276,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 7234,
+     "failures": 2
+    },
+    "4": {
+     "drive_days": 19266,
+     "failures": 3
+    },
+    "5": {
+     "drive_days": 84435,
+     "failures": 7
+    },
+    "6": {
+     "drive_days": 315409,
+     "failures": 20
+    },
+    "7": {
+     "drive_days": 4771584,
+     "failures": 487
+    },
+    "8": {
+     "drive_days": 2187086,
+     "failures": 179
+    }
+   }
+  },
+  "ST4000DM004": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 7667,
+   "drive_years": 20.99110198494182,
+   "failures": 1,
+   "afr": 0.04763923307682274,
+   "afr_90ci": [
+    0.0018824147574350756,
+    0.2252394835056096
+   ],
+   "rate_per_hour": 5.434546324072866e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 1268,
+     "failures": 1
+    },
+    "1": {
+     "drive_days": 5726,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 673,
+     "failures": 0
+    }
+   }
+  },
+  "ST4000DM005": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 13856,
+   "drive_years": 37.935660506502394,
+   "failures": 2,
+   "afr": 0.05272084295612009,
+   "afr_90ci": [
+    0.00909829559714818,
+    0.16565705789059404
+   ],
+   "rate_per_hour": 6.014241724403387e-06,
+   "age_known_share": 0.9997834872979214,
+   "age_years": {
+    "4": {
+     "drive_days": 1224,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 10810,
+     "failures": 2
+    },
+    "6": {
+     "drive_days": 1819,
+     "failures": 0
+    }
+   }
+  },
+  "ST500LM012 HN": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 221875,
+   "drive_years": 607.460643394935,
+   "failures": 35,
+   "afr": 0.0576169014084507,
+   "afr_90ci": [
+    0.04258621519451474,
+    0.07638770517681534
+   ],
+   "rate_per_hour": 6.572769953051643e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "1": {
+     "drive_days": 10378,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 10807,
+     "failures": 2
+    },
+    "3": {
+     "drive_days": 7287,
+     "failures": 2
+    },
+    "4": {
+     "drive_days": 23496,
+     "failures": 3
+    },
+    "5": {
+     "drive_days": 37860,
+     "failures": 6
+    },
+    "6": {
+     "drive_days": 51366,
+     "failures": 11
+    },
+    "7": {
+     "drive_days": 45792,
+     "failures": 8
+    },
+    "8": {
+     "drive_days": 23746,
+     "failures": 2
+    },
+    "9": {
+     "drive_days": 9023,
+     "failures": 1
+    },
+    "10": {
+     "drive_days": 2120,
+     "failures": 0
+    }
+   }
+  },
+  "ST500LM021": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 31850,
+   "drive_years": 87.20054757015743,
+   "failures": 2,
+   "afr": 0.022935635792778648,
+   "afr_90ci": [
+    0.003958115660724809,
+    0.07206732163679971
+   ],
+   "rate_per_hour": 2.6164311878597594e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "3": {
+     "drive_days": 3207,
+     "failures": 1
+    },
+    "4": {
+     "drive_days": 10902,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 10747,
+     "failures": 1
+    },
+    "6": {
+     "drive_days": 6994,
+     "failures": 0
+    }
+   }
+  },
+  "ST500LM030": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 203865,
+   "drive_years": 558.1519507186858,
+   "failures": 34,
+   "afr": 0.06091531160326687,
+   "afr_90ci": [
+    0.04480842597032001,
+    0.08109613766277157
+   ],
+   "rate_per_hour": 6.949043075891725e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "1": {
+     "drive_days": 3162,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 3650,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 17576,
+     "failures": 5
+    },
+    "4": {
+     "drive_days": 65427,
+     "failures": 20
+    },
+    "5": {
+     "drive_days": 61735,
+     "failures": 8
+    },
+    "6": {
+     "drive_days": 48555,
+     "failures": 1
+    },
+    "7": {
+     "drive_days": 3760,
+     "failures": 0
+    }
+   }
+  },
+  "ST6000DM001": {
+   "ssd": false,
+   "capacity_bytes": 6001175126016,
+   "drive_days": 1896,
+   "drive_years": 5.190965092402464,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.5718464524467917
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "5": {
+     "drive_days": 363,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 1210,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 323,
+     "failures": 0
+    }
+   }
+  },
+  "ST6000DM004": {
+   "ssd": false,
+   "capacity_bytes": 6001175126016,
+   "drive_days": 474,
+   "drive_years": 1.297741273100616,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    2.2873858097871667
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "4": {
+     "drive_days": 253,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 221,
+     "failures": 0
+    }
+   }
+  },
+  "ST6000DX000": {
+   "ssd": false,
+   "capacity_bytes": 6001175126016,
+   "drive_days": 418598,
+   "drive_years": 1146.0588637919234,
+   "failures": 6,
+   "afr": 0.0052353331836272506,
+   "afr_90ci": [
+    0.002276889990736043,
+    0.010328069070104138
+   ],
+   "rate_per_hour": 5.972317115705283e-07,
+   "age_known_share": 0.9999402768288429,
+   "age_years": {
+    "0": {
+     "drive_days": 42062,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 81,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 2738,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 2580,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 2451,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 80908,
+     "failures": 2
+    },
+    "8": {
+     "drive_days": 287753,
+     "failures": 3
+    }
+   }
+  },
+  "ST8000DM002": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 10041055,
+   "drive_years": 27490.91033538672,
+   "failures": 585,
+   "afr": 0.021279760941454857,
+   "afr_90ci": [
+    0.019853580497433566,
+    0.022784905991730737
+   ],
+   "rate_per_hour": 2.4275337601477138e-06,
+   "age_known_share": 0.9999497064800462,
+   "age_years": {
+    "0": {
+     "drive_days": 1246939,
+     "failures": 44
+    },
+    "1": {
+     "drive_days": 21135,
+     "failures": 3
+    },
+    "2": {
+     "drive_days": 36502,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 50923,
+     "failures": 2
+    },
+    "4": {
+     "drive_days": 59405,
+     "failures": 4
+    },
+    "5": {
+     "drive_days": 94904,
+     "failures": 3
+    },
+    "6": {
+     "drive_days": 2312782,
+     "failures": 207
+    },
+    "7": {
+     "drive_days": 3283737,
+     "failures": 184
+    },
+    "8": {
+     "drive_days": 2934223,
+     "failures": 129
+    }
+   }
+  },
+  "ST8000DM005": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 26504,
+   "drive_years": 72.56399726214921,
+   "failures": 1,
+   "afr": 0.013780938726230003,
+   "afr_90ci": [
+    0.0005445394636754725,
+    0.06515662239803459
+   ],
+   "rate_per_hour": 1.572089747459503e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "3": {
+     "drive_days": 298,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 5503,
+     "failures": 1
+    },
+    "5": {
+     "drive_days": 8585,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 8463,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 3467,
+     "failures": 0
+    },
+    "8": {
+     "drive_days": 188,
+     "failures": 0
+    }
+   }
+  },
+  "ST8000NM000A": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 229376,
+   "drive_years": 627.9972621492128,
+   "failures": 2,
+   "afr": 0.0031847272600446425,
+   "afr_90ci": [
+    0.0005496040727629969,
+    0.01000690653831295
+   ],
+   "rate_per_hour": 3.633045014880952e-07,
+   "age_known_share": 0.9999738420758929,
+   "age_years": {
+    "0": {
+     "drive_days": 67433,
+     "failures": 2
+    },
+    "1": {
+     "drive_days": 74775,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 53000,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 22843,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 11319,
+     "failures": 0
+    }
+   }
+  },
+  "ST8000NM0055": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 15036211,
+   "drive_years": 41166.90212183436,
+   "failures": 1190,
+   "afr": 0.028906717257426086,
+   "afr_90ci": [
+    0.027542339361598153,
+    0.030323582980455826
+   ],
+   "rate_per_hour": 3.2975949415270465e-06,
+   "age_known_share": 0.9999172663911141,
+   "age_years": {
+    "0": {
+     "drive_days": 108841,
+     "failures": 10
+    },
+    "1": {
+     "drive_days": 189809,
+     "failures": 13
+    },
+    "2": {
+     "drive_days": 235450,
+     "failures": 21
+    },
+    "3": {
+     "drive_days": 205290,
+     "failures": 14
+    },
+    "4": {
+     "drive_days": 191659,
+     "failures": 8
+    },
+    "5": {
+     "drive_days": 2464708,
+     "failures": 284
+    },
+    "6": {
+     "drive_days": 4764769,
+     "failures": 407
+    },
+    "7": {
+     "drive_days": 4566661,
+     "failures": 319
+    },
+    "8": {
+     "drive_days": 2307780,
+     "failures": 104
+    }
+   }
+  },
+  "Samsung SSD 850 EVO 1TB": {
+   "ssd": true,
+   "capacity_bytes": 1000204886016,
+   "drive_days": 730,
+   "drive_years": 1.998631074606434,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    1.4852340737522147
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 584,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 146,
+     "failures": 0
+    }
+   }
+  },
+  "Samsung SSD 850 PRO 1TB": {
+   "ssd": true,
+   "capacity_bytes": 1024209543168,
+   "drive_days": 299,
+   "drive_years": 0.8186173853524983,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    3.6261567686926988
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 299,
+     "failures": 0
+    }
+   }
+  },
+  "Samsung SSD 860 PRO 2TB": {
+   "ssd": true,
+   "capacity_bytes": 2048408248320,
+   "drive_days": 738,
+   "drive_years": 2.020533880903491,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    1.4691339753917572
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 364,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 119,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 255,
+     "failures": 0
+    }
+   }
+  },
+  "Samsung SSD 870 EVO 2TB": {
+   "ssd": true,
+   "capacity_bytes": 2000398934016,
+   "drive_days": 256,
+   "drive_years": 0.7008898015058179,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    4.23523778843405
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 256,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate BarraCuda 120 SSD ZA250CM10003": {
+   "ssd": true,
+   "capacity_bytes": 250059350016,
+   "drive_days": 1201767,
+   "drive_years": 3290.258726899384,
+   "failures": 8,
+   "afr": 0.0024314197344410355,
+   "afr_90ci": [
+    0.0012091174093553237,
+    0.004385640477140417
+   ],
+   "rate_per_hour": 2.7736935140782977e-07,
+   "age_known_share": 0.9999933431355662,
+   "age_years": {
+    "0": {
+     "drive_days": 11575,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 128309,
+     "failures": 2
+    },
+    "2": {
+     "drive_days": 351014,
+     "failures": 1
+    },
+    "3": {
+     "drive_days": 384090,
+     "failures": 5
+    },
+    "4": {
+     "drive_days": 272925,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 53846,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate BarraCuda 120 SSD ZA500CM10003": {
+   "ssd": true,
+   "capacity_bytes": 500107862016,
+   "drive_days": 3273,
+   "drive_years": 8.960985626283367,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.3312621062753183
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 434,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 1083,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 1087,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 669,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate BarraCuda SSD ZA2000CM10002": {
+   "ssd": true,
+   "capacity_bytes": 2000398934016,
+   "drive_days": 2815,
+   "drive_years": 7.707049965776865,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.3851583921275726
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "3": {
+     "drive_days": 279,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 1093,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 990,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 453,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate BarraCuda SSD ZA250CM10002": {
+   "ssd": true,
+   "capacity_bytes": 250059350016,
+   "drive_days": 561627,
+   "drive_years": 1537.6509240246407,
+   "failures": 14,
+   "afr": 0.009104797312095039,
+   "afr_90ci": [
+    0.005503699357703914,
+    0.014231654644768289
+   ],
+   "rate_per_hour": 1.0386490203165684e-06,
+   "age_known_share": 0.9999804140470454,
+   "age_years": {
+    "0": {
+     "drive_days": 437,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 1217,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 47117,
+     "failures": 2
+    },
+    "3": {
+     "drive_days": 188116,
+     "failures": 3
+    },
+    "4": {
+     "drive_days": 182411,
+     "failures": 8
+    },
+    "5": {
+     "drive_days": 135599,
+     "failures": 1
+    },
+    "6": {
+     "drive_days": 6719,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate BarraCuda SSD ZA500CM10002": {
+   "ssd": true,
+   "capacity_bytes": 500107862016,
+   "drive_days": 15471,
+   "drive_years": 42.35728952772074,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.07008085281100879
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "3": {
+     "drive_days": 113,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 6098,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 5139,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 3965,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 156,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate FireCuda 120 SSD ZA500GM10001": {
+   "ssd": true,
+   "capacity_bytes": 500107862016,
+   "drive_days": 5610,
+   "drive_years": 15.359342915811089,
+   "failures": 1,
+   "afr": 0.06510695187165776,
+   "afr_90ci": [
+    0.0025726335018279364,
+    0.3078272941243331
+   ],
+   "rate_per_hour": 7.4272133095662505e-06,
+   "age_known_share": 0.9991087344028521,
+   "age_years": {
+    "0": {
+     "drive_days": 2188,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 2249,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 1003,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 165,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate IronWolf ZA250NM10002": {
+   "ssd": false,
+   "capacity_bytes": 250059350016,
+   "drive_days": 133182,
+   "drive_years": 364.6324435318275,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.008140896471288288
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 0.9996470994578847,
+   "age_years": {
+    "0": {
+     "drive_days": 50248,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 45948,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 32333,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 4606,
+     "failures": 0
+    }
+   }
+  },
+  "Seagate SSD": {
+   "ssd": true,
+   "capacity_bytes": 250059350016,
+   "drive_days": 111027,
+   "drive_years": 303.9753593429158,
+   "failures": 5,
+   "afr": 0.01644870166716204,
+   "afr_90ci": [
+    0.0064668428761163865,
+    0.0345634815151626
+   ],
+   "rate_per_hour": 1.8764204502808626e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "2": {
+     "drive_days": 120,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 23050,
+     "failures": 1
+    },
+    "4": {
+     "drive_days": 37320,
+     "failures": 2
+    },
+    "5": {
+     "drive_days": 36384,
+     "failures": 2
+    },
+    "6": {
+     "drive_days": 14153,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA HDWE160": {
+   "ssd": false,
+   "capacity_bytes": 6001175126016,
+   "drive_days": 1896,
+   "drive_years": 5.190965092402464,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.5718464524467917
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "4": {
+     "drive_days": 627,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 1257,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 12,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA HDWF180": {
+   "ssd": false,
+   "capacity_bytes": 8001563222016,
+   "drive_days": 60224,
+   "drive_years": 164.88432580424367,
+   "failures": 10,
+   "afr": 0.06064857863974495,
+   "afr_90ci": [
+    0.03289290703966199,
+    0.10284886759102663
+   ],
+   "rate_per_hour": 6.918614948636203e-06,
+   "age_known_share": 0.9999667906482466,
+   "age_years": {
+    "0": {
+     "drive_days": 15399,
+     "failures": 4
+    },
+    "1": {
+     "drive_days": 15290,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 12568,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 1992,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 2466,
+     "failures": 1
+    },
+    "5": {
+     "drive_days": 5316,
+     "failures": 1
+    },
+    "6": {
+     "drive_days": 4227,
+     "failures": 3
+    },
+    "7": {
+     "drive_days": 2964,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MD04ABA400V": {
+   "ssd": false,
+   "capacity_bytes": 4000787030016,
+   "drive_days": 35145,
+   "drive_years": 96.22176591375771,
+   "failures": 1,
+   "afr": 0.01039265898420828,
+   "afr_90ci": [
+    0.0004106551129678397,
+    0.04913675117477618
+   ],
+   "rate_per_hour": 1.185564565846256e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "5": {
+     "drive_days": 18,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 356,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 12746,
+     "failures": 0
+    },
+    "8": {
+     "drive_days": 22025,
+     "failures": 1
+    }
+   }
+  },
+  "TOSHIBA MG07ACA14TA": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 41357693,
+   "drive_years": 113231.19233401779,
+   "failures": 1274,
+   "afr": 0.011251316653470008,
+   "afr_90ci": [
+    0.010737890126695052,
+    0.011783818923222597
+   ],
+   "rate_per_hour": 1.2835177564989743e-06,
+   "age_known_share": 0.9999617241706398,
+   "age_years": {
+    "0": {
+     "drive_days": 197347,
+     "failures": 20
+    },
+    "1": {
+     "drive_days": 2443693,
+     "failures": 52
+    },
+    "2": {
+     "drive_days": 9780434,
+     "failures": 183
+    },
+    "3": {
+     "drive_days": 13187317,
+     "failures": 342
+    },
+    "4": {
+     "drive_days": 11253531,
+     "failures": 368
+    },
+    "5": {
+     "drive_days": 3912728,
+     "failures": 240
+    },
+    "6": {
+     "drive_days": 490754,
+     "failures": 56
+    },
+    "7": {
+     "drive_days": 90306,
+     "failures": 13
+    }
+   }
+  },
+  "TOSHIBA MG07ACA14TEY": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 806731,
+   "drive_years": 2208.7091033538672,
+   "failures": 38,
+   "afr": 0.01720461963157484,
+   "afr_90ci": [
+    0.012885247577459135,
+    0.022550252126575156
+   ],
+   "rate_per_hour": 1.9626533916923155e-06,
+   "age_known_share": 0.9999491776069098,
+   "age_years": {
+    "0": {
+     "drive_days": 148321,
+     "failures": 14
+    },
+    "1": {
+     "drive_days": 105829,
+     "failures": 4
+    },
+    "2": {
+     "drive_days": 211484,
+     "failures": 5
+    },
+    "3": {
+     "drive_days": 180950,
+     "failures": 3
+    },
+    "4": {
+     "drive_days": 150142,
+     "failures": 9
+    },
+    "5": {
+     "drive_days": 9964,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MG08ACA16TA": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 33708633,
+   "drive_years": 92289.20739219713,
+   "failures": 995,
+   "afr": 0.01078132566218274,
+   "afr_90ci": [
+    0.010225357881989413,
+    0.011360730325725033
+   ],
+   "rate_per_hour": 1.229902539605606e-06,
+   "age_known_share": 0.9995633462798684,
+   "age_years": {
+    "0": {
+     "drive_days": 10531928,
+     "failures": 223
+    },
+    "1": {
+     "drive_days": 14106658,
+     "failures": 489
+    },
+    "2": {
+     "drive_days": 7338877,
+     "failures": 237
+    },
+    "3": {
+     "drive_days": 1674470,
+     "failures": 42
+    },
+    "4": {
+     "drive_days": 33953,
+     "failures": 0
+    },
+    "5": {
+     "drive_days": 8028,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MG08ACA16TE": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 6502877,
+   "drive_years": 17803.90691307324,
+   "failures": 203,
+   "afr": 0.011401991764568206,
+   "afr_90ci": [
+    0.010118381697919919,
+    0.012808838530961757
+   ],
+   "rate_per_hour": 1.3007063386457e-06,
+   "age_known_share": 0.9999904657584635,
+   "age_years": {
+    "0": {
+     "drive_days": 97911,
+     "failures": 2
+    },
+    "1": {
+     "drive_days": 1672669,
+     "failures": 46
+    },
+    "2": {
+     "drive_days": 2146344,
+     "failures": 70
+    },
+    "3": {
+     "drive_days": 2100706,
+     "failures": 79
+    },
+    "4": {
+     "drive_days": 485185,
+     "failures": 6
+    }
+   }
+  },
+  "TOSHIBA MG08ACA16TEY": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 5631179,
+   "drive_years": 15417.327857631759,
+   "failures": 458,
+   "afr": 0.029706834039550156,
+   "afr_90ci": [
+    0.02746107183147612,
+    0.03209368244458648
+   ],
+   "rate_per_hour": 3.388869956599379e-06,
+   "age_known_share": 0.9999957380150765,
+   "age_years": {
+    "0": {
+     "drive_days": 470248,
+     "failures": 4
+    },
+    "1": {
+     "drive_days": 1339321,
+     "failures": 50
+    },
+    "2": {
+     "drive_days": 1849906,
+     "failures": 107
+    },
+    "3": {
+     "drive_days": 1402436,
+     "failures": 145
+    },
+    "4": {
+     "drive_days": 536837,
+     "failures": 152
+    },
+    "5": {
+     "drive_days": 32407,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MG09ACA16TE": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 64395,
+   "drive_years": 176.30390143737165,
+   "failures": 3,
+   "afr": 0.017016072676450035,
+   "afr_90ci": [
+    0.004596052829885366,
+    0.04392717489048956
+   ],
+   "rate_per_hour": 1.9411444987964903e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 63335,
+     "failures": 3
+    },
+    "1": {
+     "drive_days": 1060,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MG10ACA20TE": {
+   "ssd": false,
+   "capacity_bytes": 20000588955648,
+   "drive_days": 5541640,
+   "drive_years": 15172.183436002739,
+   "failures": 95,
+   "afr": 0.006261458701756159,
+   "afr_90ci": [
+    0.005243567556369796,
+    0.007425668355138299
+   ],
+   "rate_per_hour": 7.142891514665935e-07,
+   "age_known_share": 0.9994185836683726,
+   "age_years": {
+    "0": {
+     "drive_days": 4859467,
+     "failures": 66
+    },
+    "1": {
+     "drive_days": 678752,
+     "failures": 29
+    },
+    "2": {
+     "drive_days": 199,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MG11ACA24TE": {
+   "ssd": false,
+   "capacity_bytes": 24000277250048,
+   "drive_days": 374087,
+   "drive_years": 1024.1943874058863,
+   "failures": 7,
+   "afr": 0.006834640070357965,
+   "afr_90ci": [
+    0.0032048113500301807,
+    0.012832412564521013
+   ],
+   "rate_per_hour": 7.796760290164231e-07,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 374087,
+     "failures": 7
+    }
+   }
+  },
+  "TOSHIBA MQ01ABF050": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 191796,
+   "drive_years": 525.1088295687885,
+   "failures": 64,
+   "afr": 0.12187949696552587,
+   "afr_90ci": [
+    0.09794873570258109,
+    0.15007159808785783
+   ],
+   "rate_per_hour": 1.3903661529263731e-05,
+   "age_known_share": 1.0,
+   "age_years": {
+    "4": {
+     "drive_days": 1515,
+     "failures": 2
+    },
+    "5": {
+     "drive_days": 33169,
+     "failures": 19
+    },
+    "6": {
+     "drive_days": 65572,
+     "failures": 26
+    },
+    "7": {
+     "drive_days": 56848,
+     "failures": 16
+    },
+    "8": {
+     "drive_days": 31106,
+     "failures": 1
+    },
+    "9": {
+     "drive_days": 3586,
+     "failures": 0
+    }
+   }
+  },
+  "TOSHIBA MQ01ABF050M": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 189933,
+   "drive_years": 520.0082135523614,
+   "failures": 68,
+   "afr": 0.13076716526354032,
+   "afr_90ci": [
+    0.10582155349444147,
+    0.16001026700901402
+   ],
+   "rate_per_hour": 1.4917541097825725e-05,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 74,
+     "failures": 0
+    },
+    "1": {
+     "drive_days": 361,
+     "failures": 0
+    },
+    "2": {
+     "drive_days": 407,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 12350,
+     "failures": 1
+    },
+    "4": {
+     "drive_days": 32216,
+     "failures": 18
+    },
+    "5": {
+     "drive_days": 61429,
+     "failures": 23
+    },
+    "6": {
+     "drive_days": 50861,
+     "failures": 25
+    },
+    "7": {
+     "drive_days": 28850,
+     "failures": 1
+    },
+    "8": {
+     "drive_days": 3385,
+     "failures": 0
+    }
+   }
+  },
+  "WD Blue SA510 2.5 250GB": {
+   "ssd": false,
+   "capacity_bytes": 250059350016,
+   "drive_days": 113224,
+   "drive_years": 309.990417522245,
+   "failures": 20,
+   "afr": 0.0645181233660708,
+   "afr_90ci": [
+    0.04275614239536171,
+    0.09374349226680113
+   ],
+   "rate_per_hour": 7.3600414517534565e-06,
+   "age_known_share": 0.9998056949056737,
+   "age_years": {
+    "0": {
+     "drive_days": 113037,
+     "failures": 19
+    },
+    "1": {
+     "drive_days": 165,
+     "failures": 1
+    }
+   }
+  },
+  "WDC WD5000BPKT": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 8263,
+   "drive_years": 22.622861054072555,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.13121395060379
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "8": {
+     "drive_days": 145,
+     "failures": 0
+    },
+    "9": {
+     "drive_days": 2096,
+     "failures": 0
+    },
+    "10": {
+     "drive_days": 2798,
+     "failures": 0
+    },
+    "11": {
+     "drive_days": 2412,
+     "failures": 0
+    },
+    "12": {
+     "drive_days": 812,
+     "failures": 0
+    }
+   }
+  },
+  "WDC WD5000LPCX": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 55042,
+   "drive_years": 150.69678302532512,
+   "failures": 2,
+   "afr": 0.013271683441735403,
+   "afr_90ci": [
+    0.002290359794231408,
+    0.04170168587863942
+   ],
+   "rate_per_hour": 1.5139953732301394e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "5": {
+     "drive_days": 748,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 11550,
+     "failures": 0
+    },
+    "7": {
+     "drive_days": 18745,
+     "failures": 1
+    },
+    "8": {
+     "drive_days": 16986,
+     "failures": 1
+    },
+    "9": {
+     "drive_days": 7013,
+     "failures": 0
+    }
+   }
+  },
+  "WDC WD5000LPVX": {
+   "ssd": false,
+   "capacity_bytes": 500107862016,
+   "drive_days": 108780,
+   "drive_years": 297.82340862422996,
+   "failures": 11,
+   "afr": 0.036934638720353005,
+   "afr_90ci": [
+    0.020708093399648454,
+    0.06112257107472732
+   ],
+   "rate_per_hour": 4.2133970705399275e-06,
+   "age_known_share": 1.0,
+   "age_years": {
+    "5": {
+     "drive_days": 520,
+     "failures": 0
+    },
+    "6": {
+     "drive_days": 8230,
+     "failures": 2
+    },
+    "7": {
+     "drive_days": 30326,
+     "failures": 1
+    },
+    "8": {
+     "drive_days": 38099,
+     "failures": 5
+    },
+    "9": {
+     "drive_days": 21193,
+     "failures": 1
+    },
+    "10": {
+     "drive_days": 8331,
+     "failures": 2
+    },
+    "11": {
+     "drive_days": 2081,
+     "failures": 0
+    }
+   }
+  },
+  "WDC WD60EFRX": {
+   "ssd": false,
+   "capacity_bytes": 6001175126016,
+   "drive_days": 1422,
+   "drive_years": 3.893223819301848,
+   "failures": 0,
+   "afr": 0.0,
+   "afr_90ci": [
+    0.0,
+    0.7624619365957221
+   ],
+   "rate_per_hour": 0.0,
+   "age_known_share": 1.0,
+   "age_years": {
+    "7": {
+     "drive_days": 377,
+     "failures": 0
+    },
+    "8": {
+     "drive_days": 1045,
+     "failures": 0
+    }
+   }
+  },
+  "WDC WDS250G2B0A": {
+   "ssd": false,
+   "capacity_bytes": 250059350016,
+   "drive_days": 163771,
+   "drive_years": 448.38056125941137,
+   "failures": 2,
+   "afr": 0.004460496669129455,
+   "afr_90ci": [
+    0.0007697698847420189,
+    0.01401557170764098
+   ],
+   "rate_per_hour": 5.088405965240081e-07,
+   "age_known_share": 0.9998473478210428,
+   "age_years": {
+    "0": {
+     "drive_days": 47190,
+     "failures": 1
+    },
+    "1": {
+     "drive_days": 58795,
+     "failures": 1
+    },
+    "2": {
+     "drive_days": 40628,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 16094,
+     "failures": 0
+    },
+    "4": {
+     "drive_days": 1039,
+     "failures": 0
+    }
+   }
+  },
+  "WDC WUH721414ALE6L4": {
+   "ssd": false,
+   "capacity_bytes": 14000519643136,
+   "drive_days": 9317645,
+   "drive_years": 25510.321697467487,
+   "failures": 178,
+   "afr": 0.006977567829639357,
+   "afr_90ci": [
+    0.0061401855861467495,
+    0.007901108150767578
+   ],
+   "rate_per_hour": 7.959808156102391e-07,
+   "age_known_share": 0.9999774621162322,
+   "age_years": {
+    "0": {
+     "drive_days": 130718,
+     "failures": 11
+    },
+    "1": {
+     "drive_days": 169077,
+     "failures": 3
+    },
+    "2": {
+     "drive_days": 2758842,
+     "failures": 34
+    },
+    "3": {
+     "drive_days": 3045750,
+     "failures": 67
+    },
+    "4": {
+     "drive_days": 2907507,
+     "failures": 58
+    },
+    "5": {
+     "drive_days": 305541,
+     "failures": 5
+    }
+   }
+  },
+  "WDC WUH721816ALE6L0": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 3192811,
+   "drive_years": 8741.440109514031,
+   "failures": 105,
+   "afr": 0.012011750773847873,
+   "afr_90ci": [
+    0.010150815534943491,
+    0.014126190464269852
+   ],
+   "rate_per_hour": 1.3702658879589178e-06,
+   "age_known_share": 0.9999862190402126,
+   "age_years": {
+    "0": {
+     "drive_days": 156290,
+     "failures": 2
+    },
+    "1": {
+     "drive_days": 834469,
+     "failures": 8
+    },
+    "2": {
+     "drive_days": 1008710,
+     "failures": 36
+    },
+    "3": {
+     "drive_days": 925049,
+     "failures": 58
+    },
+    "4": {
+     "drive_days": 268249,
+     "failures": 1
+    }
+   }
+  },
+  "WDC WUH721816ALE6L4": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 24664855,
+   "drive_years": 67528.69267624915,
+   "failures": 309,
+   "afr": 0.0045758326979826154,
+   "afr_90ci": [
+    0.004156245655929133,
+    0.005027752478972186
+   ],
+   "rate_per_hour": 5.219977980815213e-07,
+   "age_known_share": 0.9996593128157453,
+   "age_years": {
+    "0": {
+     "drive_days": 7611751,
+     "failures": 69
+    },
+    "1": {
+     "drive_days": 9425259,
+     "failures": 70
+    },
+    "2": {
+     "drive_days": 6124783,
+     "failures": 107
+    },
+    "3": {
+     "drive_days": 1494659,
+     "failures": 63
+    }
+   }
+  },
+  "WDC WUH722222ALE6L4": {
+   "ssd": false,
+   "capacity_bytes": 22000969973760,
+   "drive_days": 18479108,
+   "drive_years": 50593.04038329911,
+   "failures": 318,
+   "afr": 0.0062854494924755025,
+   "afr_90ci": [
+    0.005717142571462323,
+    0.006896899365690248
+   ],
+   "rate_per_hour": 7.170259516855467e-07,
+   "age_known_share": 0.9993078670247503,
+   "age_years": {
+    "0": {
+     "drive_days": 13206778,
+     "failures": 284
+    },
+    "1": {
+     "drive_days": 5111337,
+     "failures": 31
+    },
+    "2": {
+     "drive_days": 148203,
+     "failures": 1
+    }
+   }
+  },
+  "WDC WUH722626ALE6L4": {
+   "ssd": false,
+   "capacity_bytes": 26000658268160,
+   "drive_days": 91690,
+   "drive_years": 251.03353867214236,
+   "failures": 1,
+   "afr": 0.0039835314647180715,
+   "afr_90ci": [
+    0.00015740510355823672,
+    0.018834236231186702
+   ],
+   "rate_per_hour": 4.5442978151016104e-07,
+   "age_known_share": 1.0,
+   "age_years": {
+    "0": {
+     "drive_days": 91690,
+     "failures": 1
+    }
+   }
+  },
+  "WUH721816ALE6L4": {
+   "ssd": false,
+   "capacity_bytes": 16000900661248,
+   "drive_days": 81959,
+   "drive_years": 224.3915126625599,
+   "failures": 8,
+   "afr": 0.03565197232762723,
+   "afr_90ci": [
+    0.01772932077854439,
+    0.06430676312902313
+   ],
+   "rate_per_hour": 4.067074187500254e-06,
+   "age_known_share": 0.999926792664625,
+   "age_years": {
+    "0": {
+     "drive_days": 24064,
+     "failures": 4
+    },
+    "1": {
+     "drive_days": 42127,
+     "failures": 4
+    },
+    "2": {
+     "drive_days": 14618,
+     "failures": 0
+    },
+    "3": {
+     "drive_days": 1144,
+     "failures": 0
+    }
+   }
+  }
+ }
+}

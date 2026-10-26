@@ -120,3 +120,4 @@ notebooks/*.html
 data/fault_library/raw/spot/spotlake/
 data/fault_library/raw/azure_locations.json
 aws-*.zip
+data/fault_library/raw/backblaze/

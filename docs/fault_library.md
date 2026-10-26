@@ -38,11 +38,14 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | Component | Rate low / central / high (per year) |
 |---|---|
 | `disk/backblaze-hdd-2025` | 0.0136 / 0.0136 / 0.0136 |
+| `disk/backblaze-models` | 0.00458 / 0.0154 / 0.0444 |
+| `disk/backblaze-models-age` | 0.00458 / 0.0154 / 0.0444 |
 | `disk/backblaze-ssd-2023` | 0.01 / 0.01 / 0.01 |
 | `disk/ford10` | 0.02 / 0.0447 / 0.1 |
 | `disk/pooled` | 0.00652 / 0.0175 / 0.0472 |
 | `disk/schroeder-gibson-fast07` | 0.0283 / 0.0283 / 0.0283 |
 | `disk/vishwanath10` | 0.027 / 0.027 / 0.027 |
+| `spot/spotlake-pools` | 0.304 / 2.28 / 4.28 |
 
 ## Planned downtime
 

@@ -91,11 +91,11 @@ solution with the exact machines; column generation; Markov-score caching keyed 
 
 1. [x] Apply the recoverability decision (Birke, LANL, Vishwanath non-disk excluded; AWS profile on Ford;
    SLA clip of the pessimistic end; reference scenarios updated).
-2. [ ] Schema + library support for `population`, `curve`, `curve_population` (validation, sampling, horizon average).
-3. [ ] Populate from data in hand: Ford (Table 1 → D, Fig 3 → calendar T), SpotLake (pool series → T, 289 pools → DT).
+2. [x] Schema + library support for `population`, `curve`, `curve_population` (`powder/faults/ratemodels.py`: piecewise hazards, NHPP sampling, horizon average, validation).
+3. [x] Populate from data in hand (`build_rate_models.py`): Ford hw_reboot/sw = lognormal population of cell levels (mean = Table 1 average; sigma from the Table 1 max as the top quantile of n = 30 cells, capped at sigma = z = 1.85 because max/mean exceeds what 30 lognormal draws reach: a lower bound on spread) x Fig 3 relative daily shape (calendar, 91-day period); SpotLake: one calendar curve per pool (289 US pools, 396 days, offset shared by the pool).
 4. [ ] Schroeder & Gibson FAST'07: fetch PDF, digitize per-system rates and the age curve.
-5. [ ] Backblaze 2023-2025 (after allowlist / manual download): per-model AFR with exposure, per-model age hazard, drive age distribution.
-6. [ ] Catalogue generator (recipes, rules, uniqueness, seeds) + validation (every number traceable; sampled rates inside the data).
+5. [x] Backblaze 2023-2025 (12 quarters, 94 models, 314M drive-days; `extract_backblaze.py`): `disk/backblaze-models` (40 models with >= 500 drive-years; AFR 0.2%-13%) and `disk/backblaze-models-age` (39 models with SMART 9 ages; yearly hazards merged to >= 200 drive-years; machine age drawn from the model's drive-day age mix). Fleet AFR: HDD 1.56%, boot SSD 0.51%.
+6. [x] Catalogue generator (`powder/faults/catalogue.py`, `build_catalogue.py` -> `catalogue/machines-n1000-seed0.json.gz`): recipe = transient base (aws-ondemand-nvme or ford10-ge15min) x disk option (44: Backblaze models + literature components) x spot pool (289) or on-demand x region. Capacity: 352 on-demand recipes, 25,432 spot recipes; on-demand recipes repeat only after all are used, with independent draws (validated: no two machines share all rates). Default 1000 machines, 30% spot; on-demand prices assigned (rho 0 and 1), spot prices = pool's SpotLake median. `node_config()` gives the 30-day horizon-average exponential machine for the Markov model.
 7. [ ] Python simulator / trace NHPP support; Markov horizon average.
 8. [ ] Rust `piecewise_hazard` + node age clock; cross-check against Python.
 9. [ ] ILP scaling for 1000 types.

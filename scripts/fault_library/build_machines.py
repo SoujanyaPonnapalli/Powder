@@ -53,6 +53,7 @@ def synthetic_profiles(base: dict) -> list[dict]:
                   "notes": f"cloud/aws-ondemand-nvme with every cause rate multiplied by {factor} (stress / heterogeneity)."})
         for c in p["causes"].values():
             c["rate_per_hour"] = {k: v * factor for k, v in c["rate_per_hour"].items()}
+            c.pop("rate_model", None)  # a scaled profile keeps constant rates only
         out.append(p)
     return out
 

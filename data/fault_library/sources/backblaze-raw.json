@@ -1,0 +1,22 @@
+{
+  "id": "backblaze-raw-2023-2025",
+  "kind": "source",
+  "title": "Backblaze Hard Drive Data and Stats, raw daily drive records 2023-Q1 .. 2025-Q4",
+  "url": "https://www.backblaze.com/cloud-storage/resources/hard-drive-test-data",
+  "accessed": "2026-10-26",
+  "population": "Backblaze data-centre drives (HDD data drives and SSD boot drives), one row per drive per day",
+  "notes": "Downloaded from f001.backblazeb2.com (12 quarterly zips, ~12 GB, not in git); aggregated by scripts/fault_library/extract_backblaze.py into derived/backblaze_model_age.csv.gz and derived/backblaze_summary.json. failure = 1 on the drive's last day when it was removed as failed.",
+  "measurements": [
+    {
+      "id": "models",
+      "metric_verbatim": "per-model drive-days and failures by age quarter (SMART 9)",
+      "value": "derived/backblaze_summary.json",
+      "unit": "drive-days, failures",
+      "status": "V",
+      "location": "derived/backblaze_model_age.csv.gz",
+      "covers": [
+        "disk"
+      ]
+    }
+  ]
+}

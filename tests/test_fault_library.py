@@ -820,3 +820,69 @@ def test_no_machine_with_unknown_recoverability():
     for m in lib.query(kind="machine"):
         assert "recoverability-unknown" not in lib.get(m["fault_profile"], "node").get("tags", []), m["id"]
     assert "recoverability-unknown" in lib.get("vm/birke14-vm", "node")["tags"]
+
+
+# -- rate models and the machine catalogue (exec #1b) ----------------------------
+
+def test_piecewise_hazard_nhpp_counts_and_mean():
+    from powder.faults.ratemodels import PiecewiseHazard
+    h = PiecewiseHazard((0.0, 10.0, 20.0), (0.1, 1.0))
+    rng = np.random.default_rng(0)
+    counts = []
+    for _ in range(3000):
+        t, k = 0.0, 0
+        while (t := h.next_event(t, rng)) <= 20.0:
+            k += 1
+        counts.append(k)
+    assert abs(np.mean(counts) - 11.0) < 0.2
+    p = PiecewiseHazard((0.0, 10.0, 20.0), (0.1, 1.0), periodic=True, offset=15.0)
+    assert math.isclose(p.cumulative(0, 20), 11.0) and math.isclose(p.mean_rate(0, 40), 0.55)
+    assert math.isinf(PiecewiseHazard((0.0, 1.0), (0.0,)).next_event(0.0, rng))
+
+
+def test_rate_model_instantiation():
+    from powder.faults.ratemodels import instantiate
+    rng = np.random.default_rng(1)
+    pop = {"type": "population", "lognormal": {"mean": 1e-4, "sigma": 1.0}}
+    draws = [instantiate(pop, {"central": 1e-4}, rng).rate_per_hour for _ in range(20000)]
+    assert abs(np.mean(draws) / 1e-4 - 1) < 0.05
+    capped = {**pop, "max_per_hour": 2e-4}
+    assert max(instantiate(capped, {"central": 1e-4}, rng).rate_per_hour for _ in range(2000)) <= 2e-4
+    curve = {"type": "curve", "clock": "calendar", "edges_h": [0, 24, 48], "rate_per_hour": [0.5, 1.5],
+             "periodic": True, "scale_with": "level", "start_h": {"type": "fixed", "value": 0.0}}
+    mr = instantiate({**pop, "curve": curve}, {"central": 1e-4}, rng)
+    assert mr.kind == "curve" and math.isclose(mr.mean_rate(48.0), mr.draws["level_per_hour"])
+
+
+def test_rate_models_in_library():
+    lib = LIB
+    for cause in ("hw_reboot", "sw"):
+        rm = lib.get("cloud/aws-ondemand-nvme", "node")["causes"][cause]["rate_model"]
+        assert rm["type"] == "population" and rm["curve"]["clock"] == "calendar"
+        assert math.isclose(float(np.mean(rm["curve"]["rate_per_hour"])), 1.0, rel_tol=1e-6)
+    if "disk/backblaze-models" in lib.entries:
+        pop = lib.get("disk/backblaze-models")["rate_model"]["members"]
+        afr = [m["rate_per_hour"] * 8766 for m in pop]
+        assert len(pop) >= 20 and 0.001 < np.median(afr) < 0.05
+        for m in lib.get("disk/backblaze-models-age")["rate_model"]["members"]:
+            assert m["edges_h"][0] == 0 and len(m["edges_h"]) == len(m["rate_per_hour"]) + 1
+    if "spot/spotlake-pools" in lib.entries:
+        assert len(lib.get("spot/spotlake-pools")["rate_model"]["members"]) > 100
+
+
+def test_catalogue_unique_traceable_and_markov():
+    from powder.faults import catalogue as C
+    cat = C.generate(LIB, n=200, seed=3, spot_fraction=0.3, horizon_h=720.0)
+    assert C.validate(LIB, cat) == []
+    assert len(cat["machines"]) == 200 and sum(m["tier"] == "spot" for m in cat["machines"]) == 60
+    # spot machines of the same pool share one calendar offset
+    by_pool = {}
+    for m in cat["machines"]:
+        if m["tier"] == "spot":
+            off = m["causes"]["spot_interrupt"]["draws"]["offset_h"]
+            assert by_pool.setdefault(m["recipe"]["spot_pool"], off) == off
+    m = cat["machines"][0]
+    cfg = C.node_config(m, horizon_h=720.0)
+    lam_t = sum(v for c, v in m["markov_rate_per_hour"].items() if c in ("hw_reboot", "sw", "pause")) / 3600
+    assert math.isclose(cfg.failure_dist.rate, lam_t, rel_tol=1e-9)
+    assert C.generate(LIB, n=50, seed=3)["machines"][0]["causes"] == C.generate(LIB, n=50, seed=3)["machines"][0]["causes"]

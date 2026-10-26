@@ -14,6 +14,7 @@ from __future__ import annotations
 from typing import Any
 
 from .dists import validate_spec
+from .ratemodels import validate_model
 
 KINDS = {
     "source",
@@ -121,6 +122,7 @@ def validate_entry(e: dict[str, Any]) -> list[str]:
                 errs.append(f"{eid}: unknown cause {c!r}")
                 continue
             errs += check_triple(spec.get("rate_per_hour"), f"{eid}.causes.{c}.rate_per_hour")
+            errs += validate_model(spec.get("rate_model"), f"{eid}.causes.{c}.rate_model")
             if c in TRANSIENT_CAUSES:
                 if "duration" not in spec:
                     errs.append(f"{eid}.causes.{c}: transient cause needs a duration")
@@ -136,6 +138,7 @@ def validate_entry(e: dict[str, Any]) -> list[str]:
 
     elif kind == "component":
         errs += check_triple(e.get("rate_per_hour"), f"{eid}.rate_per_hour")
+        errs += validate_model(e.get("rate_model"), f"{eid}.rate_model")
 
     elif kind == "planned_downtime":
         errs += validate_spec(e.get("period"), f"{eid}.period")
