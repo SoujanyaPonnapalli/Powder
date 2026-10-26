@@ -963,3 +963,24 @@ def test_engine_time_varying_matches_python():
     expected = 1 - 0.5 * (3 * p * p * (1 - p) + p ** 3)
     print("rust availability", a_rust, "expected", expected)
     assert abs(a_rust - expected) < 0.02, (a_rust, expected)
+
+
+def test_catalogue_placement_ilp_binned_scorer():
+    try:
+        import scipy  # noqa: F401
+    except ImportError:
+        return
+    from powder.faults import catalogue as C
+    from powder.faults.ilp import solve_catalogue_placement
+    from powder.simulation import NodeReplacementStrategy, RaftLikeProtocol
+    cat = C.generate(LIB, n=150, seed=7, spot_fraction=0.3)
+    r = solve_catalogue_placement(LIB, cat, RaftLikeProtocol(election_time_dist=Exponential(0.2)),
+                                  NodeReplacementStrategy(failure_timeout=600.0, default_node_config=None),
+                                  num_rsms=20, replica_counts=(3,), random_samples_per_size=80,
+                                  greedy_starts_per_size=2, capacity=5)
+    sol = r["solution"]
+    assert str(sol.status) == "0" and sol.total_rsms == 20
+    assert r["binned_classes"] < 150  # binning merges machines into shared Markov classes
+    for item in sol.selected:
+        ex = r["exact_availability"][item.candidate.candidate_id]
+        assert abs((1 - ex) - (1 - item.candidate.availability)) <= 0.5 * (1 - ex) + 1e-9
