@@ -797,3 +797,14 @@ def test_spot_rates_from_band_history():
     assert r["low"] == band_rates(0)["low"] and r["high"] == band_rates(2)["high"]
     assert abs(r["central"] - 0.5 * (band_rates(0)["central"] + band_rates(2)["central"])) < 1e-15
     assert band_rates_from_history({"3": 1.0}) == band_rates(3)
+
+
+def test_reference_ford10_planned_variants():
+    from powder.faults import FaultLibrary
+    lib = FaultLibrary.load()
+    base = lib.get("scenario/reference-ford10", "scenario")
+    weekly = lib.get("scenario/reference-ford10-weekly", "scenario")
+    assert base["planned_downtime"] == "planned_downtime/ford10-rate"
+    assert weekly["planned_downtime"] == "planned_downtime/weekly-ford10"
+    strip = lambda s: {k: v for k, v in s.items() if k not in ("id", "planned_downtime", "notes")}  # noqa: E731
+    assert strip(base) == strip(weekly)

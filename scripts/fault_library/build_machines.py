@@ -112,11 +112,21 @@ def main() -> int:
                 scenarios.append({**common, "id": f"scenario/canonical-{lvl}-rho{a['rho']:g}", "machines": all_machines,
                                   "level": lvl, "price_assignment": a["id"], "price_policy": "mean_over_window",
                                   "notes": f"priced: rho={a['rho']:g} assignment for on-demand classes; native spot prices"})
-    for ref, mids in (("ford10", [m["id"] for m in machines if "ford10" in m["id"]]),
-                      ("vishwanath10", [m["id"] for m in machines if "vishwanath" in m["id"]])):
-        scenarios.append({**common, "id": f"scenario/reference-{ref}", "machines": mids, "level": "central",
-                          "price_assignment": None, "price_policy": "none",
-                          "notes": f"contrasting environment: only {ref} machine classes"})
+    ford_mids = [m["id"] for m in machines if "ford10" in m["id"]]
+    scenarios.append({**common, "id": "scenario/reference-ford10", "machines": ford_mids, "level": "central",
+                      "planned_downtime": "planned_downtime/ford10-rate", "price_assignment": None,
+                      "price_policy": "none",
+                      "notes": "contrasting environment: only ford10 machine classes, with Google's own planned-reboot "
+                               "cadence (ford10-rate) so planned downtime is not stacked on Ford's restarts"})
+    scenarios.append({**common, "id": "scenario/reference-ford10-weekly", "machines": ford_mids, "level": "central",
+                      "price_assignment": None, "price_policy": "none",
+                      "notes": "reference-ford10 with our weekly planned cadence (weekly-ford10) instead of Ford's. "
+                               "Caveat: cluster/ford10-google-storage counts all node restarts (incl. sub-15-min "
+                               "rollout restarts), which partly overlap the weekly window; the -ge15min class does not"})
+    scenarios.append({**common, "id": "scenario/reference-vishwanath10",
+                      "machines": [m["id"] for m in machines if "vishwanath" in m["id"]], "level": "central",
+                      "price_assignment": None, "price_policy": "none",
+                      "notes": "contrasting environment: only vishwanath10 machine classes"})
     (LIB / "scenarios/canonical.json").write_text(json.dumps(scenarios, indent=1) + "\n")
 
     problems = FaultLibrary.load(LIB, validate=False).validate()

@@ -758,7 +758,7 @@
  {
   "kind": "scenario",
   "region_outage": "region_outage/aws-us-from-azure",
-  "planned_downtime": "planned_downtime/weekly-ford10",
+  "planned_downtime": "planned_downtime/ford10-rate",
   "deployment": {
    "instance_type": "i4i.2xlarge",
    "fallback_instance_type": "m6id.2xlarge",
@@ -794,7 +794,48 @@
   "level": "central",
   "price_assignment": null,
   "price_policy": "none",
-  "notes": "contrasting environment: only ford10 machine classes"
+  "notes": "contrasting environment: only ford10 machine classes, with Google's own planned-reboot cadence (ford10-rate) so planned downtime is not stacked on Ford's restarts"
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/weekly-ford10",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/reference-ford10-weekly",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min"
+  ],
+  "level": "central",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "reference-ford10 with our weekly planned cadence (weekly-ford10) instead of Ford's. Caveat: cluster/ford10-google-storage counts all node restarts (incl. sub-15-min rollout restarts), which partly overlap the weekly window; the -ge15min class does not"
  },
  {
   "kind": "scenario",
