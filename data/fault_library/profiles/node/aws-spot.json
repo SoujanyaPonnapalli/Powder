@@ -12,7 +12,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -4569,7 +4568,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -9125,7 +9123,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -13682,7 +13679,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -18238,7 +18234,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -22792,7 +22787,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -27346,7 +27340,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -31902,7 +31895,6 @@
   "derived_from": [
    "vishwanath-nagappan-socc10#afr-8pct",
    "vishwanath-nagappan-socc10#disk-share",
-   "birke-dsn14#weekly-rate",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",

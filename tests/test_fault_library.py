@@ -808,3 +808,11 @@ def test_reference_ford10_planned_variants():
     assert weekly["planned_downtime"] == "planned_downtime/weekly-ford10"
     strip = lambda s: {k: v for k, v in s.items() if k not in ("id", "planned_downtime", "notes")}  # noqa: E731
     assert strip(base) == strip(weekly)
+
+
+def test_no_machine_with_unknown_recoverability():
+    from powder.faults import FaultLibrary
+    lib = FaultLibrary.load()
+    for m in lib.query(kind="machine"):
+        assert "recoverability-unknown" not in lib.get(m["fault_profile"], "node").get("tags", []), m["id"]
+    assert "recoverability-unknown" in lib.get("vm/birke14-vm", "node")["tags"]

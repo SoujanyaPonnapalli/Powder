@@ -78,8 +78,6 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `machine/aws-ondemand-nvme-loss0.8` | `cloud/aws-ondemand-nvme-loss0.8` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/aws-ondemand-x0.1` | `synthetic/aws-ondemand-x0.1` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/aws-ondemand-x10` | `synthetic/aws-ondemand-x10` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/birke14-pm` | `vm/birke14-pm` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/birke14-vm` | `vm/birke14-vm` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/ford10-google-storage` | `cluster/ford10-google-storage` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/ford10-google-storage-ge15min` | `cluster/ford10-google-storage-ge15min` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/lanl05-pooled` | `hpc/lanl05-pooled` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
@@ -112,6 +110,6 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 
 ## Coverage
 
-- Node profiles without a machine class: none
-- Machine classes with assigned (not native) prices: 16
+- Node profiles without a machine class: `vm/birke14-vm`, `vm/birke14-pm`
+- Machine classes with assigned (not native) prices: 14
 - Scenarios: `scenario/canonical-central`, `scenario/canonical-central-rho0`, `scenario/canonical-central-rho0.5`, `scenario/canonical-central-rho1`, `scenario/canonical-optimistic`, `scenario/canonical-optimistic-rho0`, `scenario/canonical-optimistic-rho0.5`, `scenario/canonical-optimistic-rho1`, `scenario/canonical-pessimistic`, `scenario/canonical-pessimistic-rho0`, `scenario/canonical-pessimistic-rho0.5`, `scenario/canonical-pessimistic-rho1`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-ford10-weekly`, `scenario/reference-vishwanath10`

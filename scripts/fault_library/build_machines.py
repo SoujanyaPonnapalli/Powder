@@ -63,8 +63,10 @@ def main() -> int:
     (LIB / "profiles/node/synthetic.json").write_text(json.dumps(synthetic_profiles(base), indent=1) + "\n")
     lib = FaultLibrary.load(LIB, validate=False)
 
+    # not instantiable: legacy, spot (built by build_prices.py), and profiles whose transient vs permanent
+    # split is unknown (e.g. Birke crash tickets: recoverability not reported)
     profiles = [p for p in lib.query(kind="node")
-                if "legacy" not in p.get("tags", []) and not p["id"].startswith("spot/")]
+                if not {"legacy", "recoverability-unknown"} & set(p.get("tags", [])) and not p["id"].startswith("spot/")]
     machines = [{"id": f"machine/{p['id'].split('/', 1)[1]}", "kind": "machine", "fault_profile": p["id"],
                  "tier": "ondemand", "storage_mode": "local", "regions": US_REGIONS, "price": {"route": "assigned"}}
                 for p in sorted(profiles, key=lambda p: p["id"])]

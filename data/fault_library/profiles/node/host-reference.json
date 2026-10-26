@@ -39,7 +39,8 @@
       "ibm",
       "enterprise",
       "2012-2013",
-      "vm"
+      "vm",
+      "recoverability-unknown"
     ],
     "derived_from": [
       "birke-dsn14#weekly-rate",
@@ -49,7 +50,7 @@
       "birke-dsn14#interfailure-gamma"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
-    "notes": "VM crash tickets (server unresponsive/unreachable), all causes, as one transient cause (the paper gives no data-loss rate). Rate central = mean weekly failure rate (Fig 2), high = Table V weekly failure probability. Duration: lognormal matched to the reported median (3.13 h) and mean (19.6 h); the paper's own fit (sigma ~2-2.9) has a much larger mean than the data, so it is not used. Repair = ticket open to close, including queueing. Recurrence within a week is 42.1x the random weekly probability; frailty_a = 1/(ratio - 1) (gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape 0.44 (bursty) is recorded in shape_variant.",
+    "notes": "VM crash tickets (server unresponsive/unreachable), all causes, as one transient cause (the paper gives no data-loss rate). NOT INSTANTIATED as a machine class (user decision 2026-10-26): crash tickets mean 'server unresponsive/unreachable' and the paper never says whether data survived, so the transient/permanent split is unknown. Kept for reference only. Rate central = mean weekly failure rate (Fig 2), high = Table V weekly failure probability. Duration: lognormal matched to the reported median (3.13 h) and mean (19.6 h); the paper's own fit (sigma ~2-2.9) has a much larger mean than the data, so it is not used. Repair = ticket open to close, including queueing. Recurrence within a week is 42.1x the random weekly probability; frailty_a = 1/(ratio - 1) (gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape 0.44 (bursty) is recorded in shape_variant.",
     "causes": {
       "hw_reboot": {
         "rate_per_hour": {
@@ -83,7 +84,8 @@
       "ibm",
       "enterprise",
       "2012-2013",
-      "pm"
+      "pm",
+      "recoverability-unknown"
     ],
     "derived_from": [
       "birke-dsn14#weekly-rate",
@@ -93,7 +95,7 @@
       "birke-dsn14#interfailure-gamma"
     ],
     "built_by": "scripts/fault_library/build_literature.py",
-    "notes": "PM crash tickets (server unresponsive/unreachable), all causes, as one transient cause (the paper gives no data-loss rate). Rate central = mean weekly failure rate (Fig 2), high = Table V weekly failure probability. Duration: lognormal matched to the reported median (6.05 h) and mean (38.5 h); the paper's own fit (sigma ~2-2.9) has a much larger mean than the data, so it is not used. Repair = ticket open to close, including queueing. Recurrence within a week is 35.5x the random weekly probability; frailty_a = 1/(ratio - 1) (gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape 0.29 (bursty) is recorded in shape_variant.",
+    "notes": "PM crash tickets (server unresponsive/unreachable), all causes, as one transient cause (the paper gives no data-loss rate). NOT INSTANTIATED as a machine class (user decision 2026-10-26): crash tickets mean 'server unresponsive/unreachable' and the paper never says whether data survived, so the transient/permanent split is unknown. Kept for reference only. Rate central = mean weekly failure rate (Fig 2), high = Table V weekly failure probability. Duration: lognormal matched to the reported median (6.05 h) and mean (38.5 h); the paper's own fit (sigma ~2-2.9) has a much larger mean than the data, so it is not used. Repair = ticket open to close, including queueing. Recurrence within a week is 35.5x the random weekly probability; frailty_a = 1/(ratio - 1) (gamma-Poisson: E[Z | failed] = 1 + 1/a), opt-in. Inter-failure Gamma shape 0.29 (bursty) is recorded in shape_variant.",
     "causes": {
       "hw_reboot": {
         "rate_per_hour": {

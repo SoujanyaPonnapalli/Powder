@@ -265,7 +265,7 @@ def main():
     aws = {"id": "cloud/aws-ondemand-nvme", "kind": "node", "version": 1, "tier": "cloud",
            "tags": ["aws", "on-demand", "local-nvme", "derived"],
            "derived_from": ["vishwanath-nagappan-socc10#afr-8pct", "vishwanath-nagappan-socc10#disk-share",
-                            "birke-dsn14#weekly-rate", "aws-ec2-sla#instance-level",
+                            "aws-ec2-sla#instance-level",
                             "azure-vm-docs#pause-18mo", "narya-afpd#narya-reduction", "narya-afpd#afpd-reduction",
                             "ford10#derived-rate-node_restart", "ford10#derived-rate-unplanned_reboot",
                             "ford10#digitized-unplanned_reboot", "ford10#digitized-node_restart", "disk/pooled"]
@@ -301,12 +301,14 @@ def main():
         sigma = math.sqrt(2 * math.log(mean_h / med_h))  # lognormal matching the reported median and mean
         mu = math.log(med_h * 3600.0)
         return {"id": f"vm/birke14-{kind}", "kind": "node", "version": 1, "tier": "reference",
-                "tags": ["ibm", "enterprise", "2012-2013", kind],
+                "tags": ["ibm", "enterprise", "2012-2013", kind, "recoverability-unknown"],
                 "derived_from": ["birke-dsn14#weekly-rate", "birke-dsn14#weekly-random-prob", "birke-dsn14#repair-lognormal",
                                  "birke-dsn14#recurrent-week", "birke-dsn14#interfailure-gamma"],
                 "built_by": "scripts/fault_library/build_literature.py",
                 "notes": (f"{kind.upper()} crash tickets (server unresponsive/unreachable), all causes, as one transient cause "
-                          "(the paper gives no data-loss rate). Rate central = mean weekly failure rate (Fig 2), high = "
+                          "(the paper gives no data-loss rate). NOT INSTANTIATED as a machine class (user decision 2026-10-26): "
+                          "crash tickets mean 'server unresponsive/unreachable' and the paper never says whether data "
+                          "survived, so the transient/permanent split is unknown. Kept for reference only. Rate central = mean weekly failure rate (Fig 2), high = "
                           "Table V weekly failure probability. Duration: lognormal matched to the reported median "
                           f"({med_h:.2f} h) and mean ({mean_h} h); the paper's own fit (sigma ~2-2.9) has a much larger mean "
                           "than the data, so it is not used. Repair = ticket open to close, including queueing. "
