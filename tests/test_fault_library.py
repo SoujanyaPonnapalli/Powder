@@ -886,3 +886,45 @@ def test_catalogue_unique_traceable_and_markov():
     lam_t = sum(v for c, v in m["markov_rate_per_hour"].items() if c in ("hw_reboot", "sw", "pause")) / 3600
     assert math.isclose(cfg.failure_dist.rate, lam_t, rel_tol=1e-9)
     assert C.generate(LIB, n=50, seed=3)["machines"][0]["causes"] == C.generate(LIB, n=50, seed=3)["machines"][0]["causes"]
+
+
+def test_simulator_time_varying_hazard_and_respawn():
+    """The Python simulator samples TimeVaryingHazard from the current time; spawns redraw age clocks."""
+    from dataclasses import replace
+    from powder.simulation import ClusterState, EventType, NetworkState, NodeState, NoOpStrategy, RaftLikeProtocol, Simulator
+    from powder.simulation.distributions import PiecewiseRate, TimeVaryingHazard, Constant
+    day = 86400.0
+    # failures only during the first 10 days of every 20 (periodic calendar clock), ~1 per day when on
+    tv = TimeVaryingHazard([PiecewiseRate([0, 10 * day, 20 * day], [1 / day, 0.0], periodic=True)])
+    base = machine_node_config(LIB, "machine/legacy-standard", "r1")
+    never = Exponential(1e-15)
+    nodes = {f"n{i}": NodeState(node_id=f"n{i}", config=replace(base, region="r1", failure_dist=tv,
+                                                                 recovery_dist=Constant(60.0), data_loss_dist=never))
+             for i in range(3)}
+    sim = Simulator(ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=3), NoOpStrategy(),
+                    RaftLikeProtocol(election_time_dist=Exponential(0.2)), seed=4, log_events=True)
+    sim.run_for(200 * day)
+    ts = [ev.time for ev in sim.event_log if ev.event_type == EventType.NODE_FAILURE]
+    on = sum(1 for t in ts if (t % (20 * day)) < 10 * day)
+    assert len(ts) > 200 and on == len(ts)  # ~300 failures, none in the off phase
+    # respawn: an age clock draws a fresh age for a new unit
+    pr = PiecewiseRate([0, 1.0, 2.0], [1.0, 2.0], age_start=([0.0, 1.0], [1.0]))
+    rng = np.random.default_rng(0)
+    r2 = pr.respawned(100.0, rng)
+    assert -100.0 <= r2.offset <= -99.0 and r2.edges is pr.edges
+
+
+def test_catalogue_trace_follows_machine_hazards():
+    from powder.faults import catalogue as C
+    cat = C.generate(LIB, n=60, seed=5, spot_fraction=0.5)
+    m = next(x for x in cat["machines"] if x["tier"] == "spot")
+    slots = {f"s{i}": m["id"] for i in range(200)}
+    H = 365 * 86400.0
+    ev = C.trace(LIB, cat, slots, H, seed=1, scenario_id=None)
+    n = sum(e.cause == "spot_interrupt" for e in ev)
+    mu = 200 * C.piecewise_rate(C.machine_rates(m)["spot_interrupt"]).cumulative(0, H)
+    assert abs(n - mu) < 4 * math.sqrt(mu) + 0.03 * mu, (n, mu)  # clocks pause during spawns: slightly fewer
+    ev2 = C.trace(LIB, cat, {"a": m["id"]}, 30 * 86400.0, seed=2)
+    assert any(e.kind == "planned" for e in ev2)
+    cfg = C.node_config(m, time_varying=True)
+    assert hasattr(cfg.data_loss_dist, "sample_at")

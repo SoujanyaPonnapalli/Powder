@@ -471,3 +471,121 @@ class Constant(Distribution):
 
     def __repr__(self) -> str:
         return f"Constant(value={self.value})"
+
+
+class PiecewiseRate:
+    """Piecewise-constant hazard (per second) on a clock that is ``offset`` at simulation time 0.
+
+    ``edges`` start at 0 (seconds); past the last edge the last rate continues,
+    or the series repeats when ``periodic``. ``age_start`` (optional) is a
+    piecewise-uniform distribution ``(edges, weights)`` of the clock position
+    for a *new* unit: a replacement node draws its age from it (age clocks);
+    calendar clocks keep running for replacements.
+    """
+
+    __slots__ = ("edges", "rates", "periodic", "offset", "age_start", "_cum", "_full")
+
+    def __init__(self, edges, rates, periodic: bool = False, offset: float = 0.0, age_start=None):
+        self.edges = np.asarray(edges, float)
+        self.rates = np.asarray(rates, float)
+        if self.edges[0] != 0.0 or len(self.edges) != len(self.rates) + 1:
+            raise ValueError("edges must start at 0 and have len(rates) + 1 entries")
+        self.periodic = bool(periodic)
+        self.offset = float(offset)
+        self.age_start = age_start
+        self._cum = np.concatenate([[0.0], np.cumsum(np.diff(self.edges) * self.rates)])
+        self._full = float(self._cum[-1])
+
+    def _cum_clock(self, x: float) -> float:
+        if x <= 0:
+            return 0.0
+        span = self.edges[-1]
+        if x >= span:
+            if self.periodic:
+                k, rem = divmod(x, span)
+                return k * self._full + self._cum_clock(rem)
+            return self._full + (x - span) * self.rates[-1]
+        i = int(np.searchsorted(self.edges, x, side="right") - 1)
+        return float(self._cum[i] + (x - self.edges[i]) * self.rates[i])
+
+    def _inv_clock(self, c: float) -> float:
+        """Smallest clock x with cum(x) >= c (inf if never)."""
+        if c <= 0:
+            return 0.0
+        span = self.edges[-1]
+        if self.periodic:
+            if self._full <= 0:
+                return math.inf
+            k, rem = divmod(c, self._full)
+            return k * span + self._inv_clock_in(rem)
+        if c >= self._full:
+            r = self.rates[-1]
+            return math.inf if r <= 0 else span + (c - self._full) / r
+        return self._inv_clock_in(c)
+
+    def _inv_clock_in(self, c: float) -> float:
+        i = int(np.searchsorted(self._cum, c, side="left"))
+        i = max(1, min(i, len(self._cum) - 1))
+        r = self.rates[i - 1]
+        return float(self.edges[i - 1] + (c - self._cum[i - 1]) / r) if r > 0 else float(self.edges[i])
+
+    def cumulative(self, t0: float, t1: float) -> float:
+        return self._cum_clock(self.offset + t1) - self._cum_clock(self.offset + t0)
+
+    def next_event(self, now: float, rng: np.random.Generator) -> float:
+        """Simulation time of the next event after ``now`` (inverse cumulative hazard)."""
+        x0 = self.offset + now
+        x = self._inv_clock(self._cum_clock(x0) + rng.exponential(1.0))
+        return math.inf if math.isinf(x) else x - self.offset
+
+    def respawned(self, now: float, rng: np.random.Generator) -> "PiecewiseRate":
+        """The same hazard for a replacement unit created at ``now`` (fresh age for age clocks)."""
+        if self.age_start is None:
+            return self
+        e, w = np.asarray(self.age_start[0], float), np.asarray(self.age_start[1], float)
+        i = int(rng.choice(len(w), p=w / w.sum()))
+        age = float(rng.uniform(e[i], e[i + 1]))
+        return PiecewiseRate(self.edges, self.rates, self.periodic, age - now, self.age_start)
+
+
+class TimeVaryingHazard(Distribution):
+    """Superposition of piecewise hazards and a constant rate (a non-homogeneous Poisson clock).
+
+    The simulator calls :meth:`sample_at` with the current simulation time (a
+    plain :meth:`sample` assumes time 0). ``mean`` is 1 / (average hazard over
+    ``mean_horizon`` seconds from time 0), for planning heuristics only.
+    """
+
+    def __init__(self, parts: list, constant_rate: float = 0.0, mean_horizon: float = 30 * 86400.0):
+        self.parts = list(parts)
+        self.constant_rate = float(constant_rate)
+        self.mean_horizon = float(mean_horizon)
+
+    def sample_at(self, now: float, rng: np.random.Generator) -> float:
+        nxt = math.inf
+        for p in self.parts:
+            nxt = min(nxt, p.next_event(now, rng))
+        if self.constant_rate > 0:
+            nxt = min(nxt, now + rng.exponential(1.0 / self.constant_rate))
+        return nxt - now
+
+    def sample(self, rng: np.random.Generator) -> float:
+        return self.sample_at(0.0, rng)
+
+    def average_rate(self, t0: float = 0.0, horizon: float | None = None) -> float:
+        h = self.mean_horizon if horizon is None else horizon
+        return self.constant_rate + sum(p.cumulative(t0, t0 + h) for p in self.parts) / h
+
+    @property
+    def mean(self) -> float:
+        r = self.average_rate()
+        return math.inf if r <= 0 else 1.0 / r
+
+    def respawned(self, now: float, rng: np.random.Generator) -> "TimeVaryingHazard":
+        return TimeVaryingHazard([p.respawned(now, rng) for p in self.parts], self.constant_rate, self.mean_horizon)
+
+
+def sample_delay(dist: Distribution, now: float, rng: np.random.Generator) -> float:
+    """Delay until the next event of ``dist`` from simulation time ``now`` (time-aware if supported)."""
+    at = getattr(dist, "sample_at", None)
+    return at(now, rng) if at is not None else dist.sample(rng)

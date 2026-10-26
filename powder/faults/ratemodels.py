@@ -236,12 +236,18 @@ def instantiate(model: dict[str, Any] | None, triple: dict[str, float], rng: np.
         return MachineRate("constant", level, member=mid, draws={} if mid else {"level_per_hour": level})
     if t == "curve":
         h, off = _curve(model, rng, float(triple["central"]), offset_h)
-        return MachineRate("curve", hazard=h, clock=model["clock"], draws={"offset_h": off})
+        draws = {"offset_h": off}
+        if model["clock"] == "age" and model.get("start_h"):
+            draws["start_h"] = model["start_h"]
+        return MachineRate("curve", hazard=h, clock=model["clock"], draws=draws)
     if t == "curve_population":
         m = _choose(model["members"], rng, member_id)
         spec = {**{k: v for k, v in model.items() if k not in ("type", "members")}, **m}
         h, off = _curve(spec, rng, None, offset_h)
-        return MachineRate("curve", hazard=h, clock=spec["clock"], member=m["id"], draws={"offset_h": off})
+        draws = {"offset_h": off}
+        if spec["clock"] == "age" and spec.get("start_h"):
+            draws["start_h"] = spec["start_h"]  # a replacement unit draws a fresh age from this
+        return MachineRate("curve", hazard=h, clock=spec["clock"], member=m["id"], draws=draws)
     raise ValueError(f"unknown rate model {t!r}")
 
 

@@ -5,13 +5,14 @@ The simulator processes events in time order, updating cluster state
 and invoking the strategy to react to changes.
 """
 
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Callable
 
 import numpy as np
 
 from .cluster import ClusterState
-from .distributions import Seconds
+from .distributions import Seconds, sample_delay
 from .events import Event, EventQueue, EventType
 from .metrics import MetricsCollector, MetricsSnapshot
 from .network import GLOBAL_REGION, NetworkConfig
@@ -136,7 +137,7 @@ class Simulator:
         current_time = self.cluster.current_time
 
         # Schedule transient failure
-        failure_time = node.config.failure_dist.sample(self.rng)
+        failure_time = sample_delay(node.config.failure_dist, current_time, self.rng)
         self.event_queue.push(
             Event(
                 time=Seconds(current_time + failure_time),
@@ -146,7 +147,7 @@ class Simulator:
         )
 
         # Schedule data loss
-        data_loss_time = node.config.data_loss_dist.sample(self.rng)
+        data_loss_time = sample_delay(node.config.data_loss_dist, current_time, self.rng)
         self.event_queue.push(
             Event(
                 time=Seconds(current_time + data_loss_time),
@@ -671,7 +672,9 @@ class Simulator:
             )
 
             # Schedule next failure (after recovery)
-            next_failure_time = node.config.failure_dist.sample(self.rng)
+            next_failure_time = sample_delay(
+                node.config.failure_dist, self.cluster.current_time + recovery_time, self.rng
+            )
             self.event_queue.push(
                 Event(
                     time=Seconds(
@@ -752,6 +755,14 @@ class Simulator:
             # No donor: clear sync, will be retried
         node.sync = None
 
+    def _respawned_config(self, node_config: NodeConfig) -> NodeConfig:
+        changes = {}
+        for name in ("failure_dist", "data_loss_dist"):
+            dist = getattr(node_config, name)
+            if hasattr(dist, "respawned"):
+                changes[name] = dist.respawned(self.cluster.current_time, self.rng)
+        return dataclasses.replace(node_config, **changes) if changes else node_config
+
     def _apply_node_spawn_complete(self, event: Event) -> None:
         """Apply completion of node spawning.
 
@@ -765,6 +776,9 @@ class Simulator:
         if node_config:
             # Remove from provisioning (was added at spawn request time)
             self.cluster.remove_provisioning_node(node_id)
+
+            # Time-varying hazards on an age clock: the new unit draws a fresh age.
+            node_config = self._respawned_config(node_config)
 
             # Create active node (starts with data, needs to sync)
             new_node = NodeState(

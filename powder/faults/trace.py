@@ -137,6 +137,16 @@ def generate(
         profile = lib.get(lib.get(machine_id, "machine")["fault_profile"], "node")
         spawn = from_spec(profile.get("spawn", s.get("system", {}).get("spawn", {"type": "exponential", "rate": 1 / 60})))
         events += _slot_events(slot, machine_id, region, profile, horizon, lvl, seed, spawn, use_frailty)
+    events += scenario_events(lib, scenario_id, slots, horizon, seed, lvl)
+    events.sort(key=lambda e: (e.start, e.slot, e.kind))
+    return events
+
+
+def scenario_events(lib: FaultLibrary, scenario_id: str, slots: dict[str, tuple], horizon: float, seed: int,
+                    lvl: str) -> list[FaultEvent]:
+    """Scenario-level events (planned downtime, region and global outages) for ``slots``."""
+    s = lib.get(scenario_id, "scenario")
+    events: list[FaultEvent] = []
     if s.get("planned_downtime"):
         pd = lib.get(s["planned_downtime"], "planned_downtime")
         groups = {slot: (v[2] if len(v) > 2 else v[1]) for slot, v in slots.items()}  # AZ if given, else region
@@ -165,7 +175,6 @@ def generate(
             if t >= horizon:
                 break
             events.append(FaultEvent("*", "*", "*", "global", "global", t, float(ro.global_duration.sample(rng))))
-    events.sort(key=lambda e: (e.start, e.slot, e.kind))
     return events
 
 

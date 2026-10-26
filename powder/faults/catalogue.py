@@ -36,7 +36,7 @@ from typing import Any, Iterable
 
 import numpy as np
 
-from powder.simulation.distributions import Exponential, Mixture
+from powder.simulation.distributions import Exponential, Mixture, PiecewiseRate, TimeVaryingHazard
 from powder.simulation.node import NodeConfig
 
 from .convert import NEVER, DEFAULT_SYSTEM, CauseRate, planned_as_cause
@@ -187,10 +187,47 @@ def reliability_score(machine: dict[str, Any], horizon_h: float = DEFAULT_HORIZO
     return down_h * 8766.0
 
 
+def piecewise_rate(mr: MachineRate) -> PiecewiseRate:
+    """A machine's curve hazard in simulator units (seconds)."""
+    h = mr.hazard
+    start = mr.draws.get("start_h")
+    age_start = None
+    if mr.clock == "age" and start and start.get("type") == "weights":
+        age_start = ([e * 3600.0 for e in start["edges_h"]], list(start["weights"]))
+    return PiecewiseRate([e * 3600.0 for e in h.edges], [r / 3600.0 for r in h.rates], h.periodic,
+                         h.offset * 3600.0, age_start)
+
+
+def time_varying_hazard(machine: dict[str, Any], causes: Iterable[str], horizon_h: float = DEFAULT_HORIZON_H,
+                        extra_constant_per_s: float = 0.0) -> TimeVaryingHazard | None:
+    parts, const = [], extra_constant_per_s
+    for c, mr in machine_rates(machine).items():
+        if c not in causes:
+            continue
+        if mr.kind == "constant":
+            const += mr.rate_per_hour / 3600.0
+        else:
+            parts.append(piecewise_rate(mr))
+    if not parts and const <= 0:
+        return None
+    return TimeVaryingHazard(parts, const, mean_horizon=horizon_h * 3600.0)
+
+
 def node_config(machine: dict[str, Any], *, horizon_h: float = DEFAULT_HORIZON_H, cost_per_hour: float | None = None,
-                planned: Iterable[CauseRate] = (), system: dict[str, Any] | None = None) -> NodeConfig:
-    """Exponential approximation of a catalogue machine (Markov model / constant-rate engines)."""
+                planned: Iterable[CauseRate] = (), system: dict[str, Any] | None = None,
+                time_varying: bool = False) -> NodeConfig:
+    """A catalogue machine as a NodeConfig.
+
+    Default: the exponential approximation (each cause's average hazard over
+    ``horizon_h``) for the Markov model and constant-rate engines.
+    ``time_varying=True``: failure and data-loss clocks are the machine's full
+    hazards (:class:`TimeVaryingHazard`, sampled from the current simulation
+    time; age clocks restart with a fresh age on replacement) for the Python
+    simulator. Planned downtime stays a constant-rate transient cause; recovery
+    durations are mixed by horizon-average weights in both modes.
+    """
     sysd = {**DEFAULT_SYSTEM, **{k: v for k, v in (system or SYSTEM).items() if k != "source"}}
+    planned = list(planned)
     r = horizon_rates(machine, horizon_h)
     trans = [(r[c] / 3600.0, from_spec(machine["durations"][c])) for c in TRANSIENT_CAUSES if r.get(c, 0) > 0]
     trans += [(p.rate_per_second, p.duration) for p in planned if p.rate_per_second > 0]
@@ -203,10 +240,16 @@ def node_config(machine: dict[str, Any], *, horizon_h: float = DEFAULT_HORIZON_H
     else:
         recovery = Mixture([x for x, _ in trans], [d for _, d in trans])
     price = machine["price"].get("per_hour") if cost_per_hour is None else cost_per_hour
+    fail = Exponential(lam_t) if lam_t > 0 else NEVER
+    loss = Exponential(lam_p) if lam_p > 0 else NEVER
+    if time_varying:
+        fail = time_varying_hazard(machine, TRANSIENT_CAUSES, horizon_h,
+                                   sum(p.rate_per_second for p in planned)) or NEVER
+        loss = time_varying_hazard(machine, PERMANENT_CAUSES, horizon_h) or NEVER
     return NodeConfig(
         region=machine["region"], cost_per_hour=float(price or 0.0),
-        failure_dist=Exponential(lam_t) if lam_t > 0 else NEVER, recovery_dist=recovery,
-        data_loss_dist=Exponential(lam_p) if lam_p > 0 else NEVER,
+        failure_dist=fail, recovery_dist=recovery,
+        data_loss_dist=loss,
         log_replay_rate_dist=from_spec(sysd["log_replay_rate_dist"]),
         snapshot_download_time_dist=from_spec(sysd["snapshot_download_time_dist"]),
         spawn_dist=from_spec(sysd["spawn"]),
@@ -288,3 +331,78 @@ def load(path: Path | str) -> dict[str, Any]:
 
 def digest(cat: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(cat, sort_keys=True).encode()).hexdigest()[:16]
+
+
+# --------------------------------------------------------------------------- traces (emulation)
+
+def _slot_events(machine: dict[str, Any], slot: str, horizon: float, seed: int, spawn) -> list:
+    from .trace import FaultEvent
+    import math
+    rng = stream(seed, "trace-node", slot)
+    rates = machine_rates(machine)
+    clocks: dict[str, Any] = {}
+    for c, mr in rates.items():
+        if mr.kind == "constant":
+            clocks[c] = mr.rate_per_hour / 3600.0
+        else:
+            clocks[c] = piecewise_rate(mr)
+
+    def nxt(c: str, now: float) -> float:
+        k = clocks[c]
+        if isinstance(k, float):
+            return now + rng.exponential(1.0 / k) if k > 0 else math.inf
+        return k.next_event(now, rng)
+
+    trans = [c for c in rates if c in TRANSIENT_CAUSES]
+    perm = [c for c in rates if c in PERMANENT_CAUSES]
+    durs = {c: from_spec(machine["durations"][c]) for c in trans}
+    out = []
+
+    def next_of(causes, now):
+        best = (math.inf, None)
+        for c in causes:
+            t = nxt(c, now)
+            if t < best[0]:
+                best = (t, c)
+        return best
+
+    t_next, c_t = next_of(trans, 0.0)
+    p_next, c_p = next_of(perm, 0.0)
+    while min(t_next, p_next) < horizon:
+        if p_next <= t_next:
+            out.append(FaultEvent(slot, machine["region"], machine["id"], "permanent", c_p, float(p_next), None))
+            restart = p_next + float(spawn.sample(rng))
+            for c, k in clocks.items():  # replacement unit: fresh age on age clocks
+                if not isinstance(k, float):
+                    clocks[c] = k.respawned(restart, rng)
+            t_next, c_t = next_of(trans, restart)
+            p_next, c_p = next_of(perm, restart)
+        else:
+            d = float(durs[c_t].sample(rng))
+            out.append(FaultEvent(slot, machine["region"], machine["id"], "transient", c_t, float(t_next), d))
+            t_next, c_t = next_of(trans, t_next + d)
+    return out
+
+
+def trace(lib: FaultLibrary, cat: dict[str, Any], slots: dict[str, str], horizon_s: float, seed: int,
+          scenario_id: str | None = "scenario/canonical-central") -> list:
+    """Fault events for ``slots`` = {slot: catalogue machine id} (emulation).
+
+    Node events follow each machine's full hazards (constant or piecewise, the
+    same objects as ``node_config(time_varying=True)``); planned downtime and
+    region/global outages come from ``scenario_id`` exactly as in
+    :func:`powder.faults.trace.generate`. Different seeds give different
+    timings from the same distributions.
+    """
+    from .trace import scenario_events
+    by_id = {m["id"]: m for m in cat["machines"]}
+    spawn = from_spec(cat.get("system", SYSTEM)["spawn"])
+    events = []
+    for slot in sorted(slots):
+        events += _slot_events(by_id[slots[slot]], slot, horizon_s, seed, spawn)
+    if scenario_id:
+        s = lib.get(scenario_id, "scenario")
+        events += scenario_events(lib, scenario_id, {k: (v, by_id[v]["region"]) for k, v in slots.items()},
+                                  horizon_s, seed, s.get("level", "central"))
+    events.sort(key=lambda e: (e.start, e.slot, e.kind))
+    return events
