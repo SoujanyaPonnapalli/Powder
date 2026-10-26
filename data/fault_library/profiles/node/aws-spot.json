@@ -10,8 +10,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -21,38 +19,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -4260,16 +4252,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -4530,8 +4522,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -4566,8 +4557,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -4577,38 +4566,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -8816,16 +8799,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -9086,8 +9069,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -9121,8 +9103,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -9132,38 +9112,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -13371,16 +13345,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -13641,8 +13615,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -13677,8 +13650,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -13688,38 +13659,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -17927,16 +17892,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -18197,8 +18162,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -18232,8 +18196,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -18243,38 +18205,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -22482,16 +22438,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -22752,8 +22708,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -22785,8 +22740,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -22796,38 +22749,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -27035,16 +26982,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -27305,8 +27252,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -27338,8 +27284,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -27349,38 +27293,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-04-10..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -31588,16 +31526,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -31858,8 +31796,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {
@@ -31893,8 +31830,6 @@
    "local-nvme"
   ],
   "derived_from": [
-   "vishwanath-nagappan-socc10#afr-8pct",
-   "vishwanath-nagappan-socc10#disk-share",
    "aws-ec2-sla#instance-level",
    "azure-vm-docs#pause-18mo",
    "narya-afpd#narya-reduction",
@@ -31904,38 +31839,32 @@
    "ford10#digitized-unplanned_reboot",
    "ford10#digitized-node_restart",
    "disk/pooled",
-   "lanl05#pooled-small",
    "cloud/aws-ondemand-nvme",
    "spotlake-aws#pools"
   ],
   "built_by": "scripts/fault_library/build_prices.py",
   "notes": "Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; band low/mid/high). Interruption loses local NVMe data. Rate from the SpotLake band history 2025-03-01..2026-03-31 (time-weighted band midpoints; low/high = best/worst band seen); the current advisor band is recorded in spot.band_index.",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 2.4870377e-05,
+     "high": 8.3419616e-05
     },
     "duration": {
      "low": {
@@ -36143,16 +36072,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-06,
-     "central": 1.6133764e-06,
-     "high": 4.5630846e-06
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371e-07,
-     "central": 1.1226592e-06,
-     "high": 2.048825e-05
+     "low": 6.6802057e-07,
+     "central": 6.1056476e-05,
+     "high": 0.00081137371
     },
     "duration": {
      "low": {
@@ -36413,8 +36342,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   },
   "spot": {

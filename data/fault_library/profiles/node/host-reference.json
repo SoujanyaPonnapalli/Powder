@@ -8,7 +8,8 @@
       "microsoft",
       "2010",
       "bare-metal",
-      "frailty"
+      "frailty",
+      "recoverability-unknown"
     ],
     "derived_from": [
       "vishwanath-nagappan-socc10#afr-8pct",

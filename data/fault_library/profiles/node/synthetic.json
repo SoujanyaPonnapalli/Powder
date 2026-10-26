@@ -14,31 +14,26 @@
   "built_by": "scripts/fault_library/build_machines.py",
   "notes": "cloud/aws-ondemand-nvme with every cause rate multiplied by 10.0 (stress / heterogeneity).",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-05,
-     "central": 1.6133764e-05,
-     "high": 4.5630845999999996e-05
+     "low": 0.0,
+     "central": 0.00024870377,
+     "high": 0.00083419616
     },
     "duration": {
      "low": {
@@ -4246,16 +4241,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-05,
-     "central": 1.6133764e-05,
-     "high": 4.5630845999999996e-05
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371000000002e-06,
-     "central": 1.1226592e-05,
-     "high": 0.00020488250000000002
+     "low": 6.6802057e-06,
+     "central": 0.0006105647600000001,
+     "high": 0.0081137371
     },
     "duration": {
      "low": {
@@ -4509,8 +4504,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   }
  },
@@ -4529,31 +4523,26 @@
   "built_by": "scripts/fault_library/build_machines.py",
   "notes": "cloud/aws-ondemand-nvme with every cause rate multiplied by 0.1 (stress / heterogeneity).",
   "assumptions": {
-   "host_repair_rate_per_year": {
-    "low": 0.037714286,
-    "central": 0.037714286,
-    "high": 0.08
-   },
    "f_LM": {
     "low": 0.5,
     "central": 0.25,
     "high": 0.0
    },
-   "f_loss": 0.5,
-   "f_loss_variants": "cloud/aws-ondemand-nvme-loss0.2 / -loss0.8",
-   "sw_ratio": {
-    "low": 0.11722346,
-    "central": 0.69584461,
-    "high": 4.49
-   },
-   "level_consistency": "hw_reboot + hw_host_loss = host_repair_rate x (1 - f_LM) at every level"
+   "host_loss": "0 (no source with known recoverability)",
+   "hw_reboot_source": "cluster/ford10-google-storage",
+   "sw_source": "cluster/ford10-google-storage-ge15min",
+   "sla_clip": {
+    "pessimistic_h_per_year_before": 140.40039,
+    "cap_h_per_year": 43.83,
+    "scale": 0.30902949
+   }
   },
   "causes": {
    "hw_reboot": {
     "rate_per_hour": {
-     "low": 1.0755842e-07,
-     "central": 1.6133764e-07,
-     "high": 4.5630845999999996e-07
+     "low": 0.0,
+     "central": 2.4870377e-06,
+     "high": 8.3419616e-06
     },
     "duration": {
      "low": {
@@ -8761,16 +8750,16 @@
    },
    "hw_host_loss": {
     "rate_per_hour": {
-     "low": 1.0755842e-07,
-     "central": 1.6133764e-07,
-     "high": 4.5630845999999996e-07
+     "low": 0.0,
+     "central": 0.0,
+     "high": 0.0
     }
    },
    "sw": {
     "rate_per_hour": {
-     "low": 1.2608371000000002e-08,
-     "central": 1.1226592000000001e-07,
-     "high": 2.0488250000000002e-06
+     "low": 6.6802057e-08,
+     "central": 6.1056476e-06,
+     "high": 8.1137371e-05
     },
     "duration": {
      "low": {
@@ -9024,8 +9013,7 @@
     "high": 0.8
    },
    "source": [
-    "schroeder-gibson-fast07#weibull-k",
-    "lanl-dsn06#weibull-k"
+    "schroeder-gibson-fast07#weibull-k"
    ]
   }
  }

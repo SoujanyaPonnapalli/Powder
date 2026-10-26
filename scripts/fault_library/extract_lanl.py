@@ -246,7 +246,7 @@ def main() -> int:
     k_med = summary["weibull_k_small"]
     profiles = [{
         "id": "hpc/lanl05-pooled", "kind": "node", "version": 1, "tier": "reference",
-        "tags": ["hpc", "bare-metal", "1996-2005", "pooled", "small-node"],
+        "tags": ["hpc", "bare-metal", "1996-2005", "pooled", "small-node", "recoverability-unknown"],
         "derived_from": ["lanl05#pooled-small", "lanl05#dataset"], "built_by": "scripts/fault_library/extract_lanl.py",
         "notes": (f"Random-effects pool over {len(small)} LANL small-node clusters (<= 4 procs/node). All failures needing an "
                   "administrator, hardware-class (hw/network/facilities/human/undetermined) as hw_reboot and software as sw, "
@@ -273,7 +273,7 @@ def main() -> int:
         hw, sw = v["hw_per_node_year"] / YEAR_H, v["sw_per_node_year"] / YEAR_H
         profiles.append({
             "id": f"hpc/lanl05-sys{s}", "kind": "node", "version": 1, "tier": "reference",
-            "tags": ["hpc", "bare-metal", "1996-2005", v["type"]], "derived_from": [f"lanl05#system-{s}"],
+            "tags": ["hpc", "bare-metal", "1996-2005", v["type"], "recoverability-unknown"], "derived_from": [f"lanl05#system-{s}"],
             "built_by": "scripts/fault_library/extract_lanl.py",
             "notes": f"LANL system {s}: {v['nodes']} nodes x {v['procs_per_node']} processors, {v['node_years']:.0f} node-years, {v['n_failures']} failures.",
             "causes": {"hw_reboot": {"rate_per_hour": tri(hw, hw, hw), "duration": dur_spec(d["hw"])},

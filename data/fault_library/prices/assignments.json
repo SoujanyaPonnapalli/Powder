@@ -10,20 +10,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys20": 0.34,
-   "machine/lanl05-sys18": 0.37484,
-   "machine/lanl05-sys16": 0.4,
-   "machine/lanl05-sys19": 0.42336,
-   "machine/aws-ondemand-x10": 0.452,
-   "machine/vishwanath10": 0.4746,
-   "machine/aws-ondemand-nvme-loss0.2": 0.5102542857142857,
-   "machine/lanl05-sys2": 0.5440685714285715,
-   "machine/aws-ondemand-x0.1": 0.5905714285714285,
-   "machine/aws-ondemand-nvme": 0.6366628571428572,
-   "machine/ford10-google-storage": 0.6721600000000001,
-   "machine/aws-ondemand-nvme-loss0.8": 0.7568571428571428,
-   "machine/lanl05-pooled": 0.8551857142857144,
-   "machine/ford10-google-storage-ge15min": 1.051
+   "machine/ford10-google-storage-ge15min": 0.357,
+   "machine/aws-ondemand-x0.1": 0.444976,
+   "machine/ford10-google-storage": 0.5292,
+   "machine/aws-ondemand-nvme": 0.6607,
+   "machine/aws-ondemand-x10": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -32,24 +23,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.2571428571428571,
+  "realised_spearman": -0.49999999999999994,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -63,20 +45,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-x0.1": 0.34,
-   "machine/lanl05-sys20": 0.37484,
-   "machine/ford10-google-storage-ge15min": 0.4,
-   "machine/vishwanath10": 0.42336,
-   "machine/lanl05-sys19": 0.452,
-   "machine/lanl05-sys18": 0.4746,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5102542857142857,
-   "machine/aws-ondemand-nvme": 0.5440685714285715,
-   "machine/lanl05-sys16": 0.5905714285714285,
-   "machine/ford10-google-storage": 0.6366628571428572,
-   "machine/lanl05-sys2": 0.6721600000000001,
-   "machine/lanl05-pooled": 0.7568571428571428,
-   "machine/aws-ondemand-nvme-loss0.2": 0.8551857142857144,
-   "machine/aws-ondemand-x10": 1.051
+   "machine/ford10-google-storage": 0.357,
+   "machine/aws-ondemand-x10": 0.444976,
+   "machine/aws-ondemand-nvme": 0.5292,
+   "machine/aws-ondemand-x0.1": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -85,24 +58,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.3054945054945055,
+  "realised_spearman": 0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -116,20 +80,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-x0.1": 0.34,
-   "machine/vishwanath10": 0.37484,
-   "machine/lanl05-sys18": 0.4,
-   "machine/aws-ondemand-nvme-loss0.2": 0.42336,
-   "machine/aws-ondemand-nvme-loss0.8": 0.452,
-   "machine/lanl05-sys20": 0.4746,
-   "machine/ford10-google-storage-ge15min": 0.5102542857142857,
-   "machine/lanl05-sys2": 0.5440685714285715,
-   "machine/aws-ondemand-nvme": 0.5905714285714285,
-   "machine/lanl05-sys16": 0.6366628571428572,
-   "machine/lanl05-pooled": 0.6721600000000001,
-   "machine/lanl05-sys19": 0.7568571428571428,
-   "machine/ford10-google-storage": 0.8551857142857144,
-   "machine/aws-ondemand-x10": 1.051
+   "machine/ford10-google-storage": 0.357,
+   "machine/aws-ondemand-x0.1": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/aws-ondemand-nvme": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -138,24 +93,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.5296703296703297,
+  "realised_spearman": 0.09999999999999999,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -169,20 +115,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-nvme-loss0.2": 0.34,
-   "machine/ford10-google-storage-ge15min": 0.37484,
-   "machine/lanl05-sys16": 0.4,
-   "machine/vishwanath10": 0.42336,
-   "machine/aws-ondemand-x0.1": 0.452,
-   "machine/aws-ondemand-x10": 0.4746,
-   "machine/lanl05-sys2": 0.5102542857142857,
-   "machine/lanl05-sys20": 0.5440685714285715,
-   "machine/lanl05-pooled": 0.5905714285714285,
-   "machine/ford10-google-storage": 0.6366628571428572,
-   "machine/lanl05-sys19": 0.6721600000000001,
-   "machine/aws-ondemand-nvme-loss0.8": 0.7568571428571428,
-   "machine/aws-ondemand-nvme": 0.8551857142857144,
-   "machine/lanl05-sys18": 1.051
+   "machine/aws-ondemand-x0.1": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/ford10-google-storage-ge15min": 0.5292,
+   "machine/aws-ondemand-x10": 0.6607,
+   "machine/aws-ondemand-nvme": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -191,24 +128,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.059340659340659345,
+  "realised_spearman": -0.3,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -222,20 +150,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-x10": 0.34,
-   "machine/lanl05-sys16": 0.37484,
-   "machine/aws-ondemand-nvme": 0.4,
-   "machine/ford10-google-storage-ge15min": 0.42336,
-   "machine/aws-ondemand-nvme-loss0.2": 0.452,
-   "machine/ford10-google-storage": 0.4746,
-   "machine/lanl05-pooled": 0.5102542857142857,
-   "machine/lanl05-sys19": 0.5440685714285715,
-   "machine/lanl05-sys18": 0.5905714285714285,
-   "machine/lanl05-sys20": 0.6366628571428572,
-   "machine/vishwanath10": 0.6721600000000001,
-   "machine/aws-ondemand-x0.1": 0.7568571428571428,
-   "machine/lanl05-sys2": 0.8551857142857144,
-   "machine/aws-ondemand-nvme-loss0.8": 1.051
+   "machine/ford10-google-storage-ge15min": 0.357,
+   "machine/aws-ondemand-nvme": 0.444976,
+   "machine/aws-ondemand-x0.1": 0.5292,
+   "machine/ford10-google-storage": 0.6607,
+   "machine/aws-ondemand-x10": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -244,24 +163,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.2043956043956044,
+  "realised_spearman": -0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -275,20 +185,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-nvme-loss0.2": 0.34,
-   "machine/lanl05-sys2": 0.37484,
-   "machine/lanl05-sys20": 0.4,
-   "machine/aws-ondemand-nvme": 0.42336,
-   "machine/lanl05-pooled": 0.452,
-   "machine/ford10-google-storage-ge15min": 0.4746,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5102542857142857,
-   "machine/ford10-google-storage": 0.5440685714285715,
-   "machine/lanl05-sys19": 0.5905714285714285,
-   "machine/aws-ondemand-x0.1": 0.6366628571428572,
-   "machine/lanl05-sys16": 0.6721600000000001,
-   "machine/aws-ondemand-x10": 0.7568571428571428,
-   "machine/vishwanath10": 0.8551857142857144,
-   "machine/lanl05-sys18": 1.051
+   "machine/aws-ondemand-x0.1": 0.357,
+   "machine/aws-ondemand-nvme": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/ford10-google-storage": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -297,24 +198,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.16923076923076924,
+  "realised_spearman": -0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -328,20 +220,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-nvme-loss0.8": 0.34,
-   "machine/lanl05-sys2": 0.37484,
-   "machine/lanl05-sys20": 0.4,
-   "machine/aws-ondemand-x0.1": 0.42336,
-   "machine/lanl05-sys19": 0.452,
-   "machine/lanl05-sys16": 0.4746,
-   "machine/vishwanath10": 0.5102542857142857,
-   "machine/lanl05-sys18": 0.5440685714285715,
-   "machine/ford10-google-storage-ge15min": 0.5905714285714285,
-   "machine/aws-ondemand-x10": 0.6366628571428572,
-   "machine/aws-ondemand-nvme": 0.6721600000000001,
-   "machine/ford10-google-storage": 0.7568571428571428,
-   "machine/lanl05-pooled": 0.8551857142857144,
-   "machine/aws-ondemand-nvme-loss0.2": 1.051
+   "machine/aws-ondemand-x10": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/ford10-google-storage-ge15min": 0.5292,
+   "machine/aws-ondemand-nvme": 0.6607,
+   "machine/aws-ondemand-x0.1": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -350,24 +233,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.002197802197802198,
+  "realised_spearman": 0.9999999999999999,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -381,20 +255,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/ford10-google-storage": 0.34,
-   "machine/vishwanath10": 0.37484,
-   "machine/aws-ondemand-x0.1": 0.4,
-   "machine/lanl05-sys18": 0.42336,
-   "machine/lanl05-sys16": 0.452,
-   "machine/aws-ondemand-x10": 0.4746,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5102542857142857,
-   "machine/aws-ondemand-nvme": 0.5440685714285715,
-   "machine/ford10-google-storage-ge15min": 0.5905714285714285,
-   "machine/lanl05-sys20": 0.6366628571428572,
-   "machine/aws-ondemand-nvme-loss0.2": 0.6721600000000001,
-   "machine/lanl05-sys2": 0.7568571428571428,
-   "machine/lanl05-sys19": 0.8551857142857144,
-   "machine/lanl05-pooled": 1.051
+   "machine/ford10-google-storage": 0.357,
+   "machine/ford10-google-storage-ge15min": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/aws-ondemand-nvme": 0.6607,
+   "machine/aws-ondemand-x0.1": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -403,24 +268,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.23956043956043957,
+  "realised_spearman": 0.7,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -434,20 +290,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-x10": 0.34,
-   "machine/aws-ondemand-nvme": 0.37484,
-   "machine/aws-ondemand-nvme-loss0.8": 0.4,
-   "machine/aws-ondemand-nvme-loss0.2": 0.42336,
-   "machine/ford10-google-storage-ge15min": 0.452,
-   "machine/aws-ondemand-x0.1": 0.4746,
-   "machine/ford10-google-storage": 0.5102542857142857,
-   "machine/lanl05-sys2": 0.5440685714285715,
-   "machine/lanl05-sys19": 0.5905714285714285,
-   "machine/lanl05-sys20": 0.6366628571428572,
-   "machine/lanl05-pooled": 0.6721600000000001,
-   "machine/lanl05-sys16": 0.7568571428571428,
-   "machine/lanl05-sys18": 0.8551857142857144,
-   "machine/vishwanath10": 1.051
+   "machine/ford10-google-storage-ge15min": 0.357,
+   "machine/aws-ondemand-nvme": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/aws-ondemand-x0.1": 0.6607,
+   "machine/ford10-google-storage": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -456,24 +303,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.3934065934065934,
+  "realised_spearman": -0.09999999999999999,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -487,20 +325,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys19": 0.34,
-   "machine/aws-ondemand-nvme-loss0.8": 0.37484,
-   "machine/lanl05-sys18": 0.4,
-   "machine/aws-ondemand-nvme": 0.42336,
-   "machine/ford10-google-storage": 0.452,
-   "machine/lanl05-sys16": 0.4746,
-   "machine/lanl05-sys20": 0.5102542857142857,
-   "machine/aws-ondemand-nvme-loss0.2": 0.5440685714285715,
-   "machine/lanl05-pooled": 0.5905714285714285,
-   "machine/ford10-google-storage-ge15min": 0.6366628571428572,
-   "machine/aws-ondemand-x0.1": 0.6721600000000001,
-   "machine/aws-ondemand-x10": 0.7568571428571428,
-   "machine/lanl05-sys2": 0.8551857142857144,
-   "machine/vishwanath10": 1.051
+   "machine/aws-ondemand-x10": 0.357,
+   "machine/aws-ondemand-nvme": 0.444976,
+   "machine/aws-ondemand-x0.1": 0.5292,
+   "machine/ford10-google-storage": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -509,24 +338,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.12967032967032965,
+  "realised_spearman": 0.19999999999999998,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -540,20 +360,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-nvme": 0.34,
-   "machine/lanl05-sys2": 0.37484,
-   "machine/aws-ondemand-nvme-loss0.8": 0.4,
-   "machine/lanl05-sys19": 0.42336,
-   "machine/aws-ondemand-nvme-loss0.2": 0.452,
-   "machine/lanl05-sys18": 0.4746,
-   "machine/lanl05-sys20": 0.5102542857142857,
-   "machine/aws-ondemand-x10": 0.5440685714285715,
-   "machine/vishwanath10": 0.5905714285714285,
-   "machine/ford10-google-storage": 0.6366628571428572,
-   "machine/aws-ondemand-x0.1": 0.6721600000000001,
-   "machine/lanl05-sys16": 0.7568571428571428,
-   "machine/ford10-google-storage-ge15min": 0.8551857142857144,
-   "machine/lanl05-pooled": 1.051
+   "machine/aws-ondemand-nvme": 0.357,
+   "machine/aws-ondemand-x10": 0.444976,
+   "machine/aws-ondemand-x0.1": 0.5292,
+   "machine/ford10-google-storage-ge15min": 0.6607,
+   "machine/ford10-google-storage": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -562,24 +373,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.15604395604395604,
+  "realised_spearman": -0.19999999999999998,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -593,20 +395,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys18": 0.34,
-   "machine/ford10-google-storage": 0.37484,
-   "machine/aws-ondemand-x0.1": 0.4,
-   "machine/aws-ondemand-x10": 0.42336,
-   "machine/vishwanath10": 0.452,
-   "machine/lanl05-sys2": 0.4746,
-   "machine/lanl05-pooled": 0.5102542857142857,
-   "machine/aws-ondemand-nvme": 0.5440685714285715,
-   "machine/ford10-google-storage-ge15min": 0.5905714285714285,
-   "machine/lanl05-sys20": 0.6366628571428572,
-   "machine/lanl05-sys16": 0.6721600000000001,
-   "machine/aws-ondemand-nvme-loss0.8": 0.7568571428571428,
-   "machine/aws-ondemand-nvme-loss0.2": 0.8551857142857144,
-   "machine/lanl05-sys19": 1.051
+   "machine/ford10-google-storage": 0.357,
+   "machine/ford10-google-storage-ge15min": 0.444976,
+   "machine/aws-ondemand-nvme": 0.5292,
+   "machine/aws-ondemand-x10": 0.6607,
+   "machine/aws-ondemand-x0.1": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -615,24 +408,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.01098901098901099,
+  "realised_spearman": 0.39999999999999997,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -646,20 +430,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys20": 0.34,
-   "machine/lanl05-pooled": 0.37484,
-   "machine/ford10-google-storage": 0.4,
-   "machine/ford10-google-storage-ge15min": 0.42336,
-   "machine/lanl05-sys16": 0.452,
-   "machine/lanl05-sys19": 0.4746,
-   "machine/aws-ondemand-nvme": 0.5102542857142857,
-   "machine/vishwanath10": 0.5440685714285715,
-   "machine/lanl05-sys2": 0.5905714285714285,
-   "machine/aws-ondemand-x0.1": 0.6366628571428572,
-   "machine/aws-ondemand-nvme-loss0.8": 0.6721600000000001,
-   "machine/lanl05-sys18": 0.7568571428571428,
-   "machine/aws-ondemand-nvme-loss0.2": 0.8551857142857144,
-   "machine/aws-ondemand-x10": 1.051
+   "machine/aws-ondemand-nvme": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/aws-ondemand-x0.1": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -668,24 +443,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.49890109890109896,
+  "realised_spearman": 0.09999999999999999,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -699,20 +465,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-nvme-loss0.2": 0.34,
-   "machine/lanl05-sys16": 0.37484,
-   "machine/lanl05-sys2": 0.4,
-   "machine/lanl05-sys20": 0.42336,
-   "machine/lanl05-pooled": 0.452,
-   "machine/aws-ondemand-x0.1": 0.4746,
-   "machine/ford10-google-storage": 0.5102542857142857,
-   "machine/lanl05-sys19": 0.5440685714285715,
-   "machine/lanl05-sys18": 0.5905714285714285,
-   "machine/vishwanath10": 0.6366628571428572,
-   "machine/aws-ondemand-nvme-loss0.8": 0.6721600000000001,
-   "machine/aws-ondemand-x10": 0.7568571428571428,
-   "machine/aws-ondemand-nvme": 0.8551857142857144,
-   "machine/ford10-google-storage-ge15min": 1.051
+   "machine/aws-ondemand-x0.1": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/ford10-google-storage-ge15min": 0.6607,
+   "machine/aws-ondemand-nvme": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -721,24 +478,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.4901098901098901,
+  "realised_spearman": -0.09999999999999999,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -752,20 +500,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-x0.1": 0.34,
-   "machine/aws-ondemand-nvme-loss0.8": 0.37484,
-   "machine/aws-ondemand-nvme-loss0.2": 0.4,
-   "machine/lanl05-sys18": 0.42336,
-   "machine/lanl05-sys2": 0.452,
-   "machine/aws-ondemand-x10": 0.4746,
-   "machine/ford10-google-storage-ge15min": 0.5102542857142857,
-   "machine/lanl05-sys20": 0.5440685714285715,
-   "machine/lanl05-pooled": 0.5905714285714285,
-   "machine/aws-ondemand-nvme": 0.6366628571428572,
-   "machine/lanl05-sys16": 0.6721600000000001,
-   "machine/ford10-google-storage": 0.7568571428571428,
-   "machine/lanl05-sys19": 0.8551857142857144,
-   "machine/vishwanath10": 1.051
+   "machine/ford10-google-storage": 0.357,
+   "machine/aws-ondemand-x10": 0.444976,
+   "machine/aws-ondemand-x0.1": 0.5292,
+   "machine/ford10-google-storage-ge15min": 0.6607,
+   "machine/aws-ondemand-nvme": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -774,24 +513,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.3010989010989011,
+  "realised_spearman": 0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -805,20 +535,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/ford10-google-storage-ge15min": 0.34,
-   "machine/aws-ondemand-nvme": 0.37484,
-   "machine/aws-ondemand-nvme-loss0.2": 0.4,
-   "machine/lanl05-sys16": 0.42336,
-   "machine/lanl05-sys2": 0.452,
-   "machine/aws-ondemand-x0.1": 0.4746,
-   "machine/lanl05-sys20": 0.5102542857142857,
-   "machine/vishwanath10": 0.5440685714285715,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5905714285714285,
-   "machine/aws-ondemand-x10": 0.6366628571428572,
-   "machine/lanl05-sys19": 0.6721600000000001,
-   "machine/ford10-google-storage": 0.7568571428571428,
-   "machine/lanl05-pooled": 0.8551857142857144,
-   "machine/lanl05-sys18": 1.051
+   "machine/aws-ondemand-nvme": 0.357,
+   "machine/aws-ondemand-x0.1": 0.444976,
+   "machine/ford10-google-storage": 0.5292,
+   "machine/aws-ondemand-x10": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -827,24 +548,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.16483516483516483,
+  "realised_spearman": -0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -858,20 +570,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys16": 0.34,
-   "machine/lanl05-sys2": 0.37484,
-   "machine/lanl05-sys18": 0.4,
-   "machine/aws-ondemand-nvme": 0.42336,
-   "machine/ford10-google-storage": 0.452,
-   "machine/lanl05-pooled": 0.4746,
-   "machine/lanl05-sys20": 0.5102542857142857,
-   "machine/lanl05-sys19": 0.5440685714285715,
-   "machine/ford10-google-storage-ge15min": 0.5905714285714285,
-   "machine/aws-ondemand-nvme-loss0.2": 0.6366628571428572,
-   "machine/aws-ondemand-x0.1": 0.6721600000000001,
-   "machine/aws-ondemand-nvme-loss0.8": 0.7568571428571428,
-   "machine/vishwanath10": 0.8551857142857144,
-   "machine/aws-ondemand-x10": 1.051
+   "machine/aws-ondemand-nvme": 0.357,
+   "machine/aws-ondemand-x0.1": 0.444976,
+   "machine/ford10-google-storage": 0.5292,
+   "machine/aws-ondemand-x10": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -880,24 +583,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.7626373626373627,
+  "realised_spearman": -0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -911,20 +605,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys19": 0.34,
-   "machine/lanl05-sys20": 0.37484,
-   "machine/aws-ondemand-x10": 0.4,
-   "machine/aws-ondemand-x0.1": 0.42336,
-   "machine/lanl05-pooled": 0.452,
-   "machine/ford10-google-storage-ge15min": 0.4746,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5102542857142857,
-   "machine/lanl05-sys16": 0.5440685714285715,
-   "machine/lanl05-sys18": 0.5905714285714285,
-   "machine/ford10-google-storage": 0.6366628571428572,
-   "machine/aws-ondemand-nvme-loss0.2": 0.6721600000000001,
-   "machine/lanl05-sys2": 0.7568571428571428,
-   "machine/aws-ondemand-nvme": 0.8551857142857144,
-   "machine/vishwanath10": 1.051
+   "machine/ford10-google-storage-ge15min": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/aws-ondemand-x0.1": 0.6607,
+   "machine/aws-ondemand-nvme": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -933,24 +618,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.08131868131868132,
+  "realised_spearman": 0.49999999999999994,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -964,20 +640,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/aws-ondemand-nvme-loss0.2": 0.34,
-   "machine/aws-ondemand-x0.1": 0.37484,
-   "machine/lanl05-sys19": 0.4,
-   "machine/aws-ondemand-nvme": 0.42336,
-   "machine/ford10-google-storage-ge15min": 0.452,
-   "machine/vishwanath10": 0.4746,
-   "machine/lanl05-sys20": 0.5102542857142857,
-   "machine/lanl05-pooled": 0.5440685714285715,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5905714285714285,
-   "machine/ford10-google-storage": 0.6366628571428572,
-   "machine/lanl05-sys2": 0.6721600000000001,
-   "machine/lanl05-sys16": 0.7568571428571428,
-   "machine/aws-ondemand-x10": 0.8551857142857144,
-   "machine/lanl05-sys18": 1.051
+   "machine/aws-ondemand-x0.1": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/aws-ondemand-nvme": 0.5292,
+   "machine/aws-ondemand-x10": 0.6607,
+   "machine/ford10-google-storage-ge15min": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -986,24 +653,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.5516483516483517,
+  "realised_spearman": -0.49999999999999994,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -1017,20 +675,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/ford10-google-storage": 0.34,
-   "machine/lanl05-sys19": 0.37484,
-   "machine/vishwanath10": 0.4,
-   "machine/aws-ondemand-x0.1": 0.42336,
-   "machine/lanl05-pooled": 0.452,
-   "machine/aws-ondemand-nvme": 0.4746,
-   "machine/lanl05-sys20": 0.5102542857142857,
-   "machine/aws-ondemand-nvme-loss0.8": 0.5440685714285715,
-   "machine/lanl05-sys18": 0.5905714285714285,
-   "machine/lanl05-sys2": 0.6366628571428572,
-   "machine/ford10-google-storage-ge15min": 0.6721600000000001,
-   "machine/lanl05-sys16": 0.7568571428571428,
-   "machine/aws-ondemand-x10": 0.8551857142857144,
-   "machine/aws-ondemand-nvme-loss0.2": 1.051
+   "machine/ford10-google-storage": 0.357,
+   "machine/aws-ondemand-nvme": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/ford10-google-storage-ge15min": 0.6607,
+   "machine/aws-ondemand-x0.1": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -1039,24 +688,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": -0.12967032967032965,
+  "realised_spearman": 0.49999999999999994,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -1070,20 +710,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys20": 0.34,
-   "machine/lanl05-sys16": 0.37484,
-   "machine/lanl05-sys18": 0.4,
-   "machine/lanl05-sys2": 0.42336,
-   "machine/lanl05-sys19": 0.452,
-   "machine/aws-ondemand-x10": 0.4746,
-   "machine/ford10-google-storage": 0.5102542857142857,
-   "machine/aws-ondemand-nvme-loss0.2": 0.5440685714285715,
-   "machine/vishwanath10": 0.5905714285714285,
-   "machine/aws-ondemand-nvme": 0.6366628571428572,
-   "machine/lanl05-pooled": 0.6721600000000001,
-   "machine/aws-ondemand-x0.1": 0.7568571428571428,
-   "machine/aws-ondemand-nvme-loss0.8": 0.8551857142857144,
-   "machine/ford10-google-storage-ge15min": 1.051
+   "machine/ford10-google-storage-ge15min": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/aws-ondemand-x10": 0.5292,
+   "machine/aws-ondemand-nvme": 0.6607,
+   "machine/aws-ondemand-x0.1": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -1092,24 +723,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 0.6703296703296703,
+  "realised_spearman": 0.6,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  },
  {
@@ -1123,20 +745,11 @@
    "price-dist/aws-us-8vcpu-x86/current-gen-non-burstable@2026-10-21"
   ],
   "assignments": {
-   "machine/lanl05-sys16": 0.34,
-   "machine/lanl05-sys2": 0.37484,
-   "machine/ford10-google-storage": 0.4,
-   "machine/lanl05-sys20": 0.42336,
-   "machine/lanl05-pooled": 0.452,
-   "machine/lanl05-sys18": 0.4746,
-   "machine/lanl05-sys19": 0.5102542857142857,
-   "machine/ford10-google-storage-ge15min": 0.5440685714285715,
-   "machine/aws-ondemand-x10": 0.5905714285714285,
-   "machine/aws-ondemand-nvme-loss0.2": 0.6366628571428572,
-   "machine/aws-ondemand-nvme": 0.6721600000000001,
-   "machine/aws-ondemand-nvme-loss0.8": 0.7568571428571428,
-   "machine/vishwanath10": 0.8551857142857144,
-   "machine/aws-ondemand-x0.1": 1.051
+   "machine/aws-ondemand-x10": 0.357,
+   "machine/ford10-google-storage": 0.444976,
+   "machine/ford10-google-storage-ge15min": 0.5292,
+   "machine/aws-ondemand-nvme": 0.6607,
+   "machine/aws-ondemand-x0.1": 0.87532
   },
   "region_factors": {
    "us-east-1": 1.0,
@@ -1145,24 +758,15 @@
    "us-west-2": 1.0
   },
   "reliability_scores_h_per_year": {
-   "machine/aws-ondemand-nvme": 0.03480783055463937,
-   "machine/aws-ondemand-nvme-loss0.2": 0.05471040789430456,
-   "machine/aws-ondemand-nvme-loss0.8": 0.01490525456771543,
+   "machine/aws-ondemand-nvme": 1.3910729566685305,
    "machine/ford10-google-storage": 3.060215843598989,
    "machine/ford10-google-storage-ge15min": 1.4362478068376199,
-   "machine/vishwanath10": 0.006123330202715392,
-   "machine/lanl05-pooled": 2.5446314677848028,
-   "machine/lanl05-sys16": 60.65625196329839,
-   "machine/lanl05-sys18": 2.5398440037051717,
-   "machine/lanl05-sys19": 2.2992782683940494,
-   "machine/lanl05-sys2": 31.15679761990439,
-   "machine/lanl05-sys20": 2.856014653757602,
-   "machine/aws-ondemand-x0.1": 0.0034807830554639354,
-   "machine/aws-ondemand-x10": 0.3480783055463936
+   "machine/aws-ondemand-x0.1": 0.13910729566685306,
+   "machine/aws-ondemand-x10": 13.910729566685307
   },
-  "realised_spearman": 1.0,
+  "realised_spearman": 0.9999999999999999,
   "rebuild_hours": 0.035719426275555556,
-  "kendall_tau_R_quarter_vs_4x": 0.9560439560439561,
+  "kendall_tau_R_quarter_vs_4x": 1.0,
   "notes": "base prices are us-east-1 equivalents; x region factor of the deployment type per region"
  }
 ]

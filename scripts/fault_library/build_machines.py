@@ -17,7 +17,7 @@ Run after build_ford10.py, build_literature.py, build_region_outages.py and
   they are availability-only (price_policy none); with prices there are
   priced variants for rho = 1, rho = 0 (seed 0) and rho = 0.5. Other seeds are
   selected at run time with ``scenario_node_configs(..., price_assignment=...)``.
-  Reference scenarios: reference-ford10, reference-vishwanath10.
+  Reference scenarios: reference-ford10 (Ford's planned cadence) and reference-ford10-weekly.
 """
 
 from __future__ import annotations
@@ -125,10 +125,6 @@ def main() -> int:
                       "notes": "reference-ford10 with our weekly planned cadence (weekly-ford10) instead of Ford's. "
                                "Caveat: cluster/ford10-google-storage counts all node restarts (incl. sub-15-min "
                                "rollout restarts), which partly overlap the weekly window; the -ge15min class does not"})
-    scenarios.append({**common, "id": "scenario/reference-vishwanath10",
-                      "machines": [m["id"] for m in machines if "vishwanath" in m["id"]], "level": "central",
-                      "price_assignment": None, "price_policy": "none",
-                      "notes": "contrasting environment: only vishwanath10 machine classes"})
     (LIB / "scenarios/canonical.json").write_text(json.dumps(scenarios, indent=1) + "\n")
 
     problems = FaultLibrary.load(LIB, validate=False).validate()

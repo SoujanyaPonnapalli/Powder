@@ -572,16 +572,16 @@ def test_trace_weibull_uses_single_transient_clock():
     # many renewals per slot: an ordinary renewal process with k < 1 front-loads events after t = 0, a
     # fixed per-slot excess over lambda*T; with ~hundreds of renewals per slot it is negligible
     for c in prof["causes"].values():
-        c["rate_per_hour"] = {k: v * 50 for k, v in c["rate_per_hour"].items()}
+        c["rate_per_hour"] = {k: v * 5 for k, v in c["rate_per_hour"].items()}
     lib.entries["__weib__"] = prof
     lib.entries["__m__"] = {"id": "__m__", "kind": "machine", "fault_profile": "__weib__", "price": {"route": "none"}}
     sid = _scenario(lib, "__sw__", machines=["__m__"])
     slots = {f"s{i}": ("__m__", "us-east-1") for i in range(200)}
     T = days(365 * 20)
     ev = generate(lib, sid, slots, T, seed=1)
-    lam_t, _, _ = transient_and_permanent(prof)
+    lam_t, rec, _ = transient_and_permanent(prof)
     n = sum(e.kind == "transient" for e in ev)
-    mu = lam_t * T * len(slots)
+    mu = lam_t * T * len(slots) / (1 + lam_t * rec.mean)  # the clock runs only while the node is up
     assert abs(n / mu - 1) < 0.05, (n, mu)
 
 
@@ -655,12 +655,17 @@ def test_global_outage_process():
     assert any(e.kind == "global" and e.region == "*" for e in ev)
 
 
-def test_aws_host_faults_consistent_per_level():
+def test_aws_transient_causes_from_ford_only():
     p = LIB.get("cloud/aws-ondemand-nvme", "node")
-    a = p["assumptions"]
-    for lvl in ("low", "central", "high"):
-        total = (p["causes"]["hw_reboot"]["rate_per_hour"][lvl] + p["causes"]["hw_host_loss"]["rate_per_hour"][lvl]) * 8766
-        assert math.isclose(total, a["host_repair_rate_per_year"][lvl] * (1 - a["f_LM"][lvl]), rel_tol=1e-6)
+    ford_all = LIB.get("cluster/ford10-google-storage", "node")["causes"]
+    ford_ge15 = LIB.get("cluster/ford10-google-storage-ge15min", "node")["causes"]
+    f_lm = p["assumptions"]["f_LM"]
+    for lvl in ("low", "central"):  # the high end may be clipped to the SLA allowance
+        assert math.isclose(p["causes"]["hw_reboot"]["rate_per_hour"][lvl],
+                            ford_all["hw_reboot"]["rate_per_hour"][lvl] * (1 - f_lm[lvl]), rel_tol=1e-6, abs_tol=1e-15)
+        assert math.isclose(p["causes"]["sw"]["rate_per_hour"][lvl], ford_ge15["sw"]["rate_per_hour"][lvl], rel_tol=1e-6)
+    assert all(v == 0 for v in p["causes"]["hw_host_loss"]["rate_per_hour"].values())
+    assert not any(d.startswith(("vishwanath", "lanl", "birke")) for d in p["derived_from"])
 
 
 # -- LANL (raw data) -------------------------------------------------------------
@@ -676,8 +681,7 @@ def test_lanl_pooled_profile_and_shapes():
     summ = LIB.measurement("lanl05#pooled-small")["value"]
     assert 0.05 < summ["rho_sw_pool"]["central"] < 1.0
     assert summ["cofail_inflation_small"]["median"] > 1  # failures cluster in time across nodes
-    aws = LIB.get("cloud/aws-ondemand-nvme", "node")["assumptions"]["sw_ratio"]
-    assert aws["low"] < 0.5 < aws["central"] < aws["high"]
+    assert "recoverability-unknown" in p["tags"]  # not instantiated as a machine class
 
 
 

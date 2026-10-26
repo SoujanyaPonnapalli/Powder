@@ -7,20 +7,18 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 
 | Profile | Tier | MTBF (transient) | Mean recovery | MTTDL (data loss) | Unavailable h/yr (rebuild 129 s) | Node availability |
 |---|---|---|---|---|---|---|
-| `cloud/aws-ondemand-nvme` | cloud | 41.7 y | 84.2 min | 31.6 y | 0.0348 | 0.999996 |
-| `cloud/aws-ondemand-nvme-loss0.2` | cloud | 26.1 y | 84.2 min | 43.1 y | 0.0547 | 0.999994 |
-| `cloud/aws-ondemand-nvme-loss0.8` | cloud | 104 y | 84.2 min | 24.9 y | 0.0149 | 0.999998 |
+| `cloud/aws-ondemand-nvme` | cloud | 1.33 y | 111 min | 57 y | 1.39 | 0.999841 |
 | `legacy/vm-spot` | cloud | 30 d | 20 min | 1 d | 17.1 | 0.998049 |
 | `legacy/vm-standard` | cloud | 30 d | 20 min | 3 y | 4.07 | 0.999536 |
 | `legacy/vm-unreliable` | cloud | 30 d | 20 min | 365 d | 4.09 | 0.999533 |
-| `spot/aws-i4i.2xlarge-us-east-1` | cloud | 41.7 y | 84.2 min | 308 d | 0.0761 | 0.999991 |
-| `spot/aws-i4i.2xlarge-us-east-2` | cloud | 41.7 y | 84.2 min | 1.31 y | 0.061 | 0.999993 |
-| `spot/aws-i4i.2xlarge-us-west-1` | cloud | 41.7 y | 84.2 min | 1.92 y | 0.0523 | 0.999994 |
-| `spot/aws-i4i.2xlarge-us-west-2` | cloud | 41.7 y | 84.2 min | 201 d | 0.0984 | 0.999989 |
-| `spot/aws-m6id.2xlarge-us-east-1` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.188 | 0.999979 |
-| `spot/aws-m6id.2xlarge-us-east-2` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.188 | 0.999979 |
-| `spot/aws-m6id.2xlarge-us-west-1` | cloud | 41.7 y | 84.2 min | 91.8 d | 0.176 | 0.999980 |
-| `spot/aws-m6id.2xlarge-us-west-2` | cloud | 41.7 y | 84.2 min | 84.7 d | 0.188 | 0.999979 |
+| `spot/aws-i4i.2xlarge-us-east-1` | cloud | 1.33 y | 111 min | 311 d | 1.43 | 0.999837 |
+| `spot/aws-i4i.2xlarge-us-east-2` | cloud | 1.33 y | 111 min | 1.33 y | 1.42 | 0.999838 |
+| `spot/aws-i4i.2xlarge-us-west-1` | cloud | 1.33 y | 111 min | 1.97 y | 1.41 | 0.999839 |
+| `spot/aws-i4i.2xlarge-us-west-2` | cloud | 1.33 y | 111 min | 203 d | 1.45 | 0.999834 |
+| `spot/aws-m6id.2xlarge-us-east-1` | cloud | 1.33 y | 111 min | 84.9 d | 1.54 | 0.999824 |
+| `spot/aws-m6id.2xlarge-us-east-2` | cloud | 1.33 y | 111 min | 84.9 d | 1.54 | 0.999824 |
+| `spot/aws-m6id.2xlarge-us-west-1` | cloud | 1.33 y | 111 min | 92.1 d | 1.53 | 0.999825 |
+| `spot/aws-m6id.2xlarge-us-west-2` | cloud | 1.33 y | 111 min | 84.9 d | 1.54 | 0.999824 |
 | `cluster/ford10-google-storage` | reference | 6.33 d | 3.18 min | 22.4 y | 3.06 | 0.999651 |
 | `cluster/ford10-google-storage-ge15min` | reference | 1.31 y | 113 min | 22.4 y | 1.44 | 0.999836 |
 | `host/vishwanath10` | reference | never | 0 s | 5.83 y | 0.00612 | 0.999999 |
@@ -30,8 +28,8 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `hpc/lanl05-sys19` | reference | 360 d | 2.27 h | never | 2.3 | 0.999738 |
 | `hpc/lanl05-sys2` | reference | 22.5 d | 115 min | never | 31.2 | 0.996446 |
 | `hpc/lanl05-sys20` | reference | 302 d | 2.36 h | never | 2.86 | 0.999674 |
-| `synthetic/aws-ondemand-x0.1` | reference | 417 y | 84.2 min | 316 y | 0.00348 | 1.000000 |
-| `synthetic/aws-ondemand-x10` | reference | 4.17 y | 84.2 min | 3.16 y | 0.348 | 0.999960 |
+| `synthetic/aws-ondemand-x0.1` | reference | 13.3 y | 111 min | 570 y | 0.139 | 0.999984 |
+| `synthetic/aws-ondemand-x10` | reference | 48.5 d | 111 min | 5.7 y | 13.9 | 0.998413 |
 | `vm/birke14-pm` | reference | 3.83 y | 38.5 h | never | 10 | 0.998854 |
 | `vm/birke14-vm` | reference | 6.39 y | 19.6 h | never | 3.07 | 0.999650 |
 
@@ -74,18 +72,10 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | Machine | Fault profile | Tier | Price route | Regions |
 |---|---|---|---|---|
 | `machine/aws-ondemand-nvme` | `cloud/aws-ondemand-nvme` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/aws-ondemand-nvme-loss0.2` | `cloud/aws-ondemand-nvme-loss0.2` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/aws-ondemand-nvme-loss0.8` | `cloud/aws-ondemand-nvme-loss0.8` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/aws-ondemand-x0.1` | `synthetic/aws-ondemand-x0.1` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/aws-ondemand-x10` | `synthetic/aws-ondemand-x10` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/ford10-google-storage` | `cluster/ford10-google-storage` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/ford10-google-storage-ge15min` | `cluster/ford10-google-storage-ge15min` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/lanl05-pooled` | `hpc/lanl05-pooled` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/lanl05-sys16` | `hpc/lanl05-sys16` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/lanl05-sys18` | `hpc/lanl05-sys18` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/lanl05-sys19` | `hpc/lanl05-sys19` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/lanl05-sys2` | `hpc/lanl05-sys2` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
-| `machine/lanl05-sys20` | `hpc/lanl05-sys20` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 | `machine/legacy-spot` | `legacy/vm-spot` | spot | native | us-east |
 | `machine/legacy-standard` | `legacy/vm-standard` | ondemand | native | us-east |
 | `machine/legacy-unreliable` | `legacy/vm-unreliable` | ondemand | native | us-east |
@@ -97,7 +87,6 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | `machine/spot-m6id.2xlarge-us-east-2` | `spot/aws-m6id.2xlarge-us-east-2` | spot | native | us-east-2 |
 | `machine/spot-m6id.2xlarge-us-west-1` | `spot/aws-m6id.2xlarge-us-west-1` | spot | native | us-west-1 |
 | `machine/spot-m6id.2xlarge-us-west-2` | `spot/aws-m6id.2xlarge-us-west-2` | spot | native | us-west-2 |
-| `machine/vishwanath10` | `host/vishwanath10` | ondemand | assigned | us-east-1, us-east-2, us-west-1, us-west-2 |
 
 ## Prices
 
@@ -110,6 +99,6 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 
 ## Coverage
 
-- Node profiles without a machine class: `vm/birke14-vm`, `vm/birke14-pm`
-- Machine classes with assigned (not native) prices: 14
-- Scenarios: `scenario/canonical-central`, `scenario/canonical-central-rho0`, `scenario/canonical-central-rho0.5`, `scenario/canonical-central-rho1`, `scenario/canonical-optimistic`, `scenario/canonical-optimistic-rho0`, `scenario/canonical-optimistic-rho0.5`, `scenario/canonical-optimistic-rho1`, `scenario/canonical-pessimistic`, `scenario/canonical-pessimistic-rho0`, `scenario/canonical-pessimistic-rho0.5`, `scenario/canonical-pessimistic-rho1`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-ford10-weekly`, `scenario/reference-vishwanath10`
+- Node profiles without a machine class: `host/vishwanath10`, `vm/birke14-vm`, `vm/birke14-pm`, `hpc/lanl05-pooled`, `hpc/lanl05-sys2`, `hpc/lanl05-sys16`, `hpc/lanl05-sys18`, `hpc/lanl05-sys19`, `hpc/lanl05-sys20`
+- Machine classes with assigned (not native) prices: 5
+- Scenarios: `scenario/canonical-central`, `scenario/canonical-central-rho0`, `scenario/canonical-central-rho0.5`, `scenario/canonical-central-rho1`, `scenario/canonical-optimistic`, `scenario/canonical-optimistic-rho0`, `scenario/canonical-optimistic-rho0.5`, `scenario/canonical-optimistic-rho1`, `scenario/canonical-pessimistic`, `scenario/canonical-pessimistic-rho0`, `scenario/canonical-pessimistic-rho0.5`, `scenario/canonical-pessimistic-rho1`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-ford10-weekly`
