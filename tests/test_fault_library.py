@@ -335,14 +335,8 @@ def test_disk_pool_brackets_inputs():
     assert min(inputs) <= pooled["central"] <= max(inputs)
 
 
-def test_aws_ondemand_within_sla_and_sensible():
-    from powder.faults.schema import pick
-    p = LIB.get("cloud/aws-ondemand-nvme", "node")
-    down_h = 0.0
-    for c in ("hw_reboot", "sw", "pause"):
-        spec = p["causes"][c]
-        down_h += spec["rate_per_hour"]["high"] * 8766 * from_spec(pick(spec["duration"], "high", "duration")).mean / 3600
-    assert down_h < 0.005 * 8766  # AWS instance-level SLA 99.5%
+def test_bare_metal_base_sensible():
+    p = LIB.get("cluster/ford10-google-storage-ge15min", "node")
     lam_t, rec, lam_p = transient_and_permanent(p, "central")
     assert 0.01 < lam_t * 3600 * 8766 < 2.0 and 0.005 < lam_p * 3600 * 8766 < 1.0  # per node-year
 
@@ -493,7 +487,7 @@ def test_assignment_extremes_and_multiset():
 
 
 def test_reliability_score_units():
-    p = LIB.get("cloud/aws-ondemand-nvme", "node")
+    p = LIB.get("cluster/ford10-google-storage-ge15min", "node")
     lam_t, rec, lam_p = transient_and_permanent(p)
     from powder.faults.system import REBUILD_S
     manual = (lam_t * rec.mean + lam_p * REBUILD_S) * 8766
@@ -502,15 +496,15 @@ def test_reliability_score_units():
 
 def test_trace_rates_round_trip():
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
-    lib.entries["__s__"] = {"id": "__s__", "kind": "scenario", "machines": ["machine/aws-ondemand-x10"],
+    lib.entries["__s__"] = {"id": "__s__", "kind": "scenario", "machines": ["machine/ford10-ge15min-x10"],
                             "region_outage": "region_outage/aws-us-from-azure",
                             "planned_downtime": "planned_downtime/weekly-ford10", "level": "central",
                             "price_assignment": None, "price_policy": "none",
                             "deployment": {"regions": ["us-east-1", "us-west-2"]}}
-    slots = {f"s{i}": ("machine/aws-ondemand-x10", "us-east-1" if i % 2 else "us-west-2") for i in range(40)}
+    slots = {f"s{i}": ("machine/ford10-ge15min-x10", "us-east-1" if i % 2 else "us-west-2") for i in range(40)}
     T = days(365 * 25)
     ev = generate(lib, "__s__", slots, T, seed=4)
-    prof = LIB.get("synthetic/aws-ondemand-x10", "node")
+    prof = LIB.get("synthetic/ford10-ge15min-x10", "node")
     rates = node_profile_rates_ps(prof)
     for cause, lam in rates.items():
         if lam <= 0:
@@ -532,7 +526,7 @@ def node_profile_rates_ps(profile):
 
 
 def test_trace_is_reproducible():
-    slots = {"a": ("machine/aws-ondemand-nvme", "us-east-1"), "b": ("machine/ford10-google-storage", "us-west-1")}
+    slots = {"a": ("machine/ford10-google-storage-ge15min", "us-east-1"), "b": ("machine/ford10-google-storage", "us-west-1")}
     e1 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
     e2 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
     assert e1 == e2 and len(e1) > 0
@@ -551,7 +545,7 @@ def test_scenario_machine_types_for_ilp():
 # -- review fixes: trace/simulator consistency, global outages, rolling planned ---
 
 def _scenario(lib, sid, **kw):
-    base = {"id": sid, "kind": "scenario", "machines": ["machine/aws-ondemand-x10"], "region_outage": None,
+    base = {"id": sid, "kind": "scenario", "machines": ["machine/ford10-ge15min-x10"], "region_outage": None,
             "planned_downtime": None, "level": "central", "price_assignment": None, "price_policy": "none",
             "deployment": {"regions": ["us-east-1", "us-west-2"]}}
     base.update(kw)
@@ -562,7 +556,7 @@ def _scenario(lib, sid, **kw):
 def test_trace_weibull_uses_single_transient_clock():
     """With a Weibull shape the trace must fire transients at lambda_T (one clock), like the simulator."""
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
-    prof = json.loads(json.dumps(LIB.get("synthetic/aws-ondemand-x10")))
+    prof = json.loads(json.dumps(LIB.get("synthetic/ford10-ge15min-x10")))
     prof["id"] = "__weib__"
     prof["shape"] = {"type": "weibull", "k": {"low": 0.7, "central": 0.7, "high": 0.7}}
     # no permanent causes: replacements restart the clock and (for k < 1) legitimately raise
@@ -588,9 +582,9 @@ def test_trace_weibull_uses_single_transient_clock():
 def test_trace_slot_streams_are_independent():
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
     sid = _scenario(lib, "__ind__", planned_downtime="planned_downtime/weekly-ford10")
-    a = {"x": ("machine/aws-ondemand-x10", "us-east-1"), "y": ("machine/aws-ondemand-x10", "us-west-2")}
-    b = {**a, "z": ("machine/aws-ondemand-x10", "us-west-2")}
-    b2 = {"a0": ("machine/aws-ondemand-x10", "us-east-1"), **b}  # sorts before x as well
+    a = {"x": ("machine/ford10-ge15min-x10", "us-east-1"), "y": ("machine/ford10-ge15min-x10", "us-west-2")}
+    b = {**a, "z": ("machine/ford10-ge15min-x10", "us-west-2")}
+    b2 = {"a0": ("machine/ford10-ge15min-x10", "us-east-1"), **b}  # sorts before x as well
     ea = [e for e in generate(lib, sid, a, days(4000), seed=3) if e.slot == "x"]
     eb = [e for e in generate(lib, sid, b2, days(4000), seed=3) if e.slot == "x"]
     assert ea == eb and any(e.kind != "planned" for e in ea)
@@ -600,7 +594,7 @@ def test_frailty_is_opt_in_and_matches_draws():
     from powder.faults.trace import frailty_draws
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
     # transient-only profile with strong frailty: same host, repeated faults (lemons)
-    prof = json.loads(json.dumps(LIB.get("synthetic/aws-ondemand-x10")))
+    prof = json.loads(json.dumps(LIB.get("synthetic/ford10-ge15min-x10")))
     prof.update({"id": "__frail__", "frailty_a": 0.1})
     for c in ("disk", "hw_host_loss"):
         prof["causes"].pop(c, None)
@@ -619,9 +613,9 @@ def test_frailty_is_opt_in_and_matches_draws():
 
 def test_planned_downtime_folded_into_node_configs():
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
-    sid = _scenario(lib, "__pl__", machines=["machine/aws-ondemand-nvme"], planned_downtime="planned_downtime/weekly-ford10")
-    with_p = scenario_node_configs(lib, sid)[("machine/aws-ondemand-nvme", "us-east-1")]
-    without = scenario_node_configs(lib, sid, include_planned=False)[("machine/aws-ondemand-nvme", "us-east-1")]
+    sid = _scenario(lib, "__pl__", machines=["machine/ford10-google-storage-ge15min"], planned_downtime="planned_downtime/weekly-ford10")
+    with_p = scenario_node_configs(lib, sid)[("machine/ford10-google-storage-ge15min", "us-east-1")]
+    without = scenario_node_configs(lib, sid, include_planned=False)[("machine/ford10-google-storage-ge15min", "us-east-1")]
     assert math.isclose(1 / with_p.failure_dist.mean - 1 / without.failure_dist.mean, 1 / days(7), rel_tol=1e-9)
 
 
@@ -651,21 +645,28 @@ def test_global_outage_process():
     assert math.isclose(exact.global_outage_dist.rate, m.global_rate_per_second)
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
     sid = _scenario(lib, "__gl__", region_outage="region_outage/aws-us-from-azure")
-    ev = generate(lib, sid, {"x": ("machine/aws-ondemand-nvme", "us-east-1")}, days(365 * 200), seed=5)
+    ev = generate(lib, sid, {"x": ("machine/ford10-google-storage-ge15min", "us-east-1")}, days(365 * 200), seed=5)
     assert any(e.kind == "global" and e.region == "*" for e in ev)
 
 
-def test_aws_transient_causes_from_ford_only():
-    p = LIB.get("cloud/aws-ondemand-nvme", "node")
-    ford_all = LIB.get("cluster/ford10-google-storage", "node")["causes"]
-    ford_ge15 = LIB.get("cluster/ford10-google-storage-ge15min", "node")["causes"]
-    f_lm = p["assumptions"]["f_LM"]
-    for lvl in ("low", "central"):  # the high end may be clipped to the SLA allowance
-        assert math.isclose(p["causes"]["hw_reboot"]["rate_per_hour"][lvl],
-                            ford_all["hw_reboot"]["rate_per_hour"][lvl] * (1 - f_lm[lvl]), rel_tol=1e-6, abs_tol=1e-15)
-        assert math.isclose(p["causes"]["sw"]["rate_per_hour"][lvl], ford_ge15["sw"]["rate_per_hour"][lvl], rel_tol=1e-6)
-    assert all(v == 0 for v in p["causes"]["hw_host_loss"]["rate_per_hour"].values())
-    assert not any(d.startswith(("vishwanath", "lanl", "birke")) for d in p["derived_from"])
+def test_no_cloud_adjusted_profile():
+    """No source measures how much a cloud hides from instances (live migration), so there is no
+    cloud/aws-ondemand-nvme profile: bare-metal Ford rates are the only transient base."""
+    assert "cloud/aws-ondemand-nvme" not in LIB.entries and "machine/aws-ondemand-nvme" not in LIB.entries
+    from powder.faults.catalogue import TRANSIENT_BASES
+    assert TRANSIENT_BASES == ("cluster/ford10-google-storage-ge15min",)
+
+
+def test_spot_transient_causes_are_ford_ge15():
+    ford = LIB.get("cluster/ford10-google-storage-ge15min", "node")["causes"]
+    spots = LIB.query(kind="node", tags=["spot"])
+    assert spots
+    for p in spots:
+        assert p["id"].startswith("spot/")
+        for c in ("hw_reboot", "sw"):
+            assert p["causes"][c]["rate_per_hour"] == ford[c]["rate_per_hour"]
+        assert not {"hw_host_loss", "pause"} & set(p["causes"])
+        assert not any(d.startswith(("vishwanath", "lanl", "birke")) for d in p["derived_from"])
 
 
 # -- LANL (raw data) -------------------------------------------------------------
@@ -788,7 +789,7 @@ def test_exec10_simple_system_timings():
     assert abs(REBUILD_S - (120 + SNAPSHOT_S)) < 1e-9
     s = LIB.get("scenario/canonical-central", "scenario")
     assert s["system"]["source"] == "exec10-simple-estimate"
-    cfg = scenario_node_configs(LIB, "scenario/canonical-central")[("machine/aws-ondemand-nvme", "us-east-1")]
+    cfg = scenario_node_configs(LIB, "scenario/canonical-central")[("machine/ford10-google-storage-ge15min", "us-east-1")]
     assert abs(cfg.snapshot_download_time_dist.value - SNAPSHOT_S) < 1e-12
     assert (cfg.spawn_dist.low, cfg.spawn_dist.high) == (60.0, 180.0)
     legacy = scenario_node_configs(LIB, "scenario/legacy")[("machine/legacy-standard", "us-east")]
@@ -857,7 +858,7 @@ def test_rate_model_instantiation():
 def test_rate_models_in_library():
     lib = LIB
     for cause in ("hw_reboot", "sw"):
-        rm = lib.get("cloud/aws-ondemand-nvme", "node")["causes"][cause]["rate_model"]
+        rm = lib.get("cluster/ford10-google-storage-ge15min", "node")["causes"][cause]["rate_model"]
         assert rm["type"] == "population" and rm["curve"]["clock"] == "calendar"
         assert math.isclose(float(np.mean(rm["curve"]["rate_per_hour"])), 1.0, rel_tol=1e-6)
     if "disk/backblaze-models" in lib.entries:

@@ -1,4 +1,4 @@
-"""Literature sources, the disk pool, and the composed AWS on-demand profile (Step D).
+"""Literature sources, the disk pool and the reference host profiles (Step D).
 
     python scripts/fault_library/build_literature.py      (run after build_ford10.py)
 
@@ -9,8 +9,7 @@ recorded only to document that they were rejected. See plan §7.11.
 Outputs:
   data/fault_library/sources/literature.json
   data/fault_library/profiles/component/disks.json   (per-source + disk/pooled)
-  data/fault_library/profiles/node/host-reference.json (host/vishwanath10)
-  data/fault_library/profiles/node/aws-ondemand.json (cloud/aws-ondemand-nvme)
+  data/fault_library/profiles/node/host-reference.json (host/vishwanath10, vm/birke14-*)
 """
 
 from __future__ import annotations
@@ -232,48 +231,6 @@ def main():
             "causes": {"hw_host_loss": {"rate_per_hour": tri(rate_yr / YEAR_H, rate_yr / YEAR_H, rate_yr / YEAR_H)}},
             "frailty_a": a, "shape": {"type": "exponential"}}
 
-    # cloud/aws-ondemand-nvme (plan §7.4, §7.9)
-    # Transient causes come from Ford et al. only (user decision 2026-10-26): Ford's unplanned reboots and
-    # node restarts are recoverable by definition (the node responds again), whereas Vishwanath's non-disk
-    # repairs and LANL's records do not say whether data survived, so they are not used.
-    ford = json.loads((LIB / "profiles/node/ford10.json").read_text())
-    ford_all = next(p for p in ford if p["id"] == "cluster/ford10-google-storage")
-    ford_ge15 = next(p for p in ford if p["id"] == "cluster/ford10-google-storage-ge15min")
-    f_lm = tri(0.5, 0.25, 0.0)     # share of host reboots hidden from the instance by live migration / live update
-    reboot = {k: ford_all["causes"]["hw_reboot"]["rate_per_hour"][k] * (1 - f_lm[k]) for k in f_lm}
-    sw = dict(ford_ge15["causes"]["sw"]["rate_per_hour"])   # >=15-min node restarts (short ones: planned downtime)
-    host_loss = tri(0.0, 0.0, 0.0)  # no source with known recoverability: a documented gap (plan §0)
-    pause = tri(0.0, 0.0, 1.0 / (18 * 30.4375 * 24))  # Azure bound, used only at the pessimistic end
-    aws = {"id": "cloud/aws-ondemand-nvme", "kind": "node", "version": 1, "tier": "cloud",
-           "tags": ["aws", "on-demand", "local-nvme", "derived"],
-           "derived_from": ["aws-ec2-sla#instance-level",
-                            "azure-vm-docs#pause-18mo", "narya-afpd#narya-reduction", "narya-afpd#afpd-reduction",
-                            "ford10#derived-rate-node_restart", "ford10#derived-rate-unplanned_reboot",
-                            "ford10#digitized-unplanned_reboot", "ford10#digitized-node_restart", "disk/pooled"],
-           "built_by": "scripts/fault_library/build_literature.py",
-           "notes": ("No public source gives a modern on-demand VM interruption rate (plan §7.13); this profile is "
-                     "derived, using only sources whose recoverability is known. Host reboots: Ford's unplanned "
-                     "reboots (all events; Table 1 cell range as low/high) x (1 - f_LM), f_LM in {0.5, 0.25, 0} "
-                     "(Narya/AFPD: live migration and prediction hide a large share). Software: Ford's >=15-min node "
-                     "restarts (short automatic restarts are left to planned downtime and exec #10). Host loss "
-                     "(non-disk faults that lose the host): 0 - no source says which host faults lose local data "
-                     "(Vishwanath's non-disk repairs and LANL were excluded for this reason); a known optimistic gap. "
-                     "Pause: Azure's 30 s at most once per 18 months, pessimistic end only. Disk: disk/pooled. "
-                     "Durations: Ford unplanned-reboot CDF (hw_reboot), Ford node-restart CDF >=15 min (sw). The "
-                     "pessimistic end is clipped to the AWS instance SLA allowance if it exceeds it. Replace with "
-                     "exec #10 measurements as @v2."),
-           "assumptions": {"f_LM": f_lm, "host_loss": "0 (no source with known recoverability)",
-                           "hw_reboot_source": "cluster/ford10-google-storage", "sw_source": "cluster/ford10-google-storage-ge15min"},
-           "causes": {
-               "hw_reboot": {"rate_per_hour": reboot, "duration": ford_all["causes"]["hw_reboot"]["duration"]},
-               "hw_host_loss": {"rate_per_hour": host_loss},
-               "sw": {"rate_per_hour": sw, "duration": ford_ge15["causes"]["sw"]["duration"]},
-               "pause": {"rate_per_hour": pause, "duration": {"type": "constant", "value": 30.0}},
-               "disk": {"rate_per_hour": next(c for c in comps if c["id"] == "disk/pooled")["rate_per_hour"]},
-           },
-           "shape": {"type": "exponential"},
-           "shape_variant": {"type": "weibull", "k": tri(0.7, 0.75, 0.8),
-                             "source": ["schroeder-gibson-fast07#weibull-k"]}}
     # vm/birke14-*: enterprise VM / PM crash tickets (IBM datacenters, 1 year)
     def birke(kind, wk_rate, wk_prob, med_h, mean_h, ratio, gamma_a):
         c = wk_rate / 168.0                    # failures per server-hour (Fig 2 mean weekly rate)
@@ -303,40 +260,7 @@ def main():
     birke_vm = birke("vm", 0.003, 0.0038, math.exp(1.14), 19.6, 42.1, 0.44)
     birke_pm = birke("pm", 0.005, 0.0062, math.exp(1.80), 38.5, 35.5, 0.29)
     (LIB / "profiles/node/host-reference.json").write_text(json.dumps(r8([vish, birke_vm, birke_pm]), indent=2) + "\n")
-    # SLA clip (plan §7.4): the instance SLA (99.5%) allows <= 43.8 h of unplanned downtime per year;
-    # if the pessimistic end exceeds it, scale the high transient rates down to the cap and log it.
-    from powder.faults.dists import from_spec as _fs
-    from powder.faults.schema import pick as _pick
-    cap_h = 0.005 * YEAR_H
-    def _h(c):
-        spec = aws["causes"][c]
-        return spec["rate_per_hour"]["high"] * YEAR_H * _fs(_pick(spec["duration"], "high", "duration")).mean / 3600
-    hi_h = sum(_h(c) for c in ("hw_reboot", "sw", "pause"))
-    if hi_h > cap_h:  # scale the Ford-derived causes only; the Azure pause bound is kept
-        f = (0.99 * cap_h - _h("pause")) / (_h("hw_reboot") + _h("sw"))
-        for c in ("hw_reboot", "sw"):
-            r = aws["causes"][c]["rate_per_hour"]
-            r["high"] = max(r["central"], r["high"] * f)
-        aws["assumptions"]["sla_clip"] = {"pessimistic_h_per_year_before": hi_h, "cap_h_per_year": cap_h, "scale": f}
-        print(f"SLA clip: pessimistic unplanned downtime {hi_h:.1f} h/yr > {cap_h:.1f}; high rates x {f:.3f}", file=sys.stderr)
-    (LIB / "profiles/node/aws-ondemand.json").write_text(json.dumps(r8([aws]), indent=2) + "\n")
-
-    # SLA cap check (pessimistic end)
-    from powder.faults.dists import from_spec
-    from powder.faults.schema import pick
-    down_h = 0.0
-    for c in ("hw_reboot", "sw", "pause"):
-        spec = aws["causes"][c]
-        d = from_spec(pick(spec["duration"], "high", "duration"))
-        down_h += spec["rate_per_hour"]["high"] * YEAR_H * d.mean / 3600
-    rebuild_h = 1.0
-    down_h += (host_loss["high"] + aws["causes"]["disk"]["rate_per_hour"]["high"]) * YEAR_H * rebuild_h
-    print(json.dumps(r8({"disk_pool_per_year": pooled.__dict__, "vishwanath": {"mu_14mo": mu14, "frailty_a": a},
-                         "aws_rates_per_year": {c: {k: v * YEAR_H for k, v in s["rate_per_hour"].items()}
-                                                for c, s in aws["causes"].items()},
-                         "pessimistic_unplanned_downtime_h_per_year": down_h,
-                         "aws_instance_sla_cap_h_per_year": 0.005 * YEAR_H,
-                         "within_sla_cap": down_h <= 0.005 * YEAR_H}), indent=1))
+    print(json.dumps(r8({"disk_pool_per_year": pooled.__dict__, "vishwanath": {"mu_14mo": mu14, "frailty_a": a}}), indent=1))
 
 
 if __name__ == "__main__":

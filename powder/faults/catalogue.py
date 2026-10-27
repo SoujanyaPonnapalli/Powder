@@ -49,7 +49,8 @@ from .system import REBUILD_S, SYSTEM
 US_REGIONS = ("us-east-1", "us-east-2", "us-west-1", "us-west-2")
 #: Node profiles whose transient causes may seed catalogue machines: recoverability known, and no
 #: overlap with the weekly planned window (cluster/ford10-google-storage counts rollout restarts).
-TRANSIENT_BASES = ("cloud/aws-ondemand-nvme", "cluster/ford10-google-storage-ge15min")
+#: Bare-metal rates only: no source measures how much a cloud hides from instances (live migration).
+TRANSIENT_BASES = ("cluster/ford10-google-storage-ge15min",)
 #: Disk components usable in recipes (all count drives removed as failed: permanent).
 DISK_COMPONENTS = ("disk/backblaze-models-age", "disk/backblaze-models", "disk/sg07-age", "disk/sg07-systems",
                    "disk/pooled", "disk/schroeder-gibson-fast07", "disk/vishwanath10", "disk/ford10")

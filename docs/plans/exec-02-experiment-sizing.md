@@ -86,6 +86,11 @@ unavailability-event probabilities separately. A single RSM's event probability
 is **not** a 50-RSM deployment probability: RSMs share physical nodes and region
 outages, and the engine has no joint-cluster deployment mode yet.
 
+> **Stale (2026-10-27):** the catalogue lost its second transient base
+> (`cloud/aws-ondemand-nvme`, see exec #1 §8), so it now has 244 distinct
+> on-demand recipes, not 488, and the numbers below were computed from the old
+> catalogue. Re-run the sweeps before citing any of them.
+
 ## Interpretation / limits
 
 - Catalogue on-demand diversity is bounded by 488 distinct recipes. Beyond M=488,

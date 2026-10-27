@@ -8,7 +8,7 @@ Run after build_ford10.py, build_literature.py, build_region_outages.py and
 * Machine classes: one per non-legacy, non-spot node profile (cloud and
   reference tiers), offered in all four US regions, with ``price.route =
   assigned``. Spot machine classes come from build_prices.py (native prices).
-* Synthetic stress profiles: cloud/aws-ondemand-nvme with all rates x10 and
+* Synthetic stress profiles: cluster/ford10-google-storage-ge15min with all rates x10 and
   x0.1 (heterogeneity for the ILP; stress tests).
 * Price assignments (only when a price distribution exists): rho = 0 for
   seeds 0..19, rho = 0.5 (seed 0), rho = 1, over the default distribution
@@ -39,6 +39,8 @@ DEPLOYMENT = {"instance_type": "i4i.2xlarge", "fallback_instance_type": "m6id.2x
               "regions": US_REGIONS, "azs_per_region": 3,
               # from the AWS price list (2026-10-21): offered in all four US regions
               "vcpu": 8, "mem_gb": 64, "storage_gb": 1875, "storage": "1 x 1875 NVMe SSD (instance store)"}
+#: bare-metal transient base of the stress profiles (the catalogue and spot classes use it too)
+BARE_METAL_BASE = "cluster/ford10-google-storage-ge15min"
 LEVELS = ("optimistic", "central", "pessimistic")
 from powder.faults.system import REBUILD_H, SYSTEM  # noqa: E402  (exec #10 placeholders)
 RHO0_SEEDS = range(20)
@@ -48,9 +50,9 @@ def synthetic_profiles(base: dict) -> list[dict]:
     out = []
     for factor, tag in ((10.0, "x10"), (0.1, "x0.1")):
         p = copy.deepcopy(base)
-        p.update({"id": f"synthetic/aws-ondemand-{tag}", "tier": "reference", "tags": ["synthetic", "stress"],
-                  "derived_from": ["cloud/aws-ondemand-nvme"], "built_by": "scripts/fault_library/build_machines.py",
-                  "notes": f"cloud/aws-ondemand-nvme with every cause rate multiplied by {factor} (stress / heterogeneity)."})
+        p.update({"id": f"synthetic/ford10-ge15min-{tag}", "tier": "reference", "tags": ["synthetic", "stress"],
+                  "derived_from": [base["id"]], "built_by": "scripts/fault_library/build_machines.py",
+                  "notes": f"{base['id']} with every cause rate multiplied by {factor} (stress / heterogeneity)."})
         for c in p["causes"].values():
             c["rate_per_hour"] = {k: v * factor for k, v in c["rate_per_hour"].items()}
             c.pop("rate_model", None)  # a scaled profile keeps constant rates only
@@ -59,8 +61,8 @@ def synthetic_profiles(base: dict) -> list[dict]:
 
 
 def main() -> int:
-    base = next(p for p in json.loads((LIB / "profiles/node/aws-ondemand.json").read_text())
-                if p["id"] == "cloud/aws-ondemand-nvme")
+    base = next(p for p in json.loads((LIB / "profiles/node/ford10.json").read_text())
+                if p["id"] == BARE_METAL_BASE)
     (LIB / "profiles/node/synthetic.json").write_text(json.dumps(synthetic_profiles(base), indent=1) + "\n")
     lib = FaultLibrary.load(LIB, validate=False)
 

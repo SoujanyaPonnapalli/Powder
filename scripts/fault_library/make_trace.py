@@ -2,7 +2,7 @@
 
     python scripts/fault_library/make_trace.py \
         --scenario scenario/canonical-central \
-        --slot tikv-1=machine/aws-ondemand-nvme@us-east-1 \
+        --slot tikv-1=machine/ford10-google-storage-ge15min@us-east-1 \
         --slot tikv-2=machine/ford10-google-storage@us-west-2 \
         --horizon-hours 24 --seed 1 --out trace.jsonl
 

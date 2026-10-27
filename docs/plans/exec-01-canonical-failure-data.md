@@ -135,7 +135,7 @@ Fault profiles:
 | Profile ID | Kind / tier | Price route | From |
 |---|---|---|---|
 | `legacy/vm-standard`, `legacy/vm-spot`, `legacy/vm-unreliable` | node / cloud | legacy constants | current `VM_PROFILES`, unchanged so existing studies still reproduce |
-| `cloud/aws-ondemand-nvme` | node / cloud | assigned (§3.4); actual price of deployment type also recorded | §7.4 bottom-up from the reference/component profiles, capped by AWS SLA |
+| ~~`cloud/aws-ondemand-nvme`~~ (removed 2026-10-27) | | | replaced by the bare-metal `cluster/ford10-google-storage-ge15min` as the transient base: no source measures how much a cloud hides from instances (§0 decisions, §8) |
 | `spot/aws-<type>-<region>` | node / cloud | **native** AWS spot pool | Spot Advisor band + SpotLake (§7.4) |
 | `spot/azure-<sku>-<region>` | node / reference | assigned (if used) | ARG eviction buckets (cross-cloud reference) |
 | `vm/birke14-vm`, `vm/birke14-pm` | node / reference | assigned | Birke DSN'14 (once the PDF is read) |
@@ -170,7 +170,7 @@ Price data ingested:
 | Machine class built from | Price | Why |
 |---|---|---|
 | `spot/aws-*` | real AWS spot price of that pool (series → scalar via `price_policy`) | spot price and interruption are measured together on AWS |
-| `cloud/aws-ondemand-nvme` and every `reference` node profile | **assigned** from the 8 vCPU x86 on-demand distribution (§3.4) | no source pairs these fault rates with a price |
+| every `reference` node profile (including the bare-metal Ford profiles) | **assigned** from the 8 vCPU x86 on-demand distribution (§3.4) | no source pairs these fault rates with a price |
 | `component` (Backblaze) | none, ever | a drive is not a machine; it only feeds the `disk` term |
 
 The generated catalogue (`docs/fault_library.md`) lists every machine class
@@ -356,7 +356,7 @@ durations) and E (planned downtime) depend on this.
 
 **Step D — HW/SW fault profiles from literature.** Source records,
 `host/vishwanath10`, `vm/birke14-*`, `disk/*`, and composed
-`cloud/aws-ondemand-nvme` (§7.4, §7.9).
+`cloud/aws-ondemand-nvme` (§7.4, §7.9; the composed profile was removed 2026-10-27, §8).
 
 **Step D2 — Raw-dataset profiles** (downloads on your machine):
 `hpc/lanl05-*`, `cluster/google2019-*`, `planned_downtime/google2019`.
@@ -477,10 +477,10 @@ summaries. No number enters a profile without such a record.
 - **Events per unit-year (m)**, e.g. Backblaze AFR (failures / drive-days ×
   365): `λ = m/H`. Each record states whether it is p or m; when both are
   given, the gap is the repeat-failure signal (§7.5).
-- **Host → instance**: `λ_inst = λ_host·(1 − f_LM)`, where `f_LM` is the share
-  of host faults hidden by live migration/live update (bracket 0.5 / 0.25 /
-  0); the remainder splits into `hw_reboot` vs `hw_host_loss` by `f_loss`
-  (bracket 0.2 / 0.5 / 0.8).
+- **Host → instance**: none. The earlier `λ_inst = λ_host·(1 − f_LM)` (f_LM =
+  0.5 / 0.25 / 0, live-migration share) was removed 2026-10-27: no source
+  measures it (Narya/AFPD report prediction-driven reductions on Azure, not the
+  share hidden from instances). Ford's bare-metal rates are used as measured.
 - **AWS spot band `[q_lo, q_hi]`**: defined as the rate at which Spot reclaimed
   capacity over the trailing month. Default reading: monthly fraction
   interrupted, `λ = −ln(1−q)/730` per hour (5% → mean ≈ 1.6 years of runtime
@@ -649,7 +649,7 @@ Implemented in `convert.py` from the per-cause rates in each node profile.
 Scenarios: `canonical-{low,central,high}` (all optimistic / central /
 pessimistic) × price assignment {ρ = 0 (20 seeds), ρ = 1}, plus contrasting
 reference-environment scenarios (LANL-like, Google-like, spot-heavy). A
-one-at-a-time tornado sweep covers `f_LM`, `f_loss`, Weibull k, spot band
+one-at-a-time tornado sweep covers Weibull k, spot band
 band position, σ_W, `R`, region under-reporting factor, region mapping variant,
 Ford-curve digitization band (§7.14), and ρ.
 
@@ -657,8 +657,8 @@ Ford-curve digitization band (§7.14), and ρ.
 
 1. **Rate round-trip**: simulate 10⁴ node-years per machine class; per-cause
    counts inside the Poisson 99% CI of `λ·T`.
-2. **SLA consistency**: unplanned downtime of `cloud/aws-ondemand-nvme` ≤ AWS
-   instance-level allowance (43.8 h/yr).
+2. **SLA consistency** (dropped 2026-10-27 with the cloud profile): the AWS
+   instance-level allowance (43.8 h/yr) is no longer used to clip rates.
 3. **Spot bands**: each `spot/aws-*` rate lies inside its Spot Advisor band
    after the §7.3 conversion (catches conversion bugs).
 4. **Planned downtime**: long-run fraction ≈ `E[D]/E[W]`; gaps pass KS
@@ -890,6 +890,7 @@ Remaining:
 - [x] Reference Ford scenarios (user decision 2026-10-26): `scenario/reference-ford10` now uses `planned_downtime/ford10-rate` (Google cadence, ~72 d) so planned downtime is not stacked on Ford's own restarts; `scenario/reference-ford10-weekly` is identical except for the weekly cadence (`weekly-ford10`).
 - [x] Birke VM/PM not instantiated (user decision 2026-10-26): crash tickets = 'unresponsive or unreachable', and DSN'14 never says whether data survived, so the transient/permanent split is unknown. Profiles kept, tagged `recoverability-unknown`, excluded from machine classes (14 on-demand + 8 spot classes). Stale Birke citation removed from `cloud/aws-ondemand-nvme` (no number used it). Without Birke the reliability ranking is stable in R (Kendall tau 0.96 > 0.9), so the R/4 and 4R ranked assignments are no longer generated.
 - [x] Recoverability rule extended (user decision 2026-10-26): LANL (its FAQ says records cannot tell transient from permanent) and Vishwanath's non-disk repairs are excluded like Birke. `cloud/aws-ondemand-nvme` transient causes now come from Ford only (unplanned reboots x (1 - f_LM); >=15-min node restarts), host loss = 0 (no source; optimistic gap), pessimistic end clipped to the SLA allowance; f_loss variants and `reference-vishwanath10` removed. Next stage: `exec-01b-machine-catalogue.md`.
+- [x] Bare-metal transient base (user decision 2026-10-27): `cloud/aws-ondemand-nvme` removed. Its only cloud-specific numbers were f_LM (0.5 / 0.25 / 0, an assumption: Narya/AFPD give prediction-driven reductions on Azure, not the share hidden from instances), a zero host-loss, the Azure pause bound and an SLA clip, so Ford's >=15-min bare-metal causes (`cluster/ford10-google-storage-ge15min`) are the only transient base (catalogue `TRANSIENT_BASES`, `spot/aws-*` profiles, `synthetic/ford10-ge15min-x{10,0.1}`). `machine/aws-ondemand-nvme` is gone; `machine/ford10-google-storage-ge15min` takes its place in the price assignments and scenarios. Catalogue recapacity: 61 disk options -> 244 on-demand recipes, 17,629 spot recipes (was 488 / 35,258); `machines-n1000-seed0` regenerated. Results computed from the old catalogue (exec #2 placement study) are stale. The Narya/AFPD and Azure sources stay in `sources/literature.json` as reference.
 - [x] Google ClusterData2019: dropped (user decision 2026-10-21).
 
 - [x] Independent review (2026-10-21): every number re-derived from the source records matches; fixes applied:
@@ -911,14 +912,15 @@ Recorded deviations from §7 (and why):
   band 0.05-2.1); per-region rates fall to 0.13/yr. With n = 1 the global rate is the least certain number in the
   region model.
 - Region outage EB uses the nine Azure US regions, not all regions worldwide: the incident search was thorough only for US regions. Window 2023-01-01 to 2026-10-20: PIRs older than ~5 years are gone, and since mid-2022 Microsoft publishes only broad incidents.
-- The software cause in `cloud/aws-ondemand-nvme` uses Ford's >=15-min node-restart : unplanned-reboot ratio (1 / 2.35 / 4.49) with >=15-min durations. Short automatic restarts are left to planned downtime and exec #10, because Ford's all-events node-restart rate (~57 per node-year) reflects Google's rollout practice.
+- The software cause of the bare-metal base `cluster/ford10-google-storage-ge15min` uses Ford's >=15-min node-restart : unplanned-reboot ratio (1 / 2.35 / 4.49) with >=15-min durations. Short automatic restarts are left to planned downtime and exec #10, because Ford's all-events node-restart rate (~57 per node-year) reflects Google's rollout practice.
 - Rust-side planned-downtime events are not done yet: in both engines, planned downtime is folded into the transient hazard (exponential, rate 1/E[W]); traces inject the exact quasi-periodic schedule.
 
 Known caveats to state in the paper (from the independent review, 2026-10-21):
 
-- `cloud/aws-ondemand-nvme` pairs a host-repair *rate* (Vishwanath, 2010, includes disk repairs) with Ford's
-  unplanned-reboot *durations* (Google, 2010): different fleets and event definitions. f_LM and the sw-ratio low
-  end (1.0) are assumptions, not measurements; the tornado sweep should show their effect.
+- Every on-demand and spot machine takes its hardware/software rates and durations from Ford et al. (Google
+  storage nodes, bare metal, ~2010) with no cloud adjustment. Modern AWS instances may be interrupted less (live
+  migration) or more (noisier multi-tenant hosts); no public source measures it, so state this limit and replace
+  the profile with exec #10 measurements as `@v2`.
 - The disk pool mixes application-visible disk errors (Ford), replacement rates (Schroeder & Gibson) and AFRs
   (Backblaze HDD and boot SSD); the wide t-based interval is the honest summary.
 - `engine=True` matches the mean and median of non-native distributions but not the tails (e.g. p99 of the

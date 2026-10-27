@@ -10,8 +10,7 @@ their outputs in place, idempotently) and before build_machines.py.
   the Table 1 max taken as the 1 - 1/(n+1) quantile of n = 30 cells, "tens of
   cells") x a relative calendar shape (Fig 3 daily series, one cell, mean 1,
   repeating every 91 days, uniform offset per machine). Applied to the Ford
-  profiles and to cloud/aws-ondemand-nvme (draws capped at the profile's
-  SLA-clipped high end).
+  profiles and to the spot profiles (which copy the Ford >=15-min causes).
 * Backblaze drive stats 2023-2025: component ``disk/backblaze-models``
   (population of per-model constant rates) and ``disk/backblaze-models-age``
   (one age hazard curve per model; machine age drawn from that model's
@@ -91,7 +90,7 @@ def ford_models() -> dict[str, dict]:
     return out
 
 
-def attach_ford(profile: dict, fm: dict, cap_high: bool) -> None:
+def attach_ford(profile: dict, fm: dict) -> None:
     for cause, m in fm.items():
         c = profile["causes"].get(cause)
         if not c:
@@ -101,8 +100,6 @@ def attach_ford(profile: dict, fm: dict, cap_high: bool) -> None:
             continue
         model = {"type": "population", "lognormal": {"mean": mean, "sigma": m["sigma"]},
                  "sigma_basis": m["sigma_basis"], "curve": m["curve"], "source": "ford10#table1 + ford10#fig3-daily"}
-        if cap_high:
-            model["max_per_hour"] = c["rate_per_hour"]["high"]
         c["rate_model"] = model
 
 
@@ -215,14 +212,8 @@ def main() -> int:
     ford_path = LIB / "profiles/node/ford10.json"
     ford = json.loads(ford_path.read_text())
     for p in ford:
-        attach_ford(p, fm, cap_high=False)
+        attach_ford(p, fm)
     ford_path.write_text(json.dumps(r8(ford), indent=2) + "\n")
-
-    aws_path = LIB / "profiles/node/aws-ondemand.json"
-    aws = json.loads(aws_path.read_text())
-    for p in aws:
-        attach_ford(p, fm, cap_high=True)
-    aws_path.write_text(json.dumps(r8(aws), indent=2) + "\n")
 
     comps = backblaze_components()
     spot_comp, curves = spot_curves()
@@ -230,7 +221,7 @@ def main() -> int:
     if spot_path.exists():
         spot = json.loads(spot_path.read_text())
         for p in spot:
-            attach_ford(p, fm, cap_high=True)
+            attach_ford(p, fm)
             m = re.match(r"spot/aws-(.+?)-(us-[a-z]+-\d)$", p["id"])
             key = f"{m.group(2)}:{m.group(1)}" if m else None
             if key and key in curves:

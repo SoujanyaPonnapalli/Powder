@@ -1,21 +1,5 @@
 [
  {
-  "id": "machine/aws-ondemand-nvme",
-  "kind": "machine",
-  "fault_profile": "cloud/aws-ondemand-nvme",
-  "tier": "ondemand",
-  "storage_mode": "local",
-  "regions": [
-   "us-east-1",
-   "us-east-2",
-   "us-west-1",
-   "us-west-2"
-  ],
-  "price": {
-   "route": "assigned"
-  }
- },
- {
   "id": "machine/ford10-google-storage",
   "kind": "machine",
   "fault_profile": "cluster/ford10-google-storage",
@@ -48,9 +32,9 @@
   }
  },
  {
-  "id": "machine/aws-ondemand-x0.1",
+  "id": "machine/ford10-ge15min-x0.1",
   "kind": "machine",
-  "fault_profile": "synthetic/aws-ondemand-x0.1",
+  "fault_profile": "synthetic/ford10-ge15min-x0.1",
   "tier": "ondemand",
   "storage_mode": "local",
   "regions": [
@@ -64,9 +48,9 @@
   }
  },
  {
-  "id": "machine/aws-ondemand-x10",
+  "id": "machine/ford10-ge15min-x10",
   "kind": "machine",
-  "fault_profile": "synthetic/aws-ondemand-x10",
+  "fault_profile": "synthetic/ford10-ge15min-x10",
   "tier": "ondemand",
   "storage_mode": "local",
   "regions": [

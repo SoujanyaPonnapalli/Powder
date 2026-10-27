@@ -35,6 +35,8 @@ from powder.faults.prices import pool_key  # noqa: E402
 LIB = ROOT / "data/fault_library"
 RAW = LIB / "raw"
 US_REGIONS = ["us-east-1", "us-east-2", "us-west-1", "us-west-2"]
+#: transient (hardware/software) base of every spot profile: Ford et al. bare metal, no cloud adjustment
+BARE_METAL_BASE = "cluster/ford10-google-storage-ge15min"
 DEPLOYMENT_TYPES = ["i4i.2xlarge", "m6id.2xlarge"]  # primary, fallback (plan §3.5)
 
 
@@ -136,8 +138,8 @@ def main() -> int:
         for k, v in parse_spot_advisor(json.loads(f.read_text()), US_REGIONS).items():
             band_history.setdefault(k, []).append(v["band"])
     hist = spot_history_summary(newest(RAW / "spot" / "history", "*"))
-    base = next(p for p in json.loads((LIB / "profiles/node/aws-ondemand.json").read_text())
-                if p["id"] == "cloud/aws-ondemand-nvme")
+    base = next(p for p in json.loads((LIB / "profiles/node/ford10.json").read_text())
+                if p["id"] == BARE_METAL_BASE)
     sl_path = LIB / "derived/spotlake_summary.json"
     spotlake = json.loads(sl_path.read_text()) if sl_path.exists() else None
     spot_prices, profiles, machines = [], [], []
@@ -149,12 +151,13 @@ def main() -> int:
             b = bands[(reg, itype)]
             pid = f"spot/aws-{itype}-{reg}"
             prof = copy.deepcopy(base)
-            prof.update({"id": pid, "tags": ["aws", "spot", "local-nvme"],
-                         "derived_from": base["derived_from"] + ["cloud/aws-ondemand-nvme"],
+            prof.update({"id": pid, "tier": "cloud", "tags": ["aws", "spot", "local-nvme", "bare-metal-base"],
+                         "derived_from": base["derived_from"] + [BARE_METAL_BASE],
                          "built_by": "scripts/fault_library/build_prices.py",
                          "spot": {"band_index": b["band"], "band_history": band_history.get((reg, itype), []),
                                   "advisor_snapshot": advisor_file.name, "savings_pct": b["savings_pct"]},
-                         "notes": ("Hardware/software causes as cloud/aws-ondemand-nvme plus spot interruption from the "
+                         "notes": ("Hardware/software causes as the bare-metal profile cluster/ford10-google-storage-ge15min "
+                                   "(no cloud adjustment: no live-migration discount) plus spot interruption from the "
                                    "AWS Spot Advisor band (monthly interrupted fraction; lambda = -ln(1-q)/730 h; "
                                    "band low/mid/high). Interruption loses local NVMe data.")})
             sl = spotlake["pools"].get(f"{reg}:{itype}") if spotlake else None
