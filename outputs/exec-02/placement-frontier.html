@@ -1,0 +1,178 @@
+<title>Placement Frontier</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* A research figure: shared scales, quiet axes, and distinct policy marks. */
+:root {
+  --page:#f6f8fb; --surface:#fcfcfb; --ink:#142235; --secondary:#44546a;
+  --muted:#66778a; --rule:#dce4eb; --grid:#e1e0d9; --axis:#9aa9b8;
+  --blue:#2a78d6; --orange:#eb6834; --aqua:#1baf7a;
+  --hover:#eef4fa; --shadow:rgba(32,62,95,.08);
+  --display:'Newsreader',Georgia,serif; --body:'IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page:#0d1119; --surface:#1a1a19; --ink:#f0efec; --secondary:#c3c2b7;
+    --muted:#a4a9aa; --rule:#384149; --grid:#2c2c2a; --axis:#646d73;
+    --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+    --hover:#232c36; --shadow:rgba(0,0,0,.25); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page:#0d1119; --surface:#1a1a19; --ink:#f0efec; --secondary:#c3c2b7;
+  --muted:#a4a9aa; --rule:#384149; --grid:#2c2c2a; --axis:#646d73;
+  --blue:#3987e5; --orange:#d95926; --aqua:#199e70;
+  --hover:#232c36; --shadow:rgba(0,0,0,.25); color-scheme:dark;
+}
+* { box-sizing:border-box }
+body { margin:0; background:var(--page); color:var(--ink); font-family:var(--body); font-size:15px;
+  padding-block:32px 64px; padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px)); }
+main { max-width:1220px; margin:auto; display:grid; gap:26px }
+header { display:grid; gap:10px; border-bottom:1px solid var(--rule); padding-bottom:22px }
+.eyebrow { font:500 11px/1.4 var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--secondary) }
+h1 { font:600 clamp(32px,4.2vw,56px)/1.02 var(--display); letter-spacing:-.03em; margin:0; text-wrap:balance }
+.deck { max-width:72ch; font-size:16px; line-height:1.56; color:var(--secondary); margin:0 }
+.scope { font:400 12px/1.6 var(--mono); color:var(--secondary); margin:0; overflow-wrap:anywhere }
+.legend { display:flex; flex-wrap:wrap; column-gap:20px; row-gap:9px; align-items:center; font-size:12px; color:var(--secondary) }
+.legend-item { display:inline-flex; align-items:center; gap:8px; white-space:nowrap }
+.legend svg { width:24px; height:17px; overflow:visible }
+.figure { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px }
+.panel { min-width:0; position:relative; background:var(--surface); border:1px solid var(--rule);
+  box-shadow:0 5px 22px var(--shadow); padding:20px 15px 13px; }
+.panel h2 { margin:0 0 1px; font:600 19px/1.25 var(--body); letter-spacing:-.02em }
+.panel .panel-sub { margin:0; color:var(--muted); font-size:12px; line-height:1.5 }
+.chart { width:100%; display:block; max-width:100%; margin-top:12px; overflow:visible }
+.chart text { font-family:var(--mono); fill:var(--muted); font-size:11px }
+.chart .grid { stroke:var(--grid); stroke-width:1 }
+.chart .axis { stroke:var(--axis); stroke-width:1 }
+.chart .frontier { stroke:var(--blue); stroke-width:2; fill:none; stroke-linecap:round; stroke-linejoin:round }
+.chart .crosshair { stroke:var(--axis); stroke-width:1; pointer-events:none }
+.chart .mark:focus-visible { outline:none; filter:drop-shadow(0 0 4px var(--blue)) }
+.axis-caption { color:var(--secondary); text-align:center; font:400 11px/1.4 var(--mono); margin:0 }
+.tooltip { position:absolute; z-index:3; pointer-events:none; background:var(--ink); color:var(--surface);
+  border-radius:4px; padding:9px 11px; font:12px/1.5 var(--body); box-shadow:0 5px 14px var(--shadow);
+  max-width:250px; white-space:normal }
+.tooltip strong { display:block; font-weight:600 }
+.tooltip span { display:block; font-variant-numeric:tabular-nums }
+.takeaway { border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:17px 0;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:26px }
+.takeaway p { margin:0; line-height:1.6; color:var(--secondary); max-width:65ch }
+.takeaway strong { color:var(--ink) }
+.table-wrap { overflow-x:auto; max-width:100% }
+h3 { font:600 22px/1.2 var(--display); margin:0 0 8px }
+table { border-collapse:collapse; width:100%; font-size:13px; font-variant-numeric:tabular-nums }
+th,td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--rule); white-space:nowrap }
+th { color:var(--secondary); font-weight:600; background:var(--hover) }
+tr:last-child td { border-bottom:0 }
+.num { text-align:right; font-family:var(--mono); font-size:12px }
+.table-block { display:grid; gap:11px }
+details { border-top:1px solid var(--rule); padding-top:12px }
+summary { cursor:pointer; color:var(--secondary); font-weight:600; width:fit-content }
+summary:focus-visible { outline:2px solid var(--blue); outline-offset:4px }
+.footnotes { display:grid; gap:8px; font-size:12px; line-height:1.55; color:var(--secondary); border-top:1px solid var(--rule); padding-top:15px }
+.footnotes p { margin:0; max-width:95ch }
+@media (max-width:790px) { .figure,.takeaway { grid-template-columns:1fr } .panel { padding-inline:12px } }
+@media (max-width:430px) { body { padding-block:22px 48px } .panel h2 { font-size:17px } .scope { font-size:11px } }
+</style>
+<main>
+  <header>
+    <div class="eyebrow">DB placement / simulation reconstruction</div>
+    <h1>Availability has a price.<br>So does knowing the price.</h1>
+    <p class="deck">The two-panel cost–availability figure from the OSDI experiment draft, rebuilt from the current placement model. The circles are <strong>estimates</strong> under the simplified Markov scorer, not a 24-hour TiDB observation.</p>
+    <p class="scope">50 RSMs · 3 replicas each · 30 active machines · 1,000-option on-demand catalogue · catalogue seed 0 · price seed 0</p>
+  </header>
+  <div class="legend" aria-label="Figure legend">
+    <span class="legend-item"><svg viewBox="0 0 24 17" aria-hidden="true"><path d="M1 9H22" stroke="var(--blue)" stroke-width="2"/><circle cx="12" cy="9" r="4" fill="var(--surface)" stroke="var(--blue)" stroke-width="2"/></svg>ILP frontier / least-cost estimate</span>
+    <span class="legend-item"><svg viewBox="0 0 24 17" aria-hidden="true"><path d="M12 3L18 9L12 15L6 9Z" fill="var(--blue)"/></svg>ILP under baseline budget</span>
+    <span class="legend-item"><svg viewBox="0 0 24 17" aria-hidden="true"><circle cx="12" cy="9" r="5" fill="var(--orange)"/></svg>Price-blind baseline</span>
+    <span class="legend-item"><svg viewBox="0 0 24 17" aria-hidden="true"><circle cx="12" cy="9" r="5" fill="var(--aqua)"/></svg>Cheapest-first baseline</span>
+  </div>
+  <section class="figure" aria-label="Cost versus availability figure">
+    <div class="panel"><h2>Independent price assignment</h2><p class="panel-sub">On-demand price unrelated to machine reliability · ρ = 0</p><svg class="chart" id="chart-rho0" role="img" aria-label="Independent pricing cost versus availability chart"></svg><p class="axis-caption">Modeled cost ($/hour)</p><div class="tooltip" hidden></div></div>
+    <div class="panel"><h2>Reliability-ranked price</h2><p class="panel-sub">More reliable machines cost more · ρ = 1</p><svg class="chart" id="chart-rho1" role="img" aria-label="Reliability-ranked pricing cost versus availability chart"></svg><p class="axis-caption">Modeled cost ($/hour)</p><div class="tooltip" hidden></div></div>
+  </section>
+  <section class="takeaway" aria-label="Interpretation">
+    <p><strong>At the baseline’s availability target:</strong> the least-cost ILP point moves left by 48.9% in the independent-price example and 25.1% in the ranked-price example. It is constrained to match or exceed the baseline’s mean and worst-RSM availability; any vertical overshoot is incidental.</p>
+    <p><strong>Under the baseline’s budget:</strong> maximizing modeled availability reduces mean unavailability by only about 1.4% and 1.3% in these seed-0 examples—roughly 0.01 second per RSM-day. The small vertical gap is consistent with the common weekly maintenance assumption dominating placement-dependent faults.</p>
+  </section>
+  <section class="table-block" aria-label="Exact plotted values">
+    <div><div class="eyebrow">The numbers behind the marks</div><h3>Plotted placements</h3></div>
+    <div class="table-wrap"><table><thead><tr><th>Pricing model</th><th>Placement</th><th class="num">Modeled $/h</th><th class="num">Mean availability</th><th class="num">Nines</th><th class="num">Unavail. sec/RSM-day</th></tr></thead><tbody id="placement-rows"></tbody></table></div>
+    <details><summary>Show all optimized frontier points</summary><div class="table-wrap"><table><thead><tr><th>Pricing model</th><th class="num">Selected $/h</th><th class="num">Mean availability</th><th class="num">Nines</th></tr></thead><tbody id="frontier-rows"></tbody></table></div></details>
+  </section>
+  <footer class="footnotes">
+    <p><strong>Model boundary.</strong> The y-axis is −log₁₀(1 − mean RSM availability). Both panels share the same scales; the ranked-price cheapest-first circle is lower because it trades away reliability. These are exact machine-rate scores in a <em>simplified</em> Markov model, which does not score the measured regional/global outage process. A separate representative-RSM Rust simulation including those outages estimated roughly 0.999619 mean availability over 24 hours, not five nines.</p>
+    <p><strong>Not in this figure.</strong> The draft’s dashed oracle and observed TiDB square are omitted: neither has been measured for this catalogue. All $/h values are assigned-model prices, not the AWS bill for identical i4i.2xlarge hosts. This is one seeded example; the 20-seed study in <code>outputs/exec-02/blind-quality-deterministic.jsonl</code> quantifies the independent-price spread.</p>
+  </footer>
+</main>
+<script>
+const data = [
+  {"id":"rho0","name":"Independent","blind":[19.20556601431487,0.9999898389020508],"cheap":[9.822978257616619,0.9999898845696122],"ours":[9.822978257616619,0.9999898844917914],"equal":[17.455442734825073,0.9999899836920008],"frontier":[[9.822978257616619,0.9999898848679024],[10.965774290925657,0.9999899692880451],[12.139523282099125,0.9999899779656838],[13.124297164169096,0.9999899799342894],[14.309612980932945,0.9999899814063576],[15.35434549244898,0.9999899823381179],[16.762960234825073,0.999989983189364],[17.455442734825073,0.9999899836920008]]},
+  {"id":"rho1","name":"Ranked","blind":[18.262172666516033,0.9999898352981886],"cheap":[9.785215117893586,0.999987327441022],"ours":[13.671959580408164,0.999989835552757],"equal":[18.22943069122449,0.9999899624484757],"frontier":[[13.671959580408164,0.999989835552757],[14.238180651836736,0.9999898744293393],[14.794002792419825,0.9999899010611577],[15.34975398548105,0.9999899189835597],[15.904618787755103,0.9999899324151318],[16.533923965976676,0.9999899438152099],[17.072844478338194,0.9999899517493113],[17.688230945335278,0.9999899580436907],[18.22943069122449,0.9999899624484757]]}
+];
+const NS='http://www.w3.org/2000/svg';
+const nines = a => -Math.log10(1-a);
+const fmtCost = x => '$'+x.toFixed(2);
+const fmtA = x => x.toFixed(10);
+function svg(tag, attrs={}, text) { const e=document.createElementNS(NS,tag); for(const [k,v] of Object.entries(attrs)) e.setAttribute(k,String(v)); if(text!==undefined) e.textContent=text; return e; }
+function cell(text,cls='') { const td=document.createElement('td');td.textContent=text;if(cls)td.className=cls;return td; }
+function addRow(parent, values) { const tr=document.createElement('tr');values.forEach(([v,c])=>tr.appendChild(cell(v,c)));parent.appendChild(tr); }
+function populateTables() {
+  const rows=document.getElementById('placement-rows'), frontier=document.getElementById('frontier-rows');
+  for(const p of data) {
+    for(const [label,point] of [['Price-blind',p.blind],['Cheapest-first',p.cheap],['ILP, minimum cost at blind target',p.ours],['ILP, maximum availability at blind budget',p.equal]]) {
+      addRow(rows,[[p.name,''],[label,''],[fmtCost(point[0]),'num'],[fmtA(point[1]),'num'],[nines(point[1]).toFixed(5),'num'],[((1-point[1])*86400).toFixed(4),'num']]);
+    }
+    for(const point of p.frontier) addRow(frontier,[[p.name,''],[fmtCost(point[0]),'num'],[fmtA(point[1]),'num'],[nines(point[1]).toFixed(5),'num']]);
+  }
+}
+function draw(p) {
+  const root=document.getElementById('chart-'+p.id),panel=root.closest('.panel'),tip=panel.querySelector('.tooltip');
+  root.replaceChildren();
+  const compact=window.innerWidth<790,w=compact?380:560,h=322,L=57,R=20,T=24,B=280;
+  root.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  const x=c=>L+(c-9)/11*(w-L-R), y=a=>T+(5.005-nines(a))/(5.005-4.88)*(B-T);
+  for(const v of [4.90,4.95,5.00]) { const yy=T+(5.005-v)/(5.005-4.88)*(B-T);root.appendChild(svg('line',{x1:L,x2:w-R,y1:yy,y2:yy,class:'grid'}));root.appendChild(svg('text',{x:L-8,y:yy+4,'text-anchor':'end'},v.toFixed(2))); }
+  for(const v of [10,12,14,16,18,20]) { const xx=x(v);root.appendChild(svg('line',{x1:xx,x2:xx,y1:T,y2:B,class:'grid'}));root.appendChild(svg('text',{x:xx,y:B+19,'text-anchor':'middle'},String(v))); }
+  root.appendChild(svg('line',{x1:L,x2:w-R,y1:B,y2:B,class:'axis'}));
+  root.appendChild(svg('text',{x:L,y:14,'text-anchor':'start'},'Mean RSM availability (nines)'));
+  const path=p.frontier.map((point,i)=>`${i?'L':'M'}${x(point[0]).toFixed(2)} ${y(point[1]).toFixed(2)}`).join(' ');
+  root.appendChild(svg('path',{d:path,class:'frontier'}));
+  const cross=svg('line',{x1:L,x2:L,y1:T,y2:B,class:'crosshair',hidden:''});root.appendChild(cross);
+  function show(label,point,event) {
+    tip.replaceChildren();const name=document.createElement('strong');name.textContent=label;tip.appendChild(name);
+    const vals=document.createElement('span');vals.textContent=`${fmtCost(point[0])}/h · ${nines(point[1]).toFixed(5)} nines`;tip.appendChild(vals);
+    const detail=document.createElement('span');detail.textContent=`A = ${fmtA(point[1])}`;tip.appendChild(detail);
+    tip.hidden=false;
+    const box=panel.getBoundingClientRect(),px=event?.clientX ? event.clientX-box.left : x(point[0])*root.getBoundingClientRect().width/w;
+    const py=event?.clientY ? event.clientY-box.top : y(point[1])*root.getBoundingClientRect().height/h+45;
+    tip.style.left=Math.max(8,Math.min(box.width-210,px+15))+'px';tip.style.top=Math.max(55,Math.min(box.height-88,py-12))+'px';
+  }
+  function hide() { tip.hidden=true;cross.setAttribute('hidden',''); }
+  const overlay=svg('rect',{x:L,y:T,width:w-L-R,height:B-T,fill:'transparent'});
+  overlay.addEventListener('pointermove',e=>{const box=root.getBoundingClientRect();const pointer=(e.clientX-box.left)*w/box.width;const nearest=p.frontier.reduce((a,b)=>Math.abs(x(a[0])-pointer)<Math.abs(x(b[0])-pointer)?a:b);cross.setAttribute('x1',x(nearest[0]));cross.setAttribute('x2',x(nearest[0]));cross.removeAttribute('hidden');show('ILP frontier',nearest,e);});
+  overlay.addEventListener('pointerleave',hide);root.appendChild(overlay);
+  function mark(label,point,kind,color) {
+    const cx=x(point[0]),cy=y(point[1]),g=svg('g',{class:'mark',tabindex:'0',role:'button','aria-label':`${label}: ${fmtCost(point[0])} per hour, ${nines(point[1]).toFixed(5)} nines`});
+    if(kind==='circle'||kind==='large')g.appendChild(svg('circle',{cx,cy,r:kind==='large'?10:6,fill:color,stroke:'var(--surface)','stroke-width':2}));
+    if(kind==='hollow')g.appendChild(svg('circle',{cx,cy,r:7,fill:'var(--surface)',stroke:color,'stroke-width':2.5}));
+    if(kind==='triangle')g.appendChild(svg('path',{d:`M${cx} ${cy-7}L${cx+7} ${cy+6}H${cx-7}Z`,fill:color,stroke:'var(--surface)','stroke-width':1.6}));
+    if(kind==='diamond')g.appendChild(svg('path',{d:`M${cx} ${cy-7}L${cx+7} ${cy}L${cx} ${cy+7}L${cx-7} ${cy}Z`,fill:color,stroke:'var(--surface)','stroke-width':1.6}));
+    g.appendChild(svg('circle',{cx,cy,r:15,fill:'transparent'}));
+    g.addEventListener('pointerenter',e=>show(label,point,e));g.addEventListener('pointermove',e=>show(label,point,e));g.addEventListener('pointerleave',hide);
+    g.addEventListener('focus',()=>show(label,point));g.addEventListener('blur',hide);root.appendChild(g);
+  }
+  p.frontier.forEach(point=>{const dot=svg('circle',{cx:x(point[0]),cy:y(point[1]),r:3.5,fill:'var(--blue)',stroke:'var(--surface)','stroke-width':1.5});root.appendChild(dot);});
+  mark('Cheapest-first baseline',p.cheap,'large','var(--aqua)');
+  mark('ILP under baseline budget',p.equal,'diamond','var(--blue)');
+  mark('Price-blind baseline',p.blind,'circle','var(--orange)');
+  mark('ILP least cost at baseline target',p.ours,'hollow','var(--blue)');
+  root.appendChild(svg('text',{x:x(p.ours[0])+12,y:y(p.ours[1])+25},'ILP target'));
+  root.appendChild(svg('text',{x:x(p.blind[0])-9,y:y(p.blind[1])+19,'text-anchor':'end'},'Blind'));
+  root.appendChild(svg('text',{x:x(p.cheap[0])+12,y:y(p.cheap[1])+(p.id==='rho0'?46:24)},'Cheapest'));
+}
+populateTables();data.forEach(draw);
+let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>data.forEach(draw),150)});
+</script>

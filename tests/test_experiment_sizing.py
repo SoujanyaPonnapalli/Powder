@@ -1,3 +1,7 @@
+import os
+import subprocess
+import sys
+
 from scripts.experiment_horizon import wilson
 from scripts.experiment_sizing import baseline, nested_order
 
@@ -127,6 +131,29 @@ def test_price_blind_baseline_packs_region_capacity():
     assert result["deployed"] == 30
     assert len(result["placements"]) == 50
     assert all(len({mid.split("-")[0] for mid in ids}) == 3 for ids in result["placements"])
+
+
+def test_candidate_search_is_independent_of_python_hash_seed():
+    code = """
+from dataclasses import replace
+from powder.placement_optimizer import Machine, CandidateScore, CandidateGenerationConfig, generate_candidates
+from powder.simulation import Constant, NodeConfig
+cfg = NodeConfig(region='a', cost_per_hour=1, failure_dist=Constant(100000),
+                 recovery_dist=Constant(10), data_loss_dist=Constant(10000000),
+                 log_replay_rate_dist=Constant(100), snapshot_download_time_dist=Constant(0),
+                 spawn_dist=Constant(0))
+ms = [Machine(f'm{i}', replace(cfg, region='abcd'[i % 4], cost_per_hour=1 + i / 20))
+      for i in range(20)]
+scorer = lambda nodes: CandidateScore(.999, sum(m.node_config.cost_per_hour for m in nodes))
+candidates = generate_candidates(ms, scorer, CandidateGenerationConfig(
+    replica_counts=(3,), random_samples_per_size=30, greedy_starts_per_size=2,
+    local_search_steps=2, rng_seed=7))
+print([c.machine_ids for c in candidates])
+"""
+    def result(seed):
+        return subprocess.check_output([sys.executable, "-c", code],
+                                       env={**os.environ, "PYTHONHASHSEED": str(seed)})
+    assert result(1) == result(9)
 
 
 def test_unique_machine_budget_charges_once():

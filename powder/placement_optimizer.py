@@ -342,7 +342,7 @@ def generate_candidates(
         for _ in range(config.greedy_starts_per_size):
             raw.add(_greedy_candidate(machines, k, rng, config))
 
-    for placement in list(raw):
+    for placement in sorted(raw):
         current = placement
         current_score = _approximate_candidate_score(current, machine_by_id, config)
         for _ in range(config.local_search_steps):

@@ -166,7 +166,7 @@ def run(args):
                     candidates, generated = candidates_for(machines, scorer, args.replicas,
                                                            seed, args.samples, args.candidate_cap)
                     candidate_by_ids = {c.machine_ids: c for c in candidates}
-                    for ids in {tuple(ids) for base in (cheap, blind) for ids in base["placements"]}:
+                    for ids in sorted({tuple(ids) for base in (cheap, blind) for ids in base["placements"]}):
                         if ids not in candidate_by_ids:
                             score = scorer([by_id[mid] for mid in ids])
                             candidate_by_ids[ids] = PlacementCandidate("baseline:" + ":".join(ids), ids,

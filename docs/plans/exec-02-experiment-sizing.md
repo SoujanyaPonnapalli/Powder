@@ -205,3 +205,34 @@ point and PNG rendering precision under this host's package versions; those
 unrelated generated files were restored rather than mutating immutable library
 inputs. No VM was deployed. Raw rows, catalogue hashes, placements and MC
 summaries are committed in `outputs/exec-02/`.
+
+## Follow-up: fixed-budget frontier (2026-10-27)
+
+The first sweep's seeded candidate local search iterated a Python set, so the
+candidate menu could change with `PYTHONHASHSEED`. The search now sorts the
+initial candidates, and baseline placements are added in sorted order. The
+original output rows are retained as a historical run; the reproducible rerun
+is `outputs/exec-02/blind-quality-deterministic.jsonl`. The new
+`experiment_frontier.py` reconstructs the same candidate menu and solves a
+second question: **maximum mean RSM availability under the blind baseline's
+cost budget, with no RSM below the baseline's worst availability**. The
+nine-budget frontier for catalogue seed 0 / price seed 0 is in
+`outputs/exec-02/frontier-deterministic.jsonl`.
+
+| M=1000 comparison | Independent prices (20 assignments) | Reliability-ranked prices (one assignment) |
+|---|---:|---:|
+| Minimum modeled cost at blind baseline's mean and worst-RSM availability | 44.862% median saving (37.795–51.910%) | 25.135% saving |
+| Incidental mean-unavailability reduction at that minimum cost | 0.226% median | 0.003% |
+| Maximum mean-unavailability reduction under blind baseline's budget | 1.329% median (0.664–5.774%) | 1.251% |
+
+The last row compares *unavailable time*, not availability percentage points.
+In the plotted seed-0 example, the baseline's simplified-Markov unavailability
+is ~0.878 seconds per RSM-day and the budget-constrained availability gain is
+only ~0.013 seconds/day (`rho0`) or ~0.011 seconds/day (`rho1`). A one-day TiDB
+run cannot resolve that difference. The figure in
+`outputs/exec-02/placement-frontier.{html,png,svg}` follows the OSDI draft's
+two-panel layout, but replaces its mock points with these modeled estimates;
+no independent oracle or observed TiDB point is plotted. The figure's circle
+at the baseline target is **cost-minimizing**, so it is expected to have almost
+no vertical availability margin. The savings rely on assigned shadow prices;
+identical physical AWS instances have the same actual bill at equal fleet size.
