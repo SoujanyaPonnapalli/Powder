@@ -456,12 +456,15 @@ def solve_candidate_ilp(
         lower.append(0.0)
         upper.append(float(config.budget_per_hour))
 
+    # Minimise scaled unavailability (as in _solve_unique_machine_cost): raw availabilities sit near 1,
+    # so HiGHS's default relative MIP gap (1e-4) would be as large as the differences between candidates.
     objective_coeffs = np.array(
-        [_objective_value(candidate, config.objective) for candidate in candidates],
+        [(1.0 - candidate.availability) * 1e6 if config.objective == "sum_availability"
+         else -_objective_value(candidate, config.objective) * 1e6 for candidate in candidates],
         dtype=float,
     )
     result = milp(
-        c=-objective_coeffs,
+        c=objective_coeffs,
         integrality=np.ones(col_count, dtype=int),
         bounds=Bounds(lb=np.zeros(col_count), ub=np.full(col_count, config.num_rsms)),
         constraints=LinearConstraint(constraints.tocsr(), np.array(lower), np.array(upper)),

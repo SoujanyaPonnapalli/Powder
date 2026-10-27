@@ -118,6 +118,47 @@ def test_candidate_ilp_respects_machine_capacity():
     assert {item.candidate.candidate_id for item in solution.selected} == {"a", "b"}
 
 
+def test_candidate_ilp_sum_availability_is_exact_despite_near_one_availabilities():
+    # Availabilities ~1 - 1e-4: with raw-availability coefficients HiGHS's default 1e-4 relative gap
+    # lets it stop on a worse placement. Compare against a zero-gap solve of the same model.
+    import random
+    import scipy.optimize
+
+    real_milp = scipy.optimize.milp
+
+    def exact_milp(*args, **kwargs):
+        kwargs["options"] = {"mip_rel_gap": 0.0}
+        return real_milp(*args, **kwargs)
+
+    for seed in (15, 19, 23, 32):  # seeds where the unscaled objective stopped early
+        rng = random.Random(seed)
+        machines = [Machine(f"m{i}", _node_config("region"), capacity=2) for i in range(14)]
+        candidates = [
+            PlacementCandidate(f"c{j}", tuple(sorted(rng.sample([m.machine_id for m in machines], 3))),
+                               1 - 1e-4 * rng.random(), 3.0)
+            for j in range(300)
+        ]
+        config = PlacementSolverConfig(num_rsms=8, objective="sum_availability")
+        got = solve_candidate_ilp(candidates, machines, config)
+        scipy.optimize.milp = exact_milp
+        try:
+            best = solve_candidate_ilp(candidates, machines, config)
+        finally:
+            scipy.optimize.milp = real_milp
+        assert got.objective_value == pytest.approx(best.objective_value, abs=1e-9, rel=0)
+
+
+def test_candidate_ilp_shares_machines_up_to_capacity():
+    machines = [Machine(f"m{i}", _node_config("region"), capacity=2) for i in range(6)]
+    candidates = [
+        PlacementCandidate("best", ("m0", "m1", "m2"), 0.999, 3.0),
+        PlacementCandidate("other", ("m3", "m4", "m5"), 0.99, 3.0),
+    ]
+    solution = solve_candidate_ilp(candidates, machines,
+                                   PlacementSolverConfig(num_rsms=2, objective="sum_availability"))
+    assert {(item.candidate.candidate_id, item.count) for item in solution.selected} == {("best", 2)}
+
+
 def test_candidate_ilp_budget_constraint_changes_choice():
     machines = [
         Machine(f"m{i}", _node_config("region"), capacity=1)

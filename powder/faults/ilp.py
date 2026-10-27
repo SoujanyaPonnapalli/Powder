@@ -134,8 +134,13 @@ def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, 
                               budget_per_hour: float | None = None, objective: str = "sum_availability",
                               bins_per_decade: int = 4, random_samples_per_size: int = 400,
                               greedy_starts_per_size: int = 10, max_candidates: int = 3000, rng_seed: int = 0,
-                              rescore_exact: bool = True, scenario_id: str = "scenario/canonical-central") -> dict:
-    """Candidate generation + ILP over a catalogue; returns the solution and timing/diagnostics."""
+                              rescore_exact: bool = True, scenario_id: str = "scenario/canonical-central",
+                              unique_machine_cost: bool = True) -> dict:
+    """Candidate generation + ILP over a catalogue; returns the solution and timing/diagnostics.
+
+    ``unique_machine_cost``: bill each machine once however many RSMs it hosts (budget and reported cost);
+    ``False`` bills it once per hosted replica, which penalises sharing.
+    """
     from powder.placement_optimizer import (CandidateGenerationConfig, PlacementSolverConfig, generate_candidates,
                                             markov_candidate_scorer, solve_candidate_ilp)
 
@@ -148,7 +153,8 @@ def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, 
     cands = generate_candidates(machines, scorer, cfg)
     t1 = time.time()
     sol = solve_candidate_ilp(cands, machines, PlacementSolverConfig(num_rsms=num_rsms, objective=objective,
-                                                                    budget_per_hour=budget_per_hour))
+                                                                    budget_per_hour=budget_per_hour,
+                                                                    unique_machine_cost=unique_machine_cost))
     t2 = time.time()
     exact = {}
     if rescore_exact and sol.selected:

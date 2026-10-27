@@ -981,6 +981,10 @@ def test_catalogue_placement_ilp_binned_scorer():
     sol = r["solution"]
     assert str(sol.status) == "0" and sol.total_rsms == 20
     assert r["binned_classes"] < 150  # binning merges machines into shared Markov classes
+    # shared machines are billed once, not once per hosted RSM
+    by_id = {m.machine_id: m for m in r["machines"]}
+    used = {mid for item in sol.selected for mid in item.candidate.machine_ids}
+    assert abs(sol.total_cost_per_hour - sum(by_id[mid].node_config.cost_per_hour for mid in used)) < 1e-9
     for item in sol.selected:
         ex = r["exact_availability"][item.candidate.candidate_id]
         assert abs((1 - ex) - (1 - item.candidate.availability)) <= 0.5 * (1 - ex) + 1e-9
