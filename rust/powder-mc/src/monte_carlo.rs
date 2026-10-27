@@ -655,8 +655,10 @@ pub fn run_single_simulation(
 
     if stop_on_data_loss {
         simulator.run_until_data_loss(max_time)
+    } else if let Some(horizon) = max_time {
+        simulator.run_through(horizon)
     } else {
-        simulator.run_until(max_time, None)
+        simulator.run_until(None, None)
     }
 }
 
@@ -730,8 +732,10 @@ impl MonteCarloRunner {
 
             let sim_result = if self.config.stop_on_data_loss {
                 simulator.run_until_data_loss(self.config.max_time)
+            } else if let Some(horizon) = self.config.max_time {
+                simulator.run_through(horizon)
             } else {
-                simulator.run_until(self.config.max_time, None)
+                simulator.run_until(None, None)
             };
             results.collect(&sim_result);
         }

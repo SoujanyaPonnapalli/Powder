@@ -132,11 +132,21 @@ class CandidateGenerationConfig:
 
 @dataclass(frozen=True)
 class PlacementSolverConfig:
-    """Configuration for the candidate ILP."""
+    """Configuration for the candidate ILP.
+
+    ``unique_machine_cost`` charges a physical node once even if it hosts several
+    RSMs. With this option, ``max_machines`` limits the deployed fleet and
+    ``min_availability`` sets a per-RSM floor for the ``min_cost`` objective.
+    """
 
     num_rsms: int = 100
     objective: Objective = "sum_availability"
     budget_per_hour: float | None = None
+    unique_machine_cost: bool = False
+    max_machines: int | None = None
+    min_availability: float | None = None
+    min_mean_availability: float | None = None
+    time_limit_seconds: float | None = None
 
 
 @dataclass(frozen=True)
@@ -395,6 +405,12 @@ def solve_candidate_ilp(
         raise ValueError("candidates must not be empty")
     if config.num_rsms <= 0:
         raise ValueError("num_rsms must be positive")
+    if config.unique_machine_cost:
+        return _solve_unique_machine_cost(candidates, machines, config)
+    if (config.max_machines is not None or config.min_availability is not None or
+            config.min_mean_availability is not None or config.time_limit_seconds is not None or
+            config.objective == "min_cost"):
+        raise ValueError("fleet limits, availability floors, and min_cost require unique_machine_cost")
 
     try:
         import numpy as np
@@ -485,6 +501,113 @@ def solve_candidate_ilp(
     )
 
 
+def _solve_unique_machine_cost(
+    candidates: Sequence[PlacementCandidate],
+    machines: Sequence[Machine],
+    config: PlacementSolverConfig,
+) -> PlacementSolution:
+    """Link candidate counts to binary machine activation; bill each active node once."""
+    import numpy as np
+    from scipy.optimize import Bounds, LinearConstraint, milp
+    from scipy.sparse import lil_matrix
+
+    if config.max_machines is not None and config.max_machines <= 0:
+        raise ValueError("max_machines must be positive")
+    if config.time_limit_seconds is not None and config.time_limit_seconds <= 0:
+        raise ValueError("time_limit_seconds must be positive")
+    if config.min_availability is not None and not 0 <= config.min_availability <= 1:
+        raise ValueError("min_availability must be in [0, 1]")
+    if config.min_mean_availability is not None and not 0 <= config.min_mean_availability <= 1:
+        raise ValueError("min_mean_availability must be in [0, 1]")
+    if (config.objective == "min_cost" and config.min_availability is None and
+            config.min_mean_availability is None):
+        raise ValueError("min_cost requires an availability target")
+    if config.objective not in ("min_cost", "sum_availability", "product_availability"):
+        raise ValueError(f"unknown objective {config.objective!r}")
+
+    all_machines = {m.machine_id: m for m in machines}
+    if len(all_machines) != len(machines):
+        raise ValueError("duplicate machine IDs")
+    eligible = [c for c in candidates if config.min_availability is None or
+                c.availability >= config.min_availability]
+    unknown = {mid for c in eligible for mid in c.machine_ids if mid not in all_machines}
+    if unknown:
+        raise ValueError(f"candidates reference unknown machines: {sorted(unknown)[:5]}")
+    used_ids = {mid for c in eligible for mid in c.machine_ids}
+    active = [m for m in machines if m.machine_id in used_ids]
+    n, a = len(eligible), len(active)
+    if not n:
+        return PlacementSolution("2", "no candidates meet availability floor", config.objective,
+                                 float("nan"), float("nan"), config.budget_per_hour, ())
+    prices = np.array([m.node_config.cost_per_hour for m in active], dtype=float)
+    if np.any(~np.isfinite(prices)) or np.any(prices < 0):
+        raise ValueError("machine prices must be finite and nonnegative")
+    if config.budget_per_hour is not None and config.budget_per_hour < 0:
+        raise ValueError("budget_per_hour must be nonnegative")
+
+    extra = (int(config.budget_per_hour is not None) + int(config.max_machines is not None) +
+             int(config.min_mean_availability is not None))
+    matrix = lil_matrix((1 + 2 * a + extra, n + a), dtype=float)
+    matrix[0, :n] = 1
+    lower = [float(config.num_rsms)] + [float("-inf")] * a + [0.0] * a
+    upper = [float(config.num_rsms)] + [0.0] * a + [float("inf")] * a
+    index = {m.machine_id: i for i, m in enumerate(active)}
+    for j, candidate in enumerate(eligible):
+        for mid in candidate.machine_ids:
+            i = index[mid]
+            matrix[1 + i, j] = 1
+            matrix[1 + a + i, j] = 1
+    for i, machine in enumerate(active):
+        matrix[1 + i, n + i] = -machine.capacity
+        matrix[1 + a + i, n + i] = -1
+    row = 1 + 2 * a
+    if config.budget_per_hour is not None:
+        matrix[row, n:] = prices
+        lower.append(0.0)
+        upper.append(config.budget_per_hour)
+        row += 1
+    if config.max_machines is not None:
+        matrix[row, n:] = 1
+        lower.append(0.0)
+        upper.append(float(config.max_machines))
+        row += 1
+    if config.min_mean_availability is not None:
+        matrix[row, :n] = [(1.0 - c.availability) * 1e6 for c in eligible]
+        lower.append(0.0)
+        upper.append((1.0 - config.min_mean_availability) * 1e6 * config.num_rsms)
+
+    objective = np.zeros(n + a)
+    if config.objective == "min_cost":
+        objective[n:] = prices
+    elif config.objective == "sum_availability":
+        objective[:n] = [(1.0 - c.availability) * 1e6 for c in eligible]
+    else:
+        objective[:n] = [-c.log_availability * 1e6 for c in eligible]
+    result = milp(
+        c=objective,
+        integrality=np.ones(n + a, dtype=int),
+        bounds=Bounds(lb=np.zeros(n + a),
+                      ub=np.r_[np.full(n, config.num_rsms), np.ones(a)]),
+        constraints=LinearConstraint(matrix.tocsr(), np.array(lower), np.array(upper)),
+        options={"time_limit": config.time_limit_seconds} if config.time_limit_seconds is not None else None,
+    )
+    if not result.success:
+        return PlacementSolution(str(result.status), str(result.message), config.objective,
+                                 float("nan"), float("nan"), config.budget_per_hour, (),
+                                 mip_gap=getattr(result, "mip_gap", None))
+    counts = np.rint(result.x[:n]).astype(int)
+    selected = tuple(SelectedCandidate(c, int(k)) for c, k in zip(eligible, counts) if k)
+    activated = {mid for item in selected for mid in item.candidate.machine_ids}
+    cost = sum(all_machines[mid].node_config.cost_per_hour for mid in activated)
+    value = cost if config.objective == "min_cost" else sum(
+        _objective_value(item.candidate, config.objective) * item.count for item in selected
+    )
+    return PlacementSolution(str(result.status), str(result.message), config.objective,
+                             float(value), float(cost), config.budget_per_hour, selected,
+                             mip_gap=getattr(result, "mip_gap", None),
+                             best_bound=getattr(result, "mip_dual_bound", None))
+
+
 def solve_candidate_ilp_gurobi(
     candidates: Sequence[PlacementCandidate],
     machines: Sequence[Machine],
@@ -511,6 +634,10 @@ def solve_candidate_ilp_gurobi(
         raise ValueError("candidates must not be empty")
     if config.num_rsms <= 0:
         raise ValueError("num_rsms must be positive")
+    if (config.unique_machine_cost or config.max_machines is not None or
+            config.min_availability is not None or config.min_mean_availability is not None or
+            config.time_limit_seconds is not None):
+        raise ValueError("unique-machine pricing and fleet limits require the SciPy solver")
     if config.objective == "min_cost":
         raise ValueError(
             "solve_candidate_ilp_gurobi supports availability objectives; "

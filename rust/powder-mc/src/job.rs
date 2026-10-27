@@ -263,8 +263,10 @@ fn run_single(resolved: &ResolvedJob) -> RunRecord {
 
     let result = if resolved.run.stop_on_data_loss {
         simulator.run_until_data_loss(resolved.run.max_time)
+    } else if let Some(horizon) = resolved.run.max_time {
+        simulator.run_through(horizon)
     } else {
-        simulator.run_until(resolved.run.max_time, None)
+        simulator.run_until(None, None)
     };
 
     let m = result.metrics;
@@ -479,6 +481,24 @@ mod tests {
         assert_eq!(runs[0].end_time, 86400.0);
         assert!(result.summary.is_none());
         assert!(result.convergence.is_none());
+    }
+
+    #[test]
+    fn fixed_horizon_runs_continue_after_data_loss() {
+        for mode in ["single", "monte_carlo"] {
+            let text = minimal_job(&format!(
+                r#""mode": "{mode}",
+                   "run": {{"max_time": 1000.0, "stop_on_data_loss": false, "num_simulations": 2, "base_seed": 1}},"#,
+            ))
+            .replace("863999999.0", "10.0");
+            let result = run_job_json(&text);
+            assert!(result.error.is_none(), "{:?}", result.error);
+            for run in result.runs.unwrap() {
+                assert_eq!(run.end_reason, "data_loss");
+                assert_eq!(run.end_time, 1000.0);
+                assert!(run.availability < 0.05, "loss must count through the horizon");
+            }
+        }
     }
 
     #[test]
