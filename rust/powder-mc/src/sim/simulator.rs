@@ -1187,6 +1187,19 @@ impl Simulator {
                 self.cluster.remove_standby_node(node_id);
                 self.cluster.remove_provisioning_node(node_id);
                 self.event_queue.cancel_all_for(node_id);
+                let mut events = Vec::new();
+                {
+                    let Simulator {
+                        protocol,
+                        cluster,
+                        rng,
+                        ..
+                    } = self;
+                    protocol.on_node_removed(node_id, cluster, rng, &mut events);
+                }
+                for event in events {
+                    self.event_queue.push(event);
+                }
             }
 
             Action::PromoteNode { node_id } => {

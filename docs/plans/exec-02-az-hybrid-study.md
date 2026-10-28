@@ -127,6 +127,27 @@ Why the days sit above the 30-day line (2026-10-28 diagnosis):
    certification are partly an artifact of horizon length, and 24 h days from a
    clean start are optimistic about network events.
 
+   **Resolved (branch `exec02-stuck-runs`): three engine bugs, both engines.**
+   Event logs of the worst runs showed two failure paths after outages:
+   - *Removed leader.* An outage's replacements are promoted after it ends;
+     the trim back to target broke ties by removing the newest node, which
+     was often the Raft leader. Elections start only when the leader fails,
+     so `leader_id` dangled and the group stayed down to the horizon (one RF 7
+     run: 324 h). Trims now keep the leader, and removing it starts an election.
+   - *Placement drift.* The trim ran before the same pass's promotions took
+     effect, so the cluster stayed over target until the next event, often a
+     failure, whose trim then removed the failed sole member of a domain. The
+     group kept two replicas in one AZ and the next outage there took it down
+     for the full outage (one RF 3 run: 17.4 h). Trims now count same-pass
+     promotions and prefer to remove a node that shares its AZ/region.
+   After the fix, unavailability no longer depends on horizon (RF 3: 4.82 /
+   4.76 / 4.81 nines at 1 / 7 / 30 d; RF 7: 5.08 at all three) and the worst
+   200 of 20,000 30-day runs hold 27 % (RF 3) and 3 % (RF 7) of downtime,
+   down from 75 % and 78 %. The two probed frontier groups move from 4.38 to
+   4.81 (RF 3, previously failing 4.5) and from 4.85 to 5.08 (RF 7). **Every
+   MC score, certification and frontier above predates the fix and must be
+   re-run.**
+
 ```bash
 python3 scripts/experiment_az_24h_oneshot.py --trials 1000
 python3 scripts/render_az_frontiers.py --oneshot outputs/exec-02/az-24h-oneshot.json

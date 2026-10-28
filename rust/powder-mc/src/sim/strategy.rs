@@ -343,7 +343,7 @@ impl ReplacementCore {
         }
 
         self.promote_eligible_standbys(cluster, protocol, out);
-        self.maintain_cluster_size(cluster, maintain_target, out);
+        self.maintain_cluster_size(cluster, maintain_target, protocol.leader_id(), out);
     }
 
     /// Cancel timeouts when the cluster is entirely down, otherwise keep the
@@ -472,41 +472,75 @@ impl ReplacementCore {
     /// Python relies on a stable reverse sort over dict-insertion order to
     /// break ties; the port adds an explicit node-ID tiebreaker so ordering
     /// never depends on container internals.
+    ///
+    /// Among equally healthy nodes the current leader is kept, as a Raft
+    /// reconfiguration removes followers; trimming the leader would leave
+    /// the protocol pointing at a node that no longer exists.  Next, a node
+    /// alone in its fault domain (AZ, else region) is kept over one sharing
+    /// it: a replacement inherits the failed node's domain, so when the
+    /// original recovers one of that pair goes -- not an unrelated node,
+    /// which would erode the placement's anti-affinity run by run.
+    ///
+    /// Standbys promoted earlier in the same pass count as members.
     fn maintain_cluster_size(
         &mut self,
         cluster: &ClusterState,
         target: usize,
+        leader: Option<Sym>,
         out: &mut Vec<Action>,
     ) {
         let mut indices = std::mem::take(&mut self.scratch_indices);
         cluster.fill_active_indices(&mut indices);
+        // Standbys promoted earlier in this pass are members once the
+        // actions run; trimming without them would leave the cluster over
+        // target until some unrelated later event, often a failure.
+        for action in out.iter() {
+            if let Action::PromoteNode { node_id } = action {
+                if let Some(i) = cluster.index_of(*node_id) {
+                    if !indices.contains(&i) {
+                        indices.push(i);
+                    }
+                }
+            }
+        }
         if indices.len() <= target {
             self.scratch_indices = indices;
             return;
         }
 
         let commit_index = cluster.commit_index;
+        let domain = |i: usize| {
+            let n = cluster.node_at(i);
+            (n.region, n.az)
+        };
+        let alone = |i: usize| indices.iter().all(|&j| j == i || domain(j) != domain(i));
         let score = |i: &usize| {
             let n = cluster.node_at(*i);
             (
                 cluster.node_effectively_available(n),
                 n.is_up_to_date(commit_index),
+                leader == Some(n.node_id),
+                alone(*i),
                 n.last_applied_index,
                 n.node_id,
             )
         };
+        let mut scored: Vec<_> = indices.iter().map(|i| (*i, score(i))).collect();
 
-        indices.sort_by(|a, b| {
-            let (aa, ab, ac, ad) = score(a);
-            let (ba, bb, bc, bd) = score(b);
-            // Best first: available, then current, then furthest ahead.
+        scored.sort_by(|(_, a), (_, b)| {
+            let (aa, ab, al, au, ac, ad) = *a;
+            let (ba, bb, bl, bu, bc, bd) = *b;
+            // Best first: available, then current, then the leader, then
+            // alone in its domain, then furthest ahead.
             rank_desc(aa, ba)
                 .then_with(|| rank_desc(ab, bb))
+                .then_with(|| rank_desc(al, bl))
+                .then_with(|| rank_desc(au, bu))
                 .then_with(|| bc.partial_cmp(&ac).unwrap_or(std::cmp::Ordering::Equal))
                 .then_with(|| ad.cmp(&bd))
         });
 
-        out.extend(indices[target..].iter().map(|&i| Action::RemoveNode {
+        out.extend(scored[target..].iter().map(|&(i, _)| Action::RemoveNode {
             node_id: cluster.node_at(i).node_id,
         }));
         self.scratch_indices = indices;
@@ -810,7 +844,7 @@ mod tests {
     use crate::sim::events::EventMeta;
     use crate::sim::distributions::make_rng;
     use crate::sim::node::{NodeConfig, NodeState};
-    use crate::sim::protocol::LeaderlessProtocol;
+    use crate::sim::protocol::{LeaderlessProtocol, RaftLikeProtocol};
     use std::rc::Rc;
 
     fn config() -> NodeConfigRef {
@@ -1349,5 +1383,66 @@ mod tests {
             Delay::Sampled(Distribution::constant(7.0)).sample(&mut rng),
             7.0
         );
+    }
+
+    fn config_in(region: &str) -> NodeConfigRef {
+        let mut cfg = (*config()).clone();
+        cfg.region = region.to_string();
+        cfg.az = Some(format!("{region}:az1"));
+        Rc::new(cfg)
+    }
+
+    fn removed(actions: &[Action]) -> Vec<Sym> {
+        of_type(actions, ActionType::RemoveNode)
+            .iter()
+            .filter_map(|a| a.node_id())
+            .collect()
+    }
+
+    #[test]
+    fn trim_keeps_the_leader_among_equally_healthy_nodes() {
+        // Ties otherwise remove the newest node, which here is the leader.
+        let mut s = NodeReplacementStrategy::new(600.0, None, true);
+        let mut c = cluster_of(4);
+        c.target_cluster_size = 3;
+        let leader = c.sym_of("node3").unwrap();
+        let mut p = RaftLikeProtocol::new(Distribution::constant(1.0));
+        p.set_leader(Some(leader));
+        let mut rng = make_rng(Some(1));
+        let n0 = c.sym_of("node0").unwrap();
+        let actions = collect_actions(&mut s,
+            &Event::new(10.0, EventType::NodeRecovery, n0),
+            &c,
+            &mut rng,
+            &p,
+        );
+        assert_eq!(removed(&actions), vec![c.sym_of("node2").unwrap()]);
+    }
+
+    #[test]
+    fn promotion_is_trimmed_in_the_same_pass_within_the_shared_domain() {
+        // A replacement for `a` (same region/AZ) syncs while `a` is back up:
+        // the pass that promotes it must also trim, and the trim must take
+        // one of the `a` pair, never the only member of another domain.
+        let mut s = NodeReplacementStrategy::new(600.0, None, true);
+        let mut c = ClusterState::new(3);
+        let a = c.add_named_node("a", config_in("us-west-1"));
+        c.add_named_node("b", config_in("us-east-2"));
+        c.add_named_node("c", config_in("us-east-1"));
+        let rep = c.intern("replacement_1");
+        let region = c.intern("us-west-1");
+        c.add_standby_node(NodeState::new(rep, region, config_in("us-west-1")));
+        let p = LeaderlessProtocol::default();
+        let mut rng = make_rng(Some(1));
+        let actions = collect_actions(&mut s,
+            &Event::new(10.0, EventType::NodeSyncComplete, rep),
+            &c,
+            &mut rng,
+            &p,
+        );
+        assert_eq!(of_type(&actions, ActionType::PromoteNode).len(), 1);
+        let gone = removed(&actions);
+        assert_eq!(gone.len(), 1);
+        assert!(gone[0] == a || gone[0] == rep, "trimmed {}", c.name_of(gone[0]));
     }
 }

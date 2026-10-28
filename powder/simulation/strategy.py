@@ -8,6 +8,7 @@ like node failures, recoveries, and data loss.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -133,6 +134,35 @@ class NoOpStrategy(ClusterStrategy):
         return []
 
 
+def _trim_to(cluster: ClusterState, protocol: Protocol, target: int,
+             promoting=()) -> list[Action]:
+    """Remove the worst members beyond ``target``.
+
+    Members are kept best first: available, up to date, the current leader,
+    alone in their fault domain (AZ, else region), then furthest ahead; ties
+    keep insertion order. Keeping the leader matches a Raft reconfiguration
+    removing followers. A replacement inherits its failed node's domain, so
+    when the original recovers one of that pair goes rather than an
+    unrelated node. Standbys promoted in the same pass count as members.
+    """
+    nodes = list(cluster.nodes.values())
+    nodes += [cluster.standby_nodes[i] for i in promoting if i in cluster.standby_nodes]
+    if len(nodes) <= target:
+        return []
+    leader = getattr(protocol, "leader_id", None)
+    domains = Counter((n.config.region, n.config.az) for n in nodes)
+
+    def node_score(n: NodeState):
+        return (cluster._node_effectively_available(n),
+                n.is_up_to_date(cluster.commit_index),
+                n.node_id == leader,
+                domains[(n.config.region, n.config.az)] == 1,
+                n.last_applied_index)
+
+    ranked = sorted(nodes, key=node_score, reverse=True)
+    return [Action(ActionType.REMOVE_NODE, {"node_id": n.node_id}) for n in ranked[target:]]
+
+
 class NodeReplacementStrategy(ClusterStrategy):
     """Strategy that replaces nodes after a configurable failure timeout.
 
@@ -233,10 +263,12 @@ class NodeReplacementStrategy(ClusterStrategy):
             actions.extend(self._reassess_timeouts(cluster, num_available=nav))
 
         # Check if we can promote any synced standby nodes
-        actions.extend(self._promote_eligible_standbys(cluster, protocol))
+        promotions = self._promote_eligible_standbys(cluster, protocol)
+        actions.extend(promotions)
 
-        # Always check cluster size boundaries
-        actions.extend(self._maintain_cluster_size(cluster, protocol))
+        # Always check cluster size boundaries, counting this pass's promotions
+        promoting = [a.params["node_id"] for a in promotions]
+        actions.extend(self._maintain_cluster_size(cluster, protocol, promoting))
 
         return actions
 
@@ -307,37 +339,10 @@ class NodeReplacementStrategy(ClusterStrategy):
         self,
         cluster: ClusterState,
         protocol: Protocol,
+        promoting: list[str] = (),
     ) -> list[Action]:
         """Remove extra nodes if the cluster is over-provisioned."""
-        target = cluster.target_cluster_size
-        nodes = list(cluster.nodes.values())
-        
-        if len(nodes) <= target:
-            return []
-
-        # We have more nodes than target. Identify victims.
-        # Sort key: (is_available, is_up_to_date, last_applied_index)
-        # We want to KEEP the best nodes (highest sort key).
-        
-        def node_score(n: NodeState):
-            is_avail = cluster._node_effectively_available(n)
-            is_updated = n.is_up_to_date(cluster.commit_index)
-            return (is_avail, is_updated, n.last_applied_index)
-
-        sorted_nodes = sorted(nodes, key=node_score, reverse=True)
-        
-        # Keep the top `target` nodes. The rest are candidates for removal.
-        candidates = sorted_nodes[target:]
-        
-        actions = []
-        for node in candidates:
-            # Use safe_mode check: ensure protocol allows removal
-            if self.safe_mode:
-                 pass # Approximation: if we keep `target` best nodes, we assume we are safe?
-            
-            actions.append(Action(ActionType.REMOVE_NODE, {"node_id": node.node_id}))
-
-        return actions
+        return _trim_to(cluster, protocol, cluster.target_cluster_size, promoting)
 
     def on_simulation_start(
         self,
@@ -444,30 +449,12 @@ class AdaptiveReplacementStrategy(NodeReplacementStrategy):
         self,
         cluster: ClusterState,
         protocol: Protocol,
+        promoting: list[str] = (),
     ) -> list[Action]:
         """Override to cleanup based on max_target_cluster_size (provisioning target)."""
         # We want to keep up to max_target_cluster_size nodes physically,
         # even if target_cluster_size (logical/quorum target) is lower.
-        target = self.max_target_cluster_size
-        nodes = list(cluster.nodes.values())
-        
-        if len(nodes) <= target:
-            return []
-
-        # Copied logic from parent but using max_target
-        def node_score(n: NodeState):
-            is_avail = cluster._node_effectively_available(n)
-            is_updated = n.is_up_to_date(cluster.commit_index)
-            return (is_avail, is_updated, n.last_applied_index)
-
-        sorted_nodes = sorted(nodes, key=node_score, reverse=True)
-        candidates = sorted_nodes[target:]
-        
-        actions = []
-        for node in candidates:
-             actions.append(Action(ActionType.REMOVE_NODE, {"node_id": node.node_id}))
-
-        return actions
+        return _trim_to(cluster, protocol, self.max_target_cluster_size, promoting)
 
     def _check_and_schedule_reconfiguration(self, cluster: ClusterState) -> list[Action]:
         """Check for scaling opportunities based on deficits."""

@@ -128,6 +128,17 @@ pub trait Protocol: AsAnyProtocol {
         None
     }
 
+    /// React to a strategy removing `node` from the cluster, appending any
+    /// events to schedule to `out`.
+    fn on_node_removed(
+        &mut self,
+        _node: Sym,
+        _cluster: &ClusterState,
+        _rng: &mut Rng,
+        _out: &mut Vec<Event>,
+    ) {
+    }
+
     /// Wall-clock time for a lagging node to catch up to its donor.
     ///
     /// The sync target is the donor's `last_applied_index` -- the data the
@@ -569,6 +580,20 @@ impl Protocol for RaftLikeProtocol {
         self.leader_id = self.pick_leader(cluster);
     }
 
+    /// A removed leader is a lost leader: without an election the cluster
+    /// would wait forever on a node that no longer exists.
+    fn on_node_removed(
+        &mut self,
+        node: Sym,
+        cluster: &ClusterState,
+        rng: &mut Rng,
+        out: &mut Vec<Event>,
+    ) {
+        if self.leader_id == Some(node) {
+            self.start_election(cluster, rng, out);
+        }
+    }
+
     fn on_event(
         &mut self,
         event: &Event,
@@ -767,6 +792,27 @@ mod tests {
         let mut rng = make_rng(Some(1));
         collect_start_events(&mut p, &c, &mut rng);
         assert_eq!(c.name_of(p.leader_id().unwrap()), "node10");
+    }
+
+    #[test]
+    fn raft_removing_the_leader_starts_an_election() {
+        let mut p = RaftLikeProtocol::new(Distribution::constant(5.0));
+        let mut c = cluster_of(3);
+        let mut rng = make_rng(Some(1));
+        collect_start_events(&mut p, &c, &mut rng);
+        let leader = p.leader_id().unwrap();
+        let other = c.sym_of("node1").unwrap();
+
+        let mut out = Vec::new();
+        p.on_node_removed(other, &c, &mut rng, &mut out);
+        assert!(out.is_empty());
+        assert_eq!(p.leader_id(), Some(leader));
+
+        c.remove_node(leader);
+        p.on_node_removed(leader, &c, &mut rng, &mut out);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].event_type, EventType::LeaderElectionComplete);
+        assert!(p.leader_id().is_none() && p.election_in_progress());
     }
 
     #[test]

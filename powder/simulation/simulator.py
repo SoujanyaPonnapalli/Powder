@@ -878,6 +878,8 @@ class Simulator:
                 self.cluster.remove_standby_node(node_id)
                 self.cluster.remove_provisioning_node(node_id)
                 self.event_queue.cancel_events_for(node_id)
+                for new_event in self.protocol.on_node_removed(node_id, self.cluster, self.rng):
+                    self.event_queue.push(new_event)
 
         elif action.action_type == ActionType.PROMOTE_NODE:
             node_id = action.params.get("node_id")

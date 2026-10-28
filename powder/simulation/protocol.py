@@ -114,6 +114,15 @@ class Protocol(ABC):
             List of new events for the simulator to schedule.
         """
 
+    def on_node_removed(
+        self,
+        node_id: str,
+        cluster: ClusterState,
+        rng: np.random.Generator,
+    ) -> list[Event]:
+        """React to a strategy removing ``node_id``; returns events to schedule."""
+        return []
+
     def on_simulation_start(
         self,
         cluster: ClusterState,
@@ -577,6 +586,17 @@ class RaftLikeProtocol(Protocol):
         ):
             self._election_stalled = True
 
+        return []
+
+    def on_node_removed(
+        self,
+        node_id: str,
+        cluster: ClusterState,
+        rng: np.random.Generator,
+    ) -> list[Event]:
+        """A removed leader is a lost leader: start an election."""
+        if node_id == self._leader_id:
+            return self._start_election(cluster, rng)
         return []
 
     def _start_election(
