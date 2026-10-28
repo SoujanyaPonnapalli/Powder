@@ -35,6 +35,9 @@ RF_COUNTS = (3, 5, 7)
 NUM_RSMS = 10_000
 CAPACITY = 500
 GROUPS = NUM_RSMS // CAPACITY
+# Bump when an engine change invalidates checkpointed MC decisions.
+# trim-v2: replacement trims keep the leader and fault domains (5affbb1).
+ENGINE = "trim-v2"
 
 
 def block_baseline(machines, replicas: int, *, cheap: bool, seed: int) -> list[tuple[str, ...]]:
@@ -114,7 +117,7 @@ def score_menu(machines, scorer, blocks):
 
 def mc_rows(lib, cat, candidates, protocol, strategy, config, checkpoint: Path,
             *, workers: int = 1):
-    fingerprint = {"catalogue": catalogue.digest(cat), "scenario": SCENARIO,
+    fingerprint = {"catalogue": catalogue.digest(cat), "scenario": SCENARIO, "engine": ENGINE,
                    "target_nines": config.target_nines, "min_runs": config.min_runs,
                    "max_runs": config.max_runs, "batch_runs": config.batch_runs,
                    "confidence": config.confidence, "comparisons": len(candidates),

@@ -59,35 +59,36 @@ rsvg-convert --zoom 1.5 outputs/exec-02/az-frontier-choice.svg \
   -o outputs/exec-02/az-frontier-choice.png
 ```
 
-Three initial full-rate pilots under the AZ-aware model should be interpreted separately
-from the old all-region stress: initial 100,000-run cheapest-first RSM probes
-were around 4.35, 4.55 and 4.82 nines at RF 3/5/7. They do not bound the ILP's
-best candidates. The low-count two-event AZ proxy and uncertain incident scope
-also require sensitivity analysis before submission-ready SLA claims.
+The low-count two-event AZ proxy and uncertain incident scope also require
+sensitivity analysis before submission-ready SLA claims.
 
 ## Measured local results
 
-The checkpoint contains **180 unique placements / 32.1 million MC runs**. All
-60 RF 3 candidates failed to certify 4.5 nines; of 60 RF 5 candidates, 57
-passed and 3 were undecided at the one-million-run cap; all 60 RF 7 candidates
-passed. None had a lower confidence bound above five nines. Every graph uses
-these same cached MC estimates for both price assignments. All baseline and
-frontier points shown are simulation results, not observed TiDB behavior.
+Re-run 2026-10-28 with the replacement-trim engine fix (`5affbb1`, checkpoint
+engine tag `trim-v2`); the first run's numbers were an artifact of runs stuck
+after AZ/region outages (see the 24-hour section). The checkpoint contains
+**180 unique placements / 18.9 million MC runs**. 59 of 60 RF 3 candidates
+certify 4.5 nines and 1 is undecided at the one-million-run cap; all 60 RF 5
+and all 60 RF 7 candidates pass. 98 candidates (RF 5/7) have a lower
+confidence bound above five nines. Every graph uses these same cached MC
+estimates for both price assignments. All baseline and frontier points shown
+are simulation results, not observed TiDB behavior.
 
 | Qualified minimum modeled cost at 4.5 nines | Independent price | Reliability-ranked price |
 |---|---:|---:|
-| Uniform RF 3 | no certified solution | no certified solution |
-| Uniform RF 5 | $35.572/h, all RF 5 | $37.129/h, all RF 5 |
-| Uniform RF 7 | $50.553/h, all RF 7 | $50.630/h, all RF 7 |
-| **ILP chooses 3/5/7** | **$35.572/h; 10,000 RF 5** | **$37.117/h; 9,500 RF 5 + 500 RF 7** |
+| Uniform RF 3 | $20.359/h, 4.82 nines | $20.586/h, 4.74 nines |
+| Uniform RF 5 | $34.938/h, 5.05 nines | $35.107/h, 5.02 nines |
+| Uniform RF 7 | $50.553/h, 5.07 nines | $50.630/h, 5.05 nines |
+| **ILP chooses 3/5/7** | **$20.359/h; 10,000 RF 3** | **$20.586/h; 10,000 RF 3** |
 
-The free-choice optimizer was **not** constrained to mix. At lower cost
-budgets its MC-scored curve includes RF 3 placements below the target; at
-higher budgets it moves through mixed RF 5/7 placements toward all RF 7.
-The six fixed-RF baseline marks per price panel remain visible on the
-free-choice graph. The cheapest-first RF 5 baseline has 19/20 or 18/20
-certified placement blocks (independent/ranked), so its lower sticker price
-is **not** an all-RSM 4.5-nines certificate.
+**4.5 nines no longer separates the policies.** Every fixed-RF baseline now
+clears it; the target-qualified ILP is the cheapest all-RF 3 placement, and
+the free-choice frontier is nearly flat above RF 5 (5.03–5.08 nines from
+$37/h to $85/h). The free-choice optimizer was **not** constrained to mix: it
+picks 9,000 RF 5 + 1,000 RF 7 at $37/h and mostly RF 7 by $52–54/h. The only
+uncertified baseline block is one of the 20 in the ranked-price
+cheapest-first RF 3 baseline (19/20). A target nearer five nines would make
+the comparison informative again; that is an open choice for the study.
 
 Figures: `outputs/exec-02/az-frontier-{rf3,rf5,rf7,choice}.{svg,png}`.
 Their blue full-frontier segments are dashed when any selected RSM lacks
@@ -110,24 +111,21 @@ seed on a given day in every deployment, so neighbouring deployments share most
 draws. Injected outages use constant delays and repeat if 2t + d < 24 h
 (flagged `may_repeat`; none in this run).
 
-Why the days sit above the 30-day line (2026-10-28 diagnosis):
+With the fixed engine the mean of the 1000 days matches the 30-day line
+(e.g. 5.03 vs 5.05, 5.09 vs 5.07 nines; all-RF 3 4.74 vs 4.82). Individual
+days still spread widely because of **skew**: downtime is concentrated in
+rare bad days, so the median day is well above the mean (all-RF 3: median
+day 5.2 nines, mean 4.7; the worst 1 % of days hold ~40 % of downtime, ~4–7 %
+for RF 5/7). A single real 24 h run will usually look better than the line.
 
-1. **Skew.** Downtime is concentrated in rare bad days, so the median day is
-   well above the mean: for all-RF 3, the median day is 5.2 nines, the mean of
-   days 4.7, and the worst 1 % of days hold ~40 % of downtime (4 % for RF 7).
-2. **The engine is not stationary when AZ/region outages are on.** Without
-   network outages, one RF 3 group's mean unavailability is flat with horizon
-   (1.4e-5 at 1, 7 and 30 days). With them it rises: 1.5e-5 (1 d), 2.1e-5
-   (7 d), 4.8e-5 (30 d). With a single AZ process at 1/(10 d) it rises
-   100-fold (1.5e-4 → 1.6e-2); with replacement disabled only 3-fold. An
-   isolated outage at day 15 costs a bounded ~0.76 h for RF 3, so it is
-   damage from *repeated* outages that compounds through the replacement path
-   (replacements copy the failed node's region/AZ config). It is unresolved
-   whether this is a bug or intended; until it is, the 30-day frontier and its
-   certification are partly an artifact of horizon length, and 24 h days from a
-   clean start are optimistic about network events.
+History (2026-10-28): before the fix the days' mean sat 0.25–0.4 nines above
+the 30-day line, because the engine was **not stationary when AZ/region
+outages were on**. Without network outages, one RF 3 group's mean
+unavailability was flat with horizon (1.4e-5 at 1, 7 and 30 days); with
+them it rose 1.5e-5 (1 d), 2.1e-5 (7 d), 4.8e-5 (30 d), and 100-fold with a
+single AZ process at 1/(10 d).
 
-   **Resolved (branch `exec02-stuck-runs`): three engine bugs, both engines.**
+   **Resolved (`5affbb1`): two engine bugs, fixed in both engines.**
    Event logs of the worst runs showed two failure paths after outages:
    - *Removed leader.* An outage's replacements are promoted after it ends;
      the trim back to target broke ties by removing the newest node, which
@@ -144,9 +142,8 @@ Why the days sit above the 30-day line (2026-10-28 diagnosis):
    4.76 / 4.81 nines at 1 / 7 / 30 d; RF 7: 5.08 at all three) and the worst
    200 of 20,000 30-day runs hold 27 % (RF 3) and 3 % (RF 7) of downtime,
    down from 75 % and 78 %. The two probed frontier groups move from 4.38 to
-   4.81 (RF 3, previously failing 4.5) and from 4.85 to 5.08 (RF 7). **Every
-   MC score, certification and frontier above predates the fix and must be
-   re-run.**
+   4.81 (RF 3, previously failing 4.5) and from 4.85 to 5.08 (RF 7). The
+   study, figures and overlay above were re-run with the fix.
 
 ```bash
 python3 scripts/experiment_az_24h_oneshot.py --trials 1000
