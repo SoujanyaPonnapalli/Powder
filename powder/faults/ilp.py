@@ -8,22 +8,20 @@ Each (machine class, region) pair of a scenario becomes one
 ``placement_optimizer.MachineType`` with ``type_id = "<machine>@<region>"``.
 
 Catalogues (exec #1b §5): every catalogue machine is its own
-``placement_optimizer.Machine`` (no shared types), scored by the Markov model
-on its horizon-average exponential approximation. With ~1000 distinct machines
-two things blow up -- type-count enumeration, and the heterogeneous Markov
-state space (7 distinct nodes: ~7k states, ~10 s per candidate) -- so
-:func:`binned_markov_scorer` scores candidates on *rate-binned*
-representatives (log-spaced bins of failure rate, recovery time and data-loss
-rate; machines in the same bin share a Markov class) with a memo keyed on the
-multiset of bins, while cost stays exact. :func:`solve_catalogue_placement`
-generates candidates over the real machines, solves the ILP, and rescores the
-chosen placements with the exact machines.
+``placement_optimizer.Machine`` (no shared types). Candidate generation uses
+horizon-average exponential rates and a memoised rate-binned Markov scorer;
+seven distinct nodes otherwise take seconds per solve. By default,
+:func:`solve_catalogue_placement` screens below 4.5 Markov nines, then admits
+only placements whose full-horizon Rust Monte Carlo t interval certifies the
+configured availability target. The ILP receives the MC mean and exact price.
+The older Markov-only path remains available for fast exploratory work.
 
 The optimizer module is imported lazily because it depends on SciPy.
 """
 
 from __future__ import annotations
 
+import hashlib
 import math
 import time
 from dataclasses import dataclass, field, replace
@@ -129,41 +127,109 @@ def binned_markov_scorer(protocol, strategy, *, bins_per_decade: int = 4, qualit
     return BinnedScorer(protocol, strategy, bins_per_decade, quality)
 
 
+def mc_shortlist(candidates: Sequence, count: int) -> list:
+    """Keep both cheap and reliable Markov survivors before expensive MC scoring."""
+    if len(candidates) <= count:
+        return list(candidates)
+    cheap = sorted(candidates, key=lambda c: (c.cost_per_hour, -c.availability, c.candidate_id))
+    reliable = sorted(candidates, key=lambda c: (-c.availability, c.cost_per_hour, c.candidate_id))
+    chosen = {}
+    for a, b in zip(cheap, reliable):
+        for candidate in (a, b):
+            chosen[candidate.candidate_id] = candidate
+            if len(chosen) >= count:
+                return [chosen[k] for k in sorted(chosen)]
+    return [chosen[k] for k in sorted(chosen)]
+
+
+def _mc_seed(base_seed: int, candidate_id: str, max_runs: int) -> int:
+    digest = hashlib.blake2b(candidate_id.encode(), digest_size=8, person=b"powdermc").digest()
+    return (base_seed + int.from_bytes(digest, "big")) % (2**63 - max_runs)
+
+
 def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, strategy, *, num_rsms: int = 100,
-                              replica_counts: tuple[int, ...] = (3, 5), capacity: int = 10, price: str = "rho0",
+                              replica_counts: tuple[int, ...] = (3, 5, 7), capacity: int = 10, price: str = "rho0",
                               budget_per_hour: float | None = None, objective: str = "sum_availability",
                               bins_per_decade: int = 4, random_samples_per_size: int = 400,
                               greedy_starts_per_size: int = 10, max_candidates: int = 3000, rng_seed: int = 0,
                               rescore_exact: bool = True, scenario_id: str = "scenario/canonical-central",
-                              unique_machine_cost: bool = True) -> dict:
-    """Candidate generation + ILP over a catalogue; returns the solution and timing/diagnostics.
+                              unique_machine_cost: bool = True, scoring: str = "hybrid",
+                              mc_config: Any = None) -> dict:
+    """Markov screening, optional MC certification, then the candidate ILP.
 
-    ``unique_machine_cost``: bill each machine once however many RSMs it hosts (budget and reported cost);
-    ``False`` bills it once per hosted replica, which penalises sharing.
+    ``scoring='hybrid'`` first rejects Markov scores below 4.5 nines, then uses
+    fixed-horizon Rust MC to certify candidate availability against the configured
+    k-nines target. Only MC-certified candidates enter the ILP. ``'markov'`` keeps
+    the older fast path, explicitly for screening/tests. A capped candidate
+    shortlist is not a proof of global placement optimality.
     """
-    from powder.placement_optimizer import (CandidateGenerationConfig, PlacementSolverConfig, generate_candidates,
-                                            markov_candidate_scorer, solve_candidate_ilp)
+    from powder.placement_optimizer import (CandidateGenerationConfig, PlacementSolverConfig, PlacementSolution,
+                                            generate_candidates, markov_candidate_scorer, solve_candidate_ilp)
 
+    if scoring not in ("hybrid", "markov"):
+        raise ValueError("scoring must be 'hybrid' or 'markov'")
     t0 = time.time()
     machines = catalogue_machines(lib, cat, scenario_id=scenario_id, price=price, capacity=capacity)
     scorer = binned_markov_scorer(protocol, strategy, bins_per_decade=bins_per_decade)
     cfg = CandidateGenerationConfig(replica_counts=replica_counts, random_samples_per_size=random_samples_per_size,
                                     greedy_starts_per_size=greedy_starts_per_size, local_search_steps=1,
                                     max_candidates=max_candidates, rng_seed=rng_seed)
-    cands = generate_candidates(machines, scorer, cfg)
+    markov_candidates = generate_candidates(machines, scorer, cfg)
     t1 = time.time()
-    sol = solve_candidate_ilp(cands, machines, PlacementSolverConfig(num_rsms=num_rsms, objective=objective,
-                                                                    budget_per_hour=budget_per_hour,
-                                                                    unique_machine_cost=unique_machine_cost))
+    cands = markov_candidates
+    mc_diagnostics = {}
+    if scoring == "hybrid":
+        from .mc_scoring import MCScoringConfig, catalogue_batch_sampler, certify_availability
+
+        mc = mc_config if mc_config is not None else MCScoringConfig()
+        if not isinstance(mc, MCScoringConfig):
+            raise TypeError("mc_config must be an MCScoringConfig")
+        survivors = [c for c in cands if c.availability >= mc.markov_floor]
+        shortlist = mc_shortlist(survivors, mc.max_candidates)
+        mc_diagnostics = {"markov_rejected": len(cands) - len(survivors),
+                          "not_shortlisted": len(survivors) - len(shortlist),
+                          "target_nines": mc.target_nines, "confidence": mc.confidence,
+                          "decisions": {}}
+        cands = []
+        for candidate in shortlist:
+            sampler = catalogue_batch_sampler(lib, cat, candidate.machine_ids, scenario_id,
+                                               price, protocol, strategy,
+                                               include_region_outages=mc.include_region_outages)
+            decision = certify_availability(
+                sampler, mc, base_seed=_mc_seed(mc.base_seed, candidate.candidate_id, mc.max_runs),
+                comparisons=len(shortlist)
+            )
+            mc_diagnostics["decisions"][candidate.candidate_id] = {
+                "status": decision.status, "runs": decision.runs,
+                "availability": decision.availability,
+                "ci_low": decision.ci_low, "ci_high": decision.ci_high,
+                "markov_availability": candidate.availability,
+            }
+            if decision.status == "pass":
+                cands.append(replace(candidate, availability=decision.availability,
+                                     metadata={**candidate.metadata, "method": "rust-mc-certified",
+                                               "runs": decision.runs, "ci_low": decision.ci_low,
+                                               "ci_high": decision.ci_high}))
+    t_mc = time.time()
+    if cands:
+        sol = solve_candidate_ilp(cands, machines, PlacementSolverConfig(num_rsms=num_rsms, objective=objective,
+                                                                        budget_per_hour=budget_per_hour,
+                                                                        unique_machine_cost=unique_machine_cost))
+    else:
+        sol = PlacementSolution("no_mc_qualified_candidates", "No candidate certified the MC threshold",
+                                objective, float("nan"), float("nan"), budget_per_hour, ())
     t2 = time.time()
     exact = {}
-    if rescore_exact and sol.selected:
+    if scoring == "markov" and rescore_exact and sol.selected:
         by_id = {m.machine_id: m for m in machines}
         ex = markov_candidate_scorer(protocol, strategy)
         for item in sol.selected:
             ids = item.candidate.machine_ids
             if len(ids) <= 5:  # 7 distinct nodes take ~10 s each; keep the binned score there
                 exact[item.candidate.candidate_id] = ex([by_id[i] for i in ids]).availability
-    return {"solution": sol, "machines": machines, "candidates": cands, "exact_availability": exact,
-            "binned_classes": len(scorer.rep), "markov_calls": scorer.calls, "markov_seconds": scorer.seconds,
-            "seconds": {"candidates": t1 - t0, "ilp": t2 - t1, "rescore": time.time() - t2}}
+    return {"solution": sol, "machines": machines, "candidates": cands,
+            "markov_candidates": markov_candidates, "mc_diagnostics": mc_diagnostics,
+            "exact_availability": exact, "binned_classes": len(scorer.rep),
+            "markov_calls": scorer.calls, "markov_seconds": scorer.seconds,
+            "seconds": {"candidates": t1 - t0, "mc": t_mc - t1,
+                        "ilp": t2 - t_mc, "rescore": time.time() - t2}}

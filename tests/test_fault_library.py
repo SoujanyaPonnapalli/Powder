@@ -978,7 +978,7 @@ def test_catalogue_placement_ilp_binned_scorer():
     r = solve_catalogue_placement(LIB, cat, RaftLikeProtocol(election_time_dist=Exponential(0.2)),
                                   NodeReplacementStrategy(failure_timeout=600.0, default_node_config=None),
                                   num_rsms=20, replica_counts=(3,), random_samples_per_size=80,
-                                  greedy_starts_per_size=2, capacity=5)
+                                  greedy_starts_per_size=2, capacity=5, scoring="markov")
     sol = r["solution"]
     assert str(sol.status) == "0" and sol.total_rsms == 20
     assert r["binned_classes"] < 150  # binning merges machines into shared Markov classes
