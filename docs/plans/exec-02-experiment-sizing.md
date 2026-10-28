@@ -246,8 +246,12 @@ identical physical AWS instances have the same actual bill at equal fleet size.
 
 The library changed after the 50-RSM study: commit `d557302` dropped the
 cloud/VM transient base and reduced the number of distinct on-demand catalogue
-recipes from 488 to **244**. The new run uses the **current Ford-based library**,
-a seed-0, 2,000-machine master, and its first 1,000 options. Its catalogue
+recipes from 488 to **244**. Ford now supplies the catalogue's transient
+base, but machines remain **compositions**: disk components include Backblaze
+and Schroeder–Gibson, SpotLake supplies Spot curves when that tier is used,
+planned windows come from Ford, region outages from mapped Azure incidents,
+and assigned prices from AWS. This on-demand run uses a seed-0, 2,000-machine
+master and its first 1,000 options. Its catalogue
 construction and price-assignment procedure match the earlier figure, but
 its underlying fault-rate inventory does **not**. Do not interpret the two
 figures as a controlled scale-only comparison.
@@ -287,3 +291,32 @@ an observed TiDB result, or an AWS bill comparison. With 500 RSMs sharing each
 machine, mean-RSM availability does not measure the probability that *any*
 partition in the whole deployment is unavailable; that requires a coupled
 cluster-level model.
+
+## Replica-count facets: RF 3, 5 and 7 (2026-10-28)
+
+The six-panel `outputs/exec-02/placement-frontier-rf357.{svg,png}` figure keeps
+10,000 RSMs and a capacity of 500 replicas per machine, but treats RF 3, RF 5
+and RF 7 as **separate workloads**, not an invented cluster mixture. They use
+60, 100 and 140 active machines respectively. Every frontier starts at the
+cheapest-first cost, including points below the blind baseline's availability
+target. All panels use the same current composed fault library and the same
+on-demand price-assignment seed. Ford supplies the transient base, but
+Backblaze/Schroeder–Gibson disk components, Ford planned windows, mapped Azure
+region incidents, and AWS assigned prices are separate inputs; SpotLake matters
+for Spot scenarios, which are not plotted here.
+
+| RF / scorer | Independent: blind → target ILP ($/h) | Ranked: blind → target ILP ($/h) |
+|---|---:|---:|
+| 3 / exact machine-rate Markov | 33.170 → 20.358 | 35.291 → 24.779 |
+| 5 / exact machine-rate Markov | 59.115 → 34.938 | 62.296 → 46.084 |
+| 7 / **rate-binned screening** | 85.529 → 56.225 | 88.246 → 54.768 |
+
+The RF 7 curve is dashed because seven distinct-node Markov solves take about
+17 seconds each. Four bins per decade make the broad candidate sweep feasible,
+but exact spot checks of two placements per price model show **5.7–6.6% error
+in unavailability**; this is neither a bound nor an assurance that the binned
+winner meets the target under an exact or Monte Carlo scorer. Do not compare
+small vertical gaps in RF 7 to the exact RF 3/5 rows. Axes are shared across
+pricing panels *within* each RF, but rescaled across RF rows. The plot reports
+mean-RSM Markov availability, not the probability that any of 10,000 RSMs is
+down; replication groups share physical fault events.

@@ -39,7 +39,7 @@ def baseline(machines, num_rsms: int, replicas: int, capacity: int, *, cheap: bo
     """Select one node per region without seeing a node's fault rates."""
     rng = random.Random(seed)
     regions = sorted({m.node_config.region for m in machines})
-    if len(regions) < replicas:
+    if len(regions) < min(replicas, 4):
         raise ValueError("not enough regions for the requested region-balanced baseline")
     by_region = {r: [m for m in machines if m.node_config.region == r] for r in regions}
     for pool in by_region.values():
@@ -66,10 +66,20 @@ def baseline(machines, num_rsms: int, replicas: int, capacity: int, *, cheap: bo
             omitted = [r for r in regions for _ in range(num_rsms - counts[r])]
             rng.shuffle(omitted)
             spread = [tuple(r for r in regions if r != omitted[i]) for i in range(num_rsms)]
+    balanced_pools = None
+    if replicas > len(regions):
+        demand = Counter(r for group in spread for r in group)
+        balanced_pools = {r: by_region[r][: (demand[r] + capacity - 1) // capacity] for r in regions}
     for selected_regions in spread:
         chosen = []
         for r in selected_regions:
-            available = next((m for m in by_region[r] if remaining[m.machine_id]), None)
+            if balanced_pools is None:
+                available = next((m for m in by_region[r]
+                                  if remaining[m.machine_id] and m.machine_id not in chosen), None)
+            else:
+                available = max((m for m in balanced_pools[r]
+                                 if remaining[m.machine_id] and m.machine_id not in chosen),
+                                key=lambda m: remaining[m.machine_id], default=None)
             if available is None:
                 raise ValueError(f"baseline exhausted capacity in {r}")
             remaining[available.machine_id] -= 1
@@ -100,7 +110,9 @@ def candidates_for(machines, scorer, replicas: int, seed: int, samples: int, cap
         for candidate in generate_candidates(machines, scorer, cfg):
             by_ids[candidate.machine_ids] = candidate
     regions = {m.machine_id: m.node_config.region for m in machines}
-    ranked = [c for c in by_ids.values() if len({regions[mid] for mid in c.machine_ids}) == replicas]
+    required_regions = min(replicas, len(set(regions.values())))
+    ranked = [c for c in by_ids.values()
+              if len({regions[mid] for mid in c.machine_ids}) == required_regions]
     if len(ranked) > cap:
         half = cap // 2
         cheapest = sorted(ranked, key=lambda c: (c.cost_per_hour, -c.availability))[:half]

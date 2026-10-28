@@ -133,6 +133,20 @@ def test_price_blind_baseline_packs_region_capacity():
     assert all(len({mid.split("-")[0] for mid in ids}) == 3 for ids in result["placements"])
 
 
+def test_five_and_seven_replica_baselines_use_distinct_nodes_across_four_regions():
+    from dataclasses import replace
+    from powder.placement_optimizer import CandidateScore
+
+    machines = [Machine(f"{r}-{i}", replace(machine(f"{r}-{i}", 1).node_config, region=r), capacity=5)
+                for r in ("a", "b", "c", "d") for i in range(50)]
+    for replicas in (5, 7):
+        result = baseline(machines, 100, replicas, 5, cheap=True, seed=0,
+                          scorer=lambda ms: CandidateScore(.999, len(ms)))
+        assert result["deployed"] == 100 * replicas // 5
+        assert all(len(ids) == len(set(ids)) == replicas for ids in result["placements"])
+        assert all(len({mid.split("-")[0] for mid in ids}) == 4 for ids in result["placements"])
+
+
 def test_candidate_search_is_independent_of_python_hash_seed():
     code = """
 from dataclasses import replace

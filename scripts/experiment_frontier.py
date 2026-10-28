@@ -23,8 +23,9 @@ from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProt
 from scripts.experiment_sizing import candidates_for, evaluate_solution, nested_order  # noqa: E402
 
 
-def candidate_menu(machines, scorer, row):
-    candidates, _ = candidates_for(machines, scorer, row["replicas"], row["price_seed"], 120, 600)
+def candidate_menu(machines, scorer, row, *, samples: int = 120, candidate_cap: int = 600):
+    candidates, _ = candidates_for(machines, scorer, row["replicas"], row["price_seed"],
+                                   samples, candidate_cap)
     by_id = {m.machine_id: m for m in machines}
     by_ids = {c.machine_ids: c for c in candidates}
     for ids in sorted({tuple(ids) for base in (row["cheap"], row["blind"]) for ids in base["placements"]}):
@@ -48,7 +49,8 @@ def solve_budget(candidates, machines, by_id, protocol, strategy, row, budget,
 
 
 def run(sweep: Path, output: Path, pools: list[int], price_seeds: int,
-        *, full_frontier: bool = False, solver_seconds: float = 30, frontier_points: int = 9):
+        *, full_frontier: bool = False, solver_seconds: float = 30, frontier_points: int = 9,
+        samples: int = 120, candidate_cap: int = 600):
     saved = [json.loads(line) for line in sweep.read_text().splitlines()]
     lookup = {(r["pool"], r["price_seed"], r["price"]): r for r in saved}
     source = saved[0]
@@ -77,7 +79,8 @@ def run(sweep: Path, output: Path, pools: list[int], price_seeds: int,
                     machines = catalogue_machines(lib, subset, price=price,
                                                    capacity=row["capacity"])
                     scorer = markov_candidate_scorer(protocol, strategy)
-                    candidates, by_id = candidate_menu(machines, scorer, row)
+                    candidates, by_id = candidate_menu(machines, scorer, row,
+                                                        samples=samples, candidate_cap=candidate_cap)
                     blind = row["blind"]
                     equal_cost = solve_budget(candidates, machines, by_id, protocol, strategy,
                                               row, blind["cost_per_hour"], solver_seconds=solver_seconds)
@@ -124,12 +127,16 @@ def main():
                     help="extend below the baseline availability floor to cheapest-first cost")
     ap.add_argument("--solver-seconds", type=float, default=30)
     ap.add_argument("--frontier-points", type=int, default=9)
+    ap.add_argument("--samples", type=int, default=120)
+    ap.add_argument("--candidate-cap", type=int, default=600)
     args = ap.parse_args()
-    if not args.pools or args.price_seeds < 1 or args.frontier_points < 2 or args.solver_seconds <= 0:
+    if (not args.pools or args.price_seeds < 1 or args.frontier_points < 2 or
+            args.solver_seconds <= 0 or args.samples < 1 or args.candidate_cap < 1):
         ap.error("provide pools, positive solver time, and at least two frontier points")
     run(args.sweep, args.output, args.pools, args.price_seeds,
         full_frontier=args.full_frontier, solver_seconds=args.solver_seconds,
-        frontier_points=args.frontier_points)
+        frontier_points=args.frontier_points, samples=args.samples,
+        candidate_cap=args.candidate_cap)
 
 
 if __name__ == "__main__":

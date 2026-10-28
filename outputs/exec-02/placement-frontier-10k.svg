@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="525" viewBox="0 0 1200 525">
 <style>text{font-family:Arial,sans-serif;font-size:11px;fill:#66778a}.grid{stroke:#e1e0d9;stroke-width:1}.axis{stroke:#9aa9b8;stroke-width:1}.frontier{stroke:#2a78d6;stroke-width:2;fill:none}.crosshair,[hidden]{display:none}</style><rect width="1200" height="525" fill="#fcfcfb"/>
 <text x="20" y="37" style="font-size:27px;fill:#142235;font-weight:700">DB placement: 10,000 RSMs</text>
-<text x="20" y="62" style="font-size:13px;fill:#44546a">10,000 RSMs · 3 replicas · 500 RSM replicas per machine · 60 active machines · current Ford catalogue · seed 0</text>
+<text x="20" y="62" style="font-size:13px;fill:#44546a">10,000 RSMs · 3 replicas · 500 RSM replicas per machine · 60 active machines · composed fault library (Ford transient) · seed 0</text>
 <path d="M20 87H47" stroke="#2a78d6" stroke-width="2"/><circle cx="34" cy="87" r="5" fill="white" stroke="#2a78d6" stroke-width="2"/>
 <text x="57" y="91" style="font-size:13px;fill:#44546a">ILP frontier / least cost at target</text>
 <circle cx="340" cy="87" r="5" fill="#eb6834"/><text x="354" y="91" style="font-size:13px;fill:#44546a">Price-blind baseline</text>
