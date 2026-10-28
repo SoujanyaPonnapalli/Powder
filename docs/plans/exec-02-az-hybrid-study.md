@@ -1,6 +1,6 @@
 # AZ-aware hybrid placement study
 
-Status: local MC experiment in progress (2026-10-28). No cloud resources.
+Status: local MC study complete (2026-10-28). No cloud resources.
 
 ## Four figures
 
@@ -42,8 +42,10 @@ physical AWS hosts' bill.
 
 The menu uses 20 disjoint, capacity-500 RSM blocks for each baseline and RF;
 this covers the arithmetic minimum of 60/100/140 distinct machines at RF 3/5/7.
-The alternative candidate sample is bounded, so the figures are **candidate-
-menu frontiers**, not an oracle or proof of global optimality. MC results are
+This run uses `--extras 0`: only the fixed-RF baseline block placements are
+available as ILP columns, and the free-choice graph uses their union. Thus
+these are **candidate-menu frontiers**, not an oracle or proof of global
+optimality; adding price-aware columns may improve them. MC results are
 cached by sorted machine IDs and reused across price assignments. The study
 streams completed candidate decisions to `outputs/exec-02/az-mc-scores.jsonl`
 for safe resumption; a fingerprint prevents reuse under a different catalogue,
@@ -62,3 +64,35 @@ from the old all-region stress: initial 100,000-run cheapest-first RSM probes
 were around 4.35, 4.55 and 4.82 nines at RF 3/5/7. They do not bound the ILP's
 best candidates. The low-count two-event AZ proxy and uncertain incident scope
 also require sensitivity analysis before submission-ready SLA claims.
+
+## Measured local results
+
+The checkpoint contains **180 unique placements / 32.1 million MC runs**. All
+60 RF 3 candidates failed to certify 4.5 nines; of 60 RF 5 candidates, 57
+passed and 3 were undecided at the one-million-run cap; all 60 RF 7 candidates
+passed. None had a lower confidence bound above five nines. Every graph uses
+these same cached MC estimates for both price assignments. All baseline and
+frontier points shown are simulation results, not observed TiDB behavior.
+
+| Qualified minimum modeled cost at 4.5 nines | Independent price | Reliability-ranked price |
+|---|---:|---:|
+| Uniform RF 3 | no certified solution | no certified solution |
+| Uniform RF 5 | $35.572/h, all RF 5 | $37.129/h, all RF 5 |
+| Uniform RF 7 | $50.553/h, all RF 7 | $50.630/h, all RF 7 |
+| **ILP chooses 3/5/7** | **$35.572/h; 10,000 RF 5** | **$37.117/h; 9,500 RF 5 + 500 RF 7** |
+
+The free-choice optimizer was **not** constrained to mix. At lower cost
+budgets its MC-scored curve includes RF 3 placements below the target; at
+higher budgets it moves through mixed RF 5/7 placements toward all RF 7.
+The six fixed-RF baseline marks per price panel remain visible on the
+free-choice graph. The cheapest-first RF 5 baseline has 19/20 or 18/20
+certified placement blocks (independent/ranked), so its lower sticker price
+is **not** an all-RSM 4.5-nines certificate.
+
+Figures: `outputs/exec-02/az-frontier-{rf3,rf5,rf7,choice}.{svg,png}`.
+Their blue full-frontier segments are dashed when any selected RSM lacks
+certification; the outlined target circle appears only for a feasible
+all-certified placement. MC error bars derive from the candidate intervals,
+not from independent physical deployments. The RF-count table on the
+free-choice figure shows actual selections at every budget, including a
+9,000 RF 5 / 1,000 RF 7 point in both price panels.

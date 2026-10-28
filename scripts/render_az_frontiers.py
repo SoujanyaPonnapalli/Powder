@@ -110,7 +110,8 @@ def render(result, name):
     target = float(result["target_nines"])
     if result["scenario"] != "scenario/canonical-central-az-aware@v2":
         raise ValueError("expected AZ-aware sensitivity scenario")
-    arms = result["arms"]
+    arms = {price: {**arm, "baselines": {int(rf): data for rf, data in arm["baselines"].items()}}
+            for price, arm in result["arms"].items()}
     relevant = []
     rf = int(name[-1]) if name.startswith("rf") else None
     for arm in arms.values():
@@ -132,9 +133,10 @@ def render(result, name):
     ystep = .05 if max(nines_values) - min(nines_values) < .25 else .1
     ymin = round(ystep * math.floor((min(min(nines_values), target) - .005) / ystep), 6)
     ymax = round(ystep * math.ceil((max(nines_values) + .005) / ystep), 6)
+    height = 865 if name == "choice" else 685
     header = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="685" viewBox="0 0 1200 685">',
-        f'<rect width="1200" height="685" fill="{SURFACE}"/>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="{height}" viewBox="0 0 1200 {height}">',
+        f'<rect width="1200" height="{height}" fill="{SURFACE}"/>',
         label(27, 43, f"{RF_LABELS[name]} · 10,000 RSMs", 27, color=INK, weight=700),
         label(27, 70, "AZ-aware sensitivity · 4 regions × 3 zones · 500 RSM replicas/machine · seed 0", 13),
         label(27, 95, "MC ≥ 100,000 runs/candidate; dashed ILP segments contain uncertified RSMs", 12),
@@ -144,6 +146,7 @@ def render(result, name):
         label(238, 125, "Price-blind", 12),
         f'<circle cx="385" cy="121" r="5" fill="{AQUA}"/>',
         label(398, 125, "Cheapest-first", 12),
+        label(610, 125, "Baseline shapes: ○ RF 3 · □ RF 5 · △ RF 7", 12),
         label(75, 161, "Independent price assignment (ρ = 0)", 18, color=INK, weight=700),
         label(665, 161, "Reliability-ranked price (ρ = 1)", 18, color=INK, weight=700),
     ]
@@ -151,8 +154,27 @@ def render(result, name):
         header.append(draw_panel(arms[price], name, rf, offset=offset,
                                  xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
                                  xstep=xstep, ystep=ystep, target=target))
-    header.append(label(27, 643, "Blue = ILP · orange = price-blind · green = cheapest-first · shapes encode baseline RF 3/5/7", 12))
-    header.append(label(27, 665, "Whole-deployment uptime is not shown. Partial WAN impact remains a stress-model gap; assigned costs are not AWS bills.", 12))
+    footer = 845 if name == "choice" else 665
+    if name == "choice":
+        header.append(label(27, 628, "Actual ILP replica choices at each budget (no mix imposed)", 15, color=INK, weight=700))
+        for offset, price in ((27, "rho0"), (617, "rho1")):
+            header.append(label(offset + 32, 652, "budget $/h", 11))
+            for dx, heading in ((154, "active"), (218, "RF3"), (284, "RF5"), (350, "RF7"), (414, "certified")):
+                header.append(label(offset + dx, 652, heading, 11))
+            for index, point in enumerate(arms[price]["frontiers"][name].get("points", [])):
+                yy = 677 + index * 26
+                header.append(label(offset + 32, yy,
+                                    f"{point.get('budget_per_hour', point.get('cost_per_hour', 0)):.2f}", 12))
+                if not usable(point):
+                    header.append(label(offset + 154, yy, "infeasible", 12))
+                    continue
+                counts = point.get("rf_counts", {})
+                header.append(label(offset + 154, yy, point["active_machines"], 12))
+                for dx, rf_count in ((218, 3), (284, 5), (350, 7)):
+                    header.append(label(offset + dx, yy, counts.get(str(rf_count), counts.get(rf_count, 0)), 12))
+                header.append(label(offset + 414, yy, point.get("certified_rsms", 0), 12))
+    header.append(label(27, footer - 22, "Blue = ILP · orange = price-blind · green = cheapest-first · shapes encode baseline RF 3/5/7", 12))
+    header.append(label(27, footer, "Whole-deployment uptime is not shown. Partial WAN impact remains a stress-model gap; assigned costs are not AWS bills.", 12))
     header.append('</svg>')
     return "\n".join(header)
 
