@@ -44,7 +44,25 @@ def usable(point):
     return point.get("status") == "0" and 0 <= point.get("mean_availability", -1) < 1
 
 
-def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, target):
+def oneshot_marks(rows, x, y, top):
+    """Each simulated day of each deployment, at that deployment's price."""
+    parts = []
+    for row in rows:
+        xx = x(row["cost_per_hour"])
+        for trial, a in enumerate(row["oneshot_availability"]):
+            if a >= 1:
+                detail = f'24 h day {trial} · ${row["cost_per_hour"]:.3f}/h · no RSM downtime'
+                mark = (f'<path d="M{xx:.2f},{top + 2:.2f}L{xx + 4:.2f},{top + 9:.2f}H{xx - 4:.2f}Z" '
+                        f'fill="none" stroke="{BLUE}" stroke-width="1.2"/>')
+            else:
+                detail = f'24 h day {trial} · ${row["cost_per_hour"]:.3f}/h · {nines(a):.3f} nines'
+                mark = (f'<circle cx="{xx:.2f}" cy="{y(a):.2f}" r="3" fill="{BLUE}" fill-opacity=".15" '
+                        f'stroke="{BLUE}" stroke-width="1.2"/>')
+            parts.append(f'<g><title>{escape(detail)}</title>{mark}</g>')
+    return parts
+
+
+def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, target, oneshot=None):
     data = arm["frontiers"][name]
     baselines = arm["baselines"]
     left, right, top, bottom = offset + 57, offset + 533, 225, 552
@@ -65,6 +83,8 @@ def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, t
         parts.append(f'<path d="M{left},{yy:.2f}H{right}" stroke="#8b979d" stroke-width="1" stroke-dasharray="5 4"/>')
         parts.append(label(right - 3, yy - 6, "4.5-nines target", 11, anchor="end"))
     parts.append(label(left, top - 17, "Mean RSM availability (nines)", 11))
+    if oneshot:
+        parts.extend(oneshot_marks(oneshot, x, y, top))
     points = [p for p in data.get("points", []) if usable(p)]
     for i in range(1, len(points)):
         p, q = points[i-1], points[i]
@@ -106,7 +126,7 @@ def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, t
     return "".join(parts)
 
 
-def render(result, name):
+def render(result, name, oneshot=None):
     target = float(result["target_nines"])
     if result["scenario"] != "scenario/canonical-central-az-aware@v2":
         raise ValueError("expected AZ-aware sensitivity scenario")
@@ -127,19 +147,30 @@ def render(result, name):
     nines_values = [nines(p[key]) for p in relevant
                     for key in ("mean_availability", "mean_ci_low", "mean_ci_high")
                     if key in p and 0 <= p[key] < 1]
+    if oneshot is not None:
+        if oneshot["scenario"] != result["scenario"] or oneshot["frontier"] != name:
+            raise ValueError("one-shot replays belong to a different figure")
+        nines_values += [nines(a) for rows in oneshot["arms"].values() for row in rows
+                         for a in row["oneshot_availability"] if a < 1]
     xstep = 5 if max(costs) - min(costs) < 35 else 10
     xmin = xstep * math.floor((min(costs) - .5) / xstep)
     xmax = xstep * math.ceil((max(costs) + .5) / xstep)
-    ystep = .05 if max(nines_values) - min(nines_values) < .25 else .1
+    spread = max(nines_values) - min(nines_values)
+    ystep = .05 if spread < .25 else .1 if spread < 1 else .25
     ymin = round(ystep * math.floor((min(min(nines_values), target) - .005) / ystep), 6)
     ymax = round(ystep * math.ceil((max(nines_values) + .005) / ystep), 6)
-    height = 865 if name == "choice" else 685
+    extra = 0 if oneshot is None else 26
+    height = (865 if name == "choice" else 685) + extra
+    subtitle = ("MC ≥ 100,000 runs/candidate; dashed ILP segments contain uncertified RSMs"
+                if oneshot is None else
+                f"Line: 30-day MC mean · dots: {oneshot['trials']} simulated {oneshot['horizon_h']:g} h days of each "
+                "ILP deployment (RSM-weighted one-shot availability; △ at top = no downtime)")
     header = [
         f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="{height}" viewBox="0 0 1200 {height}">',
         f'<rect width="1200" height="{height}" fill="{SURFACE}"/>',
         label(27, 43, f"{RF_LABELS[name]} · 10,000 RSMs", 27, color=INK, weight=700),
         label(27, 70, "AZ-aware sensitivity · 4 regions × 3 zones · 500 RSM replicas/machine · seed 0", 13),
-        label(27, 95, "MC ≥ 100,000 runs/candidate; dashed ILP segments contain uncertified RSMs", 12),
+        label(27, 95, subtitle, 12),
         f'<path d="M27,121H57" stroke="{BLUE}" stroke-width="2"/>',
         label(67, 125, "ILP frontier", 12),
         f'<circle cx="225" cy="121" r="5" fill="{ORANGE}"/>',
@@ -153,8 +184,9 @@ def render(result, name):
     for offset, price in ((27, "rho0"), (617, "rho1")):
         header.append(draw_panel(arms[price], name, rf, offset=offset,
                                  xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
-                                 xstep=xstep, ystep=ystep, target=target))
-    footer = 845 if name == "choice" else 665
+                                 xstep=xstep, ystep=ystep, target=target,
+                                 oneshot=None if oneshot is None else oneshot["arms"][price]))
+    footer = (845 if name == "choice" else 665) + extra
     if name == "choice":
         header.append(label(27, 628, "Actual ILP replica choices at each budget (no mix imposed)", 15, color=INK, weight=700))
         for offset, price in ((27, "rho0"), (617, "rho1")):
@@ -174,6 +206,9 @@ def render(result, name):
                     header.append(label(offset + dx, yy, counts.get(str(rf_count), counts.get(rf_count, 0)), 12))
                 header.append(label(offset + 414, yy, point.get("certified_rsms", 0), 12))
     header.append(label(27, footer - 22, "Blue = ILP · orange = price-blind · green = cheapest-first · shapes encode baseline RF 3/5/7", 12))
+    if oneshot is not None:
+        header.append(label(27, footer - 44, "24 h days share AZ/region outage draws across deployments; "
+                            "a machine set sees the same day wherever it is placed.", 12))
     header.append(label(27, footer, "Whole-deployment uptime is not shown. Partial WAN impact remains a stress-model gap; assigned costs are not AWS bills.", 12))
     header.append('</svg>')
     return "\n".join(header)
@@ -182,6 +217,8 @@ def render(result, name):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input", type=Path, default=Path("outputs/exec-02/az-frontiers.json"))
+    ap.add_argument("--oneshot", type=Path, default=None,
+                    help="24 h replay JSON; also writes az-frontier-<name>-24h.svg")
     ap.add_argument("--output-dir", type=Path, default=Path("outputs/exec-02"))
     args = ap.parse_args()
     result = json.loads(args.input.read_text())
@@ -189,6 +226,12 @@ def main():
     for name in RF_LABELS:
         dest = args.output_dir / f"az-frontier-{name}.svg"
         dest.write_text(render(result, name))
+        print(dest)
+    if args.oneshot is not None:
+        oneshot = json.loads(args.oneshot.read_text())
+        name = oneshot["frontier"]
+        dest = args.output_dir / f"az-frontier-{name}-24h.svg"
+        dest.write_text(render(result, name, oneshot))
         print(dest)
 
 

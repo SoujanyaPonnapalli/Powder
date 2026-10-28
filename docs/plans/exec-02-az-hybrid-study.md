@@ -96,3 +96,26 @@ all-certified placement. MC error bars derive from the candidate intervals,
 not from independent physical deployments. The RF-count table on the
 free-choice figure shows actual selections at every budget, including a
 9,000 RF 5 / 1,000 RF 7 point in both price panels.
+
+## 24-hour one-shot overlay
+
+`outputs/exec-02/az-frontier-choice-24h.png` overlays the free-choice figure
+with 10 simulated 24 h days of every ILP deployment (frontier points and the
+target-qualified point), plotted at the deployment's price. A day's value is
+the RSM-weighted mean of each placement group's 24 h Rust MC availability; △ at
+the top marks a day with no RSM downtime. Groups use disjoint machines, so
+groups are simulated separately, but AZ/region outages are drawn once per day
+and injected into every group so they hit the fleet together (none occurred in
+these 10 days; ~0.27 % of days see one). A machine set uses the same seed on a
+given day in every deployment, so neighbouring deployments share most draws.
+
+Most days sit above the 30-day line: mean unavailability grows with horizon
+(an RF 3 group: 1.5e-5 at 24 h, 2.5e-5 at 7 d, 4.9e-5 at 30 d), and 85 % of
+group-days have no downtime, so a single day is optimistic and noisy.
+
+```bash
+python3 scripts/experiment_az_24h_oneshot.py --trials 10
+python3 scripts/render_az_frontiers.py --oneshot outputs/exec-02/az-24h-oneshot.json
+rsvg-convert --zoom 1.5 outputs/exec-02/az-frontier-choice-24h.svg \
+  -o outputs/exec-02/az-frontier-choice-24h.png
+```
