@@ -44,21 +44,41 @@ def usable(point):
     return point.get("status") == "0" and 0 <= point.get("mean_availability", -1) < 1
 
 
-def oneshot_marks(rows, x, y, top):
-    """Each simulated day of each deployment, at that deployment's price."""
+def oneshot_marks(rows, x, y, top, ymax):
+    """Each simulated day of each deployment, at that deployment's price.
+
+    Days above the axis (including days with no downtime) are pinned at the
+    top. With many days the dots are faint and jittered by up to ±0.6 $/h so
+    their density shows; a bar marks the mean of the days.
+    """
     parts = []
     for row in rows:
-        xx = x(row["cost_per_hour"])
-        for trial, a in enumerate(row["oneshot_availability"]):
-            if a >= 1:
-                detail = f'24 h day {trial} · ${row["cost_per_hour"]:.3f}/h · no RSM downtime'
+        days = row["oneshot_availability"]
+        many = len(days) > 50
+        cx = x(row["cost_per_hour"])
+        spread = (x(row["cost_per_hour"] + .6) - cx) if many else 0
+        for trial, a in enumerate(days):
+            xx = cx + spread * (((trial * 0.6180339887) % 1) * 2 - 1)
+            if a >= 1 or nines(a) > ymax:
+                detail = f'24 h day {trial} · ${row["cost_per_hour"]:.3f}/h · ' + (
+                    "no RSM downtime" if a >= 1 else f"{nines(a):.3f} nines (above axis)")
                 mark = (f'<path d="M{xx:.2f},{top + 2:.2f}L{xx + 4:.2f},{top + 9:.2f}H{xx - 4:.2f}Z" '
-                        f'fill="none" stroke="{BLUE}" stroke-width="1.2"/>')
+                        f'fill="none" stroke="{BLUE}" stroke-width="1.2"/>') if not many else (
+                        f'<circle cx="{xx:.2f}" cy="{top + 5:.2f}" r="2" fill="{BLUE}" fill-opacity=".12"/>')
             else:
                 detail = f'24 h day {trial} · ${row["cost_per_hour"]:.3f}/h · {nines(a):.3f} nines'
-                mark = (f'<circle cx="{xx:.2f}" cy="{y(a):.2f}" r="3" fill="{BLUE}" fill-opacity=".15" '
+                mark = (f'<circle cx="{xx:.2f}" cy="{y(a):.2f}" r="2" fill="{BLUE}" fill-opacity=".12"/>'
+                        if many else
+                        f'<circle cx="{xx:.2f}" cy="{y(a):.2f}" r="3" fill="{BLUE}" fill-opacity=".15" '
                         f'stroke="{BLUE}" stroke-width="1.2"/>')
-            parts.append(f'<g><title>{escape(detail)}</title>{mark}</g>')
+            parts.append(f'<g><title>{escape(detail)}</title>{mark}</g>' if not many else mark)
+        if many:
+            mean = sum(days) / len(days)
+            if mean < 1 and nines(mean) <= ymax:
+                detail = (f'Mean of {len(days)} 24 h days · ${row["cost_per_hour"]:.3f}/h · '
+                          f'{nines(mean):.3f} nines')
+                parts.append(f'<g><title>{escape(detail)}</title><path d="M{cx - 9:.2f},{y(mean):.2f}H{cx + 9:.2f}" '
+                             f'stroke="{INK}" stroke-width="2.5"/></g>')
     return parts
 
 
@@ -84,7 +104,7 @@ def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, t
         parts.append(label(right - 3, yy - 6, "4.5-nines target", 11, anchor="end"))
     parts.append(label(left, top - 17, "Mean RSM availability (nines)", 11))
     if oneshot:
-        parts.extend(oneshot_marks(oneshot, x, y, top))
+        parts.extend(oneshot_marks(oneshot, x, y, top, ymax))
     points = [p for p in data.get("points", []) if usable(p)]
     for i in range(1, len(points)):
         p, q = points[i-1], points[i]
@@ -150,8 +170,9 @@ def render(result, name, oneshot=None):
     if oneshot is not None:
         if oneshot["scenario"] != result["scenario"] or oneshot["frontier"] != name:
             raise ValueError("one-shot replays belong to a different figure")
-        nines_values += [nines(a) for rows in oneshot["arms"].values() for row in rows
-                         for a in row["oneshot_availability"] if a < 1]
+        days = sorted(nines(a) for rows in oneshot["arms"].values() for row in rows
+                      for a in row["oneshot_availability"] if a < 1)
+        nines_values += days[:max(1, len(days) * 99 // 100)]  # top 1% of days pin to the axis
     xstep = 5 if max(costs) - min(costs) < 35 else 10
     xmin = xstep * math.floor((min(costs) - .5) / xstep)
     xmax = xstep * math.ceil((max(costs) + .5) / xstep)
@@ -163,6 +184,10 @@ def render(result, name, oneshot=None):
     height = (865 if name == "choice" else 685) + extra
     subtitle = ("MC ≥ 100,000 runs/candidate; dashed ILP segments contain uncertified RSMs"
                 if oneshot is None else
+                f"Line: 30-day MC mean · dots: {oneshot['trials']} simulated {oneshot['horizon_h']:g} h days of each "
+                "ILP deployment, ±0.6 $/h jitter (RSM-weighted; top edge = above axis or no downtime) · "
+                "black bar: mean of days"
+                if oneshot["trials"] > 50 else
                 f"Line: 30-day MC mean · dots: {oneshot['trials']} simulated {oneshot['horizon_h']:g} h days of each "
                 "ILP deployment (RSM-weighted one-shot availability; △ at top = no downtime)")
     header = [

@@ -100,21 +100,35 @@ free-choice figure shows actual selections at every budget, including a
 ## 24-hour one-shot overlay
 
 `outputs/exec-02/az-frontier-choice-24h.png` overlays the free-choice figure
-with 10 simulated 24 h days of every ILP deployment (frontier points and the
-target-qualified point), plotted at the deployment's price. A day's value is
-the RSM-weighted mean of each placement group's 24 h Rust MC availability; △ at
-the top marks a day with no RSM downtime. Groups use disjoint machines, so
-groups are simulated separately, but AZ/region outages are drawn once per day
-and injected into every group so they hit the fleet together (none occurred in
-these 10 days; ~0.27 % of days see one). A machine set uses the same seed on a
-given day in every deployment, so neighbouring deployments share most draws.
+with 1000 simulated 24 h days of every ILP deployment (frontier points and the
+target-qualified point), plotted at the deployment's price (±0.6 $/h jitter);
+a black bar is the mean of the days. A day's value is the RSM-weighted mean of
+each placement group's 24 h Rust MC availability. Groups use disjoint machines
+and are simulated separately; AZ/region outages are drawn once per day and
+injected into every group (4 of 1000 days had one). A machine set uses the same
+seed on a given day in every deployment, so neighbouring deployments share most
+draws. Injected outages use constant delays and repeat if 2t + d < 24 h
+(flagged `may_repeat`; none in this run).
 
-Most days sit above the 30-day line: mean unavailability grows with horizon
-(an RF 3 group: 1.5e-5 at 24 h, 2.5e-5 at 7 d, 4.9e-5 at 30 d), and 85 % of
-group-days have no downtime, so a single day is optimistic and noisy.
+Why the days sit above the 30-day line (2026-10-28 diagnosis):
+
+1. **Skew.** Downtime is concentrated in rare bad days, so the median day is
+   well above the mean: for all-RF 3, the median day is 5.2 nines, the mean of
+   days 4.7, and the worst 1 % of days hold ~40 % of downtime (4 % for RF 7).
+2. **The engine is not stationary when AZ/region outages are on.** Without
+   network outages, one RF 3 group's mean unavailability is flat with horizon
+   (1.4e-5 at 1, 7 and 30 days). With them it rises: 1.5e-5 (1 d), 2.1e-5
+   (7 d), 4.8e-5 (30 d). With a single AZ process at 1/(10 d) it rises
+   100-fold (1.5e-4 → 1.6e-2); with replacement disabled only 3-fold. An
+   isolated outage at day 15 costs a bounded ~0.76 h for RF 3, so it is
+   damage from *repeated* outages that compounds through the replacement path
+   (replacements copy the failed node's region/AZ config). It is unresolved
+   whether this is a bug or intended; until it is, the 30-day frontier and its
+   certification are partly an artifact of horizon length, and 24 h days from a
+   clean start are optimistic about network events.
 
 ```bash
-python3 scripts/experiment_az_24h_oneshot.py --trials 10
+python3 scripts/experiment_az_24h_oneshot.py --trials 1000
 python3 scripts/render_az_frontiers.py --oneshot outputs/exec-02/az-24h-oneshot.json
 rsvg-convert --zoom 1.5 outputs/exec-02/az-frontier-choice-24h.svg \
   -o outputs/exec-02/az-frontier-choice-24h.png

@@ -80,7 +80,7 @@ def main():
                     default=Path("data/fault_library/catalogue/machines-n2000-seed0-az-v2.json.gz"))
     ap.add_argument("--output", type=Path, default=Path("outputs/exec-02/az-24h-oneshot.json"))
     ap.add_argument("--frontier", default="choice")
-    ap.add_argument("--trials", type=int, default=10)
+    ap.add_argument("--trials", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     if args.trials < 1:
@@ -113,16 +113,29 @@ def main():
 
     rng = np.random.default_rng(_seed("shared", args.seed))
     trials = [shared_events(model, rng) for _ in range(args.trials)]
+    quiet = [t for t, events in enumerate(trials) if not events]
     group_cache = {}
 
+    def simulate(ids):
+        """All days of one machine set: quiet days in one batch, outage days one by one."""
+        days = {}
+        runs = run_monte_carlo(cluster(ids), strategy, protocol, num_simulations=len(quiet),
+                               max_time=HORIZON_S, stop_on_data_loss=False,
+                               seed=_seed(args.seed, "quiet", ",".join(ids)), network_config=None)
+        days.update(zip(quiet, map(float, runs.availability_samples)))
+        for t, events in enumerate(trials):
+            if events:
+                runs = run_monte_carlo(cluster(ids), strategy, protocol, num_simulations=1,
+                                       max_time=HORIZON_S, stop_on_data_loss=False,
+                                       seed=_seed(args.seed, t, ",".join(ids)),
+                                       network_config=network_for(events, model))
+                days[t] = float(runs.availability_samples[0])
+        return days
+
     def day(ids, trial):
-        key = (ids, trial)
-        if key not in group_cache:
-            runs = run_monte_carlo(cluster(ids), strategy, protocol, num_simulations=1, max_time=HORIZON_S,
-                                   stop_on_data_loss=False, seed=_seed(args.seed, trial, ",".join(ids)),
-                                   network_config=network_for(trials[trial], model))
-            group_cache[key] = float(runs.availability_samples[0])
-        return group_cache[key]
+        if ids not in group_cache:
+            group_cache[ids] = simulate(ids)
+        return group_cache[ids][trial]
 
     out = {"scenario": SCENARIO, "catalogue_digest": frontiers["catalogue_digest"],
            "frontier": args.frontier, "horizon_h": HORIZON_S / 3600, "trials": args.trials,
@@ -149,9 +162,13 @@ def main():
                          "mc_mean_availability": point["mean_availability"],
                          "rf_counts": point["rf_counts"], "groups": len(groups),
                          "oneshot_availability": samples})
-            shown = ", ".join("inf" if a >= 1 else f"{-math.log10(1 - a):.2f}" for a in samples)
+            u = 1 - np.asarray(samples)
+            nines = lambda x: math.inf if x <= 0 else -math.log10(x)
             print(f"{price} {kind}{'' if index is None else index} ${point['cost_per_hour']:.2f}/h "
-                  f"{len(groups)} groups: nines [{shown}]", flush=True)
+                  f"{len(groups)} groups: 30-day MC {nines(1 - point['mean_availability']):.2f} nines; "
+                  f"24 h mean {nines(u.mean()):.2f}, median day {nines(float(np.median(u))):.2f}, "
+                  f"worst 1% of days hold {np.sort(u)[::-1][:max(1, len(u) // 100)].sum() / max(u.sum(), 1e-300):.0%} "
+                  f"of downtime", flush=True)
         out["arms"][price] = rows
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(out, indent=2, sort_keys=True) + "\n")
