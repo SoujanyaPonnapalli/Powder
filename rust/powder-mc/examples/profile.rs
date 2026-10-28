@@ -42,6 +42,7 @@ static GLOBAL: Counting = Counting;
 fn config(failure: Distribution, recovery: Distribution, data_loss: Distribution) -> NodeConfigRef {
     Rc::new(NodeConfig {
         region: "us-east".to_string(),
+        az: None,
         cost_per_hour: 0.192,
         failure_dist: failure,
         recovery_dist: recovery,

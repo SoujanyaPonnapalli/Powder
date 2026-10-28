@@ -156,6 +156,12 @@ def validate_entry(e: dict[str, Any]) -> list[str]:
         if e.get("global") is not None:
             errs += check_triple(e["global"].get("rate_per_hour"), f"{eid}.global.rate_per_hour")
             errs += _dist_or_triple(e["global"].get("duration", e.get("duration")), f"{eid}.global.duration")
+        az = e.get("az_outages")
+        if az is not None:
+            if not isinstance(az.get("zones_per_region"), int) or az["zones_per_region"] <= 0:
+                errs.append(f"{eid}.az_outages.zones_per_region: expected positive integer")
+            errs += check_triple(az.get("rate_per_hour"), f"{eid}.az_outages.rate_per_hour")
+            errs += _dist_or_triple(az.get("duration"), f"{eid}.az_outages.duration")
 
     elif kind == "price":
         if e.get("price_kind") not in PRICE_KINDS:

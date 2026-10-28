@@ -192,12 +192,19 @@ impl Simulator {
         }
 
         if let Some(config) = &self.network_config {
-            let global = config.global.as_ref().map(|g| g.0);
-            for region in config.regions.clone() {
-                self.schedule_network_outage(region);
+            let (regions, azs, global) = (
+                config.regions.clone(),
+                config.azs.clone(),
+                config.global.as_ref().map(|g| g.0),
+            );
+            for region in regions {
+                self.schedule_network_outage(region, false);
+            }
+            for az in azs {
+                self.schedule_network_outage(az, true);
             }
             if let Some(g) = global {
-                self.schedule_network_outage(g);
+                self.schedule_network_outage(g, false);
             }
         }
 
@@ -276,15 +283,18 @@ impl Simulator {
         }
     }
 
-    /// Schedule the next outage for a region.
-    ///
-    /// Each region keeps its own independent outage chain, so several
-    /// regions can be down at once.
-    fn schedule_network_outage(&mut self, region: Sym) {
+    /// Schedule the next outage in a region, AZ, or the global region process.
+    /// Each process keeps its own independent outage chain.
+    fn schedule_network_outage(&mut self, domain: Sym, is_az: bool) {
         let Some(config) = &self.network_config else {
             return;
         };
-        let Some(dist) = config.outage_for(region) else {
+        let dist = if is_az {
+            config.outage_for_az(domain)
+        } else {
+            config.outage_for(domain)
+        };
+        let Some(dist) = dist else {
             return;
         };
 
@@ -293,8 +303,12 @@ impl Simulator {
         self.event_queue.push(Event::with_meta(
             current_time + outage_delay,
             EventType::NetworkOutageStart,
-            region,
-            EventMeta::Region(region),
+            domain,
+            if is_az {
+                EventMeta::Az(domain)
+            } else {
+                EventMeta::Region(domain)
+            },
         ));
     }
 
@@ -996,18 +1010,28 @@ impl Simulator {
         self.start_sync(node_index, None);
     }
 
-    /// Mark one region down and stop the syncs that involve its nodes.
-    fn region_goes_down(&mut self, region: Sym) {
-        self.cluster.network.add_outage(region);
+    /// Mark one region or AZ down and stop the syncs that involve its nodes.
+    fn domain_goes_down(&mut self, domain: Sym, is_az: bool) {
+        if is_az {
+            self.cluster.network.add_az_outage(domain);
+        } else {
+            self.cluster.network.add_outage(domain);
+        }
 
-        // Clear syncs for nodes in the affected region, and deal with
+        // Clear syncs for nodes in the affected domain, and deal with
         // downstream nodes that were pulling from them.
         let mut affected = std::mem::take(&mut self.scratch_region_syms);
         affected.clear();
         affected.extend(
             self.cluster
                 .active_and_standby()
-                .filter(|n| n.region == region)
+                .filter(|n| {
+                    if is_az {
+                        n.az == Some(domain)
+                    } else {
+                        n.region == domain
+                    }
+                })
                 .map(|n| n.node_id),
         );
 
@@ -1023,10 +1047,19 @@ impl Simulator {
         self.scratch_region_syms = affected;
     }
 
-    /// End one outage of a region; restart syncs once it is reachable again.
-    fn region_comes_up(&mut self, region: Sym) {
-        self.cluster.network.remove_outage(region);
-        if self.cluster.network.is_region_down(region) {
+    /// End one outage of a region or AZ; restart syncs once it is reachable again.
+    fn domain_comes_up(&mut self, domain: Sym, is_az: bool) {
+        if is_az {
+            self.cluster.network.remove_az_outage(domain);
+        } else {
+            self.cluster.network.remove_outage(domain);
+        }
+        let still_down = if is_az {
+            self.cluster.network.is_az_down(domain)
+        } else {
+            self.cluster.network.is_region_down(domain)
+        };
+        if still_down {
             return; // an overlapping outage still holds it down
         }
 
@@ -1040,9 +1073,12 @@ impl Simulator {
                 .enumerate()
                 .filter(|(_, n)| {
                     n.group != crate::sim::node::Group::Provisioning
-                        && n.region == region
-                        && n.is_available
-                        && n.has_data
+                        && (if is_az {
+                            n.az == Some(domain)
+                        } else {
+                            n.region == domain
+                        })
+                        && self.cluster.node_effectively_available(n)
                         && !n.is_up_to_date(commit_index)
                         && n.sync.is_none()
                 })
@@ -1064,32 +1100,53 @@ impl Simulator {
         }
     }
 
-    /// Apply the start of a region (or global) outage.
+    /// Apply the start of a region, AZ, or global outage.
     fn apply_network_outage_start(&mut self, event: &Event) {
-        let region = event.metadata.region().unwrap_or(event.target_id);
-        for r in self.outage_targets(region) {
-            self.region_goes_down(r);
+        let is_az = matches!(&event.metadata, EventMeta::Az(_));
+        let domain = match &event.metadata {
+            EventMeta::Region(sym) | EventMeta::Az(sym) => *sym,
+            _ => event.target_id,
+        };
+        if is_az {
+            self.domain_goes_down(domain, true);
+        } else {
+            for r in self.outage_targets(domain) {
+                self.domain_goes_down(r, false);
+            }
         }
 
         if let Some(config) = &self.network_config {
-            let duration = config.duration_for(region).sample(&mut self.rng);
+            let duration_dist = if is_az {
+                config.duration_for_az(domain)
+            } else {
+                config.duration_for(domain)
+            };
+            let duration = duration_dist.sample(&mut self.rng);
             let current_time = self.cluster.current_time;
             self.event_queue.push(Event::with_meta(
                 current_time + duration,
                 EventType::NetworkOutageEnd,
-                region,
-                EventMeta::Region(region),
+                domain,
+                event.metadata.clone(),
             ));
         }
     }
 
-    /// Apply the end of a region (or global) outage.
+    /// Apply the end of a region, AZ, or global outage.
     fn apply_network_outage_end(&mut self, event: &Event) {
-        let region = event.metadata.region().unwrap_or(event.target_id);
-        for r in self.outage_targets(region) {
-            self.region_comes_up(r);
+        let is_az = matches!(&event.metadata, EventMeta::Az(_));
+        let domain = match &event.metadata {
+            EventMeta::Region(sym) | EventMeta::Az(sym) => *sym,
+            _ => event.target_id,
+        };
+        if is_az {
+            self.domain_comes_up(domain, true);
+        } else {
+            for r in self.outage_targets(domain) {
+                self.domain_comes_up(r, false);
+            }
         }
-        self.schedule_network_outage(region);
+        self.schedule_network_outage(domain, is_az);
     }
 
     // -- actions ---------------------------------------------------------

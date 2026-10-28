@@ -17,6 +17,8 @@ from powder.placement_optimizer import (
     BlindPlacementConfig,
     generate_type_count_candidates,
     generate_candidates,
+    no_region_majority,
+    no_shared_az,
     rescore_type_count_solution,
     solve_blind_type_count_placement,
     solve_candidate_ilp,
@@ -95,6 +97,59 @@ def test_generate_candidates_scores_unique_valid_placements():
     assert {c.replica_count for c in candidates} <= {3, 5}
     assert all(len(set(c.machine_ids)) == c.replica_count for c in candidates)
     assert all(0.0 <= c.availability <= 1.0 for c in candidates)
+
+
+def test_region_majority_filter_rejects_before_markov_scoring():
+    machines = _machines(20)
+    by_id = {m.machine_id: m for m in machines}
+    scored = []
+
+    def scorer(nodes):
+        ids = tuple(m.machine_id for m in nodes)
+        assert no_region_majority(ids, by_id)
+        scored.append(ids)
+        return CandidateScore(availability=.99, cost_per_hour=len(nodes))
+
+    candidates = generate_candidates(machines, scorer, CandidateGenerationConfig(
+        replica_counts=(3, 5, 7), random_samples_per_size=20,
+        greedy_starts_per_size=2, max_candidates=200,
+        reject_region_majority=True, rng_seed=1,
+    ))
+    assert candidates and scored
+    assert {c.replica_count for c in candidates} == {3, 5, 7}
+    for c in candidates:
+        assert no_region_majority(c.machine_ids, by_id)
+        assert max(sum(by_id[mid].node_config.region == region for mid in c.machine_ids)
+                   for region in {m.node_config.region for m in machines}) <= c.replica_count // 2
+
+
+def test_az_filter_discards_collocated_replicas_before_oracle():
+    from dataclasses import replace
+
+    machines = [Machine(f"{r}-{i}", replace(_node_config(r), az=f"{r}:az{i % 3 + 1}"))
+                for r in ("a", "b", "c", "d") for i in range(6)]
+    by_id = {m.machine_id: m for m in machines}
+
+    def scorer(nodes):
+        ids = [m.machine_id for m in nodes]
+        assert no_region_majority(ids, by_id) and no_shared_az(ids, by_id)
+        return CandidateScore(availability=.999, cost_per_hour=len(nodes))
+
+    candidates = generate_candidates(machines, scorer, CandidateGenerationConfig(
+        replica_counts=(3, 5, 7), random_samples_per_size=40, greedy_starts_per_size=2,
+        reject_region_majority=True, reject_shared_az=True, rng_seed=2))
+    assert candidates
+    assert all(no_region_majority(c.machine_ids, by_id) and no_shared_az(c.machine_ids, by_id)
+               for c in candidates)
+
+
+def test_region_majority_filter_can_leave_no_candidates():
+    machines = [Machine(f"m{i}", _node_config("same")) for i in range(8)]
+    candidates = generate_candidates(machines,
+        lambda nodes: (_ for _ in ()).throw(AssertionError("oracle called")),
+        CandidateGenerationConfig(replica_counts=(3,), random_samples_per_size=8,
+                                  greedy_starts_per_size=2, reject_region_majority=True))
+    assert candidates == []
 
 
 def test_candidate_ilp_respects_machine_capacity():

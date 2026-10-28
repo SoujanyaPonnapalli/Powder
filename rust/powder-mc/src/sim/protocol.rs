@@ -593,10 +593,12 @@ impl Protocol for RaftLikeProtocol {
                         event.target_id == leader_id
                     }
                     EventType::NetworkOutageStart => match cluster.get_node(leader_id) {
-                        Some(leader) => {
-                            let region = event.metadata.region().unwrap_or(event.target_id);
-                            leader.region == region
-                        }
+                        Some(leader) => match &event.metadata {
+                            super::events::EventMeta::Az(az) => leader.az == Some(*az),
+                            _ => {
+                                leader.region == event.metadata.region().unwrap_or(event.target_id)
+                            },
+                        },
                         None => false,
                     },
                     _ => false,
@@ -632,6 +634,7 @@ mod tests {
     fn config_in(region: &str) -> NodeConfigRef {
         Rc::new(NodeConfig {
             region: region.to_string(),
+            az: None,
             cost_per_hour: 1.0,
             failure_dist: Distribution::constant(1000.0),
             recovery_dist: Distribution::constant(10.0),

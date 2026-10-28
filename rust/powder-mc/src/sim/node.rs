@@ -18,6 +18,8 @@ use super::ids::Sym;
 pub struct NodeConfig {
     /// Geographic region where the node is located.
     pub region: String,
+    /// Optional availability zone within the region.
+    pub az: Option<String>,
     /// Dollar cost of running this node per hour.
     pub cost_per_hour: f64,
     /// Time (seconds) until transient unavailability.
@@ -126,6 +128,8 @@ pub struct NodeState {
     /// Interned region name, cached from `config.region` so availability
     /// checks never touch a string.
     pub region: Sym,
+    /// Interned AZ name, when the node has one.
+    pub az: Option<Sym>,
     /// Shared static configuration.
     pub config: NodeConfigRef,
     /// Membership set this node belongs to.
@@ -148,6 +152,7 @@ impl NodeState {
         NodeState {
             node_id,
             region,
+            az: None,
             config,
             group: Group::Active,
             is_available: true,
@@ -184,6 +189,7 @@ mod tests {
     fn config() -> NodeConfigRef {
         Rc::new(NodeConfig {
             region: "us-east".to_string(),
+            az: None,
             cost_per_hour: 1.0,
             failure_dist: Distribution::constant(100.0),
             recovery_dist: Distribution::constant(10.0),

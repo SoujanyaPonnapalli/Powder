@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 import random
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from typing import Callable, Iterable, Literal, Mapping, Sequence
@@ -117,6 +117,9 @@ class CandidateGenerationConfig:
     candidate generation; it is not a correlated-failure Markov model.
     ``diversity_jaccard_threshold`` limits how similar selected machine sets
     can be when trimming a large generated candidate pool.
+    ``reject_region_majority`` rejects candidates before oracle scoring if
+    a region contains a quorum of their replicas. ``reject_shared_az`` also
+    requires distinct AZs for every replica in a candidate.
     """
 
     replica_counts: tuple[int, ...] = (3, 5, 7)
@@ -128,6 +131,8 @@ class CandidateGenerationConfig:
     spread_weight: float = 0.05
     cost_weight: float = 0.0
     diversity_jaccard_threshold: float = 0.7
+    reject_region_majority: bool = False
+    reject_shared_az: bool = False
 
 
 @dataclass(frozen=True)
@@ -320,6 +325,20 @@ def markov_type_count_scorer(
     return _score
 
 
+def no_region_majority(machine_ids: Sequence[str], machines: Mapping[str, Machine]) -> bool:
+    """A single region must not hold a quorum of any RSM's replicas."""
+    if not machine_ids:
+        return False
+    counts = Counter(machines[mid].node_config.region for mid in machine_ids)
+    return max(counts.values()) <= len(machine_ids) // 2
+
+
+def no_shared_az(machine_ids: Sequence[str], machines: Mapping[str, Machine]) -> bool:
+    """Replicas of one RSM must occupy distinct logical AZs."""
+    azs = [machines[mid].node_config.az for mid in machine_ids]
+    return all(az is not None for az in azs) and len(set(azs)) == len(azs)
+
+
 def generate_candidates(
     machines: Sequence[Machine],
     scorer: CandidateScorer,
@@ -353,6 +372,10 @@ def generate_candidates(
                 current = mutated
                 current_score = mutated_score
 
+    if config.reject_region_majority:
+        raw = {ids for ids in raw if no_region_majority(ids, machine_by_id)}
+    if config.reject_shared_az:
+        raw = {ids for ids in raw if no_shared_az(ids, machine_by_id)}
     scored = _score_raw_candidates(raw, machine_by_id, scorer)
     scored = _bucketed_pareto_filter(scored)
     return _diversity_select(scored, config.max_candidates, config.diversity_jaccard_threshold)

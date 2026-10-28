@@ -60,7 +60,8 @@ class ClusterState:
         # Fast path: skip the set lookup when there are no active outages (common case)
         if not self.network.active_outages:
             return True
-        return not self.network.is_region_down(node.config.region)
+        return (not self.network.is_region_down(node.config.region)
+                and (node.config.az is None or not self.network.is_region_down(node.config.az)))
 
     def num_up_to_date(self) -> int:
         """Count nodes that are fully synced to commit_index.

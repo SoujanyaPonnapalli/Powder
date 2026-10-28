@@ -319,6 +319,22 @@ def test_region_outage_profile():
     assert pess["regions"]["us-east-1"]["rate_per_hour"]["central"] >= ro["regions"]["us-east-1"]["rate_per_hour"]["central"]
 
 
+def test_az_aware_region_profile_preserves_original_and_cites_verified_events():
+    from powder.faults.convert import scenario_network_config
+
+    profile = LIB.get("region_outage/aws-us-az-aware@v2", "region_outage")
+    assert "global" not in profile and len(profile["wan_stress"]["incidents"]) == 2
+    assert profile["az_outages"]["zones_per_region"] == 3
+    assert profile["az_outages"]["n_incidents"] == 2
+    for ref in profile["derived_from"]:
+        assert LIB.measurement(ref)["status"] in ("V", "S")
+    network = scenario_network_config(LIB, "scenario/canonical-central-az-aware@v2").as_network_config(engine=True)
+    assert len(network.azs) == 12 and len(network.per_az) == 12
+    assert network.global_outage_dist is None
+    assert network.per_az["us-east-1:az1"][0].mean > 0
+    assert LIB.get("region_outage/aws-us-from-azure")["global"]["n_incidents"] == 2
+
+
 def test_region_incident_citations_are_confirmed():
     ro = LIB.get("region_outage/aws-us-from-azure", "region_outage")
     for ref in ro["derived_from"]:
@@ -887,6 +903,22 @@ def test_catalogue_unique_traceable_and_markov():
     lam_t = sum(v for c, v in m["markov_rate_per_hour"].items() if c in ("hw_reboot", "sw", "pause")) / 3600
     assert math.isclose(cfg.failure_dist.rate, lam_t, rel_tol=1e-9)
     assert C.generate(LIB, n=50, seed=3)["machines"][0]["causes"] == C.generate(LIB, n=50, seed=3)["machines"][0]["causes"]
+
+
+def test_az_aware_catalogue_bindings_are_seeded_and_balanced():
+    from collections import Counter
+    from powder.faults import catalogue as C
+    cat = C.generate(LIB, n=120, seed=13, spot_fraction=0.0, az_aware=True)
+    assert C.validate(LIB, cat) == []
+    assert cat["az_aware"] is True
+    assert all(m["az"].startswith(m["region"] + ":az") for m in cat["machines"])
+    for region in C.US_REGIONS:
+        counts = Counter(m["az"] for m in cat["machines"] if m["region"] == region)
+        assert max(counts.values()) - min(counts.values()) <= 1
+    assert [m["az"] for m in cat["machines"]] == [m["az"] for m in
+            C.generate(LIB, n=120, seed=13, spot_fraction=0.0, az_aware=True)["machines"]]
+    assert C.node_config(cat["machines"][0]).az == cat["machines"][0]["az"]
+    assert "az_aware" not in C.generate(LIB, n=12, seed=13)
 
 
 def test_simulator_time_varying_hazard_and_respawn():

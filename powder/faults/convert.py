@@ -183,6 +183,9 @@ class RegionOutageModel:
     source_regions: dict[str, str]
     global_rate_per_second: float = 0.0
     global_duration: Distribution | None = None
+    az_rate_per_second: float = 0.0
+    az_duration: Distribution | None = None
+    zones_per_region: int = 0
 
     def as_network_config(self, rule: str = "exact", engine: bool = False) -> NetworkConfig:
         """NetworkConfig for both engines.
@@ -197,6 +200,8 @@ class RegionOutageModel:
         rates = list(self.rate_per_second.values())
         if rule == "exact":
             base = max(rates) if rates else 0.0
+            azs = [f"{region}:az{i}" for region in sorted(self.rate_per_second)
+                   for i in range(1, self.zones_per_region + 1)]
             return NetworkConfig(
                 outage_dist=Exponential(base) if base > 0 else NEVER,
                 outage_duration_dist=dur,
@@ -205,6 +210,10 @@ class RegionOutageModel:
                             for r, v in sorted(self.rate_per_second.items())},
                 global_outage_dist=Exponential(self.global_rate_per_second) if self.global_rate_per_second > 0 else None,
                 global_duration_dist=fix(self.global_duration) if self.global_duration is not None else None,
+                azs=azs,
+                per_az={az: (Exponential(self.az_rate_per_second) if self.az_rate_per_second > 0 else NEVER,
+                             fix(self.az_duration) if self.az_duration is not None else None)
+                        for az in azs},
             )
         rate = (max(rates) if rule == "max" else sum(rates) / len(rates)) + self.global_rate_per_second
         return NetworkConfig(
@@ -231,4 +240,8 @@ def scenario_network_config(lib: FaultLibrary, scenario_id: str, level: str | No
     g = ro.get("global")
     g_rate = float(pick(g["rate_per_hour"], lvl, "rate")) / SECONDS_PER_HOUR if g else 0.0
     g_dur = from_spec(pick(g.get("duration", ro["duration"]), lvl, "duration")) if g else None
-    return RegionOutageModel(rates, dur, src, g_rate, g_dur)
+    az = ro.get("az_outages")
+    az_rate = float(pick(az["rate_per_hour"], lvl, "rate")) / SECONDS_PER_HOUR if az else 0.0
+    az_dur = from_spec(pick(az["duration"], lvl, "duration")) if az else None
+    return RegionOutageModel(rates, dur, src, g_rate, g_dur, az_rate, az_dur,
+                             int(az["zones_per_region"]) if az else 0)

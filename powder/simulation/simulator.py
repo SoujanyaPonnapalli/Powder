@@ -115,6 +115,8 @@ class Simulator:
         if self.network_config:
             for region in self.network_config.regions:
                 self._schedule_network_outage(region)
+            for az in self.network_config.azs:
+                self._schedule_network_outage(az)
             if self.network_config.global_outage_dist is not None:
                 self._schedule_network_outage(GLOBAL_REGION)
 
@@ -173,6 +175,8 @@ class Simulator:
             outage_delay = self.network_config.global_outage_dist.sample(self.rng)
         elif region in self.network_config.regions:
             outage_delay = self.network_config.outage_for(region).sample(self.rng)
+        elif region in self.network_config.azs:
+            outage_delay = self.network_config.az_outage_for(region).sample(self.rng)
         else:
             return
 
@@ -804,7 +808,7 @@ class Simulator:
         """Mark a region down and stop syncs that involve its nodes."""
         self.cluster.network.add_outage(region)
         for node in self.cluster._all_nodes:
-            if node.config.region == region:
+            if node.config.region == region or node.config.az == region:
                 self.event_queue.cancel_events_for(node.node_id, EventType.NODE_SYNC_COMPLETE)
                 node.sync = None
                 # This node may have been a donor
@@ -817,7 +821,7 @@ class Simulator:
             return  # another (overlapping) outage still holds it down
         for node in self.cluster._all_nodes:
             if (
-                node.config.region == region
+                (node.config.region == region or node.config.az == region)
                 and node.is_available
                 and node.has_data
                 and not node.is_up_to_date(self.cluster.commit_index)

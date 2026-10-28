@@ -20,6 +20,7 @@ from powder.faults import FaultLibrary, catalogue  # noqa: E402
 from powder.faults.ilp import catalogue_machines  # noqa: E402
 from powder.placement_optimizer import (  # noqa: E402
     CandidateGenerationConfig, PlacementCandidate, PlacementSolverConfig, generate_candidates,
+    no_region_majority, no_shared_az,
     markov_candidate_scorer, solve_candidate_ilp,
 )
 from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProtocol  # noqa: E402
@@ -73,13 +74,23 @@ def baseline(machines, num_rsms: int, replicas: int, capacity: int, *, cheap: bo
     for selected_regions in spread:
         chosen = []
         for r in selected_regions:
+            used_azs = {by_id[mid].node_config.az for mid in chosen if by_id[mid].node_config.az is not None}
+            def admissible(m):
+                return (remaining[m.machine_id] and m.machine_id not in chosen
+                        and (m.node_config.az is None or m.node_config.az not in used_azs))
             if balanced_pools is None:
-                available = next((m for m in by_region[r]
-                                  if remaining[m.machine_id] and m.machine_id not in chosen), None)
+                available = next((m for m in by_region[r] if admissible(m)), None)
             else:
-                available = max((m for m in balanced_pools[r]
-                                 if remaining[m.machine_id] and m.machine_id not in chosen),
-                                key=lambda m: remaining[m.machine_id], default=None)
+                eligible = [m for m in balanced_pools[r] if admissible(m)]
+                if eligible and eligible[0].node_config.az is not None:
+                    zone_capacity = Counter()
+                    for m in eligible:
+                        zone_capacity[m.node_config.az] += remaining[m.machine_id]
+                    zone = max(sorted(zone_capacity), key=zone_capacity.get)
+                    eligible = [m for m in eligible if m.node_config.az == zone]
+                available = max(eligible, key=lambda m: remaining[m.machine_id], default=None)
+                if available is None:
+                    available = next((m for m in by_region[r] if admissible(m)), None)
             if available is None:
                 raise ValueError(f"baseline exhausted capacity in {r}")
             remaining[available.machine_id] -= 1
@@ -105,14 +116,16 @@ def candidates_for(machines, scorer, replicas: int, seed: int, samples: int, cap
             replica_counts=(replicas,), random_samples_per_size=samples,
             greedy_starts_per_size=3, local_search_steps=1,
             max_candidates=max(2 * (samples + 10), cap), rng_seed=seed,
-            cost_weight=weight,
+            cost_weight=weight, reject_region_majority=True,
+            reject_shared_az=all(m.node_config.az is not None for m in machines),
         )
         for candidate in generate_candidates(machines, scorer, cfg):
             by_ids[candidate.machine_ids] = candidate
-    regions = {m.machine_id: m.node_config.region for m in machines}
-    required_regions = min(replicas, len(set(regions.values())))
+    by_id = {m.machine_id: m for m in machines}
+    az_aware = all(m.node_config.az is not None for m in machines)
     ranked = [c for c in by_ids.values()
-              if len({regions[mid] for mid in c.machine_ids}) == required_regions]
+              if no_region_majority(c.machine_ids, by_id)
+              and (not az_aware or no_shared_az(c.machine_ids, by_id))]
     if len(ranked) > cap:
         half = cap // 2
         cheapest = sorted(ranked, key=lambda c: (c.cost_per_hour, -c.availability))[:half]

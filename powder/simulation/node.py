@@ -16,6 +16,7 @@ class NodeConfig:
 
     Attributes:
         region: Geographic region where the node is located.
+        az: Optional logical availability-zone identifier within that region.
         cost_per_hour: Dollar cost of running this node per hour.
         failure_dist: Distribution for time (seconds) until transient unavailability.
         recovery_dist: Distribution for time (seconds) to recover from transient failure.
@@ -35,6 +36,7 @@ class NodeConfig:
     log_replay_rate_dist: Distribution
     snapshot_download_time_dist: Distribution
     spawn_dist: Distribution
+    az: str | None = None
 
     def __deepcopy__(self, memo: dict) -> "NodeConfig":
         # NodeConfig is effectively immutable (only distributions and primitives).

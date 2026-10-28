@@ -28,14 +28,16 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--spot-fraction", type=float, default=0.3)
     ap.add_argument("--horizon-days", type=float, default=30.0)
+    ap.add_argument("--az-aware", action="store_true", help="bind machines across three logical AZs per region")
     a = ap.parse_args()
     lib = FaultLibrary.load()
-    cat = C.generate(lib, a.n, a.seed, a.spot_fraction, a.horizon_days * 24)
+    cat = C.generate(lib, a.n, a.seed, a.spot_fraction, a.horizon_days * 24, az_aware=a.az_aware)
     errs = C.validate(lib, cat)
     if errs:
         print("\n".join(errs[:20]), file=sys.stderr)
         return 1
-    path = ROOT / f"data/fault_library/catalogue/machines-n{a.n}-seed{a.seed}.json.gz"
+    suffix = "-az-v2" if a.az_aware else ""
+    path = ROOT / f"data/fault_library/catalogue/machines-n{a.n}-seed{a.seed}{suffix}.json.gz"
     C.write(cat, path)
     ms = cat["machines"]
     yr = lambda c: np.array([m["markov_rate_per_hour"].get(c, 0.0) * 8766 for m in ms])  # noqa: E731

@@ -1,7 +1,7 @@
-//! Region-level network outage model.
+//! Region- and AZ-level network outage model.
 //!
-//! Port of `powder/simulation/network.py`.  While a region's network is down
-//! every node in it counts as unavailable.
+//! Port of `powder/simulation/network.py`, extended with independent AZ
+//! outages. A down region makes all its nodes unavailable, regardless of AZ.
 //!
 //! Python stores active outages in a `set[str]`.  Regions are interned, so
 //! the port uses a bitmap indexed by region symbol plus a running count, which
@@ -25,6 +25,10 @@ pub struct NetworkConfig {
     pub regions: Vec<Sym>,
     /// Per-region overrides: `(region, time-to-outage, optional duration)`.
     pub per_region: Vec<(Sym, Distribution, Option<Distribution>)>,
+    /// Interned AZs that can experience independent outages.
+    pub azs: Vec<Sym>,
+    /// Per-AZ overrides: `(AZ, time-to-outage, optional duration)`.
+    pub per_az: Vec<(Sym, Distribution, Option<Distribution>)>,
     /// Global process: `(pseudo-region symbol, time-to-outage, optional duration)`;
     /// each event takes every region in `regions` down at once.
     pub global: Option<(Sym, Distribution, Option<Distribution>)>,
@@ -53,6 +57,22 @@ impl NetworkConfig {
         }
     }
 
+    /// Time-to-outage distribution for an AZ.
+    pub fn outage_for_az(&self, az: Sym) -> Option<&Distribution> {
+        if let Some((_, d, _)) = self.per_az.iter().find(|(a, _, _)| *a == az) {
+            return Some(d);
+        }
+        self.azs.contains(&az).then_some(&self.outage_dist)
+    }
+
+    /// Duration distribution for an AZ.
+    pub fn duration_for_az(&self, az: Sym) -> &Distribution {
+        match self.per_az.iter().find(|(a, _, _)| *a == az) {
+            Some((_, _, Some(d))) => d,
+            _ => &self.outage_duration_dist,
+        }
+    }
+
     /// Duration distribution for a region (or the global process).
     pub fn duration_for(&self, sym: Sym) -> &Distribution {
         if let Some((g, _, d)) = &self.global {
@@ -73,7 +93,9 @@ pub struct NetworkState {
     /// `down[r]` counts the active (possibly overlapping) outages of region `r`;
     /// the region is down while it is positive.
     down: Vec<u32>,
-    /// Number of regions currently down; lets callers skip the lookup
+    /// `az_down[a]` counts active outages of AZ `a` independently of regions.
+    az_down: Vec<u32>,
+    /// Number of regions and AZs currently down; lets callers skip the lookup
     /// entirely in the common no-outage case.
     active_count: usize,
 }
@@ -90,7 +112,7 @@ impl NetworkState {
         self.active_count != 0
     }
 
-    /// Number of regions currently down.
+    /// Number of regions and AZs currently down.
     #[inline]
     pub fn active_outage_count(&self) -> usize {
         self.active_count
@@ -103,6 +125,12 @@ impl NetworkState {
             Some(&d) => d > 0,
             None => false,
         }
+    }
+
+    /// Whether an AZ has an independent outage (not counting its region).
+    #[inline]
+    pub fn is_az_down(&self, az: Sym) -> bool {
+        self.az_down.get(az as usize).is_some_and(|&d| d > 0)
     }
 
     /// Whether two regions cannot communicate, i.e. either end is down.
@@ -134,6 +162,29 @@ impl NetworkState {
         }
     }
 
+    /// Record a new outage for an AZ, independently of its region.
+    pub fn add_az_outage(&mut self, az: Sym) {
+        let idx = az as usize;
+        if self.az_down.len() <= idx {
+            self.az_down.resize(idx + 1, 0);
+        }
+        if self.az_down[idx] == 0 {
+            self.active_count += 1;
+        }
+        self.az_down[idx] += 1;
+    }
+
+    /// End one outage of an AZ; overlapping outages remain active.
+    pub fn remove_az_outage(&mut self, az: Sym) {
+        let idx = az as usize;
+        if idx < self.az_down.len() && self.az_down[idx] > 0 {
+            self.az_down[idx] -= 1;
+            if self.az_down[idx] == 0 {
+                self.active_count -= 1;
+            }
+        }
+    }
+
     /// Reset to match `src`, reusing this state's allocation.
     ///
     /// Used between the runs of one experiment: a fresh `NetworkState` per
@@ -141,6 +192,8 @@ impl NetworkState {
     pub fn reset_from(&mut self, src: &NetworkState) {
         self.down.clear();
         self.down.extend_from_slice(&src.down);
+        self.az_down.clear();
+        self.az_down.extend_from_slice(&src.az_down);
         self.active_count = src.active_count;
     }
 
@@ -215,6 +268,27 @@ mod tests {
         net.add_outage(5);
         assert_eq!(net.active_outage_count(), 2);
         assert_eq!(net.active_outages(), vec![0, 5]);
+    }
+
+    #[test]
+    fn az_outages_are_independent_and_reset_copies_them() {
+        let mut net = NetworkState::new();
+        net.add_az_outage(3);
+        net.add_az_outage(3);
+        net.add_outage(3); // same symbol does not mix AZ and region state
+        assert_eq!(net.active_outage_count(), 2);
+        net.remove_az_outage(3);
+        assert!(net.is_az_down(3));
+        net.remove_az_outage(3);
+        assert!(!net.is_az_down(3));
+        assert!(net.is_region_down(3));
+
+        let mut copy = NetworkState::new();
+        copy.reset_from(&net);
+        assert_eq!(copy, net);
+        net.remove_outage(3);
+        copy.reset_from(&net);
+        assert!(!copy.has_active_outages());
     }
 
     #[test]

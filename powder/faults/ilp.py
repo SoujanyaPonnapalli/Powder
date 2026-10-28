@@ -173,7 +173,9 @@ def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, 
     scorer = binned_markov_scorer(protocol, strategy, bins_per_decade=bins_per_decade)
     cfg = CandidateGenerationConfig(replica_counts=replica_counts, random_samples_per_size=random_samples_per_size,
                                     greedy_starts_per_size=greedy_starts_per_size, local_search_steps=1,
-                                    max_candidates=max_candidates, rng_seed=rng_seed)
+                                    max_candidates=max_candidates, rng_seed=rng_seed,
+                                    reject_region_majority=True,
+                                    reject_shared_az=bool(cat.get("az_aware")))
     markov_candidates = generate_candidates(machines, scorer, cfg)
     t1 = time.time()
     cands = markov_candidates

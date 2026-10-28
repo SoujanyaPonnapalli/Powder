@@ -13,6 +13,7 @@ if [ -f data/fault_library/raw/lanl/LA-UR-05-7318-failure-data-1996-2005.tar.gz 
 fi
 $PY scripts/fault_library/build_literature.py > /dev/null
 $PY scripts/fault_library/build_region_outages.py > /dev/null
+$PY scripts/fault_library/build_az_outages.py > /dev/null
 if $PY scripts/fault_library/build_prices.py; then :; else
   rc=$?; [ "$rc" -eq 2 ] || exit "$rc"   # 2 = no raw prices yet
 fi

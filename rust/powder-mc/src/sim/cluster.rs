@@ -20,7 +20,7 @@ use super::ids::{Interner, Sym};
 use super::network::NetworkState;
 use super::node::{Group, NodeConfigRef, NodeState};
 
-/// Whether a node is up, has data, and is not in a region outage.
+/// Whether a node is up, has data, and is not in a region or AZ outage.
 ///
 /// Free function so callers holding a mutable borrow of the node vector can
 /// still evaluate availability; see
@@ -30,11 +30,11 @@ pub fn is_effectively_available(network: &NetworkState, node: &NodeState) -> boo
     if !node.is_available || !node.has_data {
         return false;
     }
-    // Fast path: no outages anywhere means no region lookup.
+    // Fast path: no outages anywhere means no domain lookup.
     if !network.has_active_outages() {
         return true;
     }
-    !network.is_region_down(node.region)
+    !network.is_region_down(node.region) && !node.az.is_some_and(|az| network.is_az_down(az))
 }
 
 /// Active, effectively-available and up-to-date node counts.
@@ -281,18 +281,21 @@ impl ClusterState {
     /// Add an active node.
     pub fn add_node(&mut self, mut node: NodeState) {
         node.group = Group::Active;
+        node.az = node.config.az.as_ref().map(|az| self.intern(az));
         self.nodes.push(node);
     }
 
     /// Add a standby node: running and billable, but outside quorum.
     pub fn add_standby_node(&mut self, mut node: NodeState) {
         node.group = Group::Standby;
+        node.az = node.config.az.as_ref().map(|az| self.intern(az));
         self.nodes.push(node);
     }
 
     /// Add a provisioning node: billed from request time, otherwise inert.
     pub fn add_provisioning_node(&mut self, mut node: NodeState) {
         node.group = Group::Provisioning;
+        node.az = node.config.az.as_ref().map(|az| self.intern(az));
         self.nodes.push(node);
     }
 
@@ -336,7 +339,7 @@ impl ClusterState {
 
     // -- availability ----------------------------------------------------
 
-    /// Whether a node is up, has data, and is not in a region outage.
+    /// Whether a node is up, has data, and is not in a region or AZ outage.
     #[inline]
     pub fn node_effectively_available(&self, node: &NodeState) -> bool {
         is_effectively_available(&self.network, node)
@@ -374,7 +377,10 @@ impl ClusterState {
             if !node.is_available || !node.has_data {
                 continue;
             }
-            if has_outages && self.network.is_region_down(node.region) {
+            if has_outages
+                && (self.network.is_region_down(node.region)
+                    || node.az.is_some_and(|az| self.network.is_az_down(az)))
+            {
                 continue;
             }
             counts.available += 1;
@@ -588,6 +594,7 @@ mod tests {
     fn config_in(region: &str) -> NodeConfigRef {
         Rc::new(NodeConfig {
             region: region.to_string(),
+            az: None,
             cost_per_hour: 1.0,
             failure_dist: Distribution::constant(1000.0),
             recovery_dist: Distribution::constant(10.0),
@@ -647,6 +654,23 @@ mod tests {
 
         assert_eq!(c.num_available(), 1);
         assert_eq!(c.num_with_data(), 3);
+    }
+
+    #[test]
+    fn az_is_interned_for_active_standby_and_provisioning_nodes() {
+        let mut c = ClusterState::new(1);
+        let mut config = (*config_in("us-east")).clone();
+        config.az = Some("us-east-1a".to_string());
+        let config = Rc::new(config);
+        let region = c.intern("us-east");
+        c.add_node(NodeState::new(c.intern("active"), region, config.clone()));
+        c.add_standby_node(NodeState::new(c.intern("standby"), region, config.clone()));
+        c.add_provisioning_node(NodeState::new(c.intern("pending"), region, config));
+
+        let az = c.sym_of("us-east-1a").unwrap();
+        assert!(c.all_entries().iter().all(|n| n.az == Some(az)));
+        c.network.add_az_outage(az);
+        assert_eq!(c.num_available(), 0);
     }
 
     #[test]

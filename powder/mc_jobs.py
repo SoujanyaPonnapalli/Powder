@@ -160,7 +160,7 @@ def distribution_spec(dist: Distribution) -> dict[str, Any]:
 
 def node_config_spec(config: NodeConfig) -> dict[str, Any]:
     """Convert a `NodeConfig` into its JSON form."""
-    return {
+    spec = {
         "region": config.region,
         "cost_per_hour": config.cost_per_hour,
         "failure_dist": distribution_spec(config.failure_dist),
@@ -172,6 +172,9 @@ def node_config_spec(config: NodeConfig) -> dict[str, Any]:
         ),
         "spawn_dist": distribution_spec(config.spawn_dist),
     }
+    if config.az is not None:
+        spec["az"] = config.az
+    return spec
 
 
 def protocol_spec(protocol: Protocol) -> dict[str, Any]:
@@ -258,6 +261,12 @@ def network_config_spec(network: NetworkConfig) -> dict[str, Any]:
             r: {"outage_dist": distribution_spec(o),
                 **({"outage_duration_dist": distribution_spec(d)} if d is not None else {})}
             for r, (o, d) in network.per_region.items()}
+    if network.azs:
+        spec["azs"] = list(network.azs)
+        spec["per_az"] = {
+            az: {"outage_dist": distribution_spec(o),
+                 **({"outage_duration_dist": distribution_spec(d)} if d is not None else {})}
+            for az, (o, d) in network.per_az.items()}
     if network.global_outage_dist is not None:
         spec["global"] = {"outage_dist": distribution_spec(network.global_outage_dist)}
         if network.global_duration_dist is not None:

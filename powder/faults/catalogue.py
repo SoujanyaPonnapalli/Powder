@@ -30,6 +30,7 @@ import gzip
 import hashlib
 import json
 import zlib
+from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
@@ -248,7 +249,7 @@ def node_config(machine: dict[str, Any], *, horizon_h: float = DEFAULT_HORIZON_H
                                    sum(p.rate_per_second for p in planned)) or NEVER
         loss = time_varying_hazard(machine, PERMANENT_CAUSES, horizon_h) or NEVER
     return NodeConfig(
-        region=machine["region"], cost_per_hour=float(price or 0.0),
+        region=machine["region"], az=machine.get("az"), cost_per_hour=float(price or 0.0),
         failure_dist=fail, recovery_dist=recovery,
         data_loss_dist=loss,
         log_replay_rate_dist=from_spec(sysd["log_replay_rate_dist"]),
@@ -278,14 +279,25 @@ def assign_catalogue_prices(lib: FaultLibrary, machines: list[dict[str, Any]], r
     return out
 
 
+def assign_azs(machines: list[dict[str, Any]], seed: int) -> None:
+    """Randomly bind each region's machines across three logical AZs, near equally."""
+    for region in US_REGIONS:
+        indices = [i for i, machine in enumerate(machines) if machine["region"] == region]
+        order = stream(seed, "az-binding", region).permutation(indices)
+        for i, index in enumerate(order):
+            machines[int(index)]["az"] = f"{region}:az{i % 3 + 1}"
+
+
 def generate(lib: FaultLibrary, n: int = 1000, seed: int = 0, spot_fraction: float = 0.3,
-             horizon_h: float = DEFAULT_HORIZON_H) -> dict[str, Any]:
+             horizon_h: float = DEFAULT_HORIZON_H, *, az_aware: bool = False) -> dict[str, Any]:
     recipes = sample_recipes(lib, n, seed, spot_fraction)
     pools = sorted({r.spot_pool for r, _ in recipes if r.spot_pool})
     comp = lib.get(SPOT_COMPONENT) if pools else None
     spans = {m["id"]: m["edges_h"][-1] for m in comp["rate_model"]["members"]} if comp else {}
     offsets = {p: float(stream(seed, "pool", p).uniform(0, spans[p])) for p in pools}
     machines = [build_machine(lib, r, d, i, seed, offsets) for i, (r, d) in enumerate(recipes)]
+    if az_aware:
+        assign_azs(machines, seed)
     prices = assign_catalogue_prices(lib, machines, seed=seed, horizon_h=horizon_h)
     for m in machines:
         m["markov_rate_per_hour"] = horizon_rates(m, horizon_h)
@@ -293,11 +305,19 @@ def generate(lib: FaultLibrary, n: int = 1000, seed: int = 0, spot_fraction: flo
               if eid in lib.entries}
     return {"kind": "machine_catalogue", "seed": seed, "n": n, "spot_fraction": spot_fraction,
             "horizon_h": horizon_h, "capacity": recipe_capacity(lib), "pool_offsets_h": offsets,
-            "price_assignments": prices, "library_hashes": hashes, "system": SYSTEM, "machines": machines}
+            "price_assignments": prices, "library_hashes": hashes, "system": SYSTEM, "machines": machines,
+            **({"az_aware": True} if az_aware else {})}
 
 
 def validate(lib: FaultLibrary, cat: dict[str, Any]) -> list[str]:
     errs = []
+    if cat.get("az_aware"):
+        for region in US_REGIONS:
+            counts = Counter(m.get("az") for m in cat["machines"] if m["region"] == region)
+            expected = {f"{region}:az{i}" for i in (1, 2, 3)}
+            if not set(counts) <= expected or max((counts[z] for z in expected), default=0) - min(
+                    (counts[z] for z in expected), default=0) > 1:
+                errs.append(f"{region}: unbalanced or invalid AZ assignment")
     keys = [(m["recipe_key"], m["draw"]) for m in cat["machines"]]
     if len(set(keys)) != len(keys):
         errs.append("duplicate (recipe, draw)")
@@ -403,7 +423,10 @@ def trace(lib: FaultLibrary, cat: dict[str, Any], slots: dict[str, str], horizon
         events += _slot_events(by_id[slots[slot]], slot, horizon_s, seed, spawn)
     if scenario_id:
         s = lib.get(scenario_id, "scenario")
-        events += scenario_events(lib, scenario_id, {k: (v, by_id[v]["region"]) for k, v in slots.items()},
-                                  horizon_s, seed, s.get("level", "central"))
+        events += scenario_events(
+            lib, scenario_id,
+            {k: (v, by_id[v]["region"], by_id[v]["az"]) if by_id[v].get("az") else
+             (v, by_id[v]["region"]) for k, v in slots.items()},
+            horizon_s, seed, s.get("level", "central"))
     events.sort(key=lambda e: (e.start, e.slot, e.kind))
     return events

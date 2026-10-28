@@ -283,6 +283,7 @@ mod tests {
     fn config_at(cost_per_hour: f64) -> NodeConfigRef {
         Rc::new(NodeConfig {
             region: "us-east".to_string(),
+            az: None,
             cost_per_hour,
             failure_dist: Distribution::constant(1000.0),
             recovery_dist: Distribution::constant(10.0),

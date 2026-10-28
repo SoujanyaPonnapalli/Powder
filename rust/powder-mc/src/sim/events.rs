@@ -103,6 +103,8 @@ pub enum EventMeta {
     None,
     /// `NETWORK_OUTAGE_*`: the affected region.
     Region(Sym),
+    /// `NETWORK_OUTAGE_*`: an independently affected AZ.
+    Az(Sym),
     /// `LEADER_ELECTION_COMPLETE`: the election epoch, used to drop stale
     /// events from a cancelled election.
     Epoch(u64),

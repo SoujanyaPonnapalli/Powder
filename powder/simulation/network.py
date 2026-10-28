@@ -29,6 +29,8 @@ class NetworkConfig:
             takes every region in ``regions`` down at once (correlated process).
         global_duration_dist: Duration of global outages (defaults to
             ``outage_duration_dist``).
+        azs: Logical availability zones with independent outage processes.
+        per_az: Optional per-AZ overrides, shaped like ``per_region``.
     """
 
     outage_dist: Distribution
@@ -37,6 +39,11 @@ class NetworkConfig:
     per_region: dict = field(default_factory=dict)
     global_outage_dist: Distribution | None = None
     global_duration_dist: Distribution | None = None
+    azs: list[str] = field(default_factory=list)
+    per_az: dict = field(default_factory=dict)
+
+    def az_outage_for(self, az: str) -> Distribution:
+        return self.per_az.get(az, (self.outage_dist, None))[0]
 
     def outage_for(self, region: str) -> Distribution:
         return self.per_region.get(region, (self.outage_dist, None))[0]
@@ -44,6 +51,9 @@ class NetworkConfig:
     def duration_for(self, region: str) -> Distribution:
         if region == GLOBAL_REGION:
             return self.global_duration_dist or self.outage_duration_dist
+        if region in self.azs:
+            dur = self.per_az.get(region, (None, None))[1]
+            return dur or self.outage_duration_dist
         dur = self.per_region.get(region, (None, None))[1]
         return dur or self.outage_duration_dist
 

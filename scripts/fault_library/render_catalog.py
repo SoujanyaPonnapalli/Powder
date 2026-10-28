@@ -81,6 +81,14 @@ def main() -> int:
             q = p["global"]["rate_per_hour"]
             out.append(f"| `{p['id']}` | **all regions at once** | global process ({p['global']['n_incidents']} incident) | "
                        f"{q['low'] * H:.3g} / {q['central'] * H:.3g} / {q['high'] * H:.3g} | {fmt_s(d)} |")
+        if p.get("az_outages"):
+            az = p["az_outages"]
+            q = az["rate_per_hour"]
+            az_duration = from_spec(az["duration"]["central"]).mean
+            out.append(f"| `{p['id']}` | **one of 12 logical AZs** | {az['n_incidents']} AZ PIRs (pooled proxy) | "
+                       f"{q['low'] * H:.3g} / {q['central'] * H:.3g} / {q['high'] * H:.3g} | {fmt_s(az_duration)} |")
+        if p.get("wan_stress"):
+            out.append(f"| `{p['id']}` | **stress only; not injected** | broad WAN incidents | — | — |")
 
     machines = sorted(lib.query(kind="machine"), key=lambda m: m["id"])
     out += ["", "## Machine classes", "", "| Machine | Fault profile | Tier | Price route | Regions |", "|---|---|---|---|---|"]

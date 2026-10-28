@@ -239,6 +239,9 @@ impl DelaySpec {
 pub struct NodeConfigSpec {
     /// Region the node sits in.
     pub region: String,
+    /// Optional availability zone within the region.
+    #[serde(default)]
+    pub az: Option<String>,
     /// Dollar cost per hour.
     pub cost_per_hour: f64,
     /// Time until transient unavailability.
@@ -260,6 +263,7 @@ impl NodeConfigSpec {
     pub fn build(&self) -> Result<NodeConfigRef> {
         Ok(Rc::new(NodeConfig {
             region: self.region.clone(),
+            az: self.az.clone(),
             cost_per_hour: self.cost_per_hour,
             failure_dist: self.failure_dist.build()?,
             recovery_dist: self.recovery_dist.build()?,
@@ -449,6 +453,12 @@ pub struct NetworkConfigSpec {
     /// Optional per-region overrides of the outage (and duration) distribution.
     #[serde(default)]
     pub per_region: std::collections::BTreeMap<String, OutageProcessSpec>,
+    /// AZs that can experience independent outages (names are AZ IDs, e.g. us-east-1a).
+    #[serde(default)]
+    pub azs: Vec<String>,
+    /// Optional per-AZ overrides of the outage (and duration) distribution.
+    #[serde(default)]
+    pub per_az: std::collections::BTreeMap<String, OutageProcessSpec>,
     /// Optional global process: each event takes every region down at once.
     #[serde(default)]
     pub global: Option<OutageProcessSpec>,
@@ -819,6 +829,20 @@ impl Job {
                     };
                     per_region.push((cluster.intern(name), p.outage_dist.build()?, dur));
                 }
+                let azs = spec.azs.iter().map(|az| cluster.intern(az)).collect();
+                let mut per_az = Vec::new();
+                for (name, p) in &spec.per_az {
+                    if !spec.azs.iter().any(|az| az == name) {
+                        return Err(ConfigError(format!(
+                            "network_config.per_az has AZ {name:?} that is not in azs"
+                        )));
+                    }
+                    let dur = match &p.outage_duration_dist {
+                        Some(d) => Some(d.build()?),
+                        None => None,
+                    };
+                    per_az.push((cluster.intern(name), p.outage_dist.build()?, dur));
+                }
                 let global = match &spec.global {
                     Some(g) => Some((
                         cluster.intern(crate::sim::network::GLOBAL_REGION),
@@ -835,6 +859,8 @@ impl Job {
                     outage_duration_dist: spec.outage_duration_dist.build()?,
                     regions,
                     per_region,
+                    azs,
+                    per_az,
                     global,
                 })
             }
@@ -1082,6 +1108,169 @@ mod tests {
             net.regions[0],
             resolved.cluster_template.sym_of("us-east").unwrap()
         );
+    }
+
+    fn az_simulator(network: serde_json::Value) -> crate::sim::simulator::Simulator {
+        az_simulator_with_protocol(network, serde_json::json!({"type": "leaderless"}))
+    }
+
+    fn az_simulator_with_protocol(
+        network: serde_json::Value,
+        protocol: serde_json::Value,
+    ) -> crate::sim::simulator::Simulator {
+        use serde_json::json;
+
+        let mut value: serde_json::Value = serde_json::from_str(MINIMAL).unwrap();
+        value["protocol"] = protocol;
+        let mut east_a = value["node_configs"]["standard"].clone();
+        east_a["az"] = json!("us-east-1a");
+        let mut east_b = east_a.clone();
+        east_b["az"] = json!("us-east-1b");
+        let mut west_a = east_a.clone();
+        west_a["region"] = json!("us-west");
+        west_a["az"] = json!("us-west-1a");
+        for config in [&mut east_a, &mut east_b, &mut west_a] {
+            config["failure_dist"] = json!({"type": "constant", "value": 1e9});
+            config["data_loss_dist"] = json!({"type": "constant", "value": 1e9});
+        }
+        value["node_configs"] = json!({"east_a": east_a, "east_b": east_b, "west_a": west_a});
+        value["cluster"]["nodes"] = json!([
+            {"node_id": "a", "config": "east_a"},
+            {"node_id": "b", "config": "east_b"},
+            {"node_id": "c", "config": "west_a"}
+        ]);
+        value["network_config"] = network;
+        let job: Job = serde_json::from_value(value).unwrap();
+        let resolved = job.resolve().unwrap();
+        crate::sim::simulator::Simulator::new(
+            resolved.build_cluster(),
+            resolved.build_strategy(),
+            resolved.build_protocol(),
+            resolved.network_config,
+            Some(7),
+            true,
+        )
+    }
+
+    #[test]
+    fn single_az_outage_only_affects_that_zone_and_recovers() {
+        use serde_json::json;
+        let mut sim = az_simulator(json!({
+            "outage_dist": {"type": "constant", "value": 1000},
+            "outage_duration_dist": {"type": "constant", "value": 5},
+            "regions": ["us-east", "us-west"],
+            "azs": ["us-east-1a", "us-east-1b", "us-west-1a"],
+            "per_az": {"us-east-1a": {"outage_dist": {"type": "constant", "value": 10}}}
+        }));
+        sim.run_for(11.0);
+        let c = &sim.cluster;
+        assert_eq!(c.availability_counts().available, 2);
+        assert!(!c.node_effectively_available(c.get_node(c.sym_of("a").unwrap()).unwrap()));
+        assert!(c.node_effectively_available(c.get_node(c.sym_of("b").unwrap()).unwrap()));
+        assert!(c.node_effectively_available(c.get_node(c.sym_of("c").unwrap()).unwrap()));
+        assert!(c.network.is_az_down(c.sym_of("us-east-1a").unwrap()));
+        assert!(!c.network.is_region_down(c.sym_of("us-east").unwrap()));
+        sim.run_for(5.0);
+        assert_eq!(sim.cluster.num_available(), 3);
+        sim.run_for(10.0); // the AZ's next independent outage
+        assert_eq!(sim.cluster.num_available(), 2);
+    }
+
+    #[test]
+    fn az_outage_of_raft_leader_starts_election() {
+        use serde_json::json;
+        let mut sim = az_simulator_with_protocol(
+            json!({
+                "outage_dist": {"type": "constant", "value": 1000},
+                "outage_duration_dist": {"type": "constant", "value": 20},
+                "azs": ["us-east-1a"],
+                "per_az": {"us-east-1a": {"outage_dist": {"type": "constant", "value": 10}}}
+            }),
+            json!({
+                "type": "raft",
+                "election_time_dist": {"type": "constant", "value": 2}
+            }),
+        );
+        sim.run_for(9.0);
+        assert_eq!(sim.protocol.leader_id(), sim.cluster.sym_of("a"));
+        sim.run_for(4.0);
+        assert_eq!(sim.protocol.leader_id(), sim.cluster.sym_of("b"));
+    }
+
+    #[test]
+    fn region_outage_affects_every_az_in_region() {
+        use serde_json::json;
+        let mut sim = az_simulator(json!({
+            "outage_dist": {"type": "constant", "value": 1000},
+            "outage_duration_dist": {"type": "constant", "value": 5},
+            "regions": ["us-east", "us-west"],
+            "azs": ["us-east-1a", "us-east-1b", "us-west-1a"],
+            "per_region": {"us-east": {"outage_dist": {"type": "constant", "value": 10}}}
+        }));
+        sim.run_for(11.0);
+        let c = &sim.cluster;
+        assert_eq!(c.availability_counts().available, 1);
+        assert!(!c.node_effectively_available(c.get_node(c.sym_of("a").unwrap()).unwrap()));
+        assert!(!c.node_effectively_available(c.get_node(c.sym_of("b").unwrap()).unwrap()));
+        assert!(c.node_effectively_available(c.get_node(c.sym_of("c").unwrap()).unwrap()));
+        assert!(!c.network.is_az_down(c.sym_of("us-east-1a").unwrap()));
+        sim.run_for(5.0);
+        assert_eq!(sim.cluster.num_available(), 3);
+    }
+
+    #[test]
+    fn az_recovery_does_not_override_overlapping_region_outage() {
+        use serde_json::json;
+        let mut sim = az_simulator(json!({
+            "outage_dist": {"type": "constant", "value": 1000},
+            "outage_duration_dist": {"type": "constant", "value": 5},
+            "regions": ["us-east"],
+            "azs": ["us-east-1a"],
+            "per_region": {"us-east": {
+                "outage_dist": {"type": "constant", "value": 12},
+                "outage_duration_dist": {"type": "constant", "value": 20}
+            }},
+            "per_az": {"us-east-1a": {"outage_dist": {"type": "constant", "value": 10}}}
+        }));
+        sim.run_for(16.0); // AZ recovered at 15, region remains down until 32
+        let c = &sim.cluster;
+        assert!(!c.network.is_az_down(c.sym_of("us-east-1a").unwrap()));
+        assert!(c.network.is_region_down(c.sym_of("us-east").unwrap()));
+        assert_eq!(c.num_available(), 1);
+        sim.run_for(17.0);
+        assert_eq!(sim.cluster.num_available(), 3);
+    }
+
+    #[test]
+    fn global_outage_still_targets_all_regions_with_az_nodes() {
+        use serde_json::json;
+        let mut sim = az_simulator(json!({
+            "outage_dist": {"type": "constant", "value": 1000},
+            "outage_duration_dist": {"type": "constant", "value": 5},
+            "regions": ["us-east", "us-west"],
+            "azs": ["us-east-1a", "us-east-1b", "us-west-1a"],
+            "global": {"outage_dist": {"type": "constant", "value": 10}}
+        }));
+        sim.run_for(11.0);
+        assert_eq!(sim.cluster.availability_counts().available, 0);
+        assert!(sim.cluster.network.is_region_down(sim.cluster.sym_of("us-east").unwrap()));
+        assert!(sim.cluster.network.is_region_down(sim.cluster.sym_of("us-west").unwrap()));
+        assert!(!sim.cluster.network.is_az_down(sim.cluster.sym_of("us-east-1a").unwrap()));
+        sim.run_for(5.0);
+        assert_eq!(sim.cluster.num_available(), 3);
+    }
+
+    #[test]
+    fn per_az_override_requires_listed_az() {
+        use serde_json::json;
+        let mut value: serde_json::Value = serde_json::from_str(MINIMAL).unwrap();
+        value["network_config"] = json!({
+            "outage_dist": {"type": "constant", "value": 1000},
+            "outage_duration_dist": {"type": "constant", "value": 5},
+            "per_az": {"us-east-1a": {"outage_dist": {"type": "constant", "value": 10}}}
+        });
+        let job: Job = serde_json::from_value(value).unwrap();
+        assert!(job.resolve().unwrap_err().0.contains("not in azs"));
     }
 
     #[test]

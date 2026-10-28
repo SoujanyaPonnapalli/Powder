@@ -1,0 +1,198 @@
+{
+  "id": "region_outage/aws-us-az-aware@v2",
+  "kind": "region_outage",
+  "version": 2,
+  "tags": [
+    "azure-pir",
+    "az-aware",
+    "sensitivity"
+  ],
+  "derived_from": [
+    "azure-pir-incidents#2022-06-07-eus2-cooling",
+    "azure-pir-incidents#2022-07-29-wan-surge",
+    "azure-pir-incidents#2022-08-27-wus2-power",
+    "azure-pir-incidents#2023-01-25-wan",
+    "azure-pir-incidents#2023-09-16-eus-power",
+    "azure-pir-incidents#2024-03-14-zaf-cables",
+    "azure-pir-incidents#2024-07-18-cus-storage",
+    "azure-pir-incidents#2025-09-26-szn-cert",
+    "azure-pir-incidents#2026-05-29-wus2-storm",
+    "azure-pir-incidents#2026-07-23-wus-wan"
+  ],
+  "built_by": "scripts/fault_library/build_az_outages.py",
+  "window": [
+    "2022-06-01",
+    "2026-10-20"
+  ],
+  "counting_rule": "default; scopes counted: multi_az, region_wide",
+  "rate_model": {
+    "method": "empirical-Bayes Gamma-Poisson over Azure US regions",
+    "alpha": 5.35067,
+    "beta_years": 52.8033,
+    "heterogeneous": true,
+    "pooled_per_year": 0.101332,
+    "azure_counts": {
+      "eastus": 0,
+      "eastus2": 0,
+      "centralus": 1,
+      "northcentralus": 0,
+      "southcentralus": 0,
+      "westcentralus": 0,
+      "westus": 1,
+      "westus2": 2,
+      "westus3": 0
+    },
+    "high_rule": "2 x posterior 95th percentile (under-reporting)"
+  },
+  "regions": {
+    "us-east-1": {
+      "azure_region": "eastus2",
+      "distance_km": 275.3,
+      "rule": "tie with eastus (both Virginia); fixed to eastus2 by decision 2026-10-20",
+      "rate_per_hour": {
+        "low": 4.37189e-06,
+        "central": 1.06731e-05,
+        "high": 3.84353e-05
+      },
+      "n_incidents": 0,
+      "exposure_years": 4.38604,
+      "incidents": []
+    },
+    "us-east-2": {
+      "azure_region": "eastus",
+      "distance_km": 399.0,
+      "rule": "nearest",
+      "rate_per_hour": {
+        "low": 4.37189e-06,
+        "central": 1.06731e-05,
+        "high": 3.84353e-05
+      },
+      "n_incidents": 0,
+      "exposure_years": 4.38604,
+      "incidents": []
+    },
+    "us-west-1": {
+      "azure_region": "westus",
+      "distance_km": 67.7,
+      "rule": "nearest",
+      "rate_per_hour": {
+        "low": 5.67657e-06,
+        "central": 1.26678e-05,
+        "high": 4.38132e-05
+      },
+      "n_incidents": 1,
+      "exposure_years": 4.38604,
+      "incidents": [
+        "2026-07-23-wus-wan"
+      ]
+    },
+    "us-west-2": {
+      "azure_region": "westus2",
+      "distance_km": 155.3,
+      "rule": "nearest",
+      "rate_per_hour": {
+        "low": 7.03504e-06,
+        "central": 1.46626e-05,
+        "high": 4.90811e-05
+      },
+      "n_incidents": 2,
+      "exposure_years": 4.38604,
+      "incidents": [
+        "2022-08-27-wus2-power",
+        "2026-05-29-wus2-storm"
+      ]
+    }
+  },
+  "duration": {
+    "low": {
+      "type": "lognormal",
+      "mu": 9.40461,
+      "sigma": 0.668757
+    },
+    "central": {
+      "type": "lognormal",
+      "mu": 9.89637,
+      "sigma": 0.668757
+    },
+    "high": {
+      "type": "lognormal",
+      "mu": 10.4353,
+      "sigma": 0.668757
+    }
+  },
+  "duration_fit": {
+    "n": 8,
+    "values_s": [
+      7020.0,
+      14760.0,
+      15180.0,
+      17820.0,
+      18660.0,
+      19200.0,
+      27360.0,
+      88020.0
+    ],
+    "best": "lognormal",
+    "aic": {
+      "exponential": 180.655,
+      "lognormal": 178.608,
+      "weibull": 181.71
+    },
+    "ks_bootstrap_p": 0.0979021,
+    "mean_s": 26002.5,
+    "median_s": 18240.0,
+    "bootstrap_mean_5_95_s": [
+      15187.5,
+      42570.0
+    ]
+  },
+  "multi_region_incidents": [
+    "2022-07-29-wan-surge",
+    "2023-01-25-wan"
+  ],
+  "notes": "Primary AZ-aware sensitivity: per-region events retain the original conservative scope; single-AZ rates pool two verified Azure events over 12 logical AWS AZs. WAN incidents are recorded in wan_stress, not injected as full all-region outages. This is a cross-cloud modelling assumption, not measured AWS AZ rates.",
+  "az_outages": {
+    "zones_per_region": 3,
+    "rate_per_hour": {
+      "low": 1.2413695403117737e-06,
+      "central": 5.418574004716327e-06,
+      "high": 2.3994524408543893e-05
+    },
+    "duration": {
+      "low": {
+        "type": "constant",
+        "value": 41760.0
+      },
+      "central": {
+        "type": "constant",
+        "value": 42150.0
+      },
+      "high": {
+        "type": "constant",
+        "value": 42540.0
+      }
+    },
+    "n_incidents": 2,
+    "exposure_az_years": 52.63244353182751,
+    "incidents": [
+      "2022-06-07-eus2-cooling",
+      "2023-09-16-eus-power"
+    ],
+    "rule": "Jeffreys Gamma(n+0.5, 4 AWS regions x 3 AZ x exposure years); pooled AZ proxy"
+  },
+  "wan_stress": {
+    "rate_per_hour": {
+      "low": 1.48964e-05,
+      "central": 6.50229e-05,
+      "high": 0.000287934
+    },
+    "n_incidents": 2,
+    "exposure_years": 4.38604,
+    "incidents": [
+      "2022-07-29-wan-surge",
+      "2023-01-25-wan"
+    ],
+    "method": "Jeffreys Gamma(n + 1/2, T); low = q05, high = 2 x q95",
+    "duration_note": "same duration distribution as regional outages (too few global events to fit)"
+  }
+}

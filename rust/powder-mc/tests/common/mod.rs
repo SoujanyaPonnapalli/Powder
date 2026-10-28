@@ -99,6 +99,7 @@ impl ConfigBuilder {
     pub fn build(self) -> NodeConfigRef {
         Rc::new(NodeConfig {
             region: self.region,
+            az: None,
             cost_per_hour: self.cost_per_hour,
             failure_dist: self.failure,
             recovery_dist: self.recovery,

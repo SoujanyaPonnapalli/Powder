@@ -816,6 +816,7 @@ mod tests {
     fn config() -> NodeConfigRef {
         Rc::new(NodeConfig {
             region: "us-east".to_string(),
+            az: None,
             cost_per_hour: 1.0,
             failure_dist: Distribution::constant(1000.0),
             recovery_dist: Distribution::constant(10.0),
