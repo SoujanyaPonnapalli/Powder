@@ -1,0 +1,174 @@
+"""Render four AZ-aware, MC-scored 10,000-RSM frontiers as SVG figures."""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+from html import escape
+from pathlib import Path
+
+BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
+INK, MUTED, GRID, SURFACE = "#142235", "#66778a", "#e1e0d9", "#fcfcfb"
+RF_LABELS = {"rf3": "Uniform RF 3", "rf5": "Uniform RF 5",
+             "rf7": "Uniform RF 7", "choice": "ILP chooses RF 3 / 5 / 7"}
+
+
+def label(x, y, value, size=12, *, color=MUTED, anchor="start", weight=400):
+    return (f'<text x="{x:.2f}" y="{y:.2f}" font-size="{size}" fill="{color}" '
+            f'font-family="DejaVu Sans,Arial,sans-serif" font-weight="{weight}" '
+            f'text-anchor="{anchor}">{escape(str(value))}</text>')
+
+
+def nines(a):
+    if not 0 <= a < 1:
+        raise ValueError("availability at 1.0 is unresolved; cannot plot finite nines")
+    return -math.log10(1 - a)
+
+
+def glyph(x, y, policy, rf, detail, *, selected=False):
+    color = BLUE if selected else ORANGE if policy == "blind" else AQUA
+    title = f'<title>{escape(detail)}</title>'
+    shape = rf if not selected else "target"
+    if shape == "target":
+        mark = f'<circle cx="{x:.2f}" cy="{y:.2f}" r="7" fill="{SURFACE}" stroke="{color}" stroke-width="2.5"/>'
+    elif shape == 3:
+        mark = f'<circle cx="{x:.2f}" cy="{y:.2f}" r="6" fill="{color}" stroke="{SURFACE}" stroke-width="2"/>'
+    elif shape == 5:
+        mark = f'<rect x="{x-6:.2f}" y="{y-6:.2f}" width="12" height="12" rx="2" fill="{color}" stroke="{SURFACE}" stroke-width="2"/>'
+    else:
+        mark = f'<path d="M{x:.2f},{y-7:.2f}L{x+7:.2f},{y+6:.2f}H{x-7:.2f}Z" fill="{color}" stroke="{SURFACE}" stroke-width="2"/>'
+    return f'<g>{title}{mark}</g>'
+
+
+def usable(point):
+    return point.get("status") == "0" and 0 <= point.get("mean_availability", -1) < 1
+
+
+def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, target):
+    data = arm["frontiers"][name]
+    baselines = arm["baselines"]
+    left, right, top, bottom = offset + 57, offset + 533, 225, 552
+    x = lambda cost: left + (cost - xmin) / (xmax - xmin) * (right - left)
+    y = lambda a: top + (ymax - nines(a)) / (ymax - ymin) * (bottom - top)
+    parts = []
+    for i in range(round((ymax - ymin) / ystep) + 1):
+        value = ymin + i * ystep
+        yy = top + (ymax - value) / (ymax - ymin) * (bottom - top)
+        parts.append(f'<path d="M{left},{yy:.2f}H{right}" stroke="{GRID}" stroke-width="1"/>')
+        parts.append(label(left - 8, yy + 4, f"{value:.2f}", 11, anchor="end"))
+    for value in range(xmin, xmax + 1, xstep):
+        xx = x(value)
+        parts.append(f'<path d="M{xx:.2f},{top}V{bottom}" stroke="{GRID}" stroke-width="1"/>')
+        parts.append(label(xx, bottom + 20, value, 11, anchor="middle"))
+    if ymin <= target <= ymax:
+        yy = top + (ymax - target) / (ymax - ymin) * (bottom - top)
+        parts.append(f'<path d="M{left},{yy:.2f}H{right}" stroke="#8b979d" stroke-width="1" stroke-dasharray="5 4"/>')
+        parts.append(label(right - 3, yy - 6, "4.5-nines target", 11, anchor="end"))
+    parts.append(label(left, top - 17, "Mean RSM availability (nines)", 11))
+    points = [p for p in data.get("points", []) if usable(p)]
+    for i in range(1, len(points)):
+        p, q = points[i-1], points[i]
+        dashed = 'stroke-dasharray="6 4"' if (p.get("certified_rsms", 0) < 10000 or q.get("certified_rsms", 0) < 10000) else ''
+        parts.append(f'<path d="M{x(p["cost_per_hour"]):.2f},{y(p["mean_availability"]):.2f} '
+                     f'L{x(q["cost_per_hour"]):.2f},{y(q["mean_availability"]):.2f}" '
+                     f'stroke="{BLUE}" stroke-width="2" fill="none" {dashed}/>')
+    for p in points:
+        xx, yy = x(p["cost_per_hour"]), y(p["mean_availability"])
+        if "mean_ci_low" in p and "mean_ci_high" in p and p["mean_ci_high"] < 1:
+            lo, hi = y(p["mean_ci_low"]), y(p["mean_ci_high"])
+            parts.append(f'<path d="M{xx:.2f},{lo:.2f}V{hi:.2f}" stroke="{BLUE}" stroke-width="1"/>')
+        mix = p.get("rf_counts", {})
+        detail = (f'ILP ${p["cost_per_hour"]:.3f}/h · {nines(p["mean_availability"]):.5f} nines · '
+                  f'{p.get("certified_rsms", 0)}/10000 RSMs certified · RF mix {mix}')
+        parts.append(f'<g><title>{escape(detail)}</title><circle cx="{xx:.2f}" cy="{yy:.2f}" r="4" fill="{BLUE}" stroke="{SURFACE}" stroke-width="1.5"/></g>')
+    for fixed in (3, 5, 7) if name == "choice" else (rf,):
+        for policy in ("blind", "cheap"):
+            p = baselines[fixed][policy]
+            if p["status"] != "scored" or p["mean_availability"] >= 1:
+                continue
+            detail = (f'RF{fixed} {policy} baseline · ${p["cost_per_hour"]:.3f}/h · '
+                      f'{nines(p["mean_availability"]):.5f} nines · '
+                      f'{p["certified_groups"]}/20 groups certified')
+            parts.append(glyph(x(p["cost_per_hour"]), y(p["mean_availability"]), policy, fixed, detail))
+    qualified = data.get("target_qualified", {})
+    if usable(qualified):
+        detail = (f'ILP target-qualified · ${qualified["cost_per_hour"]:.3f}/h · '
+                  f'{nines(qualified["mean_availability"]):.5f} nines · '
+                  f'RF counts {qualified.get("rf_counts", {})}')
+        parts.append(glyph(x(qualified["cost_per_hour"]), y(qualified["mean_availability"]),
+                           "ilp", rf, detail, selected=True))
+        parts.append(label(x(qualified["cost_per_hour"]) + 9,
+                           y(qualified["mean_availability"]) + 24, "ILP target", 11))
+    else:
+        parts.append(label(left, bottom - 13, "No MC-certified placement at 4.5 nines", 11))
+    parts.append(label((left + right) / 2, bottom + 46, "Assigned-model cost ($/hour)", 12,
+                       anchor="middle"))
+    return "".join(parts)
+
+
+def render(result, name):
+    target = float(result["target_nines"])
+    if result["scenario"] != "scenario/canonical-central-az-aware@v2":
+        raise ValueError("expected AZ-aware sensitivity scenario")
+    arms = result["arms"]
+    relevant = []
+    rf = int(name[-1]) if name.startswith("rf") else None
+    for arm in arms.values():
+        data = arm["frontiers"][name]
+        relevant.extend(p for p in data.get("points", []) if usable(p))
+        relevant += [p for size in ((3, 5, 7) if rf is None else (rf,))
+                     for p in arm["baselines"][size].values() if p["status"] == "scored"]
+        if usable(data.get("target_qualified", {})):
+            relevant.append(data["target_qualified"])
+    if not relevant:
+        raise ValueError("no scored points to plot")
+    costs = [p["cost_per_hour"] for p in relevant]
+    nines_values = [nines(p[key]) for p in relevant
+                    for key in ("mean_availability", "mean_ci_low", "mean_ci_high")
+                    if key in p and 0 <= p[key] < 1]
+    xstep = 5 if max(costs) - min(costs) < 35 else 10
+    xmin = xstep * math.floor((min(costs) - .5) / xstep)
+    xmax = xstep * math.ceil((max(costs) + .5) / xstep)
+    ystep = .05 if max(nines_values) - min(nines_values) < .25 else .1
+    ymin = round(ystep * math.floor((min(min(nines_values), target) - .005) / ystep), 6)
+    ymax = round(ystep * math.ceil((max(nines_values) + .005) / ystep), 6)
+    header = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="685" viewBox="0 0 1200 685">',
+        f'<rect width="1200" height="685" fill="{SURFACE}"/>',
+        label(27, 43, f"{RF_LABELS[name]} · 10,000 RSMs", 27, color=INK, weight=700),
+        label(27, 70, "AZ-aware sensitivity · 4 regions × 3 zones · 500 RSM replicas/machine · seed 0", 13),
+        label(27, 95, "MC ≥ 100,000 runs/candidate; dashed ILP segments contain uncertified RSMs", 12),
+        f'<path d="M27,121H57" stroke="{BLUE}" stroke-width="2"/>',
+        label(67, 125, "ILP frontier", 12),
+        f'<circle cx="225" cy="121" r="5" fill="{ORANGE}"/>',
+        label(238, 125, "Price-blind", 12),
+        f'<circle cx="385" cy="121" r="5" fill="{AQUA}"/>',
+        label(398, 125, "Cheapest-first", 12),
+        label(75, 161, "Independent price assignment (ρ = 0)", 18, color=INK, weight=700),
+        label(665, 161, "Reliability-ranked price (ρ = 1)", 18, color=INK, weight=700),
+    ]
+    for offset, price in ((27, "rho0"), (617, "rho1")):
+        header.append(draw_panel(arms[price], name, rf, offset=offset,
+                                 xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax,
+                                 xstep=xstep, ystep=ystep, target=target))
+    header.append(label(27, 643, "Blue = ILP · orange = price-blind · green = cheapest-first · shapes encode baseline RF 3/5/7", 12))
+    header.append(label(27, 665, "Whole-deployment uptime is not shown. Partial WAN impact remains a stress-model gap; assigned costs are not AWS bills.", 12))
+    header.append('</svg>')
+    return "\n".join(header)
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--input", type=Path, default=Path("outputs/exec-02/az-frontiers.json"))
+    ap.add_argument("--output-dir", type=Path, default=Path("outputs/exec-02"))
+    args = ap.parse_args()
+    result = json.loads(args.input.read_text())
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    for name in RF_LABELS:
+        dest = args.output_dir / f"az-frontier-{name}.svg"
+        dest.write_text(render(result, name))
+        print(dest)
+
+
+if __name__ == "__main__":
+    main()
