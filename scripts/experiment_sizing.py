@@ -137,8 +137,8 @@ def evaluate_solution(solution, by_id, protocol, strategy, num_rsms):
 
 def run(args):
     lib = FaultLibrary.load()
-    master = catalogue.generate(lib, max(args.pools), args.catalogue_seed, args.spot_fraction,
-                                args.horizon_days * 24)
+    master = catalogue.generate(lib, args.master_size or max(args.pools), args.catalogue_seed,
+                                args.spot_fraction, args.horizon_days * 24)
     ordered = nested_order(master["machines"], args.spot_fraction)
     protocol = RaftLikeProtocol(election_time_dist=Exponential(0.2))
     strategy = NodeReplacementStrategy(failure_timeout=600.0, default_node_config=None)
@@ -228,6 +228,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--output", default="outputs/exec-02/sweep.jsonl")
     ap.add_argument("--pools", type=int, nargs="+", default=[250, 500, 1000, 2000])
+    ap.add_argument("--master-size", type=int, default=None,
+                    help="freeze a larger inventory before taking the requested pool prefixes")
     ap.add_argument("--catalogue-seed", type=int, default=0)
     ap.add_argument("--price-seeds", type=int, default=3)
     ap.add_argument("--spot-fraction", type=float, default=0.0)
@@ -242,8 +244,9 @@ def main():
     ap.add_argument("--solver-seconds", type=float, default=30)
     args = ap.parse_args()
     if (not args.pools or any(m < args.max_deployed for m in args.pools) or
+            (args.master_size is not None and args.master_size < max(args.pools)) or
             args.price_seeds < 1 or args.replicas < 1 or args.max_deployed * args.capacity < args.num_rsms * args.replicas):
-        ap.error("pool and capacity must accommodate the deployed fleet and replicas")
+        ap.error("master pool and capacity must accommodate the deployed fleet and replicas")
     run(args)
 
 

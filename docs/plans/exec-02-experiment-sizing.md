@@ -241,3 +241,49 @@ no independent oracle or observed TiDB point is plotted. The figure's circle
 at the baseline target is **cost-minimizing**, so it is expected to have almost
 no vertical availability margin. The savings rely on assigned shadow prices;
 identical physical AWS instances have the same actual bill at equal fleet size.
+
+## Scale illustration: 10,000 RSMs (2026-10-28)
+
+The library changed after the 50-RSM study: commit `d557302` dropped the
+cloud/VM transient base and reduced the number of distinct on-demand catalogue
+recipes from 488 to **244**. The new run uses the **current Ford-based library**,
+a seed-0, 2,000-machine master, and its first 1,000 options. Its catalogue
+construction and price-assignment procedure match the earlier figure, but
+its underlying fault-rate inventory does **not**. Do not interpret the two
+figures as a controlled scale-only comparison.
+
+With 10,000 three-replica RSMs and capacity for **500 distinct RSM replicas per
+machine**, 30,000 replica slots require at least 60 active machines. The
+price-blind, cheapest-first, target-matched ILP, and every plotted ILP frontier
+point all use exactly **60** machines. Capacity 500 is a replica-count
+assumption, not validated storage or TiDB throughput capacity.
+
+| Current-library seed 0, M=1000 | Independent price | Reliability-ranked price |
+|---|---:|---:|
+| Price-blind baseline modeled cost | $33.170/h | $35.291/h |
+| Cheapest-first modeled cost | $20.359/h | $20.363/h |
+| ILP min cost at blind baseline's mean and worst-RSM availability | $20.358/h (38.62% below blind) | $24.779/h (29.79% below blind) |
+| Mean-unavailability reduction with ILP under blind budget and worst-RSM floor | 3.359% | 3.051% |
+
+Reproduce both sweeps locally:
+
+```bash
+python3 scripts/experiment_sizing.py --pools 1000 --master-size 2000 \
+  --price-seeds 1 --num-rsms 10000 --capacity 500 --max-deployed 64 \
+  --solver-seconds 120 --output outputs/exec-02/rsm10000-ford-master2000.jsonl
+python3 scripts/experiment_frontier.py \
+  --sweep outputs/exec-02/rsm10000-ford-master2000.jsonl \
+  --pools 1000 --price-seeds 1 --full-frontier --solver-seconds 120 \
+  --frontier-points 7 --output outputs/exec-02/rsm10000-ford-frontier.jsonl
+```
+
+The full blue frontier starts at the **cheapest-first cost** with no per-RSM
+availability floor; the outlined target circle enforces both the blind mean
+and worst-RSM target, and the diamond enforces its worst-RSM floor. Points
+left of the target circle may miss the target. The separately named
+`placement-frontier-10k.{html,png,svg}` figure presents these current-library
+results. This is one catalogue and price seed, **not** an uncertainty interval,
+an observed TiDB result, or an AWS bill comparison. With 500 RSMs sharing each
+machine, mean-RSM availability does not measure the probability that *any*
+partition in the whole deployment is unavailable; that requires a coupled
+cluster-level model.

@@ -35,17 +35,20 @@ def candidate_menu(machines, scorer, row):
     return list(by_ids.values()), by_id
 
 
-def solve_budget(candidates, machines, by_id, protocol, strategy, row, budget):
+def solve_budget(candidates, machines, by_id, protocol, strategy, row, budget,
+                 *, enforce_floor: bool = True, solver_seconds: float = 30):
     cfg = PlacementSolverConfig(num_rsms=row["num_rsms"], unique_machine_cost=True,
                                 max_machines=row["blind"]["deployed"],
-                                min_availability=max(0.9999, row["blind"]["min_availability"]),
+                                min_availability=(max(0.9999, row["blind"]["min_availability"])
+                                                  if enforce_floor else None),
                                 budget_per_hour=budget * (1 + 1e-9),
-                                time_limit_seconds=30)
+                                time_limit_seconds=solver_seconds)
     sol = solve_candidate_ilp(candidates, machines, cfg)
     return evaluate_solution(sol, by_id, protocol, strategy, row["num_rsms"])
 
 
-def run(sweep: Path, output: Path, pools: list[int], price_seeds: int):
+def run(sweep: Path, output: Path, pools: list[int], price_seeds: int,
+        *, full_frontier: bool = False, solver_seconds: float = 30, frontier_points: int = 9):
     saved = [json.loads(line) for line in sweep.read_text().splitlines()]
     lookup = {(r["pool"], r["price_seed"], r["price"]): r for r in saved}
     source = saved[0]
@@ -54,7 +57,7 @@ def run(sweep: Path, output: Path, pools: list[int], price_seeds: int):
     lib = FaultLibrary.load()
     # The frozen sizing run used the integer 720-hour default; its JSON digest
     # distinguishes 720 from 720.0 even though their hazard calculations agree.
-    master = catalogue.generate(lib, max(r["pool"] for r in saved), source["catalogue_seed"],
+    master = catalogue.generate(lib, source["master_size"], source["catalogue_seed"],
                                 source["spot_fraction"], 720)
     ordered = nested_order(master["machines"], source["spot_fraction"])
     protocol = RaftLikeProtocol(election_time_dist=Exponential(0.2))
@@ -77,7 +80,7 @@ def run(sweep: Path, output: Path, pools: list[int], price_seeds: int):
                     candidates, by_id = candidate_menu(machines, scorer, row)
                     blind = row["blind"]
                     equal_cost = solve_budget(candidates, machines, by_id, protocol, strategy,
-                                              row, blind["cost_per_hour"])
+                                              row, blind["cost_per_hour"], solver_seconds=solver_seconds)
                     if equal_cost["status"] != "0":
                         raise RuntimeError(f"equal-cost solver failed: {equal_cost}")
                     if (equal_cost["mean_availability_exact"] + 1e-10 < blind["mean_availability"] or
@@ -91,13 +94,18 @@ def run(sweep: Path, output: Path, pools: list[int], price_seeds: int):
                         "max_availability_at_blind_cost": equal_cost,
                     }
                     if seed == 0 and pool == max(pools):
-                        lo = row["iso_blind_quality"]["cost_per_hour"]
+                        lo = (row["cheap"] if full_frontier else row["iso_blind_quality"])["cost_per_hour"]
                         hi = blind["cost_per_hour"]
-                        budgets = [lo + (hi - lo) * i / 8 for i in range(9)]
+                        budgets = [lo + (hi - lo) * i / (frontier_points - 1)
+                                   for i in range(frontier_points)]
                         result["frontier"] = [
                             {"budget_per_hour": b, **solve_budget(candidates, machines, by_id,
-                                protocol, strategy, row, b)} for b in budgets
+                                protocol, strategy, row, b, enforce_floor=not full_frontier,
+                                solver_seconds=solver_seconds)} for b in budgets
                         ]
+                        if any(point["status"] != "0" for point in result["frontier"]):
+                            raise RuntimeError("a frontier budget failed to produce a solution")
+                        result["frontier_has_baseline_floor"] = not full_frontier
                     fh.write(json.dumps(result, sort_keys=True) + "\n")
                     fh.flush()
                     base_u = 1 - blind["mean_availability"]
@@ -112,10 +120,16 @@ def main():
     ap.add_argument("--output", type=Path, default=Path("outputs/exec-02/frontier-deterministic.jsonl"))
     ap.add_argument("--pools", type=int, nargs="+", default=[250, 1000])
     ap.add_argument("--price-seeds", type=int, default=20)
+    ap.add_argument("--full-frontier", action="store_true",
+                    help="extend below the baseline availability floor to cheapest-first cost")
+    ap.add_argument("--solver-seconds", type=float, default=30)
+    ap.add_argument("--frontier-points", type=int, default=9)
     args = ap.parse_args()
-    if not args.pools or args.price_seeds < 1:
-        ap.error("provide at least one pool and one price seed")
-    run(args.sweep, args.output, args.pools, args.price_seeds)
+    if not args.pools or args.price_seeds < 1 or args.frontier_points < 2 or args.solver_seconds <= 0:
+        ap.error("provide pools, positive solver time, and at least two frontier points")
+    run(args.sweep, args.output, args.pools, args.price_seeds,
+        full_frontier=args.full_frontier, solver_seconds=args.solver_seconds,
+        frontier_points=args.frontier_points)
 
 
 if __name__ == "__main__":
