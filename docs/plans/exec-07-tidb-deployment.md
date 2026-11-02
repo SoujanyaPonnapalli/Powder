@@ -1,0 +1,591 @@
+# Plan: Execution Order #7 — TiDB in the repo + deployable/experiment scripts on AWS
+
+Scope: October Goals, execution order #7 ("Add TiDB to the repo and run a test deployment on AWS"),
+Goal 6.2 ("Make TiDB deployment script"), and the plumbing that #8 (failure emulator), #9 (PD queries
+the ILP) and #10 (timing benchmarks) will sit on.
+
+Status: **draft v2 (2026-11-02), nothing implemented.** v2 changes: an AWS account with budget is
+assumed (live AWS is the primary test target, local/fake backends dropped, §10); workload-level availability
+metric added (§7); VM reservation walkthrough (§6.1) and PD/TiUP detail (§6.2) added; spend-guard wording
+clarified (§9). v2.2: repartitioning metrics (§7); experiments must name the deployment handle they run on (§4.2); teardown
+simplified to handles / `--all` / `--older-than` (§6.0). v2.1: random run handles + handle-based teardown/listing (§4.1, §6), per-RSM
+and per-partition availability attribution and error-cause recording (§7). The work VM itself has no deploy credentials; live steps run from the owner's machine or a VM
+with the deploy role.
+
+## 0. Decisions proposed (change any before implementation starts)
+
+| Topic | Proposal | Why |
+|---|---|---|
+| TiDB version | One pinned **LTS release** (`v8.5.8` at time of writing; confirm at step 1) for TiDB, TiKV, PD, TiUP. Recorded in `third_party/tidb/VERSIONS` and in every run's `manifest.json`. | Results must be reproducible; PD patches in #9 must rebase onto a known tag. |
+| "Copying TiDB" | **Binaries from the official release tarballs now; PD as a pinned fork submodule `third_party/pd`** (built but not yet modified). TiKV and TiDB stay unmodified binaries; TiKV source only if #10 needs extra instrumentation. | PD is the only component we will change (#9). Vendoring all three Go/Rust trees costs GBs and build time with no benefit today. |
+| Cluster manager | **TiUP cluster** (`tiup cluster deploy/start/scale-out/scale-in/patch`). | Native labels, scale-out/in (= replacement), and `tiup cluster patch` swaps in our PD binary for #9 without a new deploy path. |
+| Language | **Python 3 (boto3 + PyYAML) for orchestration**, bash only on-node. Library in `powder/deploy/`, thin CLIs in `infra/tidb/`. | VPC-peering meshes, tagging, retries and teardown ordering are unmaintainable in bash; Python can import `powder.faults` (spec, trace, prices) directly. `boto3` becomes an optional dependency (`pyproject` extra `deploy`). |
+| Regions | The 4 US commercial regions of exec #1 (`powder.faults.regions.AWS_US_REGIONS`); any subset per run. | Matches the library and ILP. |
+| Instance types | TiKV nodes: **`i4i.2xlarge`**, local NVMe (exec #1 §3.5). Control plane (controller, PD, TiDB, monitoring, load generators): **separate smaller type, not fault-injected** (default `m6i.xlarge`). | Faults are injected into the nodes the ILP chooses; the control plane must not die from our own injection. Open question Q1: PD is itself a Raft group — do we ever fault it? |
+| Ingress | Public IPs on all nodes for egress (no NAT gateway cost); ingress only: SSH from the operator's IP + all ports between nodes by CIDR. TiUP runs **from a controller VM inside the mesh**. | One SSH entry point; no per-region NAT cost; TiUP needs SSH to every node. |
+| Run isolation | Every deployment ("run") gets a **random handle** such as `OrangePanda` (or an explicit `--handle`). A handle names a **deployment**; experiments run *on* a handle. Every resource is tagged `Project=powder`, `Run=<handle>`, `Owner=<user>`, `CreatedAt=<utc>`. Listing and teardown work from tags alone. | Teardown must survive a lost state file and a half-failed deploy, and you must be able to see and kill leftover deployments by name. |
+
+## 1. Goals / non-goals
+
+Goals:
+1. Pinned TiDB in the repo with a reproducible fetch.
+2. Four composable scripts (deploy infra, teardown infra, install TiDB, run experiment + collect) and one
+   orchestrator that runs all of them with guaranteed teardown.
+3. A first real smoke test on AWS (exec #7 done-criterion).
+4. Interfaces that do not change when fault injection (#8) and PD↔ILP (#9) land (§8).
+
+Non-goals (this step): fault injection, a modified PD, ILP-driven placement, calibrated timing (#10),
+the full diurnal/hot-partition workload set (Goal 6.3), analysis/graph scripts. Each has a reserved hook.
+
+## 2. Repository layout
+
+```
+third_party/
+  tidb/VERSIONS                 # tidb/tikv/pd/tiup versions + sha256 of every tarball
+  pd/                           # git submodule (fork of tikv/pd) pinned to the VERSIONS tag; unused until #9
+powder/deploy/                  # library (importable, unit-tested, no side effects at import)
+  spec.py                       # ClusterSpec: slots -> machine class @ region; roles; validation; JSON <-> YAML
+  state.py                      # RunState (state.json): instances, IPs, VPC ids, key path, stage status
+  names.py                      # AdjectiveNoun handle generator + validation + uniqueness check
+  pricing.py                    # $/h estimate from data/fault_library (on-demand + inter-region $/GB)
+  aws_net.py                    # VPCs, subnets, IGW, routes, peering mesh, security groups
+  aws_nodes.py                  # AMI lookup, key pairs, launch/terminate, user-data, quotas preflight
+  teardown.py                   # tag-based discovery + dependency-ordered deletion + verify
+  topology.py                   # ClusterSpec + RunState -> TiUP topology.yaml (labels incl. machine_class)
+  remote.py                     # ssh/scp/rsync helpers (via controller), retries, timeouts
+  workloads/                    # base.py (interface), smoke.py ; later diurnal/hot/shifting are configs
+  prober.py                     # per-Raft-region availability prober (runs on load-gen nodes)
+  loadgen/                      # powder-load: open-loop Go load generator with timeout/conflict classification
+  collect.py                    # logs, Prometheus export, prober output -> outputs/tidb/<handle>/
+infra/tidb/
+  deploy_infra.py               # script 1
+  teardown_infra.py             # script 2
+  install_tidb.py               # script 3
+  run_experiment.py             # script 4
+  run_all.py                    # script 5 (orchestrator)
+  fetch_tidb.sh                 # download + checksum-verify tarballs, build PD from submodule if asked
+  node_bootstrap.sh             # on-node: NVMe mount, OS tuning (pushed by user-data / install)
+  iam-deploy-policy.json        # least-privilege policy for the deploy role (§9)
+  README.md
+tests/test_deploy_*.py          # NumPy/pytest-free where cheap, matching the library test style
+outputs/tidb/<handle>/          # results (§7); raw logs gitignored, summaries tracked
+docs/plans/exec-07-tidb-deployment.md   # this file
+```
+
+Existing `infra/aws/` (work VM) is untouched; `infra/tidb/` reuses its conventions (idempotent, tag-based,
+`log()` style, `POWDER_*` env overrides).
+
+## 3. TiDB in the repo
+
+1. `third_party/tidb/VERSIONS` pins versions and checksums; `fetch_tidb.sh` downloads
+   `tidb-community-server-<v>-linux-amd64.tar.gz` (+ toolkit for `pd-ctl`) from PingCAP, verifies sha256,
+   and unpacks to `~/.cache/powder/tidb/<v>/` (never into the repo). The controller pulls the same
+   tarballs once (or from an S3 bucket if we add one), so 30 nodes do not each hit the internet.
+2. `third_party/pd` submodule at the matching `v8.5.x` tag; `fetch_tidb.sh --build-pd` builds
+   `pd-server` (Go) and writes it next to the stock binaries with a distinct version string, ready for
+   `tiup cluster patch` in #9. CI/step-1 check: stock vs built PD both start in the smoke test.
+3. The egress allowlist (`docs/egress_allowlist.md`) gains `tiup-mirrors.pingcap.com`,
+   `download.pingcap.org` (and the Go module proxy only if `--build-pd` is used in the sandbox).
+
+## 4. Core contract: ClusterSpec in, RunState out
+
+All five scripts communicate only through files in `outputs/tidb/<handle>/`, so any stage can be re-run
+alone and `run_all` is just sequencing.
+
+**`spec.yaml` (input, hand-written or generated by the ILP later):**
+
+```yaml
+handle: auto                    # auto = random AdjectiveNoun (e.g. OrangePanda); or an explicit name
+label: smoke                    # free-text description, informational only
+tidb_version: v8.5.8            # default from VERSIONS
+scenario: scenario/canonical    # fault-library scenario (recorded, used by #8)
+seed: 1
+control_plane: {region: us-east-1, instance_type: m6i.xlarge, pd: 3, tidb_per_region: 1, loadgen_per_region: 1}
+slots:                           # same grammar as scripts/fault_library/make_trace.py --slot
+  tikv-1: {machine: machine/ford10-google-storage@us-east-1}
+  tikv-2: {machine: machine/ford10-google-storage@us-east-2}
+  ...
+limits: {max_hourly_usd: 25, max_hours: 3}
+```
+
+* `slot` is the stable identity (survives instance replacement); `machine` is the library class whose faults
+  #8 will inject; the region is the placement. This is the exact contract `trace.generate` already uses, so
+  a trace for the run is `make_trace.py` over `spec.slots` with no translation.
+* The spec is **declarative and idempotent**: running `deploy_infra` and `install_tidb` against a spec with
+  an extra/removed slot adds/removes only that node. That *is* the replacement primitive #8/#9 need.
+
+**`state.json` (output):** per slot `{instance_id, region, az, private_ip, public_ip, machine, state}`,
+VPC/subnet/peering/SG ids per region, controller address, key path, stage status
+(`infra: done|partial`, `install`, `experiments[...]`), creation time, estimated $/h. Written atomically
+after every AWS call that creates something, so a crash never loses an id.
+
+### 4.1 Run handles
+
+A **run** is one deployment (infra + TiDB cluster) and can host several experiments over its life (experiments
+keep descriptive names like `smoke`, `hotspot-60m`; the *handle* names the deployment).
+
+* **Generation:** two CamelCase words from committed lists (`powder/deploy/names.py`, about 200 adjectives x 200
+  nouns, easy to read aloud, no look-alike or offensive words), e.g. `OrangePanda`, `QuietFalcon`. The
+  generator rejects any handle that collides with a live `Run` tag in **any region** or an existing
+  `outputs/tidb/<handle>/` directory, so a handle is never reused, even after teardown, and a results directory is
+  never overwritten.
+* **Explicit handles:** `--handle MyName` / `handle: MyName` in the spec. Validated (`[A-Za-z][A-Za-z0-9-]{2,30}`),
+  must not already exist unless you are resuming that same run (`--resume`).
+* **Where it appears:** AWS tags (`Run`, and `Name=<handle>-<slot>` so the console groups by run), the results
+  directory, `state.json`/`manifest.json`, the key-pair name, VPC names, log lines, and the first and last line
+  `run_all.py` prints (it also prints the exact teardown command on any failure).
+
+### 4.2 Experiments run on a handle
+
+The deployment spec (above) says what to *build*. An **experiment config** says what to *do* on a built
+deployment, and is a separate file so one deployment can host several experiments:
+
+```yaml
+# infra/tidb/experiments/smoke.yaml
+name: smoke
+workload: {type: smoke, key_dist: uniform, rate_per_region: 500, duration: 10m}
+request_timeout: 5s              # defines "timed out" for the workload metric (§7)
+prober: {interval: 1s}
+region_map_interval: 10s         # PD Region-map snapshots for RSM attribution + repartition metrics (§7)
+pd_runtime_config: {}            # optional pd-ctl overrides applied at start and restored at end,
+                                 #   e.g. {max-store-down-time: 10m} for the node-timeout what-if; recorded
+injector: none                   # `trace:<file>` reserved for #8
+```
+
+* **`run_experiment.py` requires `--handle <Handle>`** (no default, no "latest run" guessing). It fails fast if
+  that handle has no `state.json`, install is not finished, or the controller is unreachable, and it never
+  creates infrastructure.
+* Results go to `outputs/tidb/<handle>/experiments/<name>-<utc>/` (the timestamp keeps repeated runs of the same
+  experiment from overwriting each other); the experiment's `config.json` and the run `manifest.json` both
+  record the handle, git sha, and the deployment spec hash it ran against.
+* `run_all.py --spec S --experiment E1 [--experiment E2 ...]` generates the handle (or uses the spec's), then
+  deploys, installs, runs each experiment **on that handle** in order, collects, and tears down.
+
+## 5. Network design (script 1)
+
+Per region R in the run (all four at most): one VPC `10.<i>.0.0/16` (non-overlapping by region index), one
+public subnet per used AZ (AZ is recorded in state because exec #2-az results are AZ-aware), IGW, route
+table; **full-mesh inter-region VPC peering** (6 pairs for 4 regions: request, accept in the peer region,
+routes in both route tables to the peer CIDR). Security group per region: all TCP/UDP from the four VPC
+CIDRs (cluster traffic, TiUP SSH from controller), SSH (22) from the operator's /32, Grafana/Prometheus only
+from the operator's /32. No cross-region SG references (unsupported over inter-region peering) — CIDRs only.
+Intra-mesh traffic uses private IPs, so inter-region $/GB billing matches the `transfer` prices in the library.
+
+Node launch: Ubuntu 24.04 AMI resolved per region from the public SSM parameter; one key pair per run
+(created in each region, private key stored `0600` under `outputs/tidb/<handle>/` and gitignored); IMDSv2
+required; user-data runs `node_bootstrap.sh`: format the instance-store NVMe (`ext4 -O ... nodelalloc,noatime`
+as TiDB recommends), mount at `/data`, swap off, THP off, ulimits, chrony. **Instance-store caveat:** stop/start
+or terminate loses NVMe data (matches "permanent" faults); plain `reboot` keeps it. #8 must therefore use
+process kill / `reboot` for transients, never EC2 stop/start.
+
+Preflight (fails before creating anything): credentials, the Service Quotas for
+"Running On-Demand Standard (A,C,D,H,I,M,R,T,Z) instances" vCPUs in every used region
+(30 TiKV x 8 vCPU = 240 vCPU total), `i4i.2xlarge` offered in the chosen AZs, `max_hourly_usd` /
+`max_hours` limits vs. `pricing.py` estimate, and an explicit spend acknowledgement (`--yes` or
+`POWDER_ALLOW_SPEND=1`).
+
+## 6. The scripts
+
+All scripts take the run **handle** (`--handle OrangePanda`; its directory is `outputs/tidb/<handle>`, override with `--run-dir`), `--dry-run` (print the plan and estimated cost,
+touch nothing), `--log-level`, non-zero exit on failure, and are resumable (re-running skips finished work).
+
+1. **`deploy_infra.py --spec spec.yaml`** — preflight (§5) → network → controller + node launch → wait for
+   SSH + bootstrap done → write `state.json`. On partial failure it records what exists and exits
+   non-zero; it never tears down by itself (the orchestrator decides).
+2. **`teardown_infra.py`** — `--list` shows every deployment still holding AWS resources;
+   `teardown_infra.py OrangePanda [BlueFalcon ...]` tears down the named handles; `--all` tears down every
+   `Project=powder` deployment; `--older-than 6h` tears down those older than that (trivial: it filters on the
+   `CreatedAt` tag); `--verify` fails if anything tagged `Project=powder` remains (details in §6.0). Discovery is
+   **by tag** in every region (not only from `state.json`); deletion is in dependency order (instances → wait
+   terminated → peering → routes → IGW → subnets → SGs → VPCs → key pairs) and tolerant of already-deleted
+   resources.
+3. **`install_tidb.py --handle H`** — on the controller: fetch/verify tarballs, `tiup cluster check
+   --apply`, render `topology.yaml` from spec+state (`topology.py`): PD x3 spread over regions, TiKV
+   per slot with labels `region`, `zone`, `host`, **`machine_class`**, TiDB + monitoring + load generators
+   per §0; PD `location-labels = ["region","zone","host"]`, `isolation-level = "region"`, replication
+   factor 3; `tiup cluster deploy/start`; health gate: all PD members up, every store `Up` with expected
+   labels, `SELECT 1` through each TiDB, Grafana reachable. Also builds/copies `powder-load` and the prober to
+   the load generators. Output `install/` (topology, `tiup cluster display`, versions).
+4. **`run_experiment.py --handle H --experiment smoke [--workload smoke] [--duration 10m]`** — creates
+   the schema (a table pre-split into one key range per target Raft region, e.g. 50 to mirror the 50-RSM
+   study), starts the prober on each load generator and the workload, waits, stops them, then runs
+   collection (§7). `--injector none` is the only value today; `--injector trace:<trace.jsonl>` is reserved
+   for #8 (the flag, the `faults/` output directory and the manifest field exist, the implementation errors
+   with a clear message).
+5. **`run_all.py --spec spec.yaml [--experiment ...] [--keep-infra] [--yes]`** — `deploy → install →
+   experiment(s) → collect → teardown`, using the same library functions (not subprocesses where avoidable).
+   Teardown runs in `try/finally` and on SIGINT/SIGTERM; teardown failure is loud, prints the exact
+   `teardown_infra.py OrangePanda` command, and exits non-zero even if the experiment succeeded.
+   `--keep-infra` leaves everything up for debugging and prints the hourly burn. `--resume` continues a
+   run from `state.json`.
+
+   *Future:* `infra/tidb/campaigns/<name>.py` composes `run_all` for a fixed experiment set and then calls an
+   analysis/plot script over `outputs/tidb/<handle>/`. That works because experiments are keyed by name
+   inside a run directory and every artifact is machine-readable (§7).
+
+## 6.0 Listing and tearing down deployments
+
+`teardown_infra.py --list` scans all regions for `Project=powder` resources and prints one row per handle:
+
+```
+HANDLE        AGE    REGIONS (nodes)                $/h    LOCAL DIR
+OrangePanda   3h10m  use1(4) use2(4) usw2(4) =12    9.4    yes
+QuietFalcon   26h    use1(2) usw2(2)                3.1    yes
+BoldHeron     2d     use2(1)                        0.7    no     <- deployed from another machine, or dir deleted
+SwiftOtter    1h     VPCs only (0 instances)        0.0    yes    <- partial deploy
+```
+
+Teardown selection is deliberately small:
+
+| Command | Effect |
+|---|---|
+| `teardown_infra.py OrangePanda [BlueFalcon ...]` | the named handles (a handle that matches nothing is an error, not a no-op) |
+| `teardown_infra.py --all` | every `Project=powder` deployment |
+| `teardown_infra.py --older-than 6h` | deployments whose `CreatedAt` tag is older than that |
+| `teardown_infra.py --list` / `--verify` / `--dry-run` | inspect; fail if anything tagged remains; show the plan only |
+
+Anything selected is printed with node counts and $/h and needs a typed `yes` (or `--yes`). Only resources with
+`Project=powder` are ever touched. Teardown never deletes the local `outputs/tidb/<handle>/` results and writes
+`teardown.json` there (what was deleted, when, residual check). No owner filtering, globbing, groups or expiry
+tags: add them only if a real need appears.
+
+## 6.1 How the scripts reserve VMs
+
+Only **`deploy_infra.py`** creates VMs (it is also the only path that adds nodes later, by re-running it on an
+edited spec). `teardown_infra.py` deletes them. `install_tidb.py` and `run_experiment.py` only SSH into
+machines that already exist, and `run_all.py` just calls the other four. "Reserve" means plain **on-demand
+`RunInstances`**, no Spot and no Capacity Reservations by default.
+
+Sequence inside `deploy_infra.py` (every call is tagged `Project=powder, Run=<handle>, Owner, CreatedAt`; `Name` tags read `<handle>-<slot>`, e.g. `OrangePanda-tikv-3`):
+
+1. **Preflight, no side effects:** `sts:GetCallerIdentity`; per region `service-quotas` on the "Running
+   On-Demand Standard (A, C, D, H, I, M, R, T, Z)" vCPU quota vs. the vCPUs this spec needs;
+   `DescribeInstanceTypeOfferings` per AZ for `i4i.2xlarge` and the control-plane type; price/limit check
+   against `limits`. Anything short of the quota is reported as "request N vCPUs in region R" before we start.
+2. **Network per region:** `CreateVpc` (`10.<i>.0.0/16`) -> `CreateSubnet` per AZ used -> `CreateInternetGateway`
+   + attach -> route table with `0.0.0.0/0` -> IGW -> `CreateSecurityGroup` + ingress rules.
+3. **Peering mesh:** for each region pair, `CreateVpcPeeringConnection` from the lower-indexed region, then
+   `AcceptVpcPeeringConnection` in the peer region (waiting for `active`), then `CreateRoute` to the peer CIDR in
+   both route tables.
+4. **Key pair:** one SSH key is generated locally for the run and `ImportKeyPair`'d into every region (so the same
+   key opens every node).
+5. **Instances:** `RunInstances` once per (region, AZ, instance type) group with `MinCount=MaxCount`, Ubuntu 24.04
+   AMI from the SSM public parameter, root EBS 50 GB gp3 (the i4i NVMe volume attaches automatically), IMDSv2
+   required, `InstanceInitiatedShutdownBehavior=terminate`, user-data = `node_bootstrap.sh`,
+   **`TagSpecifications` on the instance, volume and ENI at launch** (so there is never an untagged window in
+   which a crash could leak a machine), and a **`ClientToken` derived from `handle + slot`** so a retried call
+   cannot double-launch. Each instance carries tag `Slot=tikv-3` / `Role=controller|pd|tidb|loadgen`, which is
+   the slot -> instance mapping; re-running with the same spec looks nodes up by `Run + Slot` and launches only
+   the missing ones (this is also how a permanently lost node is replaced).
+6. **Capacity failures:** `InsufficientInstanceCapacity` in an AZ retries the other AZs of that region if the slot
+   did not pin one (spec `az: auto|us-east-1c`); pinned AZs fail loudly. `VcpuLimitExceeded` can only appear if
+   preflight was bypassed. If i4i capacity is a recurring problem for the 30-node run we add optional On-Demand
+   Capacity Reservations (`CreateCapacityReservation`) in step 3 of the work breakdown; not needed for the
+   smoke test.
+7. **Wait + readiness:** `instance_running` waiter -> `instance_status_ok` -> SSH reachable through the controller ->
+   `/var/lib/powder/bootstrap.done` present on every node (NVMe mounted at `/data`, OS tuning applied) ->
+   `state.json` complete. Failures leave `state.json` describing what exists; nothing is torn down implicitly.
+
+`teardown_infra.py` reverses it from tags alone, across **all** regions (so a lost `state.json` or a half-failed
+deploy still gets cleaned up): terminate instances -> wait for `terminated` -> delete peering -> routes -> detach
+and delete IGW -> subnets -> SGs -> VPCs -> key pairs, then `--verify` rescans every region for anything still
+tagged `Project=powder` and fails if it finds any.
+
+| Script | Creates | Deletes | Reads |
+|---|---|---|---|
+| `deploy_infra.py` | VPCs, subnets, IGW, routes, peering, SGs, key pairs, instances | nothing | quotas, offerings, AMIs, prices |
+| `teardown_infra.py` | nothing | everything tagged for the named handle(s) / all / older than X | tags, resource graph |
+| `install_tidb.py` | files/services on instances (no AWS resources) | nothing | `state.json` |
+| `run_experiment.py` | files on instances; local result files | nothing | `state.json`, TiDB/Prometheus APIs |
+| `run_all.py` | (via the above) | (via teardown) | |
+
+## 6.2 PD and the cluster manager (TiUP) in detail
+
+**What PD is.** The Placement Driver is TiDB's control plane: a small Raft group (3 members here) that (a) stores
+the metadata of every Raft group ("Region": key range, peers, leader, epoch), (b) hands out transaction
+timestamps (TSO), and (c) **schedules**: each TiKV store sends heartbeats and per-Region reports; PD decides
+changes and returns them as *operators* (add peer, remove peer, transfer leader, split, merge) in heartbeat
+responses. TiKV executes them. TiDB servers are stateless SQL layers that ask PD where a key lives.
+
+**Why it matters for Powder.** Everything the paper compares against is a PD behavior, and several of our knobs are
+PD configuration:
+
+| Behavior | PD mechanism | Relevance |
+|---|---|---|
+| Replace a dead node | A store silent for `max-store-down-time` (default 30 min) is marked down and the replica/rule checker re-creates its replicas elsewhere | This **is** the PDF's "node replica timeout" what-if (10/15/20 min); we set it per run via spec `pd_config`. |
+| Where replicas go | `location-labels`, `isolation-level`, and *placement rules* (counts, roles incl. `learner`, label constraints) | Baseline "TiDB PD" placement; learner rules = the "active + passive learner" what-if. |
+| Merge small Regions | merge checker, bounded by `max-merge-region-size/keys` and schedule limits | Goal 1.4: ILP/simulator picks which nodes stay in a merge. |
+| Split / new Region placement | TiKV splits a Region in place (`region-split-size`), PD then balances; `scatter-region` for pre-split tables | Goal 1.4: ILP picks which nodes take a split partition. |
+| Rate of data movement | `region/replica/leader/merge-schedule-limit`, per-store `store-limit` | Recovery speed; feeds Goal 2.1 calibration and the GB-movement constraint. |
+| Rolling software updates | `tiup cluster upgrade` evicts leaders (`evict-leader` scheduler) per node and restarts | Goal 5: the weekly-update downtime we compare against. |
+
+The #9 hook is therefore **inside PD's store-selection path for add-peer/remove-peer/merge** (the `pkg/schedule`
+checkers and store selector; exact files to be confirmed against the pinned tag in step 1 and recorded in this
+plan). Today the plan only guarantees what that work needs: PD built from `third_party/pd`, patchable via
+`tiup cluster patch -R pd`, store labels including `machine_class`, and a reserved oracle endpoint.
+
+**What TiUP is and what it does for us.** TiUP is PingCAP's package/cluster manager. `tiup cluster` takes a
+topology YAML (`global`, `server_configs` for pd/tikv/tidb, `pd_servers`, `tikv_servers`, `tidb_servers`,
+`monitoring_servers`, `grafana_servers`) and, over SSH from a control machine, creates a service user, pushes
+binaries, writes configs, installs **systemd units**, and starts everything in dependency order. We use:
+`check --apply` (OS prerequisites), `deploy`, `start`, `display`, `scale-out`/`scale-in` (node replacement, `--force`
+when the instance is already gone), `edit-config`/`reload` (change PD/TiKV settings for what-if runs),
+`exec` (run a command on all nodes: log collection), `patch` (PD swap for #9), `upgrade` (rolling update).
+TiKV store labels come from `config.server.labels` per node (`region`, `zone`, `host`, `machine_class`).
+
+**Constraints we design around.** (1) TiUP uses the topology `host` both to SSH and as the advertised address, so
+the control machine must reach **private** IPs: hence the controller VM inside the peering mesh. (2) TiUP wants a
+passwordless-sudo SSH user on every node (the `ubuntu` user + the run's key). (3) All TiUP components download to
+the controller once; nodes never hit the internet for TiDB bits.
+
+**Alternatives considered.** *tidb-operator on Kubernetes (EKS):* production-grade but adds a k8s layer, pod
+networking and node pools between us and the processes/NVMe/iptables the failure emulator must manipulate.
+*Hand-rolled systemd + tarballs:* maximal control but we would re-implement labels, scale-in/out, rolling restarts and
+config reload. TiUP is the standard route for VM deployments and keeps #8/#9 small. Revisit only if TiUP's
+scale-in of a permanently lost store proves too slow or fragile in step 4's testing.
+
+## 7. Experiments and result collection
+
+**Three measurements, collected independently: two availability metrics and repartitioning.**
+
+1. **Partition (RSM) availability: the prober.** `prober.py` runs on each load generator: every 1 s
+   (configurable) it does a short write+read transaction on one key per target Raft region (via the local TiDB)
+   with a hard timeout, and logs `{ts, region_key, ok, latency_ms, error}`. Per-RSM unavailability =
+   failed-probe seconds / run seconds; aggregate = mean over RSMs and the worst RSM. This is the quantity the
+   simulator/ILP predict (unit: time, per partition). Probing from every region means a region-isolating fault
+   is visible as a client-side effect rather than assumed. It is independent of the load workload so it is not
+   starved by it.
+2. **Workload availability: fraction of requests that timed out.** What a user of the database sees, weighted by
+   where the traffic actually goes (a hot partition counts more). Defined precisely:
+
+   | Outcome class | Examples | Counts as |
+   |---|---|---|
+   | `ok` | committed / read returned | available |
+   | `timeout` (unavailable) | client deadline exceeded, connect refused/reset, TiDB `9001` PD timeout, `9002` TiKV timeout, `9003` TiKV busy, `9005` Region unavailable | **unavailable** |
+   | `conflict` | `9007` write conflict, `1213` deadlock, `1062` duplicate key, `8022`/retryable txn errors | **excluded from numerator and denominator** (application-level contention, not availability) |
+   | `other` | anything unclassified | reported separately; the run is flagged if it exceeds 0.1% so nothing is silently dropped |
+
+   `workload_unavailability = timeout / (ok + timeout)`; conflicts and `other` are reported as their own rates.
+   The error-code list is checked against the pinned TiDB version's `errno` table in step 5, not assumed.
+
+   **Every non-`ok` request records its cause, whatever its class** (not only timeouts): `outcome` class,
+   `cause` (a stable slug such as `client_deadline`, `conn_refused`, `conn_reset`, `tidb_9005_region_unavailable`,
+   `tidb_9007_write_conflict`, `mysql_1213_deadlock`, `unclassified`), the numeric `error_code`, the `layer` it
+   surfaced at when known (client / TiDB / TiKV / PD), and the error text (truncated to 200 characters and
+   stored through a dictionary so the log stays compact). `summary.json` carries a **cause breakdown table**
+   (count and share) overall, per RSM, per client region and per 10 s interval, so a plot can show *why* requests
+   failed during a window (e.g. election gap vs. region unavailable vs. connection loss) and #8 can later
+   line causes up against injected fault events. Prober failures record the same fields.
+
+   Two design requirements make this number meaningful: the generator is **open-loop** (requests are issued on a
+   fixed or time-varying arrival schedule, each with its own client-side deadline), because a closed-loop client
+   stops sending while the database is down and so *under-counts* the outage; and every request is tagged with its
+   target Region/key range so the metric can be broken down per RSM and per client region. The deadline is a
+   spec parameter (`request_timeout`, default 5 s) and is part of the metric's definition, so it is recorded in
+   `config.json` and `summary.json`; the analysis can also recompute at other thresholds from the per-request log
+   (`latency_ms` kept for every request in a compact binary/JSONL log).
+
+   **Attribution to partitions and RSMs.** Requests are single-key point operations (range scans are tagged by
+   their first key), so each maps to exactly one Region at issue time. Region boundaries and peer sets change during
+   a run (splits, merges, rebalancing, replacement), so `run_experiment` snapshots the Region map from PD every 10 s
+   (`pd/regions-<ts>.json`: key range, peer stores, leader) and attribution is done offline with the map valid at
+   each request's timestamp. Three groupings are reported, for **both** metrics:
+
+   | Grouping | Meaning | Used for |
+   |---|---|---|
+   | **per partition** | one TiKV Region (key range) | raw numbers; per-RSM roll-ups |
+   | **per RSM** | the set of stores holding the Region's replicas (the Raft group's membership); Regions with the same store set are merged | comparison with the ILP/Markov per-RSM prediction and the placement it chose |
+   | **per client region** | where the request originated | region-outage visibility |
+
+   For each: prober unavailability (failed-probe time / run time), workload unavailability and its cause breakdown,
+   request count, and p50/p99 latency. A Region with too few requests to be meaningful (e.g. < 100) is flagged
+   rather than reported as 0% unavailable, and the weight each RSM carries in the workload metric (its share of
+   requests) is always shown next to its number.
+
+   The two metrics can legitimately disagree (uniform traffic vs. a failed cold partition; a leader-election gap
+   shorter than one probe period), and reporting both is the point; `summary.json` has both.
+
+3. **Repartitioning: how often and how long.** "Repartitioning" here means any change to how data is divided
+   or placed: **splits**, **merges** (key ranges change), **replica moves** (add / remove / move peer: the RSM's
+   membership changes and data is copied), and **leader transfers** (no data moves, but the serving node changes;
+   tracked separately). Three sources are collected and cross-checked, because no single one is complete:
+
+   | Source | Gives | Limits |
+   |---|---|---|
+   | **PD operator lifecycle**, from PD logs and the Prometheus operator counters/duration histograms | each operator's kind, Region, steps, creating scheduler/checker, create -> start -> finish/timeout/cancel times | metric and log-line formats vary by version: verified against the pinned tag in step 5 |
+   | **Region-map snapshots** (every `region_map_interval`, default 10 s) diffed over time | version-independent ground truth for splits, merges, peer-set changes, leader changes, Region sizes, under-replicated / pending peers | 10 s resolution; events shorter than that are only seen via the operator log |
+   | **TiKV counters** (admin commands: split / merge; snapshot bytes and durations sent/received) | actual bytes transferred and snapshot times | per store, not per Region |
+
+   Reported in `summary.json` -> `repartition`, and as raw events in `repartition/events.jsonl`:
+
+   | Metric | Definition |
+   |---|---|
+   | **How often** | event counts and per-hour rates by kind (split / merge / add-, remove-, move-peer / leader transfer) and by trigger (balance-region, balance-leader, hot-region, merge checker, replica/rule checker after a node loss, scatter, manual); Region count over time |
+   | **How long** | per-operator duration distribution (p50 / p90 / p99 / max) by kind, with timeouts and cancels counted; **episodes** (operators separated by < 60 s gaps are one episode): episode count, duration distribution, and the **share of run time with at least one operator in flight** |
+   | **How much** | GB moved (snapshot bytes), split intra- vs inter-region from the store -> region map, and the implied inter-region $ (exec #6 GB-movement constraint; paper Fig 8) |
+   | **Per RSM** | times each RSM's store set changed, and time spent under-replicated (fewer healthy voters than the replication factor, or a learner still catching up): the restore-replication time #10 needs |
+   | **Tie to availability** | every failed request/probe is flagged `during_repartition` if an operator touching its Region was in flight or a leader transfer happened within a few seconds, so the cause table shows how much unavailability coincides with repartitioning (paper Fig 7) |
+
+   Initial smoke runs will mostly show splits and balancing at load start; the interesting numbers appear with
+   hotspots (Goal 6.3) and node loss, which is why they are recorded from the first experiment.
+
+**Load generator: `powder-load`** (small Go program, built on the controller, `database/sql` + MySQL driver),
+not `go-ycsb`, because go-ycsb is closed-loop and does not classify errors this way. It takes a key distribution
+(uniform / zipf / hot-range / shifting-hot-range) and an arrival-rate profile (constant / diurnal), which
+are exactly Goal 6.3's four workloads, so only the smoke workload is built now and the others are config.
+Throughput/latency comparisons against vanilla TiDB (paper Fig 5/6) come from the same tool. If it
+proves too heavy, the fallback is `go-ycsb` for performance plus an asyncio Python client for the availability
+metric.
+
+Workload interface (`workloads/base.py`): `prepare(cluster)`, `run(cluster, duration, seed) -> artifacts`. The smoke
+workload is uniform keys at a fixed modest rate (e.g. 500 req/s per region) for the duration.
+
+**Collected per experiment** (`outputs/tidb/<handle>/experiments/<name>-<utc>/`):
+
+| Path | Content |
+|---|---|
+| `config.json` | experiment config, handle, seed, start/end UTC |
+| `prober/<region>.jsonl` | raw probe results (`ts, region_key, ok, latency_ms, cause, error_code`) |
+| `workload/<client-region>/requests.*` | per-request log from `powder-load` (`ts, key range, outcome class, cause, error_code, layer, latency_ms`; error text via `errors.dict.json`) + per-interval throughput/latency |
+| `metrics/*.json` | Prometheus `query_range` export of a fixed metric list (QPS, p99, region/leader counts per store, PD scheduler counters, store state, raft apply/commit, snapshot send/recv bytes) |
+| `logs/<slot>/{pd,tikv,tidb}.log.gz` | service logs from every node |
+| `pd/` | `pd-ctl` dumps: `store`, `config show all`, placement rules, `operator` history at start/end, and the periodic Region-map snapshots `regions-<ts>.json` used for attribution |
+| `repartition/events.jsonl` | one line per repartitioning event: `{kind, region_id, key_range, trigger, from_store, to_store, t_create, t_start, t_finish, duration_s, outcome, bytes_moved, source}` |
+| `faults/{planned,applied}.jsonl` | empty today; the #8 trace and what was actually injected |
+| `summary.json` | prober unavailability and workload unavailability (timeouts / (ok + timeouts)) **per partition, per RSM, per client region and aggregate**, with request weights; conflict and other rates; **cause breakdown tables** (overall, per RSM, per interval); the `repartition` block (below); throughput/latency percentiles; node-count, hours, **modeled $ cost** (library prices + transfer, not the bill) and the **actual** estimated AWS cost |
+
+Run-level `manifest.json`: git sha + dirty flag, library content hashes (from `trace` header logic), TiDB
+versions, spec hash, instance ids, stage timings (deploy/install/experiment/teardown wall times — also
+seed data for #10's setup-timing distributions). Large raw logs are gitignored; `manifest.json`,
+`summary.json` and `config.json` are committed so a result can be cited the way library entries are.
+
+## 8. Interfaces reserved for #8, #9, #10 and Goal 1
+
+* **Fault injection (#8):** `trace.generate` already emits `{slot, region, machine, kind, cause, start,
+  duration}`. #8 adds an `injector` that connects through the controller and implements the §3.5 action
+  table: kill/restart TiKV (transient), kill + `rm -rf /data/tikv` + replace the instance (permanent),
+  graceful stop (planned), `iptables` partition of a region (region outage). This plan guarantees what it
+  needs: stable slot→instance mapping in `state.json`, systemd units with predictable names
+  (`tikv-20160.service`), data dir on the NVMe at `/data`, `iptables`/`tc` present on nodes,
+  idempotent spec-driven node replacement (§4), and `faults/` output paths.
+* **PD ↔ ILP (#9, Goal 1.4):** TiKV stores carry the label **`machine_class`** (and region/zone/host), so a
+  patched PD (or the oracle process it calls) can see each store's library class directly from store labels
+  without a side channel. The controller reserves a `powder-oracle` slot (port 8650, SG rule, systemd
+  unit placeholder, spec field `oracle: {enabled: false}`), and `tiup cluster patch` is the path to ship the
+  forked PD from `third_party/pd`. ILP-driven *initial* deployment (Goal 1.2.1) = generate `spec.yaml` from
+  an ILP placement; nothing else changes.
+* **Recovery timing (#10, Goal 2.1):** stage wall times and `pd-ctl` operator history are already collected;
+  #10 adds dedicated benchmarks (inter-region download speed, leader election) as new experiments under
+  the same `run_experiment` skeleton.
+* **Storage/size constraints (Goal 1.1):** spec records per-slot disk (`/data` size from the instance
+  metadata) so the ILP's storage model can be checked against real stores.
+
+## 9. Safety, cost, permissions
+
+* **Spend guard (budget is not the concern; unattended and forgotten resources are).** `deploy_infra.py` and
+  `run_all.py` refuse to create anything unless given `--yes` or `POWDER_ALLOW_SPEND=1`, and always print the
+  estimated $/h and total first. Interactive use: you pass `--yes` and it is a one-word confirmation. The point
+  is the *unattended* sessions: `infra/aws/run_claude.sh` starts a Claude Code session every 6 h on the work VM
+  with Bash access and nobody watching. Its environment (`~/.powder-runner.env`) will not export
+  `POWDER_ALLOW_SPEND`, and its instance role (`infra/aws/iam-policy.json`) is read-only for EC2, so a runner that
+  decides to "just test the deploy script" gets a refusal, not a 30-node bill. If you later want unattended
+  deploy runs, make it a deliberate step: a separate role with the tag-scoped deploy policy, the env var set in a
+  *different* runner profile, and `limits.max_hourly_usd` / `max_hours` caps enforced by the script.
+* Cost estimate printed before launch: 1 h smoke test of 6 TiKV (`i4i.2xlarge` ≈ $0.69–0.76/h) plus control
+  plane is roughly **$5–6**; the 30-node 24 h study is roughly **$600+** plus inter-region transfer
+  ($0.02/GB class). `pricing.py` computes the real figure from the price library.
+* `iam-deploy-policy.json`: EC2 create/delete restricted by tag condition where AWS supports it
+  (`aws:RequestTag/Project=powder`), VPC peering, SSM `GetParameter` for AMIs, `servicequotas:Get*`,
+  `pricing:Get*`. Attached to a separate role/user from the work VM role (`infra/aws/iam-policy.json`).
+* Teardown safety: the orchestrator's `finally`, tag-based `teardown_infra.py --verify`, and `--list` to see
+  forgotten deployments by name (§6.0). Optional backstop (step 7, only if wanted): a daily cron on the work VM
+  running `teardown_infra.py --older-than 48h --yes` and logging `--list` to `~/powder-logs/`. `limits.max_hours` is
+  used for the cost preview and a warning, not as an expiry tag.
+* Never print or log the private key; `*.pem` and `outputs/tidb/*/ssh/` in `.gitignore`.
+
+## 10. Testing strategy (live AWS first)
+
+An AWS account with budget is assumed, so the plan tests against real AWS and **drops** the fake boto3 client /
+`moto` and the local `tiup playground` backend that v1 proposed: a fake client only verifies our beliefs about
+the AWS API, and cross-region networking, quotas, NVMe behaviour and TiUP-over-peering can only fail on the real
+thing. What we keep is what is *cheap and catches silent errors*; what we add is a loop that makes live iteration
+fast.
+
+**1. Pure-logic unit tests (seconds, no AWS, no mocks).** Only for logic where a bug would be silent or expensive
+to find live:
+
+* the **availability metrics**: outcome classification (every error code in §7's table, plus unknown -> `other`),
+  open-loop accounting, and `summary.json` math, against canned request/probe logs with hand-computed answers
+  (e.g. 600 s run, one RSM down 60 s -> 0.1 unavailability; conflicts excluded from numerator and denominator);
+* network planning: non-overlapping CIDRs, exactly C(n,2) peerings, route entries on both sides;
+* `topology.py` golden file (labels, `location-labels`, PD/TiKV counts per region);
+* handle generation (format, uniqueness against fake tag/dir lists, collision retry, explicit-name validation) and
+  teardown selection over a fake deployment list (handle list, `--all`, `--older-than`, unknown handle is an error);
+* repartition detection: operator-log parser on canned PD log lines; Region-map snapshot diffs that must report the
+  right splits, merges, peer moves and leader changes, durations, episodes and bytes moved;
+* RSM attribution: Region maps that split/merge/rebalance mid-run give the right per-RSM numbers on a canned log;
+* teardown ordering over a resource graph (dependencies before dependents; tolerates already-deleted nodes);
+* spec validation and the cost/quota arithmetic behind `--dry-run`.
+
+**2. `--dry-run` everywhere** (needed anyway for the cost/quota preview).
+
+**3. A fast live dev loop.** A *dev run* (e.g. 3 regions x 2 TiKV, ~$5/h) is created once with `--keep-infra`.
+`install_tidb.py` and `run_experiment.py` are re-runnable against it (`--resume`, re-install = `tiup cluster
+destroy` + deploy, experiments are keyed by name), so we iterate on topology, prober, load generator and
+collection without paying the ~5-10 min VM+peering setup each time. Teardown at the end of the session;
+`teardown_infra.py --list` shows anything left over.
+
+**4. Live gates (each must pass before the next step starts):**
+
+| Gate | What runs | What it proves |
+|---|---|---|
+| G1 infra | `deploy_infra` for 2 nodes in 2 regions, ping + SSH over private IPs, NVMe mounted, then teardown + `--verify` | peering/routes/SGs/quotas; no leaks |
+| G2 install | 6 TiKV across 3 regions + control plane: health gate green, labels present, `SELECT 1` per TiDB | TiUP over the mesh, PD placement by labels |
+| G3 metric self-test | `run_experiment --self-test`: (a) pick a Region via `pd-ctl`, stop a majority of its peers for a scripted 60 s, restart, repeat for 3 Regions; (b) scripted repartitioning: `SPLIT TABLE` into a known number of Regions, a `pd-ctl operator add` peer move and leader transfer | (a) prober and `powder-load` report ~60 s unavailability for exactly those RSMs, and ~0 for the others; (b) the repartition log reports exactly the known splits, the peer move and the leader transfer, with plausible durations; no fault emulator needed |
+| G4 smoke | full `run_all --spec smoke.yaml`: deploy -> install -> 10 min experiment -> collect -> teardown, `--verify` clean | the whole pipeline; **exec #7 done** |
+| G5 abort safety | run G4 again, SIGINT during the experiment; then another run with `state.json` and its directory deleted: `--list` must still show its handle (LOCAL DIR `no`) and `teardown_infra.py <handle>` + `--verify` must clean it; also start two deployments and tear one down by handle, leaving the other untouched | teardown guarantees under failure; handle selection never touches the other deployment |
+
+G3 is the one that matters most for the paper: it calibrates the measurement itself before any emulated-fault
+result is trusted, and the known outage durations give an exact expected answer.
+
+## 11. Work breakdown (each step its own commit; tick in §12)
+
+1. **Pin + fetch:** `third_party/tidb/VERSIONS`, `fetch_tidb.sh` with checksums, `third_party/pd` submodule at the
+   matching tag (record in this plan the PD files for the #9 hook), allowlist additions.
+2. **Library + unit tests + `--dry-run`:** spec/state/pricing/topology, network planning, metric math (§10.1). No AWS calls.
+3. **`deploy_infra.py` + `teardown_infra.py`** (handles, `--list`, selectors); gate G1.
+4. **`install_tidb.py` + `node_bootstrap.sh`**; gate G2. Decide here whether TiUP scale-in of a lost store is good
+   enough (§6.2 alternatives).
+5. **`powder-load`, `prober.py`, workload interface + smoke workload, `collect.py`, `run_experiment.py`
+   (including `--self-test`)**; gate G3.
+6. **`run_all.py`** with signal-safe teardown, `--resume`, `--keep-infra`; gates G4 and G5 = **exec #7 done**.
+7. **Docs:** `infra/tidb/README.md`, update `CLAUDE.md` "Where things are", `iam-deploy-policy.json`; optional `--older-than` cron on the work VM.
+
+Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine running them.
+
+## 12. Progress checklist
+
+- [ ] Step 1: pin + fetch + `third_party/pd`
+- [ ] Step 2: library + unit tests + dry-run
+- [ ] Step 3: `deploy_infra.py` / `teardown_infra.py`; G1 passed
+- [ ] Step 4: `install_tidb.py` + `node_bootstrap.sh`; G2 passed
+- [ ] Step 5: load generator, prober, collection, `run_experiment.py`; G3 passed
+- [ ] Step 6: `run_all.py`; G4 + G5 passed (exec #7 done)
+- [ ] Step 7: docs, IAM policy, optional `--older-than` cron
+
+## 13. Open questions (owner)
+
+1. **Is PD ever fault-injected?** Proposal: no (stable control plane, 3 PD across 3 regions) for the paper's
+   first results; note as a limitation. If yes, PD nodes become `slots` with a role.
+2. **Fork or vanilla PD submodule now?** Proposal: submodule of upstream `tikv/pd` at the pinned tag today; add
+   your own fork remote when #9 starts.
+3. **Instance type for the control plane / load generators** (`m6i.xlarge` proposed) — load generators in the
+   same region as TiDB servers, or one region only?
+4. **Regions for the smoke test:** 3 of the 4 regions (cheaper) vs all 4. Proposal: 3 for the smoke test, 4 for
+   the first real study.
+5. **Result storage:** local `outputs/` only, or also an S3 bucket for raw logs (needs a bucket + policy)?
+6. **Where the scripts run:** your Mac, or a work VM with a deploy role (separate from the unattended Claude
+   role)? The plan supports both; it only changes where the deploy key and role live.
+7. **Request timeout** that defines "timed out" for the workload metric (default 5 s): what does the paper's
+   availability SLA call a failed request? The per-request log lets us recompute at other thresholds.
+8. **Should unattended runner sessions ever be allowed to deploy?** Default: no (§9).
