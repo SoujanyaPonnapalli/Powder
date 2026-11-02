@@ -30,3 +30,4 @@
 "github.com"
 "api.github.com"
 "raw.githubusercontent.com"
+"tiup-mirrors.pingcap.com"

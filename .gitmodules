@@ -1,0 +1,4 @@
+[submodule "third_party/pd"]
+	path = third_party/pd
+	url = https://github.com/tikv/pd.git
+	shallow = true
