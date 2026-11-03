@@ -31,3 +31,7 @@
 "api.github.com"
 "raw.githubusercontent.com"
 "tiup-mirrors.pingcap.com"
+"checkip.amazonaws.com"
+"dl.google.com"
+"proxy.golang.org"
+"sum.golang.org"

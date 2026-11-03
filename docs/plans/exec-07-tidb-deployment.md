@@ -4,13 +4,12 @@ Scope: October Goals, execution order #7 ("Add TiDB to the repo and run a test d
 Goal 6.2 ("Make TiDB deployment script"), and the plumbing that #8 (failure emulator), #9 (PD queries
 the ILP) and #10 (timing benchmarks) will sit on.
 
-Status: **draft v2 (2026-11-02), nothing implemented.** v2 changes: an AWS account with budget is
-assumed (live AWS is the primary test target, local/fake backends dropped, §10); workload-level availability
-metric added (§7); VM reservation walkthrough (§6.1) and PD/TiUP detail (§6.2) added; spend-guard wording
-clarified (§9). v2.2: repartitioning metrics (§7); experiments must name the deployment handle they run on (§4.2); teardown
-simplified to handles / `--all` / `--older-than` (§6.0). v2.1: random run handles + handle-based teardown/listing (§4.1, §6), per-RSM
-and per-partition availability attribution and error-cause recording (§7). The work VM itself has no deploy credentials; live steps run from the owner's machine or a VM
-with the deploy role.
+Status: **v3 (2026-11-03): steps 1-7 implemented and committed on `exec07-tidb-deployment`; live AWS gates G1-G5 NOT yet
+run** (the machine this was built on has no AWS credentials). Everything is tested against moto (emulated EC2), fakes, the
+real TiDB output captured in `tests/fixtures/tidb/`, and a real TiDB on one machine (`infra/tidb/local_pipeline_check.py`).
+Section 14 lists what changed from the earlier drafts and what the first live runs must verify. Earlier revisions: v2.2
+repartitioning metrics, experiments name their handle, simplified teardown; v2.1 random handles, per-RSM attribution; v2
+live-AWS-first testing, workload metric.
 
 ## 0. Decisions proposed (change any before implementation starts)
 
@@ -534,11 +533,11 @@ seed data for #10's setup-timing distributions). Large raw logs are gitignored; 
 
 ## 10. Testing strategy (live AWS first)
 
-An AWS account with budget is assumed, so the plan tests against real AWS and **drops** the fake boto3 client /
-`moto` and the local `tiup playground` backend that v1 proposed: a fake client only verifies our beliefs about
-the AWS API, and cross-region networking, quotas, NVMe behaviour and TiUP-over-peering can only fail on the real
-thing. What we keep is what is *cheap and catches silent errors*; what we add is a loop that makes live iteration
-fast.
+Live AWS is the real test, but the code was built where no AWS credentials exist, so v3 reinstates stand-ins: **moto**
+(emulated EC2, a dev dependency; tests skip without it) for deploy/teardown/run_all, scripted/fake runners for the SSH stages,
+the real PD/TiKV output captured in `tests/fixtures/tidb/` for the parsers, and `infra/tidb/local_pipeline_check.py` (real TiDB via
+`tiup playground`) for the Go tool and the metric chain. These caught real bugs (below) but cannot prove that SSH, TiUP-over-peering,
+IAM, quotas or cross-region behaviour work: only the live gates can. What we keep from v2 is the cheap logic tests and the fast live dev loop.
 
 **1. Pure-logic unit tests (seconds, no AWS, no mocks).** Only for logic where a bug would be silent or expensive
 to find live:
@@ -595,12 +594,18 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
 ## 12. Progress checklist
 
 - [x] Step 1 (2026-11-02): pin + fetch + `third_party/pd`. Pinned v8.5.8 (+ tiup/cluster v1.17.1) from the TiUP mirror; fetch/verify/tamper paths tested; stock `pd-server`, `tikv-server`, `tidb-server` report 8.5.8; PD submodule commit equals the stock PD binary's commit. Decisions: mirror not `download.pingcap.org`; PD build deferred to #9 (needs Go 1.25.12).
-- [ ] Step 2: library + unit tests + dry-run
-- [ ] Step 3: `deploy_infra.py` / `teardown_infra.py`; G1 passed
-- [ ] Step 4: `install_tidb.py` + `node_bootstrap.sh`; G2 passed
-- [ ] Step 5: load generator, prober, collection, `run_experiment.py`; G3 passed
-- [ ] Step 6: `run_all.py`; G4 + G5 passed (exec #7 done)
-- [ ] Step 7: docs, IAM policy, optional `--older-than` cron
+- [x] Step 2 (2026-11-02/03): `powder/deploy` library (spec, state, handles, netplan, pricing incl. fetched control-plane prices,
+  topology), metric math (outcomes, availability, repartition), real-format Region-map loader and PD log parser written against
+  captured v8.5.8 output, `python -m powder.deploy.plan` dry-run. Deviation: handle word lists are 101 x 92 (~9,300 names), not 200 x 200.
+- [x] Step 3 (code, 2026-11-03): `deploy_infra.py` / `teardown_infra.py`, moto-tested. **G1 not run (no AWS credentials).**
+- [x] Step 4 (code, 2026-11-03): `install_tidb.py` + `node_bootstrap.sh`, tested with a scripted runner. **G2 not run.**
+- [x] Step 5 (code, 2026-11-03): `powder-load` (Go) + probes, collection, `run_experiment.py`, `--self-test` planner/evaluator;
+  validated on a real local TiDB. **G3 (self-test on AWS) not run.**
+- [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
+  repeated signals, failing teardown). **G4 and G5 not run: exec #7 is NOT done until they pass.**
+- [x] Step 7 (2026-11-03): `infra/tidb/README.md`, `iam-deploy-policy.json` (draft, unvalidated), `CLAUDE.md`, unattended-runner
+  safety line, `deploy`/`dev` extras. The `--older-than` cron is documented, not installed.
+- [ ] **Owner: run gates G1 -> G5 (§10) on real AWS.** First `deploy_infra.py --dry-run`, then G1 (~$1).
 
 ## 13. Open questions (owner)
 
@@ -618,3 +623,37 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
 7. **Request timeout** that defines "timed out" for the workload metric (default 5 s): what does the paper's
    availability SLA call a failed request? The per-request log lets us recompute at other thresholds.
 8. **Should unattended runner sessions ever be allowed to deploy?** Default: no (§9).
+
+## 14. Implementation notes (v3)
+
+**Deviations from the earlier drafts**
+
+* `RunInstances` is **one call per node**, not per (region, AZ, type) group: each node needs its own `Slot` tag and idempotency
+  token. AZs are chosen per region as those offering every instance type used there (up to 3); capacity errors fall back to the
+  other AZs unless the slot pins one.
+* `powder-load` is built **on the controller** (hash-pinned Go in `infra/tidb/loadgen/GO_PIN`), so no Go is needed on the operator's
+  machine; the binary reports a hash of its embedded error table, which must equal the Python table's.
+* Operator history is lossy, so lifecycles come from **PD logs** (`pdlog.py`); `pd-ctl operator history` is saved only as a cross-check.
+* Real-data findings that changed the design: `down_peers` never appears (down = voter on a non-Up store), `pending_peers` is
+  omitted when empty, Region lists are unordered, keys are memcomparable-encoded, membership changes shorter than one snapshot
+  interval are only visible through `epoch.conf_ver` (**peer_churn** events), TiKV `raftstore.max-peer-down-duration` (10 m, not
+  online-modifiable) gates dead-store re-replication (spec warns), and PD logs some lines twice (deduplicated).
+* A **settle gate** (no Regions missing a replica, no running operators) precedes load: a fresh cluster is still up-replicating, which
+  would otherwise be measured as repartitioning. Experiments abort loudly if the cluster never settles (`--settle-timeout`).
+* Two aggregator bugs found only on real output and fixed with regression tests: probe records are written at completion (late by up
+  to the request timeout) so bins must stay open for a lag allowance (`late_records` is counted and flagged, never double-counted),
+  and probe timestamps on bin boundaries need a 1 ms tolerance.
+* `local_pipeline_check.py` (real TiDB on one machine) is reinstated as a developer tool even though v2 dropped local backends: it
+  was the only way to validate the Go tool and the metrics without AWS.
+
+**First real-TiDB result (local, 3 TiKV, 70 s, 2 of 3 TiKV paused for 21 s):** probes show 35 s of unavailability per partition
+(0.50): the 21 s pause plus ~14 s of Raft re-election and recovery; every failure carries cause `client_deadline`; leader transfers
+afterwards were the only repartitioning. Timings are loopback numbers, not AWS numbers.
+
+**What the live gates must verify (known unknowns)**
+
+* G1: IAM policy sufficiency, quotas, cross-region peering acceptance latency, NVMe mount on `i4i.2xlarge`, teardown leaves nothing.
+* G2: TiUP flags and topology schema, `tiup cluster check` advisories to tolerate, PD `/members` shape, exporter versions to pin,
+  time to deploy 6-30 nodes.
+* G3: stopping `tikv-20160` via systemd matches `plan_rounds`' expectations; allowed gaps (`ELECTION_GAP_S`, `RECOVERY_GAP_S`) are right.
+* G4/G5: whole pipeline, SIGINT mid-experiment, teardown by tag with `state.json` deleted, two deployments independent.

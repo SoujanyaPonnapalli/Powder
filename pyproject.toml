@@ -25,11 +25,16 @@ cudss = [
 mkl = [
     "pypardiso",
 ]
+deploy = [
+    "boto3>=1.34",
+]
 gurobi = [
     "gurobipy>=12,<14",
 ]
 dev = [
     "pytest",
+    "boto3>=1.34",
+    "moto[ec2,ssm]>=5",
     "jupyterlab",
     "nbstripout",
     "pdfplumber>=0.11",

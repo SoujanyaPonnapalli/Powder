@@ -14,6 +14,11 @@ Each chat will detail a specific action item to take. We will make a plan that w
 - Library tests are NumPy-only: `python scripts/fault_library/run_tests.py` works without pytest/SciPy.
 - Monte Carlo engine: Rust, `rust/` (`cargo build --release --manifest-path rust/Cargo.toml`).
 - AWS work VM (data refresh + unattended Claude sessions): `infra/aws/README.md`.
+- TiDB deployment + experiments on AWS (exec #7): plan `docs/plans/exec-07-tidb-deployment.md` (§12 checklist),
+  scripts and README in `infra/tidb/`, library in `powder/deploy/`, pinned TiDB in `third_party/tidb/VERSIONS` and
+  `third_party/pd` (submodule: `git submodule update --init --depth 1 third_party/pd`). Results: `outputs/tidb/<handle>/`.
+  Tests: `~/.cache/powder/venv` has moto; `python -m pytest tests/test_deploy_*.py` (moto tests skip without it) and
+  `go test ./...` in `infra/tidb/loadgen`. Deploys cost money: never run them unattended.
 
 ## Conventions
 

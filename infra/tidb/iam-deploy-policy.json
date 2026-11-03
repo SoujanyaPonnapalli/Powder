@@ -1,0 +1,137 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadOnlyDescribeAndQuotas",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:Describe*",
+        "servicequotas:GetServiceQuota",
+        "servicequotas:GetAWSDefaultServiceQuota",
+        "servicequotas:ListServiceQuotas",
+        "ssm:GetParameter"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CreateTaggedNetworkAndKeys",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateVpc",
+        "ec2:CreateSubnet",
+        "ec2:CreateInternetGateway",
+        "ec2:CreateRouteTable",
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateVpcPeeringConnection",
+        "ec2:ImportKeyPair"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "powder"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstancesTaggedAtLaunch",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:*:*:instance/*",
+        "arn:aws:ec2:*:*:volume/*",
+        "arn:aws:ec2:*:*:network-interface/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "powder"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstancesUsingOwnNetworkAndKeys",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": [
+        "arn:aws:ec2:*:*:subnet/*",
+        "arn:aws:ec2:*:*:security-group/*",
+        "arn:aws:ec2:*:*:key-pair/*"
+      ],
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Project": "powder"
+        }
+      }
+    },
+    {
+      "Sid": "RunInstancesFromPublicImages",
+      "Effect": "Allow",
+      "Action": "ec2:RunInstances",
+      "Resource": "arn:aws:ec2:*::image/*"
+    },
+    {
+      "Sid": "TagOnlyAtCreation",
+      "Effect": "Allow",
+      "Action": "ec2:CreateTags",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "powder"
+        },
+        "StringLike": {
+          "ec2:CreateAction": [
+            "CreateVpc",
+            "CreateSubnet",
+            "CreateInternetGateway",
+            "CreateRouteTable",
+            "CreateSecurityGroup",
+            "CreateVpcPeeringConnection",
+            "ImportKeyPair",
+            "RunInstances"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "WireUpOwnResourcesOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:AttachInternetGateway",
+        "ec2:AssociateRouteTable",
+        "ec2:CreateRoute",
+        "ec2:AuthorizeSecurityGroupIngress",
+        "ec2:ModifyVpcAttribute",
+        "ec2:ModifySubnetAttribute",
+        "ec2:AcceptVpcPeeringConnection"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Project": "powder"
+        }
+      }
+    },
+    {
+      "Sid": "DeleteOwnResourcesOnly",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:TerminateInstances",
+        "ec2:DetachInternetGateway",
+        "ec2:DisassociateRouteTable",
+        "ec2:DeleteRoute",
+        "ec2:DeleteRouteTable",
+        "ec2:DeleteSubnet",
+        "ec2:DeleteInternetGateway",
+        "ec2:DeleteSecurityGroup",
+        "ec2:DeleteVpc",
+        "ec2:DeleteVpcPeeringConnection",
+        "ec2:DeleteKeyPair"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Project": "powder"
+        }
+      }
+    }
+  ]
+}

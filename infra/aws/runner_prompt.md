@@ -22,3 +22,7 @@ reasonable decisions, record them in the plan, and keep going.
 Never push to `main` or rewrite published history. Do not delete data under
 `data/fault_library/raw/`. If an item is blocked (e.g. needs a human login),
 add `(blocked: reason)` to it, commit that, and move to the next item.
+
+Never create AWS resources: do not run `infra/tidb/deploy_infra.py`, `infra/tidb/run_all.py` or anything else that
+launches instances, and never set `POWDER_ALLOW_SPEND`. Those scripts refuse without it, and this VM's role is
+read-only for EC2; deployments are started by a human who reads the cost estimate first.
