@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "source": "pingcap/tidb v8.5.8 pkg/errno/errcode.go (codes); classification is Powder's definition (plan section 7)",
+  "outcomes": {
+    "timeout": "counts against availability: the request could not be served (client deadline, lost connection, or a TiDB/TiKV/PD unavailability error)",
+    "conflict": "excluded from the availability numerator and denominator: application-level contention or constraint failure",
+    "other": "unclassified; reported separately and flagged if above 0.1% of requests so nothing disappears silently"
+  },
+  "mysql_codes": {
+    "1053": {"outcome": "timeout",  "cause": "mysql_1053_server_shutdown",          "layer": "tidb"},
+    "1062": {"outcome": "conflict", "cause": "mysql_1062_duplicate_key",             "layer": "tidb"},
+    "1205": {"outcome": "conflict", "cause": "mysql_1205_lock_wait_timeout",         "layer": "tikv"},
+    "1213": {"outcome": "conflict", "cause": "mysql_1213_deadlock",                  "layer": "tikv"},
+    "1317": {"outcome": "other",    "cause": "mysql_1317_query_interrupted",         "layer": "tidb"},
+    "8004": {"outcome": "other",    "cause": "tidb_8004_txn_too_large",              "layer": "tidb"},
+    "8005": {"outcome": "conflict", "cause": "tidb_8005_write_conflict_in_tidb",     "layer": "tidb"},
+    "8022": {"outcome": "conflict", "cause": "tidb_8022_txn_retryable",              "layer": "tikv"},
+    "8027": {"outcome": "timeout",  "cause": "tidb_8027_infoschema_expired",         "layer": "tidb"},
+    "8028": {"outcome": "other",    "cause": "tidb_8028_infoschema_changed",         "layer": "tidb"},
+    "9001": {"outcome": "timeout",  "cause": "tidb_9001_pd_server_timeout",          "layer": "pd"},
+    "9002": {"outcome": "timeout",  "cause": "tidb_9002_tikv_server_timeout",        "layer": "tikv"},
+    "9003": {"outcome": "timeout",  "cause": "tidb_9003_tikv_server_busy",           "layer": "tikv"},
+    "9004": {"outcome": "timeout",  "cause": "tidb_9004_resolve_lock_timeout",       "layer": "tikv"},
+    "9005": {"outcome": "timeout",  "cause": "tidb_9005_region_unavailable",         "layer": "tikv"},
+    "9006": {"outcome": "other",    "cause": "tidb_9006_gc_too_early",               "layer": "tikv"},
+    "9007": {"outcome": "conflict", "cause": "tidb_9007_write_conflict",             "layer": "tikv"},
+    "9008": {"outcome": "timeout",  "cause": "tidb_9008_tikv_store_limit",           "layer": "tikv"},
+    "9010": {"outcome": "timeout",  "cause": "tidb_9010_tikv_stale_command",         "layer": "tikv"},
+    "9011": {"outcome": "timeout",  "cause": "tidb_9011_max_timestamp_not_synced",   "layer": "tikv"},
+    "9012": {"outcome": "other",    "cause": "tidb_9012_tiflash_server_timeout",     "layer": "tikv"},
+    "9013": {"outcome": "other",    "cause": "tidb_9013_tiflash_server_busy",        "layer": "tikv"}
+  },
+  "client_deadline": {"outcome": "timeout", "cause": "client_deadline", "layer": "client"},
+  "error_text_patterns": [
+    {"regex": "connection refused",                                           "outcome": "timeout", "cause": "conn_refused",  "layer": "client"},
+    {"regex": "connection reset|broken pipe|bad connection|invalid connection|unexpected EOF|^EOF$", "outcome": "timeout", "cause": "conn_reset", "layer": "client"},
+    {"regex": "deadline exceeded|i/o timeout|timed out|timeout",              "outcome": "timeout", "cause": "client_deadline", "layer": "client"},
+    {"regex": "no route to host|network is unreachable|no such host",         "outcome": "timeout", "cause": "conn_unreachable", "layer": "client"}
+  ],
+  "unclassified_cause_prefix": "unclassified"
+}
