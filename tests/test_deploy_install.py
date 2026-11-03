@@ -149,6 +149,9 @@ class Scripted:
             return Result(0, "200")
         if " display " in command:
             return Result(0, DISPLAY)
+        if "powder-load version" in command:
+            from powder.deploy.loadgen_build import table_hash
+            return Result(0, f"powder-load 1 error_classes={table_hash()}\n")
         if "tiup" in command and " check " in command:
             return Result(0, "Node  Check  Result  Message\n10.0.0.5  cpu-governor  Fail  advisory\n10.0.0.5  swap  Pass  ok\n")
         return Result(0, "")
@@ -175,7 +178,12 @@ def test_install_sequence_and_artifacts(tmp_path):
         r"fetch_tidb\.sh tiup cluster tidb tikv pd ctl", r"tar xzf .*tiup-v1\.", r"tiup install cluster:v1\.",
         r" check ", r" deploy OrangePanda v8\.5\.8 ", r" start OrangePanda", r"/pd/api/v1/members", r" display OrangePanda")]
     assert order == sorted(order)                                              # verify -> tiup -> check -> deploy -> start -> health -> display
-    assert all(n == "controller" for n, _ in runner.calls)                      # everything runs on the controller
+    # everything runs on the controller, except the final check that each load generator got the same binary
+    assert all(n == "controller" for n, c in runner.calls if "powder-load version" not in c)
+    lg_checks = [n for n, c in runner.calls if n != "controller"]
+    assert sorted(lg_checks) == ["loadgen-us-east-1-1", "loadgen-us-east-2-1", "loadgen-us-west-2-1"]
+    assert any("go build" in c for _, c in runner.calls) and any("sha256sum -c" in c for _, c in runner.calls)
+    assert {p[1] for p in runner.puts} >= {"main.go", "classify.go", "gen.go", "record.go", "go.mod", "go.sum", "error_classes.json"}
     assert ("controller", "fetch_tidb.sh", "~/powder/infra/tidb/fetch_tidb.sh") in runner.puts
     assert any(p[1] == "VERSIONS" for p in runner.puts) and any(p[2] == I.CONTROLLER_KEY for p in runner.puts)
     topo = (rd.install_dir / "topology.yaml").read_text()
@@ -183,7 +191,7 @@ def test_install_sequence_and_artifacts(tmp_path):
     assert (rd.install_dir / "check.txt").exists() and (rd.install_dir / "display.txt").exists()
     assert state.stages["install"] == "done" and rd.load_state().stages["install"] == "done"
     m = json.loads(rd.manifest_path.read_text())
-    assert m["tidb_version"] == "v8.5.8" and m["check_advisory_failures"] == 1 and m["pins"]["pd"] == "v8.5.8"
+    assert m["loadgen"].startswith("powder-load 1") and m["tidb_version"] == "v8.5.8" and m["check_advisory_failures"] == 1 and m["pins"]["pd"] == "v8.5.8"
 
 
 def test_health_gate_retries_until_healthy(tmp_path):

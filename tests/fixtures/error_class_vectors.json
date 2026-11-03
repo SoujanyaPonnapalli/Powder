@@ -1,0 +1,24 @@
+{
+  "comment": "Shared by powder/deploy/outcomes.py (tests/test_deploy_outcomes.py) and infra/tidb/loadgen (go test): both implementations must agree on every row.",
+  "vectors": [
+    {"code": 9005, "text": "Region is unavailable", "deadline": false, "outcome": "timeout",  "cause": "tidb_9005_region_unavailable", "layer": "tikv"},
+    {"code": 9001, "text": "PD server timeout",     "deadline": false, "outcome": "timeout",  "cause": "tidb_9001_pd_server_timeout", "layer": "pd"},
+    {"code": 9002, "text": "TiKV server timeout",   "deadline": false, "outcome": "timeout",  "cause": "tidb_9002_tikv_server_timeout", "layer": "tikv"},
+    {"code": 9003, "text": "TiKV server is busy",   "deadline": false, "outcome": "timeout",  "cause": "tidb_9003_tikv_server_busy", "layer": "tikv"},
+    {"code": 9007, "text": "Write conflict",        "deadline": false, "outcome": "conflict", "cause": "tidb_9007_write_conflict", "layer": "tikv"},
+    {"code": 1213, "text": "Deadlock found",        "deadline": false, "outcome": "conflict", "cause": "mysql_1213_deadlock", "layer": "tikv"},
+    {"code": 1062, "text": "Duplicate entry",       "deadline": false, "outcome": "conflict", "cause": "mysql_1062_duplicate_key", "layer": "tidb"},
+    {"code": 1205, "text": "Lock wait timeout exceeded; try restarting transaction", "deadline": false, "outcome": "conflict", "cause": "mysql_1205_lock_wait_timeout", "layer": "tikv"},
+    {"code": 9006, "text": "GC life time is shorter than transaction duration", "deadline": false, "outcome": "other", "cause": "tidb_9006_gc_too_early", "layer": "tikv"},
+    {"code": 1146, "text": "Table doesn't exist",   "deadline": false, "outcome": "other",    "cause": "unclassified_1146", "layer": null},
+    {"code": 0,    "text": "dial tcp 10.0.0.1:4000: connect: connection refused", "deadline": false, "outcome": "timeout", "cause": "conn_refused", "layer": "client"},
+    {"code": 0,    "text": "read tcp 10.0.0.2:5->10.0.0.1:4000: read: connection reset by peer", "deadline": false, "outcome": "timeout", "cause": "conn_reset", "layer": "client"},
+    {"code": 0,    "text": "driver: bad connection", "deadline": false, "outcome": "timeout",  "cause": "conn_reset", "layer": "client"},
+    {"code": 0,    "text": "unexpected EOF",        "deadline": false, "outcome": "timeout",  "cause": "conn_reset", "layer": "client"},
+    {"code": 0,    "text": "context deadline exceeded", "deadline": false, "outcome": "timeout", "cause": "client_deadline", "layer": "client"},
+    {"code": 0,    "text": "read tcp: i/o timeout", "deadline": false, "outcome": "timeout",  "cause": "client_deadline", "layer": "client"},
+    {"code": 0,    "text": "lookup tidb: no such host", "deadline": false, "outcome": "timeout", "cause": "conn_unreachable", "layer": "client"},
+    {"code": 9007, "text": "Write conflict",        "deadline": true,  "outcome": "timeout",  "cause": "client_deadline", "layer": "client"},
+    {"code": 0,    "text": "something odd",         "deadline": false, "outcome": "other",    "cause": "unclassified_no_code", "layer": null}
+  ]
+}

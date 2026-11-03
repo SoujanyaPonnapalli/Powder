@@ -231,9 +231,15 @@ def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[st
                        timeout=60, check=False).stdout
     (rundir.install_dir / "components.txt").write_text(comps)
 
+    from .loadgen_build import LoadgenBuildError, ensure_loadgen
+    try:
+        loadgen_version = ensure_loadgen(runner, state, log)
+    except LoadgenBuildError as e:
+        raise InstallError(f"load generator build failed: {e}") from e
+
     state.set_stage("install", "done")
     state.save(rundir.state_path)
-    rundir.update_manifest(installed_at=utcnow(), tidb_version=tidb_v, tiup_version=tiup_v, tiup_cluster_version=cluster_v,
+    rundir.update_manifest(installed_at=utcnow(), loadgen=loadgen_version, tidb_version=tidb_v, tiup_version=tiup_v, tiup_cluster_version=cluster_v,
                            pins=pins, check_advisory_failures=fails)
     log(f"[{state.handle}] installed: {len(parse_display(disp))} instances up")
     return state

@@ -1,0 +1,3 @@
+# Go toolchain used to build powder-load on the controller (downloaded from dl.google.com, sha256 verified).
+# Columns: version  platform  sha256  url
+go1.25.12  linux-amd64  234828b7a89e0e303d2556310ee549fbcf253d28de937bac3da13d6294262ac1  https://dl.google.com/go/go1.25.12.linux-amd64.tar.gz

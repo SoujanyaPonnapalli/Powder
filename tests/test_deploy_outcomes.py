@@ -1,5 +1,8 @@
 """Outcome classification and the availability ratio (exec #7 step 2)."""
 
+import json
+from pathlib import Path
+
 import pytest
 
 from powder.deploy import outcomes as O
@@ -105,3 +108,18 @@ def test_normalize_classifies_raw_records_only_when_needed():
     assert (n["outcome"], n["cause"]) == ("timeout", "tidb_9005_region_unavailable")
     assert normalize({"ts": 1, "failed": False})["outcome"] == "ok"
     assert normalize({"ts": 1, "deadline": True})["cause"] == "client_deadline"
+
+
+VECTORS = json.loads((Path(__file__).parent / "fixtures" / "error_class_vectors.json").read_text())["vectors"]
+
+
+@pytest.mark.parametrize("v", VECTORS, ids=lambda v: f"{v['code']}-{v['text'][:24]}")
+def test_python_classifier_matches_the_shared_vectors(v):
+    # the Go load generator is tested against the same file (infra/tidb/loadgen/main_test.go)
+    got = O.classify(code=v["code"] or None, text=v["text"], deadline_exceeded=v["deadline"])
+    assert (got.outcome, got.cause, got.layer) == (v["outcome"], v["cause"], v["layer"])
+
+
+def test_go_embedded_table_is_identical_to_the_python_one():
+    go = Path(__file__).resolve().parents[1] / "infra" / "tidb" / "loadgen" / "error_classes.json"
+    assert go.read_bytes() == O.TABLE_PATH.read_bytes(), "copy powder/deploy/error_classes.json into infra/tidb/loadgen/"

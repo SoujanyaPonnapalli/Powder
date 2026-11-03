@@ -32,6 +32,7 @@ from . import outcomes as O
 from .regionmap import RegionMapSeries, bucket_of, row_key
 
 LOW_SAMPLE = 100
+BIN_EPS_S = 1e-3            # tolerance for timestamps that sit on a bin boundary
 OTHER_FLAG = 0.001          # run is flagged when more than 0.1% of requests are unclassified ("other")
 _LAT_BASE = math.log(1.02)
 
@@ -77,13 +78,13 @@ class _Group:
     causes: Counter = field(default_factory=Counter)        # (cause, outcome, layer) -> n  for non-ok
     lat: Counter = field(default_factory=Counter)           # latency bucket -> n  for ok
 
-    def add(self, outcome: str, cause, layer, latency_ms) -> None:
-        self.counts.add(outcome)
+    def add(self, outcome: str, cause, layer, latency_ms, w: int = 1) -> None:
+        self.counts.add(outcome, w)
         if outcome == O.OK:
             if latency_ms is not None:
-                self.lat[lat_bucket(float(latency_ms))] += 1
+                self.lat[lat_bucket(float(latency_ms))] += w
         else:
-            self.causes[(cause or "unknown", outcome, layer)] += 1
+            self.causes[(cause or "unknown", outcome, layer)] += w
 
     def to_dict(self, grand_total: int) -> dict:
         d = self.counts.to_dict()
@@ -122,7 +123,8 @@ class WorkloadAggregator:
         row = rec["row"]
         key = row_key(self.table_id, row)
         rsm = self.maps.at(ts).rsm_label(key)
-        args = (outcome, rec.get("cause"), rec.get("layer"), rec.get("latency_ms"))
+        w = int(rec.get("w", 1))                     # >1 when the load generator down-sampled ok requests
+        args = (outcome, rec.get("cause"), rec.get("layer"), rec.get("latency_ms"), w)
         self.overall.add(*args)
         self.by_partition.setdefault(bucket_of(row, self.keys, self.buckets), _Group()).add(*args)
         self.by_rsm.setdefault(rsm, _Group()).add(*args)
@@ -131,14 +133,14 @@ class WorkloadAggregator:
         self._t_last = ts if self._t_last is None else max(self._t_last, ts)
         if outcome != O.OK:
             b = int(ts // self.interval_s)
-            self.over_time.setdefault(b, Counter())[rec.get("cause") or "unknown"] += 1
+            self.over_time.setdefault(b, Counter())[rec.get("cause") or "unknown"] += w
             if self.repartition is not None:
                 during = self.repartition.during(ts, key)
-                self._fail_total += 1
-                self._fail_during += during
+                self._fail_total += w
+                self._fail_during += w * during
                 if outcome == O.TIMEOUT:
-                    self._to_total += 1
-                    self._to_during += during
+                    self._to_total += w
+                    self._to_during += w * during
 
     def consume(self, records: Iterable[dict]) -> "WorkloadAggregator":
         for r in records:
@@ -194,15 +196,20 @@ class _Bins:
 class ProbeAggregator:
     """Fixed-interval prober -> time-based partition availability.
 
-    Records must arrive approximately in time order (use :func:`merge_sorted` on the per-region files); a bin is
-    closed once the stream is two bins past it. Bins with no probe at all are not counted (they lower
-    ``coverage``, which is reported and flagged below 95%).
+    Records are stamped with their *scheduled* time but written at *completion*, so a probe that waits out a 5 s
+    timeout lands in the file ~5 s after later, faster ones. Records may therefore arrive out of order by up to
+    ``max_lag_s`` (set it to the probe timeout plus margin); a bin is finalised only once the stream is that far
+    past it. A record later than that is counted in ``late_records`` and flagged, never double-counted. Bins with no
+    probe at all are not counted (they lower ``coverage``, which is reported and flagged below 95%).
     """
 
     def __init__(self, maps: RegionMapSeries, table_id: int, keys: int, regions_target: int,
-                 interval_s: float, window: tuple[float, float]):
+                 interval_s: float, window: tuple[float, float], max_lag_s: float = 30.0):
         self.maps, self.table_id, self.keys, self.buckets = maps, table_id, keys, regions_target
         self.interval_s, self.t0, self.t1 = interval_s, window[0], window[1]
+        self.lag_bins = int(math.ceil(max_lag_s / interval_s)) + 1
+        self._closed_below = 0               # every bin index below this is finalised
+        self.late = 0
         self.expected_bins = max(1.0, (self.t1 - self.t0) / interval_s)
         self._open: dict[tuple[int, int], dict] = {}        # (bin, bucket) -> {"regions": {region: failed}, "row": row}
         self._max_bin = -1
@@ -215,9 +222,15 @@ class ProbeAggregator:
 
     def add(self, rec: dict) -> None:
         rec = normalize(rec)
-        b = int((rec["ts"] - self.t0) // self.interval_s)
-        if b < 0 or rec["ts"] > self.t1:
+        # Probes are timestamped at their scheduled instants, i.e. exactly on bin boundaries. At epoch magnitudes a
+        # float64 is only good to ~2e-7 s, so floor() alone could put one tick into two different bins (seen on a real
+        # cluster: 71-73 bins for a 70-tick run). A 1 ms tolerance keeps every tick in its own bin.
+        b = int(math.floor((rec["ts"] - self.t0) / self.interval_s + BIN_EPS_S / self.interval_s))
+        if b < 0 or rec["ts"] > self.t1 + BIN_EPS_S:
             return                                           # outside the experiment window
+        if b < self._closed_below:
+            self.late += 1                   # arrived after its bin was finalised: reported, not re-counted
+            return
         bucket = bucket_of(rec["row"], self.keys, self.buckets)
         slot = self._open.setdefault((b, bucket), {"regions": {}, "row": rec["row"]})
         failed = rec["outcome"] == O.TIMEOUT
@@ -230,7 +243,7 @@ class ProbeAggregator:
             self.causes[(rec.get("cause") or "unknown", rec["outcome"], rec.get("layer"))] += 1
         if b > self._max_bin:
             self._max_bin = b
-            self._close_before(b - 1)
+            self._close_before(b - self.lag_bins)
 
     def consume(self, records: Iterable[dict]) -> "ProbeAggregator":
         for r in records:
@@ -238,6 +251,7 @@ class ProbeAggregator:
         return self
 
     def _close_before(self, bin_idx: int) -> None:
+        self._closed_below = max(self._closed_below, bin_idx)
         for key in [k for k in self._open if k[0] < bin_idx]:
             self._finalize(key, self._open.pop(key))
 
@@ -273,6 +287,7 @@ class ProbeAggregator:
             "by_partition": per,
             "by_rsm": {k: v.to_dict(self.interval_s) for k, v in sorted(self.by_rsm.items())},
             "causes": _cause_table(self.causes, sum(self.causes.values())),
-            "flags": {"low_coverage": bool(cov) and min(cov) < 0.95,
+            "late_records": self.late,
+            "flags": {"low_coverage": bool(cov) and min(cov) < 0.95, "late_records": self.late > 0,
                       "other_rate_above_threshold": bool(self.total) and self.other / self.total > OTHER_FLAG},
         }

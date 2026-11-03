@@ -217,3 +217,54 @@ def test_merge_sorted_interleaves_streams_by_time():
     a = [{"ts": 1}, {"ts": 4}]
     b = [{"ts": 2}, {"ts": 3}, {"ts": 5}]
     assert [r["ts"] for r in A.merge_sorted(a, b)] == [1, 2, 3, 4, 5]
+
+
+def test_down_sampled_ok_requests_are_weighted():
+    agg = workload()
+    for t in range(100):                                 # 1 ok in 10 is logged, with weight 10 -> 1000 ok requests
+        agg.add({**req(t, 100), "w": 10})
+    for t in range(50):                                  # failures are always logged individually
+        agg.add(req(t, 100, "timeout", cause="client_deadline", layer="client"))
+    o = agg.result()["overall"]
+    assert (o["ok"], o["timeout"], o["total"]) == (1000, 50, 1050)
+    assert o["unavailability"] == pytest.approx(50 / 1050)
+    assert agg.result()["by_rsm"]["1,2,3"]["low_sample"] is False
+
+
+def test_ticks_on_bin_boundaries_stay_in_one_bin_despite_float_noise():
+    # real-cluster regression: three client regions record the same scheduled tick with ~1e-7 s of float noise
+    t0 = 1793670151.309
+    agg = A.ProbeAggregator(series(two_regions()), TABLE, KEYS, BUCKETS, 1.0, (t0, t0 + 60.0))
+    noise = {"us-east-1": 0.0, "us-east-2": -2.4e-7, "us-west-2": 2.4e-7}
+    for k in range(60):
+        for reg, eps in noise.items():
+            agg.add(req(t0 + k + eps, 100, region=reg))
+    r = agg.result()
+    assert r["by_partition"]["0"]["bins"] == 60                                   # not 61 or 62
+    assert r["by_partition"]["0"]["coverage"] == pytest.approx(1.0)
+
+
+def completion_ordered(stream, delay_of):
+    """Order records the way the Go writer emits them: by completion time (scheduled ts + latency), not by ts."""
+    return sorted(stream, key=lambda r: r["ts"] + delay_of(r))
+
+
+def test_probes_that_wait_out_their_timeout_arrive_late_and_are_not_double_counted():
+    # real-cluster regression: the outage's failed probes complete 5 s after the later, healthy ones
+    stream = list(probe_stream())
+    late = completion_ordered(stream, lambda r: 5.0 if r["outcome"] == "timeout" else 0.0)
+    assert late != stream                                                       # the order really differs
+    agg = A.ProbeAggregator(series(two_regions()), TABLE, KEYS, BUCKETS, 1.0, (0.0, 600.0), max_lag_s=15)
+    r = agg.consume(late).result()
+    assert r["by_partition"]["2"]["bins"] == 600 and r["by_partition"]["2"]["unavailability_all"] == pytest.approx(0.1)
+    assert r["by_partition"]["2"]["coverage"] == pytest.approx(1.0) and r["late_records"] == 0
+    assert r["flags"]["late_records"] is False
+
+
+def test_records_later_than_the_lag_allowance_are_counted_as_late_not_re_counted():
+    stream = list(probe_stream())
+    far_late = completion_ordered(stream, lambda r: 100.0 if r["outcome"] == "timeout" else 0.0)
+    agg = A.ProbeAggregator(series(two_regions()), TABLE, KEYS, BUCKETS, 1.0, (0.0, 600.0), max_lag_s=5)
+    r = agg.consume(far_late).result()
+    assert r["late_records"] > 0 and r["flags"]["late_records"] is True
+    assert r["by_partition"]["2"]["bins"] <= 600                                 # never more bins than ticks
