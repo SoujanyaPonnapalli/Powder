@@ -1,0 +1,7 @@
+# Smoke experiment: uniform keys, fixed rate, no fault injection.
+name: smoke
+workload: {type: smoke, key_dist: uniform, arrival: constant, rate_per_region: 500, duration: 10m, regions_target: 50}
+request_timeout: 5s              # defines "timed out" for the workload availability metric
+prober: {interval: 1s}
+region_map_interval: 10s         # PD Region-map snapshots for RSM attribution and repartition metrics
+injector: none                   # trace:<file> arrives with exec #8

@@ -1,0 +1,73 @@
+{
+ "fetched_at": "2026-11-03T00:46:41+00:00",
+ "kind": "control_plane_prices",
+ "prices": {
+  "c6i.large": {
+   "us-east-1": 0.085,
+   "us-east-2": 0.085,
+   "us-west-1": 0.106,
+   "us-west-2": 0.085
+  },
+  "c6i.xlarge": {
+   "us-east-1": 0.17,
+   "us-east-2": 0.17,
+   "us-west-1": 0.212,
+   "us-west-2": 0.17
+  },
+  "m5.large": {
+   "us-east-1": 0.096,
+   "us-east-2": 0.096,
+   "us-west-1": 0.112,
+   "us-west-2": 0.096
+  },
+  "m5.xlarge": {
+   "us-east-1": 0.192,
+   "us-east-2": 0.192,
+   "us-west-1": 0.224,
+   "us-west-2": 0.192
+  },
+  "m6i.large": {
+   "us-east-1": 0.096,
+   "us-east-2": 0.096,
+   "us-west-1": 0.112,
+   "us-west-2": 0.096
+  },
+  "m6i.xlarge": {
+   "us-east-1": 0.192,
+   "us-east-2": 0.192,
+   "us-west-1": 0.224,
+   "us-west-2": 0.192
+  }
+ },
+ "sources": {
+  "us-east-1": {
+   "publicationDate": "2026-10-29T17:56:34Z",
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261029175634/us-east-1/index.csv",
+   "version": "20261029175634"
+  },
+  "us-east-2": {
+   "publicationDate": "2026-10-29T17:56:34Z",
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261029175634/us-east-2/index.csv",
+   "version": "20261029175634"
+  },
+  "us-west-1": {
+   "publicationDate": "2026-10-29T17:56:34Z",
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261029175634/us-west-1/index.csv",
+   "version": "20261029175634"
+  },
+  "us-west-2": {
+   "publicationDate": "2026-10-29T17:56:34Z",
+   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonEC2/20261029175634/us-west-2/index.csv",
+   "version": "20261029175634"
+  }
+ },
+ "unit": "USD per hour, Linux, shared tenancy, on-demand",
+ "vcpu": {
+  "c6i.large": 2,
+  "c6i.xlarge": 4,
+  "m5.large": 2,
+  "m5.xlarge": 4,
+  "m6i.large": 2,
+  "m6i.xlarge": 4
+ }
+}
