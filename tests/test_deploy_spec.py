@@ -173,3 +173,11 @@ def test_experiment_errors_are_collected():
 
 def test_experiment_trace_injector_syntax_accepted():
     assert S.parse_experiment({"injector": "trace:out/trace.jsonl"}).injector == "trace:out/trace.jsonl"
+
+
+def test_warns_when_only_pd_down_time_is_tuned():
+    d = smoke_dict()
+    d["pd_config"] = {"schedule.max-store-down-time": "10m"}
+    assert any("max-peer-down-duration" in w for w in S.spec_warnings(S.parse_spec(d)))
+    d["tikv_config"] = {"raftstore.max-peer-down-duration": "10m"}
+    assert not any("max-peer-down-duration" in w for w in S.spec_warnings(S.parse_spec(d)))

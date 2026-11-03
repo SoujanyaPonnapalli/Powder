@@ -1,0 +1,48 @@
+# TYPE pd_cluster_region_event counter
+pd_cluster_region_event{event="update_cache"} 1746
+pd_cluster_region_event{event="update_kv"} 975
+# TYPE pd_cluster_status gauge
+pd_cluster_status{engine="tikv",store="1",type="leader_count"} 27
+pd_cluster_status{engine="tikv",store="1",type="learner_count"} 0
+pd_cluster_status{engine="tikv",store="1",type="region_count"} 72
+pd_cluster_status{engine="tikv",store="1",type="storage_capacity"} 2.6539941888e+11
+# TYPE pd_regions_abnormal_peer_duration_seconds histogram
+pd_regions_abnormal_peer_duration_seconds_sum{type="down-peer"} 29
+pd_regions_abnormal_peer_duration_seconds_count{type="down-peer"} 126
+pd_regions_abnormal_peer_duration_seconds_sum{type="miss-voter-peer"} 242
+pd_regions_abnormal_peer_duration_seconds_count{type="miss-voter-peer"} 155
+# TYPE pd_regions_status gauge
+pd_regions_status{type="down-peer-region-count"} 0
+pd_regions_status{type="empty-region-count"} 66
+pd_regions_status{type="extra-peer-region-count"} 0
+pd_regions_status{type="learner-peer-region-count"} 0
+# TYPE pd_schedule_finish_operator_steps_duration_seconds histogram
+pd_schedule_finish_operator_steps_duration_seconds_sum{type="AddLearner"} 20.369675104000002
+pd_schedule_finish_operator_steps_duration_seconds_count{type="AddLearner"} 245
+pd_schedule_finish_operator_steps_duration_seconds_sum{type="ChangePeerV2Enter"} 1.2487081060000003
+pd_schedule_finish_operator_steps_duration_seconds_count{type="ChangePeerV2Enter"} 172
+# TYPE pd_schedule_finish_operators_duration_seconds histogram
+pd_schedule_finish_operators_duration_seconds_sum{type="add-rule-peer"} 12.585934303000002
+pd_schedule_finish_operators_duration_seconds_count{type="add-rule-peer"} 71
+pd_schedule_finish_operators_duration_seconds_sum{type="admin-add-learner"} 0.076506975
+pd_schedule_finish_operators_duration_seconds_count{type="admin-add-learner"} 1
+# TYPE pd_schedule_operator_region_size histogram
+pd_schedule_operator_region_size_sum{type="add-rule-peer"} 86
+pd_schedule_operator_region_size_count{type="add-rule-peer"} 71
+pd_schedule_operator_region_size_sum{type="admin-add-learner"} 7
+pd_schedule_operator_region_size_count{type="admin-add-learner"} 1
+# TYPE pd_schedule_operators_count counter
+pd_schedule_operators_count{event="already-have",type="balance-leader-scheduler"} 2
+pd_schedule_operators_count{event="cancel",type="add-rule-peer"} 1
+pd_schedule_operators_count{event="cancel",type="admin-merge-region"} 1
+pd_schedule_operators_count{event="cancel",type="balance-leader-scheduler"} 3
+# TYPE pd_scheduler_event_count counter
+pd_scheduler_event_count{name="abnormal_replica",type="balance-hot-region-scheduler"} 0
+pd_scheduler_event_count{name="balanced",type="balance-range-scheduler"} 0
+pd_scheduler_event_count{name="bucket-disable",type="split-bucket-scheduler"} 0
+pd_scheduler_event_count{name="create-operator-fail",type="balance-range-scheduler"} 0
+# TYPE pd_scheduler_store_status gauge
+pd_scheduler_store_status{address="127.0.0.1:20160",store="1",type="leader_count"} 27
+pd_scheduler_store_status{address="127.0.0.1:20160",store="1",type="leader_score"} 27
+pd_scheduler_store_status{address="127.0.0.1:20160",store="1",type="leader_size"} 34
+pd_scheduler_store_status{address="127.0.0.1:20160",store="1",type="learner_count"} 0

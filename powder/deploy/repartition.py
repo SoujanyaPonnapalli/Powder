@@ -27,7 +27,7 @@ from dataclasses import dataclass, field
 from .availability import percentile  # noqa: F401  (re-exported for callers)
 from .regionmap import Region, RegionMap, RegionMapSeries
 
-KINDS = ("split", "merge", "add_peer", "remove_peer", "move_peer", "transfer_leader")
+KINDS = ("split", "merge", "add_peer", "remove_peer", "move_peer", "peer_churn", "transfer_leader")
 DATA_MOVING = ("add_peer", "move_peer")
 MIB_PER_GIB = 1024.0
 LEADER_WINDOW_S = 3.0
@@ -49,6 +49,7 @@ class Event:
     inter_region: bool | None = None    # data crossed AWS regions; None when store locations are unknown
     rsm_before: tuple[int, ...] = ()
     source: str = "region_map"
+    conf_delta: int = 0                 # peer_churn: how many membership changes (epoch.conf_ver) happened in the window
 
     def covers(self, key: bytes) -> bool:
         return key >= self.range_start and (self.range_end == b"" or key < self.range_end)
@@ -67,6 +68,9 @@ class OperatorEvent:
     from_store: int | None = None
     to_store: int | None = None
     desc: str = ""
+    size_mb: float = 0.0
+    cancel_reason: str = ""
+    name: str = ""                  # PD operator name, e.g. admin-transfer-leader, replace-rule-down-peer
 
     @property
     def t_end(self) -> float:
@@ -120,6 +124,10 @@ def diff_maps(prev: RegionMap, cur: RegionMap) -> list[Event]:
             ev.append(Event("add_peer", to_store=s, inter_region=_cross((prev, cur), src, s), **base))
         for s in removed[paired:]:
             ev.append(Event("remove_peer", from_store=s, **base))
+        if peers_p == peers_r and r.conf_ver > p.conf_ver:
+            # membership changed and changed back inside one snapshot interval (e.g. add + remove of the same
+            # store): the peer sets look identical, but epoch.conf_ver proves it happened, and data may have moved
+            ev.append(Event("peer_churn", conf_delta=r.conf_ver - p.conf_ver, **base))
         if p.leader is not None and r.leader is not None and p.leader != r.leader:
             ev.append(Event("transfer_leader", from_store=p.leader, to_store=r.leader, **base))
     return sorted(ev, key=lambda e: (e.t_end, e.key, e.kind))
@@ -213,6 +221,7 @@ def under_replication(series: RegionMapSeries, replication_factor: int, window_e
 # ------------------------------------------------------------------ operator summary
 def summarize_operators(ops: list[OperatorEvent], run_seconds: float, gap_s: float = 60.0) -> dict:
     by_kind: Counter = Counter(o.kind for o in ops)
+    finished_kind: Counter = Counter(o.kind for o in ops if o.outcome == "finished")
     by_trigger: Counter = Counter(o.trigger or "unknown" for o in ops)
     by_outcome: Counter = Counter(o.outcome for o in ops)
     durs: dict[str, list[float]] = {}
@@ -224,7 +233,7 @@ def summarize_operators(ops: list[OperatorEvent], run_seconds: float, gap_s: flo
     hours = run_seconds / 3600.0 if run_seconds > 0 else None
     return {
         "count": len(ops),
-        "by_kind": dict(by_kind), "by_trigger": dict(by_trigger), "by_outcome": dict(by_outcome),
+        "by_kind": dict(by_kind), "by_kind_finished": dict(finished_kind), "by_trigger": dict(by_trigger), "by_outcome": dict(by_outcome),
         "rate_per_hour_by_kind": {k: n / hours for k, n in by_kind.items()} if hours else None,
         "duration_s_by_kind": dist,
         "episodes": episode_summary([(o.t_create, o.t_end) for o in ops], run_seconds, gap_s),
@@ -284,7 +293,7 @@ class RepartitionIndex:
 # ------------------------------------------------------------------ summary
 def summarize(series: RegionMapSeries, replication_factor: int, window: tuple[float, float],
               operators: list[OperatorEvent] | None = None, gap_s: float = 60.0,
-              inter_region_usd_per_gb: float | None = None) -> dict:
+              inter_region_usd_per_gb: float | None = None, log_splits: int | None = None) -> dict:
     t0, t1 = window
     run_s = max(0.0, t1 - t0)
     events = events_from_series(series)
@@ -318,7 +327,10 @@ def summarize(series: RegionMapSeries, replication_factor: int, window: tuple[fl
         "events": len(events),
     }
     if operators is not None:
-        op_counts = Counter(o.kind for o in operators)
-        out["cross_check"] = {k: {"region_maps": counts.get(k, 0), "operators": op_counts.get(k, 0)}
-                              for k in ("split", "merge", "add_peer", "remove_peer", "move_peer", "transfer_leader")}
+        op_counts = Counter(o.kind for o in operators if o.outcome == "finished")   # a merge logs two operators, one canceled
+        cc = {k: {"region_maps": counts.get(k, 0), "operators": op_counts.get(k, 0)}
+              for k in ("split", "merge", "add_peer", "remove_peer", "move_peer", "transfer_leader")}
+        if log_splits is not None:                      # TiKV-initiated splits are not operators: they are logged as batch splits
+            cc["split"]["operators"] += log_splits
+        out["cross_check"] = cc
     return out

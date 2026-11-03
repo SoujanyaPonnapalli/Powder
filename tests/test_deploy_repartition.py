@@ -74,7 +74,7 @@ def test_data_movement_is_attributed_intra_vs_inter_region():
 def test_summary_counts_rates_gb_and_membership_changes():
     s = R.summarize(RegionMapSeries(story()), 3, (0, 70), inter_region_usd_per_gb=0.02)
     assert s["counts"] == {"split": 1, "merge": 1, "add_peer": 1, "remove_peer": 1, "move_peer": 1,
-                           "transfer_leader": 1}
+                           "peer_churn": 0, "transfer_leader": 1}
     assert s["rates_per_hour"]["split"] == pytest.approx(3600 / 70)
     assert s["region_count"] == {"start": 2, "end": 2, "min": 2, "max": 3}
     gb = s["gb_moved"]
@@ -181,3 +181,26 @@ def test_index_matches_operators_by_region_id():
     assert idx.during(25, row_key(100, 800)) is True          # key is in Region 3 at t=25
     assert idx.during(25, row_key(100, 100)) is False         # Region 1
     assert idx.during(40, row_key(100, 800)) is False         # operator finished
+
+
+def test_membership_change_that_reverts_inside_one_interval_is_seen_as_peer_churn():
+    # add + remove of the same store between two snapshots: identical peer sets, but conf_ver proves it happened
+    a = rmap(0, [Region(1, b"", b"", (1, 2, 3), (), 1, 96.0, conf_ver=17)])
+    b = rmap(10, [Region(1, b"", b"", (1, 2, 3), (), 1, 96.0, conf_ver=20)])
+    ev = R.diff_maps(a, b)
+    assert [(e.kind, e.conf_delta) for e in ev] == [("peer_churn", 3)]
+    assert R.diff_maps(a, rmap(10, [Region(1, b"", b"", (1, 2, 3), (), 1, 96.0, conf_ver=17)])) == []   # no change, no event
+    s = R.summarize(RegionMapSeries([a, b]), 3, (0, 10))
+    assert s["counts"]["peer_churn"] == 1 and s["counts"]["add_peer"] == 0
+
+
+def test_cross_check_counts_tikv_initiated_splits_from_the_log():
+    # TiKV splits Regions on size; PD only logs "region batch split" (no operator), so summarize takes that count
+    ops = [op("move_peer", 42, 47)]
+    s = R.summarize(RegionMapSeries(story()), 3, (0, 70), operators=ops, log_splits=1)
+    assert s["cross_check"]["split"] == {"region_maps": 1, "operators": 1}
+    # a merge logs two operators (source canceled, target finished): only finished ones are counted
+    merge_pair = [op("merge", 60, 70, region=9), op("merge", 60, 70, "canceled", region=3)]
+    s2 = R.summarize(RegionMapSeries(story()), 3, (0, 70), operators=merge_pair)
+    assert s2["cross_check"]["merge"] == {"region_maps": 1, "operators": 1}
+    assert s2["operators"]["by_kind"]["merge"] == 2 and s2["operators"]["by_kind_finished"]["merge"] == 1

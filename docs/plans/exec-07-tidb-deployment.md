@@ -47,8 +47,15 @@ powder/deploy/                  # library (importable, unit-tested, no side effe
   spec.py                       # ClusterSpec: slots -> machine class @ region; roles; validation; JSON <-> YAML
   state.py                      # RunState (state.json): instances, IPs, VPC ids, key path, stage status
   names.py                      # AdjectiveNoun handle generator + validation + uniqueness check
-  pricing.py                    # $/h estimate from data/fault_library (on-demand + inter-region $/GB)
-  aws_net.py                    # VPCs, subnets, IGW, routes, peering mesh, security groups
+  pricing.py                    # bill estimate vs modeled cost; vCPU-per-region quota arithmetic
+  netplan.py                    # pure plan: per-region CIDRs, subnets, peering mesh, routes, SG rules
+  aws_net.py                    # (step 3) executes the netplan: VPCs, subnets, IGW, routes, peering, SGs
+  plan.py                       # `python -m powder.deploy.plan SPEC`: dry-run preview (no AWS)
+  outcomes.py, error_classes.json   # ok/timeout/conflict/other + cause; code table shared with powder-load
+  regionmap.py                  # normalized PD Region map (+ PD JSON loader), row keys, partition buckets
+  availability.py               # workload + probe aggregators: per partition / RSM / client region / overall
+  repartition.py                # snapshot-diff events, episodes, under-replication, GB moved, flag index
+  pdlog.py                      # PD operator-lifecycle log parser (formats captured from a real v8.5.8 cluster)
   aws_nodes.py                  # AMI lookup, key pairs, launch/terminate, user-data, quotas preflight
   teardown.py                   # tag-based discovery + dependency-ordered deletion + verify
   topology.py                   # ClusterSpec + RunState -> TiUP topology.yaml (labels incl. machine_class)
@@ -133,8 +140,8 @@ after every AWS call that creates something, so a crash never loses an id.
 A **run** is one deployment (infra + TiDB cluster) and can host several experiments over its life (experiments
 keep descriptive names like `smoke`, `hotspot-60m`; the *handle* names the deployment).
 
-* **Generation:** two CamelCase words from committed lists (`powder/deploy/names.py`, about 200 adjectives x 200
-  nouns, easy to read aloud, no look-alike or offensive words), e.g. `OrangePanda`, `QuietFalcon`. The
+* **Generation:** two CamelCase words from committed lists (`powder/deploy/names.py`, 101 adjectives x 92
+  nouns (~9,300 handles), easy to read aloud, no look-alike or offensive words), e.g. `OrangePanda`, `QuietFalcon`. The
   generator rejects any handle that collides with a live `Run` tag in **any region** or an existing
   `outputs/tidb/<handle>/` directory, so a handle is never reused, even after teardown, and a results directory is
   never overwritten.
@@ -574,7 +581,7 @@ result is trusted, and the known outage durations give an exact expected answer.
 
 1. **Pin + fetch (done):** `third_party/tidb/VERSIONS`, `pin_versions.py`, `fetch_tidb.sh` with checksums,
    `third_party/pd` submodule at the matching tag, PD hook files recorded in §6.2, allowlist addition.
-2. **Library + unit tests + `--dry-run`:** spec/state/pricing/topology, network planning, metric math (§10.1). No AWS calls.
+2. **Library + unit tests + `--dry-run` (done, §12):** spec/state/pricing/topology, network planning, metric math (§10.1). No AWS calls.
 3. **`deploy_infra.py` + `teardown_infra.py`** (handles, `--list`, selectors); gate G1.
 4. **`install_tidb.py` + `node_bootstrap.sh`**; gate G2. Decide here whether TiUP scale-in of a lost store is good
    enough (§6.2 alternatives).

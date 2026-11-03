@@ -1,0 +1,157 @@
+{
+ "count": 4,
+ "stores": [
+  {
+   "store": {
+    "id": 6,
+    "address": "127.0.0.1:20163",
+    "version": "8.5.8",
+    "peer_address": "127.0.0.1:20163",
+    "status_address": "127.0.0.1:20183",
+    "git_hash": "a1fdd6a59bb9c8a282c15677e1894501a52425cf",
+    "start_timestamp": 1793666839,
+    "deploy_path": "/home/ubuntu/.cache/powder/tiup-home/components/tikv/v8.5.8",
+    "last_heartbeat": 1793666909847797812,
+    "node_state": 1,
+    "state_name": "Up"
+   },
+   "status": {
+    "capacity": "247.2GiB",
+    "available": "232.8GiB",
+    "used_size": "292.5MiB",
+    "leader_count": 13,
+    "leader_weight": 1,
+    "leader_score": 13,
+    "leader_size": 13,
+    "region_count": 47,
+    "region_weight": 1,
+    "region_score": 103.20101121032839,
+    "region_size": 47,
+    "slow_score": 1,
+    "slow_trend": {
+     "cause_value": 250057.1772575251,
+     "cause_rate": 0,
+     "result_value": 0,
+     "result_rate": 0
+    },
+    "start_ts": "2026-11-03T00:47:19Z",
+    "last_heartbeat_ts": "2026-11-03T00:48:29.847797812Z",
+    "uptime": "1m10.847797812s"
+   }
+  },
+  {
+   "store": {
+    "id": 1,
+    "address": "127.0.0.1:20160",
+    "version": "8.5.8",
+    "peer_address": "127.0.0.1:20160",
+    "status_address": "127.0.0.1:20180",
+    "git_hash": "a1fdd6a59bb9c8a282c15677e1894501a52425cf",
+    "start_timestamp": 1793666839,
+    "deploy_path": "/home/ubuntu/.cache/powder/tiup-home/components/tikv/v8.5.8",
+    "last_heartbeat": 1793666909816152441,
+    "node_state": 1,
+    "state_name": "Up"
+   },
+   "status": {
+    "capacity": "247.2GiB",
+    "available": "232.8GiB",
+    "used_size": "292.5MiB",
+    "leader_count": 23,
+    "leader_weight": 1,
+    "leader_score": 23,
+    "leader_size": 23,
+    "region_count": 50,
+    "region_weight": 1,
+    "region_score": 109.78831069922224,
+    "region_size": 50,
+    "slow_score": 1,
+    "slow_trend": {
+     "cause_value": 250053.79264214047,
+     "cause_rate": 0,
+     "result_value": 2,
+     "result_rate": 0
+    },
+    "start_ts": "2026-11-03T00:47:19Z",
+    "last_heartbeat_ts": "2026-11-03T00:48:29.816152441Z",
+    "uptime": "1m10.816152441s"
+   }
+  },
+  {
+   "store": {
+    "id": 5,
+    "address": "127.0.0.1:20162",
+    "version": "8.5.8",
+    "peer_address": "127.0.0.1:20162",
+    "status_address": "127.0.0.1:20182",
+    "git_hash": "a1fdd6a59bb9c8a282c15677e1894501a52425cf",
+    "start_timestamp": 1793666839,
+    "deploy_path": "/home/ubuntu/.cache/powder/tiup-home/components/tikv/v8.5.8",
+    "last_heartbeat": 1793666909800274581,
+    "node_state": 1,
+    "state_name": "Up"
+   },
+   "status": {
+    "capacity": "247.2GiB",
+    "available": "232.8GiB",
+    "used_size": "291.5MiB",
+    "leader_count": 15,
+    "leader_weight": 1,
+    "leader_score": 15,
+    "leader_size": 15,
+    "region_count": 49,
+    "region_weight": 1,
+    "region_score": 107.59254510818663,
+    "region_size": 49,
+    "slow_score": 1,
+    "slow_trend": {
+     "cause_value": 250053.26421404682,
+     "cause_rate": 0,
+     "result_value": 7.5,
+     "result_rate": 0
+    },
+    "start_ts": "2026-11-03T00:47:19Z",
+    "last_heartbeat_ts": "2026-11-03T00:48:29.800274581Z",
+    "uptime": "1m10.800274581s"
+   }
+  },
+  {
+   "store": {
+    "id": 4,
+    "address": "127.0.0.1:20161",
+    "version": "8.5.8",
+    "peer_address": "127.0.0.1:20161",
+    "status_address": "127.0.0.1:20181",
+    "git_hash": "a1fdd6a59bb9c8a282c15677e1894501a52425cf",
+    "start_timestamp": 1793666839,
+    "deploy_path": "/home/ubuntu/.cache/powder/tiup-home/components/tikv/v8.5.8",
+    "last_heartbeat": 1793666909797668040,
+    "node_state": 1,
+    "state_name": "Up"
+   },
+   "status": {
+    "capacity": "247.2GiB",
+    "available": "232.8GiB",
+    "used_size": "293.5MiB",
+    "leader_count": 14,
+    "leader_weight": 1,
+    "leader_score": 14,
+    "leader_size": 14,
+    "region_count": 49,
+    "region_weight": 1,
+    "region_score": 107.59254510818663,
+    "region_size": 49,
+    "slow_score": 1,
+    "slow_trend": {
+     "cause_value": 250057.7658862876,
+     "cause_rate": 0,
+     "result_value": 1,
+     "result_rate": 0
+    },
+    "start_ts": "2026-11-03T00:47:19Z",
+    "last_heartbeat_ts": "2026-11-03T00:48:29.79766804Z",
+    "uptime": "1m10.79766804s"
+   }
+  }
+ ]
+}

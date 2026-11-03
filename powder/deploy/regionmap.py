@@ -24,9 +24,26 @@ def _enc_int(v: int) -> bytes:
     return struct.pack(">Q", (v + (1 << 63)) & 0xFFFFFFFFFFFFFFFF)
 
 
-def row_key(table_id: int, row_id: int) -> bytes:
-    """Raw (pre-MVCC) record key of a row of a TiDB table: ``t{table}_r{row}``."""
+def mc_encode(raw: bytes) -> bytes:
+    """TiKV/TiDB memcomparable bytes encoding: 8-byte groups, each followed by ``0xFF - padding``."""
+    out = bytearray()
+    for i in range(0, len(raw) + 1, 8):
+        chunk = raw[i:i + 8]
+        pad = 8 - len(chunk)
+        out += chunk + b"\x00" * pad + bytes([0xFF - pad])
+        if pad:
+            break
+    return bytes(out)
+
+
+def raw_row_key(table_id: int, row_id: int) -> bytes:
+    """Raw (pre-encoding) record key of a TiDB row: ``t{table}_r{row}``."""
     return b"t" + _enc_int(table_id) + b"_r" + _enc_int(row_id)
+
+
+def row_key(table_id: int, row_id: int) -> bytes:
+    """Key of a row as PD reports Region boundaries (memcomparable-encoded), so it compares with Region keys."""
+    return mc_encode(raw_row_key(table_id, row_id))
 
 
 def bucket_of(row: int, keys: int, buckets: int) -> int:
@@ -45,8 +62,10 @@ class Region:
     learners: tuple[int, ...] = ()
     leader: int | None = None
     size_mb: float = 0.0
-    down: tuple[int, ...] = ()      # store ids of peers PD reports as down
+    down: tuple[int, ...] = ()      # voters on stores that are not Up (PD's own down_peers field is never populated)
     pending: tuple[int, ...] = ()   # store ids of peers still catching up
+    conf_ver: int = 0               # epoch.conf_ver: +1 for every membership change (add learner, promote, demote, remove)
+    version: int = 0                # epoch.version: +1 on split / merge
 
     @property
     def rsm(self) -> tuple[int, ...]:
@@ -129,3 +148,44 @@ class RegionMapSeries:
 
     def __len__(self) -> int:
         return len(self.maps)
+
+
+# ------------------------------------------------------------------ PD JSON loader
+UP_STATES = {"Up"}
+VOTER_ROLES = {"Voter", "IncomingVoter", "DemotingVoter"}     # joint-consensus roles still count toward membership
+
+
+def parse_stores(doc: dict) -> dict[int, StoreInfo]:
+    """``GET /pd/api/v1/stores`` -> {store id: StoreInfo}; location labels come from the store labels."""
+    out = {}
+    for item in doc.get("stores", []):
+        st = item["store"]
+        labels = {l["key"]: l["value"] for l in st.get("labels", [])}
+        out[int(st["id"])] = StoreInfo(
+            id=int(st["id"]), address=st.get("address", ""), state=st.get("state_name", "Up"),
+            region=labels.get("region", ""), zone=labels.get("zone", ""), host=labels.get("host", ""),
+            machine_class=labels.get("machine_class", ""))
+    return out
+
+
+def from_pd_json(regions_doc: dict, ts: float, stores_doc: dict | None = None) -> RegionMap:
+    """``GET /pd/api/v1/regions`` (+ optionally ``/stores``) -> :class:`RegionMap`.
+
+    Notes from real v8.5.8 output: the list is **unordered** (``RegionMap`` sorts it); keys are uppercase hex of
+    memcomparable-encoded keys (``''`` = -inf / +inf); ``pending_peers`` is omitted when empty; ``down_peers`` never
+    appears, so a peer is considered *down* when its store is not ``Up`` (needs ``stores_doc``).
+    """
+    stores = parse_stores(stores_doc) if stores_doc else {}
+    regions = []
+    for r in regions_doc.get("regions", []):
+        voters = sorted(p["store_id"] for p in r.get("peers", []) if p.get("role_name", "Voter") in VOTER_ROLES)
+        learners = sorted(p["store_id"] for p in r.get("peers", []) if p.get("role_name") == "Learner")
+        down = tuple(s for s in voters if s in stores and stores[s].state not in UP_STATES)
+        pending = tuple(sorted(p["store_id"] for p in r.get("pending_peers", [])))
+        leader = r.get("leader") or {}
+        regions.append(Region(
+            id=int(r["id"]), start=bytes.fromhex(r.get("start_key", "")), end=bytes.fromhex(r.get("end_key", "")),
+            voters=tuple(voters), learners=tuple(learners), leader=leader.get("store_id"),
+            size_mb=float(r.get("approximate_size", 0)), down=down, pending=pending,
+            conf_ver=int(r.get("epoch", {}).get("conf_ver", 0)), version=int(r.get("epoch", {}).get("version", 0))))
+    return RegionMap(ts, regions, stores)

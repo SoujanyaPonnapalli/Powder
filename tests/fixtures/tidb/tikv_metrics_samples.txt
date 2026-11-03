@@ -1,0 +1,46 @@
+# TYPE tikv_raftstore_admin_cmd_total counter
+tikv_raftstore_admin_cmd_total{status="all",type="add_learner"} 375
+tikv_raftstore_admin_cmd_total{status="all",type="add_peer"} 246
+tikv_raftstore_admin_cmd_total{status="all",type="batch-split"} 63
+tikv_raftstore_admin_cmd_total{status="all",type="batch-switch-witness"} 0
+# TYPE tikv_raftstore_leader_missing gauge
+tikv_raftstore_leader_missing 0
+# TYPE tikv_raftstore_peer_pending_duration_seconds histogram
+tikv_raftstore_peer_pending_duration_seconds_sum 21400.841286278
+tikv_raftstore_peer_pending_duration_seconds_count 907
+# TYPE tikv_raftstore_raft_sent_message_total counter
+tikv_raftstore_raft_sent_message_total{status="accept",type="append"} 3920
+tikv_raftstore_raft_sent_message_total{status="accept",type="append_resp"} 1545
+tikv_raftstore_raft_sent_message_total{status="accept",type="heartbeat"} 17626
+tikv_raftstore_raft_sent_message_total{status="accept",type="heartbeat_resp"} 8971
+# TYPE tikv_raftstore_region_count gauge
+tikv_raftstore_region_count{type="buckets"} 72
+tikv_raftstore_region_count{type="leader"} 27
+tikv_raftstore_region_count{type="region"} 72
+# TYPE tikv_raftstore_snapshot_duration_seconds histogram
+tikv_raftstore_snapshot_duration_seconds_sum{type="apply"} 0.33964388800000006
+tikv_raftstore_snapshot_duration_seconds_count{type="apply"} 34
+tikv_raftstore_snapshot_duration_seconds_sum{type="generate"} 1.2665288680000002
+tikv_raftstore_snapshot_duration_seconds_count{type="generate"} 136
+# TYPE tikv_raftstore_snapshot_total counter
+tikv_raftstore_snapshot_total{status="abort",type="apply"} 0
+tikv_raftstore_snapshot_total{status="abort",type="generate"} 0
+tikv_raftstore_snapshot_total{status="all",type="apply"} 34
+tikv_raftstore_snapshot_total{status="all",type="generate"} 136
+# TYPE tikv_raftstore_snapshot_traffic_total gauge
+tikv_raftstore_snapshot_traffic_total{type="receiving"} 0
+tikv_raftstore_snapshot_traffic_total{type="sending"} 0
+# TYPE tikv_server_send_snapshot_duration_seconds histogram
+tikv_server_send_snapshot_duration_seconds_sum 2.076999999999997
+tikv_server_send_snapshot_duration_seconds_count 137
+# TYPE tikv_server_snapshot_task_total counter
+tikv_server_snapshot_task_total{type="recv"} 35
+tikv_server_snapshot_task_total{type="recv_v2"} 0
+tikv_server_snapshot_task_total{type="send"} 137
+# TYPE tikv_snapshot_limit_transport_bytes counter
+tikv_snapshot_limit_transport_bytes{type="recv"} 297648
+tikv_snapshot_limit_transport_bytes{type="recv_v2"} 0
+tikv_snapshot_limit_transport_bytes{type="send"} 702081
+# TYPE tikv_snapshot_size histogram
+tikv_snapshot_size_sum 702081
+tikv_snapshot_size_count 137

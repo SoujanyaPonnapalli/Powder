@@ -297,6 +297,10 @@ def spec_warnings(spec: ClusterSpec, lib: FaultLibrary | None = None) -> list[st
         w.append("a single PD is a single point of failure")
     if spec.control_plane.pd > len(spec.regions):
         w.append(f"{spec.control_plane.pd} PD members across {len(spec.regions)} region(s): PD members share regions")
+    if "schedule.max-store-down-time" in spec.pd_config and "raftstore.max-peer-down-duration" not in spec.tikv_config:
+        w.append("pd_config sets schedule.max-store-down-time, but re-replication of a dead store's peers is also gated "
+                 "by TiKV's raftstore.max-peer-down-duration (default 10m, NOT changeable online; measured on v8.5.8: "
+                 "replacement started 9 min after the kill with PD at 1m). Set it in tikv_config for a replica-timeout what-if")
     try:
         lib = lib or FaultLibrary.load()
         dep = lib.get(spec.scenario, "scenario").get("deployment", {})

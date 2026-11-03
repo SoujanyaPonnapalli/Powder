@@ -121,3 +121,9 @@ data/fault_library/raw/spot/spotlake/
 data/fault_library/raw/azure_locations.json
 aws-*.zip
 data/fault_library/raw/backblaze/
+
+# exec #7: per-run SSH keys and bulky raw experiment logs (summaries/manifests stay tracked)
+outputs/tidb/*/ssh/
+outputs/tidb/*/experiments/*/logs/
+outputs/tidb/*/experiments/*/raw/
+*.pem
