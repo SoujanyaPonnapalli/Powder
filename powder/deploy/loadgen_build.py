@@ -20,7 +20,9 @@ from .state import RunState
 ROOT = Path(__file__).resolve().parents[2]
 SRC_DIR = ROOT / "infra" / "tidb" / "loadgen"
 GO_PIN = SRC_DIR / "GO_PIN"
-SOURCES = ["main.go", "classify.go", "gen.go", "record.go", "go.mod", "go.sum", "error_classes.json"]
+# every non-test .go file: a hand-kept list missed pool.go (G3 retry) and the remote build failed
+SOURCES = sorted(p.name for p in SRC_DIR.glob("*.go") if not p.name.endswith("_test.go")) + \
+    ["go.mod", "go.sum", "error_classes.json"]
 REMOTE_SRC = "~/powder-src/loadgen"
 REMOTE_BIN = "~/powder-bin/powder-load"
 

@@ -190,7 +190,8 @@ def test_install_sequence_and_artifacts(tmp_path):
     assert sorted(runner.calls[i][0] for i in chowns) == [f"tikv-{k}" for k in range(1, 7)]
     assert order[4] < min(chowns) and max(chowns) < order[5]
     assert any("go build" in c for _, c in runner.calls) and any("sha256sum -c" in c for _, c in runner.calls)
-    assert {p[1] for p in runner.puts} >= {"main.go", "classify.go", "gen.go", "record.go", "go.mod", "go.sum", "error_classes.json"}
+    assert {p[1] for p in runner.puts} >= {"main.go", "classify.go", "gen.go", "record.go", "pool.go", "go.mod", "go.sum",
+                                           "error_classes.json"}
     assert ("controller", "fetch_tidb.sh", "~/powder/infra/tidb/fetch_tidb.sh") in runner.puts
     assert any(p[1] == "VERSIONS" for p in runner.puts) and any(p[2] == I.CONTROLLER_KEY for p in runner.puts)
     topo = (rd.install_dir / "topology.yaml").read_text()
