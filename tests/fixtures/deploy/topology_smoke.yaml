@@ -16,7 +16,8 @@ server_configs:
     replication.isolation-level: region
     replication.max-replicas: 3
   tikv: {}
-  tidb: {}
+  tidb:
+    token-limit: 20000
 pd_servers:
 - host: 10.0.0.2
   name: pd-1

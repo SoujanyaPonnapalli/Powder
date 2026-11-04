@@ -5,7 +5,8 @@ results, and tear it all down. Design and decisions: `docs/plans/exec-07-tidb-de
 
 > **These scripts create billable AWS resources.** Every creating command refuses without `--yes` (or
 > `POWDER_ALLOW_SPEND=1`) and prints the estimated $/h first. The unattended Claude runner must never set it.
-> **Live AWS validation: gates G1 (infra deploy + teardown) and G2 (TiDB install on the smoke layout) passed 2026-11-04; G3-G5 not yet run**: the rest is tested against moto, fakes,
+> **Live AWS validation: gates G1 (infra deploy + teardown) and G2 (TiDB install on the smoke layout) passed 2026-11-04; G3 (metric
+> self-test) ran but has not passed: see the plan's §12 for the open cross-RSM interference question; G4-G5 not yet run**: the rest is tested against moto, fakes,
 > and a real TiDB on one machine, but not yet against real AWS. Start with gate G1 (two nodes, ~$1).
 
 ## Prerequisites

@@ -610,7 +610,24 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   placement); chown `/data/tikv` to `tidb` after deploy (bootstrap made it root-owned); skip `deploy` when tiup already has
   the cluster (re-runs continue); `start --wait-timeout 1200` (first-TiDB schema bootstrap took ~2.5 min cross-region).
 - [x] Step 5 (code, 2026-11-03): `powder-load` (Go) + probes, collection, `run_experiment.py`, `--self-test` planner/evaluator;
-  validated on a real local TiDB. **G3 (self-test on AWS) not run.**
+  validated on a real local TiDB. **G3 run on AWS 2026-11-04 (handle `FrostyDragonfly`, 4 attempts): NOT passed.**
+  The measurement itself is validated: with crash faults, partitions whose Region lost quorum read 65-73 s for a 60 s
+  hold (outage + TiKV restart + election) and partitions that only lost a leader read 0-14 s; round 2 of the last
+  attempt passes outright. Fixes made on the way (all in `exec07-g1-live`): probers wrote the same 50 rows from 3
+  regions and server-side lock waits (50 s) outlived the 5 s client deadline -> self-sustaining lock pile-up (each
+  prober now has its own row, `innodb_lock_wait_timeout`/`max_execution_time` = client deadline); outages were planned
+  on the pre-prepare Region map (system tables) -> planned after prepare on the probed Regions; per-RSM sums of
+  partition-seconds -> per-round, per-partition evaluation from raw probes, leaving out Regions that moved around the
+  kill; `systemctl stop` is a graceful shutdown that tries leader eviction for up to 20 s -> SIGKILL; simultaneous
+  actions ran ~7 s apart -> run in parallel; log collection never created its directory on PD/TiKV/TiDB nodes;
+  TiDB's default `token-limit` 1000 filled with statements retrying on dead Regions and stalled *all* queries when
+  ~half the keys were down -> topology sets 20000. **Open (decide before the paper's baseline runs):**
+  (1) round 3 (stores 10+11) still made 38 healthy partitions unavailable for ~40 s (e.g. a Region on stores 2,5,12
+  with its leader on 12), starting ~30 s after the kill while TiDB logs `regionMiss backoffer.maxSleep 40000ms` for the
+  dead Regions: cross-RSM interference under an open-loop client that abandons requests at 5 s. Real TiDB behaviour or
+  harness artefact is not settled; it directly affects any per-RSM availability claim. (2) Whether baseline runs keep
+  `token-limit` 20000 or TiDB's default. (3) One leader-only partition read 25 s (allowance 20 s). Evidence:
+  `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 and G5 not run: exec #7 is NOT done until they pass.**
 - [x] Step 7 (2026-11-03): `infra/tidb/README.md`, `iam-deploy-policy.json` (draft, unvalidated), `CLAUDE.md`, unattended-runner

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -37,11 +38,16 @@ func fatal(format string, a ...any) {
 	os.Exit(2)
 }
 
-func openDB(dsn string, conns int) *sql.DB {
+func openDB(dsn string, conns int, reqTimeout time.Duration) *sql.DB {
 	cfg := mysql.NewConfig()
 	cfg.User, cfg.Net, cfg.Addr, cfg.DBName = "root", "tcp", dsn, "powder"
 	cfg.Timeout = 5 * time.Second
 	cfg.InterpolateParams = true
+	// Server-side lock waits must not outlive the client deadline (default 50 s): at G3 abandoned statements kept
+	// queueing on row locks after the client gave up, and the backlog saturated TiDB long after the fault ended.
+	// max_execution_time does the same for reads (TiDB applies it to SELECT only).
+	cfg.Params = map[string]string{"innodb_lock_wait_timeout": fmt.Sprint(int(math.Ceil(reqTimeout.Seconds()))),
+		"max_execution_time": fmt.Sprint(reqTimeout.Milliseconds())}
 	c, err := mysql.NewConnector(cfg)
 	if err != nil {
 		fatal("dsn: %v", err)
@@ -195,7 +201,7 @@ func runLoad(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db := openDB(*dsn, *maxConns)
+	db := openDB(*dsn, *maxConns, *timeout)
 	defer db.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
@@ -296,6 +302,7 @@ func runProbe(args []string) {
 	interval := fs.Duration("interval", time.Second, "probe period")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
 	timeout := fs.Duration("timeout", 5*time.Second, "per-probe deadline")
+	rowOffset := fs.Int64("row-offset", 0, "added to each bucket's middle row, so concurrent probers never write the same row")
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at")
 	out := fs.String("out", "probes.jsonl.gz", "output records")
 	fs.Parse(args)
@@ -304,7 +311,7 @@ func runProbe(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db := openDB(*dsn, *buckets*2)
+	db := openDB(*dsn, *buckets*2, *timeout)
 	defer db.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
@@ -320,7 +327,7 @@ func runProbe(args []string) {
 			time.Sleep(d)
 		}
 		for b := 0; b < *buckets; b++ {
-			row := int64((float64(b) + 0.5) * float64(*keys) / float64(*buckets))
+			row := int64((float64(b)+0.5)*float64(*keys)/float64(*buckets)) + *rowOffset
 			wg.Add(1)
 			probes.Add(1)
 			go func(row int64, sched float64) {

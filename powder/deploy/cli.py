@@ -248,9 +248,11 @@ def experiment_main(argv: list[str] | None = None, runner_factory=None, out=prin
         if a.self_test:
             exp, verdict = run_self_test(spec, rd, runner, rounds=a.rounds, hold_s=a.hold, log=out, **kwargs)
             out(f"self-test {'PASSED' if verdict['passed'] else 'FAILED'}: {exp / 'selftest.json'}")
-            for r in verdict["rsms"]:
-                out(f"  RSM {r['rsm']:<10} expected {r['expected_s']:>5.0f}s  measured {r['measured_s']:>6.1f}s  "
-                    f"allowed {r['allowed_range_s'][0]:.0f}-{r['allowed_range_s'][1]:.0f}s  {'ok' if r['ok'] else 'MISMATCH'}")
+            for r in verdict["rounds"]:
+                lo, hi = r["allowed_lost_s"]
+                out(f"  round {r['round']} stores {r['stores']}: {r['lost_buckets']} partitions lost quorum, down "
+                    f"{r['lost_down_s']['min']}-{r['lost_down_s']['max']}s (allowed {lo:.0f}-{hi:.0f}); others down "
+                    f"<= {r['kept_down_s_max']}s (allowed {r['allowed_kept_s']:.0f})  {'ok' if r['passed'] else 'MISMATCH'}")
             return OK if verdict["passed"] else FAIL
         cfg = parse_experiment(a.experiment)
         exp = run_experiment(spec, cfg, rd, runner, log=out, **kwargs)
