@@ -655,6 +655,20 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   work at the pool size but moves the starvation into the client pool; (3) per-partition connection budgets in
   `powder-load` (bulkheads) plus (1); or (4) accept it as TiDB behaviour and measure it (it is what an app with this
   timeout policy would see). Data: `~/powder-runs/tidb/HonestFerret/experiments/selftest-20261104T211916Z/`.
+  **Attempt 6 (2026-11-04, `YoungMeerkat`): user-chosen policy -- 5 s SLO per request, never retried, query never
+  cancelled (connection kept), `tikv-client.commit-timeout = 5s` (verified live), default `token-limit`. NOT passed:
+  healthy partitions down ~60 s, i.e. the whole outage.** The client side behaved as designed (0 reconnects during
+  outages, connections reused afterwards), but the server never gave up: abandoned queries stayed at ~1000 per load
+  generator for the entire outage, all 1224 client connections per TiDB were held, tokens pinned at 1000. Slow log:
+  reads stop at 5.07 s (`max_execution_time` works), but writes sit in **prewrite** (`Prewrite_time` up to 72.9 s,
+  `regionMiss/tikvRPC/regionScheduling` backoff, `Commit_time` 0.015 s) and many finally *succeed* 20-73 s later once
+  the Region returns. `commit-timeout` only bounds the commit phase, so it does not help; we found no TiDB v8.5 knob
+  that ends a write's prewrite at 5 s. Consequence: with TiDB defaults, every in-flight write to a dead Region holds a
+  connection and a token for the whole outage, so any shared, finite pool (client connections or TiDB tokens) fills
+  and starves healthy keys. Also: a request reported lost may still be applied later. **Proposed next:** per-partition
+  connection budgets in `powder-load` (bulkheads): a dead partition can only exhaust its own budget, which also caps
+  the dead statements per TiDB below 1000 tokens (e.g. 8 per partition x 25 dead partitions + probes ~ 250); and
+  revert `commit-timeout` to the default since it has no effect. Data: `~/powder-runs/tidb/YoungMeerkat/`.
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
