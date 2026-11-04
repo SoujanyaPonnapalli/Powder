@@ -1,0 +1,322 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1302" height="690" viewBox="0 0 1302 690">
+<rect width="1302" height="690" fill="#fcfcfb"/>
+<text x="92.0" y="28.0" font-size="16" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="start">Cost vs. availability under scaled fault rates (50 RSMs, 2000-VM catalogue)</text>
+<text x="92.0" y="48.0" font-size="11" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">Expected per-RSM availability from the Markov model (no region/AZ outages); ILP at 50% budget and unrestricted vs. fixed-RF baselines</text>
+<circle cx="98.0" cy="68.0" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP (50% budget → no budget)</title></circle>
+<text x="110.0" y="72.0" font-size="11" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">ILP (50% budget → no budget)</text>
+<rect x="298.2" y="63.0" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind baseline</title></rect>
+<text x="315.2" y="72.0" font-size="11" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">Price-blind baseline</text>
+<path d="M457.2,61.5 L463.2,72.5 L451.2,72.5 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first baseline</title></path>
+<text x="469.2" y="72.0" font-size="11" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">Cheapest-first baseline</text>
+<line x1="624.4000000000001" y1="68" x2="646.4000000000001" y2="68" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="652.4" y="72.0" font-size="11" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">Pareto envelope of shown points</text>
+<text x="217.0" y="106.0" font-size="13" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">1× fault rates</text>
+<text x="34.0" y="223.0" font-size="12" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle" transform="rotate(-90 34.0 223.0)">Independent prices</text>
+<line x1="92" y1="310.8" x2="342" y2="310.8" stroke="#e1e0d9"/>
+<text x="86.0" y="314.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5.7</text>
+<line x1="92" y1="263.1" x2="342" y2="263.1" stroke="#e1e0d9"/>
+<text x="86.0" y="267.1" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5.8</text>
+<line x1="92" y1="215.5" x2="342" y2="215.5" stroke="#e1e0d9"/>
+<text x="86.0" y="219.5" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5.9</text>
+<line x1="92" y1="167.8" x2="342" y2="167.8" stroke="#e1e0d9"/>
+<text x="86.0" y="171.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">6</text>
+<line x1="92" y1="120.2" x2="342" y2="120.2" stroke="#e1e0d9"/>
+<text x="86.0" y="124.2" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">6.1</text>
+<line x1="92.0" y1="118" x2="92.0" y2="328" stroke="#e1e0d9"/>
+<text x="92.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="154.5" y1="118" x2="154.5" y2="328" stroke="#e1e0d9"/>
+<text x="154.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="217.0" y1="118" x2="217.0" y2="328" stroke="#e1e0d9"/>
+<text x="217.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="279.5" y1="118" x2="279.5" y2="328" stroke="#e1e0d9"/>
+<text x="279.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="342.0" y1="118" x2="342.0" y2="328" stroke="#e1e0d9"/>
+<text x="342.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="92" y1="328" x2="342" y2="328" stroke="#c3c2b7"/>
+<text x="217.0" y="360.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<text x="58.0" y="223.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle" transform="rotate(-90 58.0 223.0)">Availability (nines)</text>
+<path d="M109.2,269.4 H125.3 V230.8 H165.1 V181.0 H184.8 V138.9 H278.2 V138.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="184.8,138.9 278.2,138.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="184.8" cy="138.9" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 6.06 nines, $14.85/h</title></circle>
+<circle cx="278.2" cy="138.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 6.06 nines, $29.80/h</title></circle>
+<rect x="160.1" y="176.0" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 5.97 nines, $11.70/h</title></rect>
+<text x="172.1" y="197.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M109.2,262.9 L115.2,273.9 L103.2,273.9 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 5.79 nines, $2.76/h</title></path>
+<text x="116.2" y="262.4" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="213.1" y="167.6" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 5.99 nines, $20.17/h</title></rect>
+<text x="225.1" y="188.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M125.3,224.3 L131.3,235.3 L119.3,235.3 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 5.87 nines, $5.33/h</title></path>
+<text x="132.3" y="223.8" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="260.3" y="180.1" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 5.96 nines, $27.73/h</title></rect>
+<text x="272.3" y="201.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M140.9,240.4 L146.9,251.4 L134.9,251.4 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 5.83 nines, $7.82/h</title></path>
+<text x="147.9" y="239.9" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="184.8" y="128.9" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">6.06</text>
+<text x="34.0" y="507.0" font-size="12" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle" transform="rotate(-90 34.0 507.0)">Reliability-ranked prices</text>
+<line x1="92" y1="594.8" x2="342" y2="594.8" stroke="#e1e0d9"/>
+<text x="86.0" y="598.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5.7</text>
+<line x1="92" y1="547.1" x2="342" y2="547.1" stroke="#e1e0d9"/>
+<text x="86.0" y="551.1" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5.8</text>
+<line x1="92" y1="499.5" x2="342" y2="499.5" stroke="#e1e0d9"/>
+<text x="86.0" y="503.5" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5.9</text>
+<line x1="92" y1="451.8" x2="342" y2="451.8" stroke="#e1e0d9"/>
+<text x="86.0" y="455.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">6</text>
+<line x1="92" y1="404.2" x2="342" y2="404.2" stroke="#e1e0d9"/>
+<text x="86.0" y="408.2" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">6.1</text>
+<line x1="92.0" y1="402" x2="92.0" y2="612" stroke="#e1e0d9"/>
+<text x="92.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="154.5" y1="402" x2="154.5" y2="612" stroke="#e1e0d9"/>
+<text x="154.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="217.0" y1="402" x2="217.0" y2="612" stroke="#e1e0d9"/>
+<text x="217.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="279.5" y1="402" x2="279.5" y2="612" stroke="#e1e0d9"/>
+<text x="279.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="342.0" y1="402" x2="342.0" y2="612" stroke="#e1e0d9"/>
+<text x="342.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="92" y1="612" x2="342" y2="612" stroke="#c3c2b7"/>
+<text x="217.0" y="644.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<text x="58.0" y="507.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle" transform="rotate(-90 58.0 507.0)">Availability (nines)</text>
+<path d="M108.5,591.7 H124.3 V552.6 H169.9 V467.1 H188.0 V438.9 H284.2 V422.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="188.0,438.9 284.2,422.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="188.0" cy="438.9" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 6.03 nines, $15.37/h</title></circle>
+<circle cx="284.2" cy="422.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 6.06 nines, $30.75/h</title></circle>
+<rect x="164.9" y="462.1" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 5.97 nines, $12.47/h</title></rect>
+<text x="176.9" y="483.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M108.5,585.2 L114.5,596.2 L102.5,596.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 5.71 nines, $2.65/h</title></path>
+<text x="115.5" y="584.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="229.6" y="451.6" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 5.99 nines, $22.82/h</title></rect>
+<text x="241.6" y="472.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M124.3,546.1 L130.3,557.1 L118.3,557.1 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 5.79 nines, $5.17/h</title></path>
+<text x="131.3" y="545.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="275.9" y="464.1" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 5.96 nines, $30.22/h</title></rect>
+<text x="287.9" y="485.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M139.6,553.6 L145.6,564.6 L133.6,564.6 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 5.77 nines, $7.62/h</title></path>
+<text x="146.6" y="553.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="188.0" y="428.9" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">6.03</text>
+<text x="529.0" y="106.0" font-size="13" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">10× fault rates</text>
+<line x1="404" y1="316.7" x2="654" y2="316.7" stroke="#e1e0d9"/>
+<text x="398.0" y="320.7" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.4</text>
+<line x1="404" y1="262.8" x2="654" y2="262.8" stroke="#e1e0d9"/>
+<text x="398.0" y="266.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.6</text>
+<line x1="404" y1="208.8" x2="654" y2="208.8" stroke="#e1e0d9"/>
+<text x="398.0" y="212.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.8</text>
+<line x1="404" y1="154.8" x2="654" y2="154.8" stroke="#e1e0d9"/>
+<text x="398.0" y="158.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5</text>
+<line x1="404.0" y1="118" x2="404.0" y2="328" stroke="#e1e0d9"/>
+<text x="404.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="466.5" y1="118" x2="466.5" y2="328" stroke="#e1e0d9"/>
+<text x="466.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="529.0" y1="118" x2="529.0" y2="328" stroke="#e1e0d9"/>
+<text x="529.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="591.5" y1="118" x2="591.5" y2="328" stroke="#e1e0d9"/>
+<text x="591.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="654.0" y1="118" x2="654.0" y2="328" stroke="#e1e0d9"/>
+<text x="654.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="404" y1="328" x2="654" y2="328" stroke="#c3c2b7"/>
+<text x="529.0" y="360.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<path d="M421.2,270.3 H437.3 V190.9 H489.7 V152.6 H576.1 V138.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="489.7,152.6 576.1,138.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="489.7" cy="152.6" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 5.01 nines, $13.71/h</title></circle>
+<circle cx="576.1" cy="138.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 5.06 nines, $27.53/h</title></circle>
+<rect x="472.1" y="190.7" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 4.85 nines, $11.70/h</title></rect>
+<text x="484.1" y="211.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M421.2,263.8 L427.2,274.8 L415.2,274.8 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 4.57 nines, $2.76/h</title></path>
+<text x="428.2" y="263.3" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="525.1" y="152.7" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 4.99 nines, $20.17/h</title></rect>
+<text x="537.1" y="173.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M437.3,184.4 L443.3,195.4 L431.3,195.4 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 4.87 nines, $5.33/h</title></path>
+<text x="444.3" y="183.9" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="572.3" y="159.6" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 4.96 nines, $27.73/h</title></rect>
+<text x="584.3" y="180.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M452.9,193.0 L458.9,204.0 L446.9,204.0 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 4.83 nines, $7.82/h</title></path>
+<text x="459.9" y="192.5" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="489.7" y="142.6" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">5.01</text>
+<line x1="404" y1="600.7" x2="654" y2="600.7" stroke="#e1e0d9"/>
+<text x="398.0" y="604.7" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.4</text>
+<line x1="404" y1="546.8" x2="654" y2="546.8" stroke="#e1e0d9"/>
+<text x="398.0" y="550.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.6</text>
+<line x1="404" y1="492.8" x2="654" y2="492.8" stroke="#e1e0d9"/>
+<text x="398.0" y="496.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.8</text>
+<line x1="404" y1="438.8" x2="654" y2="438.8" stroke="#e1e0d9"/>
+<text x="398.0" y="442.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">5</text>
+<line x1="404.0" y1="402" x2="404.0" y2="612" stroke="#e1e0d9"/>
+<text x="404.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="466.5" y1="402" x2="466.5" y2="612" stroke="#e1e0d9"/>
+<text x="466.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="529.0" y1="402" x2="529.0" y2="612" stroke="#e1e0d9"/>
+<text x="529.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="591.5" y1="402" x2="591.5" y2="612" stroke="#e1e0d9"/>
+<text x="591.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="654.0" y1="402" x2="654.0" y2="612" stroke="#e1e0d9"/>
+<text x="654.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="404" y1="612" x2="654" y2="612" stroke="#c3c2b7"/>
+<text x="529.0" y="644.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<path d="M420.5,591.7 H436.3 V496.7 H481.9 V481.6 H496.1 V436.2 H588.9 V422.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="496.1,436.2 588.9,422.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="496.1" cy="436.2" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 5.01 nines, $14.73/h</title></circle>
+<circle cx="588.9" cy="422.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 5.06 nines, $29.58/h</title></circle>
+<rect x="476.9" y="476.6" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 4.84 nines, $12.47/h</title></rect>
+<text x="488.9" y="497.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M420.5,585.2 L426.5,596.2 L414.5,596.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 4.43 nines, $2.65/h</title></path>
+<text x="427.5" y="584.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="541.6" y="436.7" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 4.99 nines, $22.82/h</title></rect>
+<text x="553.6" y="457.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M436.3,490.2 L442.3,501.2 L430.3,501.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 4.79 nines, $5.17/h</title></path>
+<text x="443.3" y="489.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="587.9" y="443.6" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 4.96 nines, $30.22/h</title></rect>
+<text x="599.9" y="464.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M451.6,493.6 L457.6,504.6 L445.6,504.6 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 4.77 nines, $7.62/h</title></path>
+<text x="458.6" y="493.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="496.1" y="426.2" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">5.01</text>
+<text x="841.0" y="106.0" font-size="13" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">20× fault rates</text>
+<line x1="716" y1="297.9" x2="966" y2="297.9" stroke="#e1e0d9"/>
+<text x="710.0" y="301.9" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4</text>
+<line x1="716" y1="245.7" x2="966" y2="245.7" stroke="#e1e0d9"/>
+<text x="710.0" y="249.7" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.25</text>
+<line x1="716" y1="193.5" x2="966" y2="193.5" stroke="#e1e0d9"/>
+<text x="710.0" y="197.5" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.5</text>
+<line x1="716" y1="141.3" x2="966" y2="141.3" stroke="#e1e0d9"/>
+<text x="710.0" y="145.3" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.75</text>
+<line x1="716.0" y1="118" x2="716.0" y2="328" stroke="#e1e0d9"/>
+<text x="716.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="778.5" y1="118" x2="778.5" y2="328" stroke="#e1e0d9"/>
+<text x="778.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="841.0" y1="118" x2="841.0" y2="328" stroke="#e1e0d9"/>
+<text x="841.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="903.5" y1="118" x2="903.5" y2="328" stroke="#e1e0d9"/>
+<text x="903.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="966.0" y1="118" x2="966.0" y2="328" stroke="#e1e0d9"/>
+<text x="966.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="716" y1="328" x2="966" y2="328" stroke="#c3c2b7"/>
+<text x="841.0" y="360.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<path d="M733.2,273.7 H749.3 V180.8 H764.9 V178.4 H809.4 V147.6 H902.9 V138.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="809.4,147.6 902.9,138.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="809.4" cy="147.6" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 4.72 nines, $14.95/h</title></circle>
+<circle cx="902.9" cy="138.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 4.76 nines, $29.90/h</title></circle>
+<rect x="784.1" y="200.6" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 4.44 nines, $11.70/h</title></rect>
+<text x="796.1" y="221.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M733.2,267.2 L739.2,278.2 L727.2,278.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 4.12 nines, $2.76/h</title></path>
+<text x="740.2" y="266.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="837.1" y="149.5" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 4.69 nines, $20.17/h</title></rect>
+<text x="849.1" y="170.5" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M749.3,174.3 L755.3,185.3 L743.3,185.3 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 4.56 nines, $5.33/h</title></path>
+<text x="756.3" y="173.8" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="884.3" y="144.8" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 4.71 nines, $27.73/h</title></rect>
+<text x="896.3" y="165.8" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M764.9,171.9 L770.9,182.9 L758.9,182.9 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 4.57 nines, $7.82/h</title></path>
+<text x="771.9" y="171.4" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="809.4" y="137.6" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">4.72</text>
+<line x1="716" y1="581.9" x2="966" y2="581.9" stroke="#e1e0d9"/>
+<text x="710.0" y="585.9" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4</text>
+<line x1="716" y1="529.7" x2="966" y2="529.7" stroke="#e1e0d9"/>
+<text x="710.0" y="533.7" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.25</text>
+<line x1="716" y1="477.5" x2="966" y2="477.5" stroke="#e1e0d9"/>
+<text x="710.0" y="481.5" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.5</text>
+<line x1="716" y1="425.3" x2="966" y2="425.3" stroke="#e1e0d9"/>
+<text x="710.0" y="429.3" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.75</text>
+<line x1="716.0" y1="402" x2="716.0" y2="612" stroke="#e1e0d9"/>
+<text x="716.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="778.5" y1="402" x2="778.5" y2="612" stroke="#e1e0d9"/>
+<text x="778.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="841.0" y1="402" x2="841.0" y2="612" stroke="#e1e0d9"/>
+<text x="841.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="903.5" y1="402" x2="903.5" y2="612" stroke="#e1e0d9"/>
+<text x="903.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="966.0" y1="402" x2="966.0" y2="612" stroke="#e1e0d9"/>
+<text x="966.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="716" y1="612" x2="966" y2="612" stroke="#c3c2b7"/>
+<text x="841.0" y="644.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<path d="M732.5,591.7 H748.3 V482.6 H763.6 V477.9 H813.3 V432.5 H910.8 V422.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="813.3,432.5 910.8,422.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="813.3" cy="432.5" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 4.72 nines, $15.57/h</title></circle>
+<circle cx="910.8" cy="422.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 4.76 nines, $31.17/h</title></circle>
+<rect x="788.9" y="486.3" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 4.43 nines, $12.47/h</title></rect>
+<text x="800.9" y="507.3" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M732.5,585.2 L738.5,596.2 L726.5,596.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 3.95 nines, $2.65/h</title></path>
+<text x="739.5" y="584.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="853.6" y="433.5" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 4.69 nines, $22.82/h</title></rect>
+<text x="865.6" y="454.5" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M748.3,476.1 L754.3,487.1 L742.3,487.1 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 4.48 nines, $5.17/h</title></path>
+<text x="755.3" y="475.6" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="899.9" y="428.8" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 4.71 nines, $30.22/h</title></rect>
+<text x="911.9" y="449.8" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M763.6,471.4 L769.6,482.4 L757.6,482.4 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 4.50 nines, $7.62/h</title></path>
+<text x="770.6" y="470.9" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="813.3" y="422.5" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">4.72</text>
+<text x="1153.0" y="106.0" font-size="13" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">30× fault rates</text>
+<line x1="1028" y1="289.8" x2="1278" y2="289.8" stroke="#e1e0d9"/>
+<text x="1022.0" y="293.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">3.75</text>
+<line x1="1028" y1="244.3" x2="1278" y2="244.3" stroke="#e1e0d9"/>
+<text x="1022.0" y="248.3" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4</text>
+<line x1="1028" y1="198.8" x2="1278" y2="198.8" stroke="#e1e0d9"/>
+<text x="1022.0" y="202.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.25</text>
+<line x1="1028" y1="153.2" x2="1278" y2="153.2" stroke="#e1e0d9"/>
+<text x="1022.0" y="157.2" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.5</text>
+<line x1="1028.0" y1="118" x2="1028.0" y2="328" stroke="#e1e0d9"/>
+<text x="1028.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="1090.5" y1="118" x2="1090.5" y2="328" stroke="#e1e0d9"/>
+<text x="1090.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="1153.0" y1="118" x2="1153.0" y2="328" stroke="#e1e0d9"/>
+<text x="1153.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="1215.5" y1="118" x2="1215.5" y2="328" stroke="#e1e0d9"/>
+<text x="1215.5" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="1278.0" y1="118" x2="1278.0" y2="328" stroke="#e1e0d9"/>
+<text x="1278.0" y="343.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="1028" y1="328" x2="1278" y2="328" stroke="#c3c2b7"/>
+<text x="1153.0" y="360.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<path d="M1045.2,275.8 H1061.3 V175.7 H1076.9 V173.4 H1121.1 V146.7 H1214.2 V138.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="1121.1,146.7 1214.2,138.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="1121.1" cy="146.7" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 4.54 nines, $14.89/h</title></circle>
+<circle cx="1214.2" cy="138.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 4.58 nines, $29.80/h</title></circle>
+<rect x="1096.1" y="206.3" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 4.18 nines, $11.70/h</title></rect>
+<text x="1108.1" y="227.3" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M1045.2,269.3 L1051.2,280.3 L1039.2,280.3 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 3.83 nines, $2.76/h</title></path>
+<text x="1052.2" y="268.8" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="1149.1" y="146.9" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 4.51 nines, $20.17/h</title></rect>
+<text x="1161.1" y="167.9" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M1061.3,169.2 L1067.3,180.2 L1055.3,180.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 4.38 nines, $5.33/h</title></path>
+<text x="1068.3" y="168.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="1196.3" y="152.1" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 4.48 nines, $27.73/h</title></rect>
+<text x="1208.3" y="173.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M1076.9,166.9 L1082.9,177.9 L1070.9,177.9 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 4.39 nines, $7.82/h</title></path>
+<text x="1083.9" y="166.4" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="1121.1" y="136.7" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">4.54</text>
+<line x1="1028" y1="573.8" x2="1278" y2="573.8" stroke="#e1e0d9"/>
+<text x="1022.0" y="577.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">3.75</text>
+<line x1="1028" y1="528.3" x2="1278" y2="528.3" stroke="#e1e0d9"/>
+<text x="1022.0" y="532.3" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4</text>
+<line x1="1028" y1="482.8" x2="1278" y2="482.8" stroke="#e1e0d9"/>
+<text x="1022.0" y="486.8" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.25</text>
+<line x1="1028" y1="437.2" x2="1278" y2="437.2" stroke="#e1e0d9"/>
+<text x="1022.0" y="441.2" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="end">4.5</text>
+<line x1="1028.0" y1="402" x2="1028.0" y2="612" stroke="#e1e0d9"/>
+<text x="1028.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$0</text>
+<line x1="1090.5" y1="402" x2="1090.5" y2="612" stroke="#e1e0d9"/>
+<text x="1090.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$10</text>
+<line x1="1153.0" y1="402" x2="1153.0" y2="612" stroke="#e1e0d9"/>
+<text x="1153.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$20</text>
+<line x1="1215.5" y1="402" x2="1215.5" y2="612" stroke="#e1e0d9"/>
+<text x="1215.5" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$30</text>
+<line x1="1278.0" y1="402" x2="1278.0" y2="612" stroke="#e1e0d9"/>
+<text x="1278.0" y="627.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">$40</text>
+<line x1="1028" y1="612" x2="1278" y2="612" stroke="#c3c2b7"/>
+<text x="1153.0" y="644.0" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="middle">Cluster cost ($/h)</text>
+<path d="M1044.5,591.7 H1060.3 V476.4 H1075.6 V465.7 H1123.9 V431.7 H1220.2 V422.3" fill="none" stroke="#898781" stroke-width="1.5" stroke-dasharray="4 3"/>
+<polyline points="1123.9,431.7 1220.2,422.3" fill="none" stroke="#2a78d6" stroke-width="2"/>
+<circle cx="1123.9" cy="431.7" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP 50% budget: 4.53 nines, $15.35/h</title></circle>
+<circle cx="1220.2" cy="422.3" r="5.5" fill="#2a78d6" stroke="#fcfcfb" stroke-width="2"><title>ILP no budget: 4.58 nines, $30.75/h</title></circle>
+<rect x="1100.9" y="491.9" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 3: 4.17 nines, $12.47/h</title></rect>
+<text x="1112.9" y="512.9" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<path d="M1044.5,585.2 L1050.5,596.2 L1038.5,596.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 3: 3.65 nines, $2.65/h</title></path>
+<text x="1051.5" y="584.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">3</text>
+<rect x="1165.6" y="430.9" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 5: 4.51 nines, $22.82/h</title></rect>
+<text x="1177.6" y="451.9" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<path d="M1060.3,469.9 L1066.3,480.9 L1054.3,480.9 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 5: 4.29 nines, $5.17/h</title></path>
+<text x="1067.3" y="469.4" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">5</text>
+<rect x="1211.9" y="436.1" width="10" height="10" rx="1.5" fill="#eb6834" stroke="#fcfcfb" stroke-width="2"><title>Price-blind RF 7: 4.48 nines, $30.22/h</title></rect>
+<text x="1223.9" y="457.1" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<path d="M1075.6,459.2 L1081.6,470.2 L1069.6,470.2 Z" fill="#1baf7a" stroke="#fcfcfb" stroke-width="2"><title>Cheapest-first RF 7: 4.34 nines, $7.62/h</title></path>
+<text x="1082.6" y="458.7" font-size="10" fill="#52514e" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">7</text>
+<text x="1123.9" y="421.7" font-size="10" fill="#0b0b0b" font-family="DejaVu Sans,Arial,sans-serif" font-weight="600" text-anchor="middle">4.53</text>
+<text x="92.0" y="678.0" font-size="10" fill="#898781" font-family="DejaVu Sans,Arial,sans-serif" font-weight="400" text-anchor="start">Numbers beside baseline markers are the replication factor (3/5/7). Markov screening scores; RF 7 uses binned rates.</text>
+</svg>
