@@ -44,13 +44,16 @@ def scenario_machine_types(lib: FaultLibrary, scenario_id: str, *, copies: int =
 # --------------------------------------------------------------------------- catalogues
 
 def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: str = "scenario/canonical-central@v2",
-                       price: str = "rho0", capacity: int = 10, horizon_h: float | None = None):
+                       price: str = "rho0", capacity: int = 10, horizon_h: float | None = None,
+                       rate_scale: float = 1.0):
     """One optimizer ``Machine`` per catalogue machine (exponential approximation, planned downtime folded in).
 
     ``price``: which assignment to use (``rho0`` / ``rho1``); native-priced spot machines use their pool price.
     ``capacity``: RSM replicas a machine can host.
+    ``rate_scale``: multiplies every node fault rate (transient incl. planned, and permanent); a stress knob.
     """
     from powder.placement_optimizer import Machine
+    from powder.simulation.distributions import Exponential
     from . import catalogue as C
 
     s = lib.get(scenario_id, "scenario")
@@ -59,8 +62,12 @@ def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: s
     out = []
     for m in cat["machines"]:
         p = C.machine_price(m, price)
-        out.append(Machine(m["id"], C.node_config(m, horizon_h=h, planned=planned, cost_per_hour=p or 0.0),
-                           capacity=capacity))
+        cfg = C.node_config(m, horizon_h=h, planned=planned, cost_per_hour=p or 0.0)
+        if rate_scale != 1.0:
+            cfg = replace(cfg, **{f: Exponential(d.rate * rate_scale) for f, d in
+                                  (("failure_dist", cfg.failure_dist), ("data_loss_dist", cfg.data_loss_dist))
+                                  if isinstance(d, Exponential)})
+        out.append(Machine(m["id"], cfg, capacity=capacity))
     return out
 
 
@@ -154,7 +161,7 @@ def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, 
                               greedy_starts_per_size: int = 10, max_candidates: int = 3000, rng_seed: int = 0,
                               rescore_exact: bool = True, scenario_id: str = "scenario/canonical-central@v2",
                               unique_machine_cost: bool = True, scoring: str = "hybrid",
-                              mc_config: Any = None) -> dict:
+                              mc_config: Any = None, rate_scale: float = 1.0) -> dict:
     """Markov screening, optional MC certification, then the candidate ILP.
 
     ``scoring='hybrid'`` first rejects Markov scores below 4.5 nines, then uses
@@ -169,7 +176,8 @@ def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, 
     if scoring not in ("hybrid", "markov"):
         raise ValueError("scoring must be 'hybrid' or 'markov'")
     t0 = time.time()
-    machines = catalogue_machines(lib, cat, scenario_id=scenario_id, price=price, capacity=capacity)
+    machines = catalogue_machines(lib, cat, scenario_id=scenario_id, price=price, capacity=capacity,
+                                  rate_scale=rate_scale)
     scorer = binned_markov_scorer(protocol, strategy, bins_per_decade=bins_per_decade)
     cfg = CandidateGenerationConfig(replica_counts=replica_counts, random_samples_per_size=random_samples_per_size,
                                     greedy_starts_per_size=greedy_starts_per_size, local_search_steps=1,
