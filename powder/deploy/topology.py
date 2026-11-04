@@ -23,7 +23,6 @@ LOCATION_LABELS = ["region", "zone", "host"]
 DEPLOY_DIR = "/tidb-deploy"
 DATA_DIR = "/tidb-data"
 TIKV_DATA_DIR = "/data/tikv"      # instance-store NVMe mounted by node_bootstrap.sh
-TIDB_TOKEN_LIMIT = 20000          # concurrent statements per TiDB (default 1000)
 _LABEL_RE = re.compile(r"^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$")
 
 
@@ -66,15 +65,10 @@ def topology_dict(spec: ClusterSpec, hosts: dict[str, Host]) -> dict:
         "replication.max-replicas": spec.replication_factor,
     }
     pd_cfg.update(spec.pd_config)       # explicit spec settings win (e.g. schedule.max-store-down-time)
-    # statements on an RSM without quorum keep retrying inside TiDB long after the client's deadline; at G3 they filled
-    # the default 1000 tokens and stalled every query, healthy RSMs included, whenever ~half the keys were down
-    tidb_cfg = {"token-limit": TIDB_TOKEN_LIMIT}
-    tidb_cfg.update(spec.tidb_config)
-
     topo: dict = {
         "global": {"user": "tidb", "ssh_port": 22, "deploy_dir": DEPLOY_DIR, "data_dir": DATA_DIR,
                    "arch": "amd64"},
-        "server_configs": {"pd": pd_cfg, "tikv": dict(spec.tikv_config), "tidb": tidb_cfg},
+        "server_configs": {"pd": pd_cfg, "tikv": dict(spec.tikv_config), "tidb": dict(spec.tidb_config)},
         "pd_servers": [], "tidb_servers": [], "tikv_servers": [],
     }
     for n in nodes:

@@ -43,6 +43,11 @@ METRICS: dict[str, str] = {
     "tikv_snapshot_transport_bytes": "sum by (instance, type) (tikv_snapshot_limit_transport_bytes)",
     "tidb_query_total": "sum by (instance) (tidb_server_query_total)",
     "tidb_query_duration_p99": "histogram_quantile(0.99, sum by (le) (rate(tidb_server_handle_query_duration_seconds_bucket[1m])))",
+    # G3 follow-up: is the healthy-Region stall connection churn? (server side of powder-load's pool stats)
+    "tidb_connections": "sum by (instance) (tidb_server_connections)",
+    "tidb_handshake_errors": "sum by (instance) (tidb_server_handshake_error_total)",
+    "tidb_tokens": "sum by (instance) (tidb_server_tokens)",
+    "tidb_kv_backoff_count": "sum by (type) (tidb_tikvclient_backoff_seconds_count)",
 }
 
 

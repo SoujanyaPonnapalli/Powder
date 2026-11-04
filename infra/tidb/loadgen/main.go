@@ -38,7 +38,7 @@ func fatal(format string, a ...any) {
 	os.Exit(2)
 }
 
-func openDB(dsn string, conns int, reqTimeout time.Duration) *sql.DB {
+func openDB(dsn string, conns int, reqTimeout time.Duration) (*sql.DB, *countingConnector) {
 	cfg := mysql.NewConfig()
 	cfg.User, cfg.Net, cfg.Addr, cfg.DBName = "root", "tcp", dsn, "powder"
 	cfg.Timeout = 5 * time.Second
@@ -53,11 +53,19 @@ func openDB(dsn string, conns int, reqTimeout time.Duration) *sql.DB {
 		fatal("dsn: %v", err)
 	}
 	// A TCP read can block far past the request deadline when a node is paused; the context deadline cancels it.
-	db := sql.OpenDB(c)
+	cc := &countingConnector{inner: c}
+	db := sql.OpenDB(cc)
 	db.SetMaxOpenConns(conns)
 	db.SetMaxIdleConns(conns)
 	db.SetConnMaxLifetime(0)
-	return db
+	return db, cc
+}
+
+// acquire takes a pool connection and reports how long that took (pool wait + any new-connection setup).
+func acquire(ctx context.Context, db *sql.DB) (*sql.Conn, float64, error) {
+	start := time.Now()
+	conn, err := db.Conn(ctx)
+	return conn, float64(time.Since(start)) / 1e6, err
 }
 
 func main() {
@@ -201,10 +209,14 @@ func runLoad(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db := openDB(*dsn, *maxConns, *timeout)
+	db, cc := openDB(*dsn, *maxConns, *timeout)
 	defer db.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
+	var inflight atomic.Int64
+	statsCtx, stopStats := context.WithCancel(context.Background())
+	statsDone := make(chan struct{})
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight); close(statsDone) }()
 
 	payload := make([]byte, *payloadBytes)
 	rng := rand.New(rand.NewSource(*seed))
@@ -236,23 +248,31 @@ func runLoad(args []string) {
 			go func(row int64, read bool, sched float64) {
 				defer wg.Done()
 				defer func() { <-sem }()
+				inflight.Add(1)
+				defer inflight.Add(-1)
 				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 				defer cancel()
 				start := time.Now()
-				var err error
 				op := "write"
 				if read {
 					op = "read"
-					var v []byte
-					err = db.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
-					if errors.Is(err, sql.ErrNoRows) {
-						err = nil
+				}
+				conn, connMS, err := acquire(ctx, db)
+				if err == nil {
+					if read {
+						var v []byte
+						err = conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
+						if errors.Is(err, sql.ErrNoRows) {
+							err = nil
+						}
+					} else {
+						_, err = conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, payload, start.UnixMilli())
 					}
-				} else {
-					_, err = db.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, payload, start.UnixMilli())
+					conn.Close()
 				}
 				o := Classify(err, ctx.Err() == context.DeadlineExceeded)
-				rec := Record{TS: sched, Row: row, Op: op, Outcome: o, LatencyMS: float64(time.Since(start)) / 1e6, Weight: 1}
+				rec := Record{TS: sched, Row: row, Op: op, Outcome: o, LatencyMS: float64(time.Since(start)) / 1e6,
+					ConnMS: connMS, Weight: 1}
 				if err != nil {
 					rec.Err = err.Error()
 				}
@@ -283,6 +303,8 @@ func runLoad(args []string) {
 		next = next.Add(time.Duration(float64(time.Second) / rt(next.Sub(t0))))
 	}
 	wg.Wait()
+	stopStats()
+	<-statsDone
 	n := w.Close()
 	sum, _ := json.Marshal(map[string]any{"issued": issued, "records": n, "ok": okN.Load(), "timeout": toN.Load(),
 		"conflict": cfN.Load(), "other": otN.Load(), "saturated": saturated.Load(),
@@ -311,10 +333,14 @@ func runProbe(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db := openDB(*dsn, *buckets*2, *timeout)
+	db, cc := openDB(*dsn, *buckets*2, *timeout)
 	defer db.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
+	var inflight atomic.Int64
+	statsCtx, stopStats := context.WithCancel(context.Background())
+	statsDone := make(chan struct{})
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight); close(statsDone) }()
 	var wg sync.WaitGroup
 	t0 := waitUntil(*startAt)
 	var probes atomic.Int64
@@ -332,6 +358,8 @@ func runProbe(args []string) {
 			probes.Add(1)
 			go func(row int64, sched float64) {
 				defer wg.Done()
+				inflight.Add(1)
+				defer inflight.Add(-1)
 				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 				defer cancel()
 				start := time.Now()
@@ -343,22 +371,30 @@ func runProbe(args []string) {
 						worst, errText = o, err.Error()
 					}
 				}
-				_, err := db.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli())
+				conn, connMS, err := acquire(ctx, db)
 				if err != nil {
 					consider(err)
 				} else {
-					var v []byte
-					err = db.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
-					if err != nil && !errors.Is(err, sql.ErrNoRows) {
+					_, err = conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli())
+					if err != nil {
 						consider(err)
+					} else {
+						var v []byte
+						err = conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
+						if err != nil && !errors.Is(err, sql.ErrNoRows) {
+							consider(err)
+						}
 					}
+					conn.Close()
 				}
 				w.Add(Record{TS: sched, Row: row, Op: "probe", Outcome: worst, LatencyMS: float64(time.Since(start)) / 1e6,
-					Err: errText, Weight: 1})
+					ConnMS: connMS, Err: errText, Weight: 1})
 			}(row, epoch(sched))
 		}
 	}
 	wg.Wait()
+	stopStats()
+	<-statsDone
 	n := w.Close()
 	sum, _ := json.Marshal(map[string]any{"probes": probes.Load(), "records": n, "start": epoch(t0), "end": epoch(time.Now())})
 	fmt.Println(string(sum))

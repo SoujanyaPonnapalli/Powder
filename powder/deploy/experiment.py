@@ -325,7 +325,7 @@ def run_experiment(spec: ClusterSpec, cfg: ExperimentConfig, rundir: RunDir, run
                    log: Callable[[str], None] = print,
                    sleep=time.sleep, clock=time.time, loadgen_bin: str = LOADGEN_BIN, pdctl: str | None = None,
                    exp_id: str | None = None, pd_url_override: str | None = None, settle_timeout_s: float = 600.0,
-                   settle_interval_s: float = 10.0) -> Path:
+                   settle_interval_s: float = 10.0, rebalance_wait_s: float = 0.0) -> Path:
     if cfg.injector.startswith("trace:"):
         raise ExperimentError("injector 'trace:<file>' is reserved for exec #8 (the failure emulator) and not implemented yet")
     state = rundir.load_state()
@@ -347,6 +347,11 @@ def run_experiment(spec: ClusterSpec, cfg: ExperimentConfig, rundir: RunDir, run
     try:
         log("  preparing table")
         prep = prepare_table(ctx)
+        if rebalance_wait_s > 0:
+            # SPLIT TABLE leaves the new Regions on their parent's voters; PD spreads them over minutes, in bursts the
+            # settle gate below can miss (G3 started ~10 s after the split, on 2 voter sets)
+            log(f"  waiting {rebalance_wait_s:.0f}s for PD to rebalance the new Regions")
+            sleep(rebalance_wait_s)
         if settle_timeout_s > 0:
             waited = wait_settled(ctx, settle_timeout_s, interval=settle_interval_s)
             log(f"  cluster settled (waited {waited:.0f}s)")

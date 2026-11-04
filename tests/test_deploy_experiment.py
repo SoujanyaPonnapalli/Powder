@@ -246,6 +246,25 @@ def test_an_unsettled_cluster_aborts_before_any_load_is_generated(tmp_path, pd_s
     assert rd.load_state().experiments == []
 
 
+def test_rebalance_wait_happens_after_prepare_and_before_load(tmp_path, pd_server, monkeypatch):
+    seen, slept = [], []
+    monkeypatch.setattr(E, "WORK_ROOT", str(tmp_path / "work"))
+    spec, rd = make_run(tmp_path)
+    clk = FastClock()
+
+    def sleep(s):
+        slept.append(s)
+        clk.sleep(s)
+
+    E.run_experiment(spec, cfg(), rd, LocalRunner(), log=seen.append, sleep=sleep, clock=clk.now,
+                     loadgen_bin=str(FIX / "fake_powder_load.py"), pdctl="echo", pd_url_override=pd_server,
+                     exp_id="exp1", rebalance_wait_s=300)
+    assert 300 in slept
+    order = [next(i for i, l in enumerate(seen) if key in l)
+             for key in ("preparing table", "rebalance the new Regions", "starting PD snapshotter")]
+    assert order == sorted(order)
+
+
 def test_settle_can_be_disabled(tmp_path, pd_server, monkeypatch):
     SETTLE["miss"][:] = [9] * 100                 # would never settle
     try:

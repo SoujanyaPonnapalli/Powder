@@ -230,6 +230,9 @@ def experiment_main(argv: list[str] | None = None, runner_factory=None, out=prin
     ap.add_argument("--hold", type=float, default=60.0, help="seconds each self-test outage lasts")
     ap.add_argument("--settle-timeout", type=float, default=600.0,
                     help="seconds to wait for replication/operators to quiesce before starting load (0 = do not wait)")
+    ap.add_argument("--rebalance-wait", type=float, default=None,
+                    help="seconds to let PD spread the freshly split table before load starts "
+                         "(default: 300 for --self-test, 0 for --experiment)")
     ap.add_argument("--out-root", type=Path, default=DEFAULT_ROOT)
     a = ap.parse_args(argv)
     if not a.experiment and not a.self_test:
@@ -245,6 +248,8 @@ def experiment_main(argv: list[str] | None = None, runner_factory=None, out=prin
         kwargs = dict(kw, settle_timeout_s=a.settle_timeout)
         if sleep:
             kwargs["sleep"] = sleep
+        if a.rebalance_wait is not None:
+            kwargs["rebalance_wait_s"] = a.rebalance_wait
         if a.self_test:
             exp, verdict = run_self_test(spec, rd, runner, rounds=a.rounds, hold_s=a.hold, log=out, **kwargs)
             out(f"self-test {'PASSED' if verdict['passed'] else 'FAILED'}: {exp / 'selftest.json'}")

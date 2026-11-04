@@ -137,7 +137,8 @@ def evaluate(summary: dict, rounds: list[Round], interval_s: float = 1.0) -> dic
             "expected_rsms_not_observed": missing}
 
 
-PRE_KILL_S = 6.0                # a probe issued this long before the kill can still time out because of it
+REBALANCE_WAIT_S = 300.0        # after the split, before planning: let PD spread the probe table's Regions (G3)
+PRE_KILL_S = 6.0               # a probe issued this long before the kill can still time out because of it
 
 
 def unavailable_seconds(fail_by_sec: dict[int, bool], lo: float, hi: float) -> int:
@@ -221,7 +222,8 @@ def _current_map(runner: Runner, pd: str) -> RegionMap:
 
 
 def run_self_test(spec: ClusterSpec, rundir: RunDir, runner: Runner, rounds: int = 3, hold_s: float = 60.0,
-                  rate_per_region: float = 200.0, **kw) -> tuple[Path, dict]:
+                  rate_per_region: float = 200.0, rebalance_wait_s: float = REBALANCE_WAIT_S,
+                  **kw) -> tuple[Path, dict]:
     from .experiment import Context, nested_get  # noqa: F401  (kept for symmetry with run_experiment)
     from .install import pd_url
     from .topology import Host
@@ -246,7 +248,7 @@ def run_self_test(spec: ClusterSpec, rundir: RunDir, runner: Runner, rounds: int
                 + "; ".join(f"stop {r.stop_nodes} -> {r.expected_rsms}" for r in planned))
         return schedule_for(planned)
 
-    exp = run_experiment(spec, cfg, rundir, runner, schedule=make_schedule, **kw)
+    exp = run_experiment(spec, cfg, rundir, runner, schedule=make_schedule, rebalance_wait_s=rebalance_wait_s, **kw)
     plan = planned
     summary = json.loads((exp / "summary.json").read_text())
     verdict = evaluate_experiment(exp, plan)                      # pass/fail: per round and partition
