@@ -629,7 +629,18 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   `token-limit` 20000 or TiDB's default. (3) One leader-only partition read 25 s (allowance 20 s). Evidence:
   `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
-  repeated signals, failing teardown). **G4 and G5 not run: exec #7 is NOT done until they pass.**
+  repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
+  --spec specs/smoke.yaml --experiment experiments/smoke.yaml`: deploy -> install -> 10 min at 3 x 500 req/s ->
+  collect -> teardown in 0.43 h; 900,000/900,000 requests ok, p50 62 ms / p99 369 ms, probes 0 % unavailable, no
+  collection errors, logs from all 12 PD/TiKV/TiDB nodes; `--verify` clean; a second smoke `run_all` (`ShinyLion`,
+  0.42 h) also completed cleanly). **G5 passed 2026-11-04:** (a) SIGINT to `run_all` 60 s into the experiment
+  (`RosyWeasel`) -> "interrupted: tearing down", exit 130, `--verify` clean; deviation: run on the 8-node G1-sized spec,
+  not `smoke.yaml` (the signal path does not depend on cluster size; the first smoke attempt sent the signal too late
+  because the log was block-buffered); (b) two deployments up at once (`GladKoala`, `CrimsonLeopard`), `GladKoala`'s
+  local directory deleted: `--list` showed it with LOCAL DIR `no`, `teardown_infra.py GladKoala` removed all of it
+  (0 instances/VPCs left by tag) while `CrimsonLeopard` kept its 8 running instances; then torn down, `--verify` clean.
+  Logs: `~/powder-runs/tidb/g4-run_all.log`, `g5a-run_all.log`, `g5bc.log`. **Exec #7 is done except G3** (open
+  questions above).
 - [x] Step 7 (2026-11-03): `infra/tidb/README.md`, `iam-deploy-policy.json` (draft, unvalidated), `CLAUDE.md`, unattended-runner
   safety line, `deploy`/`dev` extras. The `--older-than` cron is documented, not installed.
 - [ ] **Owner: run gates G1 -> G5 (§10) on real AWS.** First `deploy_infra.py --dry-run`, then G1 (~$1).
