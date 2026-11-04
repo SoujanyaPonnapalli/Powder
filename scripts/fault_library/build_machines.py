@@ -18,6 +18,8 @@ Run after build_ford10.py, build_literature.py, build_region_outages.py and
   priced variants for rho = 1, rho = 0 (seed 0) and rho = 0.5. Other seeds are
   selected at run time with ``scenario_node_configs(..., price_assignment=...)``.
   Reference scenarios: reference-ford10 (Ford's planned cadence) and reference-ford10-weekly.
+* canonical-*@v2 (the default from 2026-11-04): the canonical scenarios with planned downtime at
+  Ford's Table 1 planned-reboot cadence (planned_downtime/ford10-rate) instead of weekly.
 """
 
 from __future__ import annotations
@@ -44,6 +46,7 @@ BARE_METAL_BASE = "cluster/ford10-google-storage-ge15min"
 LEVELS = ("optimistic", "central", "pessimistic")
 from powder.faults.system import REBUILD_H, SYSTEM  # noqa: E402  (exec #10 placeholders)
 RHO0_SEEDS = range(20)
+PLANNED_V2 = "planned_downtime/ford10-rate"
 
 
 def synthetic_profiles(base: dict) -> list[dict]:
@@ -129,6 +132,11 @@ def main() -> int:
                                "Caveat: cluster/ford10-google-storage counts all node restarts (incl. sub-15-min "
                                "rollout restarts), which partly overlap the weekly window; the -ge15min class does not"})
     (LIB / "scenarios/canonical.json").write_text(json.dumps(scenarios, indent=1) + "\n")
+    # @v2 (decision 2026-11-04): planned downtime at Ford's Table 1 planned-reboot cadence, not weekly.
+    v2 = [{**s, "id": s["id"] + "@v2", "version": 2, "planned_downtime": PLANNED_V2,
+           "notes": s["notes"] + "; planned downtime at Ford's cadence (ford10-rate), not weekly"}
+          for s in scenarios if s["id"].startswith("scenario/canonical-")]
+    (LIB / "scenarios/canonical@v2.json").write_text(json.dumps(v2, indent=1) + "\n")
 
     problems = FaultLibrary.load(LIB, validate=False).validate()
     if problems:

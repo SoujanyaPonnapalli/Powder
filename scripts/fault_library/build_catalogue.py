@@ -1,8 +1,10 @@
 """Generate the machine catalogue (exec #1b §3).
 
     python scripts/fault_library/build_catalogue.py [--n 1000] [--seed 0] [--spot-fraction 0.3] [--horizon-days 30]
+    python scripts/fault_library/build_catalogue.py --spot-twins --az-aware    # the standard 2000-VM catalogue
 
-Writes data/fault_library/catalogue/machines-n<N>-seed<S>.json.gz and prints a summary.
+Writes data/fault_library/catalogue/machines-n<N>-seed<S>.json.gz and prints a summary. ``--spot-twins``
+builds N on-demand machines plus one spot twin each, as machines-od<N>-spot<N>-seed<S>[-az].json.gz.
 """
 
 from __future__ import annotations
@@ -29,15 +31,21 @@ def main() -> int:
     ap.add_argument("--spot-fraction", type=float, default=0.3)
     ap.add_argument("--horizon-days", type=float, default=30.0)
     ap.add_argument("--az-aware", action="store_true", help="bind machines across three logical AZs per region")
+    ap.add_argument("--spot-twins", action="store_true", help="N on-demand machines plus a spot twin of each")
     a = ap.parse_args()
     lib = FaultLibrary.load()
-    cat = C.generate(lib, a.n, a.seed, a.spot_fraction, a.horizon_days * 24, az_aware=a.az_aware)
+    spot_fraction = 0.0 if a.spot_twins else a.spot_fraction
+    cat = C.generate(lib, a.n, a.seed, spot_fraction, a.horizon_days * 24, az_aware=a.az_aware,
+                     spot_twins=a.spot_twins)
     errs = C.validate(lib, cat)
     if errs:
         print("\n".join(errs[:20]), file=sys.stderr)
         return 1
-    suffix = "-az-v2" if a.az_aware else ""
-    path = ROOT / f"data/fault_library/catalogue/machines-n{a.n}-seed{a.seed}{suffix}.json.gz"
+    if a.spot_twins:
+        name = f"machines-od{a.n}-spot{a.n}-seed{a.seed}{'-az' if a.az_aware else ''}"
+    else:
+        name = f"machines-n{a.n}-seed{a.seed}{'-az-v2' if a.az_aware else ''}"
+    path = ROOT / f"data/fault_library/catalogue/{name}.json.gz"
     C.write(cat, path)
     ms = cat["machines"]
     yr = lambda c: np.array([m["markov_rate_per_hour"].get(c, 0.0) * 8766 for m in ms])  # noqa: E731

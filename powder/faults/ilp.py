@@ -43,11 +43,11 @@ def scenario_machine_types(lib: FaultLibrary, scenario_id: str, *, copies: int =
 
 # --------------------------------------------------------------------------- catalogues
 
-def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: str = "scenario/canonical-central",
+def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: str = "scenario/canonical-central@v2",
                        price: str = "rho0", capacity: int = 10, horizon_h: float | None = None):
     """One optimizer ``Machine`` per catalogue machine (exponential approximation, planned downtime folded in).
 
-    ``price``: which on-demand assignment to use (``rho0`` / ``rho1``); spot machines use their pool price.
+    ``price``: which assignment to use (``rho0`` / ``rho1``); native-priced spot machines use their pool price.
     ``capacity``: RSM replicas a machine can host.
     """
     from powder.placement_optimizer import Machine
@@ -58,7 +58,7 @@ def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: s
     h = horizon_h or cat["horizon_h"]
     out = []
     for m in cat["machines"]:
-        p = m["price"].get("per_hour") if m["tier"] == "spot" else m["price"].get(price)
+        p = C.machine_price(m, price)
         out.append(Machine(m["id"], C.node_config(m, horizon_h=h, planned=planned, cost_per_hour=p or 0.0),
                            capacity=capacity))
     return out
@@ -152,7 +152,7 @@ def solve_catalogue_placement(lib: FaultLibrary, cat: dict[str, Any], protocol, 
                               budget_per_hour: float | None = None, objective: str = "sum_availability",
                               bins_per_decade: int = 4, random_samples_per_size: int = 400,
                               greedy_starts_per_size: int = 10, max_candidates: int = 3000, rng_seed: int = 0,
-                              rescore_exact: bool = True, scenario_id: str = "scenario/canonical-central",
+                              rescore_exact: bool = True, scenario_id: str = "scenario/canonical-central@v2",
                               unique_machine_cost: bool = True, scoring: str = "hybrid",
                               mc_config: Any = None) -> dict:
     """Markov screening, optional MC certification, then the candidate ILP.

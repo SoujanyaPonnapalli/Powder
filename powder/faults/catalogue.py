@@ -11,7 +11,9 @@ A machine is a **recipe** plus **draws**:
   per catalogue (pool-wide reclaim waves).
 
 A recipe repeats only after every recipe of its tier is used, and then with
-independent draws, so no two machines share all their rates. Every cause records its source entry and
+independent draws, so no two machines share all their rates. A ``spot_twins``
+catalogue instead pairs every on-demand machine with a spot twin: the same draws
+plus a spot-interruption cause, priced at the parent's price x the pool's discount. Every cause records its source entry and
 member so each number traces back to a source measurement.
 
 Consumers:
@@ -26,6 +28,7 @@ Consumers:
 
 from __future__ import annotations
 
+import copy
 import gzip
 import hashlib
 import json
@@ -168,6 +171,32 @@ def build_machine(lib: FaultLibrary, recipe: Recipe, draw: int, idx: int, seed: 
             "price": price}
 
 
+def build_spot_twin(lib: FaultLibrary, parent: dict[str, Any], pool: str, idx: int, seed: int,
+                    pool_offsets: dict[str, float]) -> dict[str, Any]:
+    """The spot variant of an on-demand machine: the parent's draws (same causes, region and AZ) plus a
+    ``spot_interrupt`` cause from ``pool``. Price: each of the parent's assigned prices x the pool's
+    spot-p50 / on-demand ratio, so the twin is always cheaper than its parent under every assignment."""
+    comp = lib.get(SPOT_COMPONENT)
+    mr = instantiate(comp["rate_model"], comp["rate_per_hour"], stream(seed, "twin", parent["id"]),
+                     member_id=pool, offset_h=pool_offsets[pool])
+    mem = next(m for m in comp["rate_model"]["members"] if m["id"] == pool)
+    discount = mem["spot_price_p50"] / mem["ondemand_price"]
+    recipe = {**parent["recipe"], "spot_pool": pool}
+    twin = copy.deepcopy({k: parent[k] for k in ("causes", "durations", "region", "draw")})
+    twin["causes"]["spot_interrupt"] = {**mr.to_dict(), "source": SPOT_COMPONENT}
+    price = {"route": "twin", "discount": discount, "source": "spotlake-aws#pools",
+             **{k: v * discount for k, v in parent["price"].items() if k.startswith("rho")}}
+    return {**twin, "id": f"m{idx:05d}", "recipe": recipe, "recipe_key": Recipe(**recipe).key,
+            "tier": "spot", "twin_of": parent["id"], "price": price,
+            **({"az": parent["az"]} if "az" in parent else {})}
+
+
+def machine_price(machine: dict[str, Any], price: str) -> float | None:
+    """Hourly price under assignment ``price`` (``rho0`` / ``rho1``); native-priced spot machines have one price."""
+    p = machine["price"]
+    return p.get(price) if price in p else p.get("per_hour")
+
+
 def machine_rates(machine: dict[str, Any]) -> dict[str, MachineRate]:
     return {c: machine_rate_from_dict(d) for c, d in machine["causes"].items()}
 
@@ -289,9 +318,18 @@ def assign_azs(machines: list[dict[str, Any]], seed: int) -> None:
 
 
 def generate(lib: FaultLibrary, n: int = 1000, seed: int = 0, spot_fraction: float = 0.3,
-             horizon_h: float = DEFAULT_HORIZON_H, *, az_aware: bool = False) -> dict[str, Any]:
+             horizon_h: float = DEFAULT_HORIZON_H, *, az_aware: bool = False, spot_twins: bool = False) -> dict[str, Any]:
+    """``spot_twins``: ``n`` on-demand machines (``spot_fraction`` must be 0), then one spot twin of each
+    (ids ``n .. 2n-1``) on a seeded random SpotLake pool of its region (:func:`build_spot_twin`)."""
+    if spot_twins and spot_fraction:
+        raise ValueError("spot_twins builds its own spot tier; use spot_fraction=0")
     recipes = sample_recipes(lib, n, seed, spot_fraction)
-    pools = sorted({r.spot_pool for r, _ in recipes if r.spot_pool})
+    by_region: dict[str, list[str]] = {}
+    for p in spot_pools(lib):
+        by_region.setdefault(p.split(":", 1)[0], []).append(p)
+    twin_pools = [str(stream(seed, "twin-pool", str(i)).choice(by_region[r.region])) for i, (r, _) in
+                  enumerate(recipes)] if spot_twins else []
+    pools = sorted({r.spot_pool for r, _ in recipes if r.spot_pool} | set(twin_pools))
     comp = lib.get(SPOT_COMPONENT) if pools else None
     spans = {m["id"]: m["edges_h"][-1] for m in comp["rate_model"]["members"]} if comp else {}
     offsets = {p: float(stream(seed, "pool", p).uniform(0, spans[p])) for p in pools}
@@ -299,6 +337,7 @@ def generate(lib: FaultLibrary, n: int = 1000, seed: int = 0, spot_fraction: flo
     if az_aware:
         assign_azs(machines, seed)
     prices = assign_catalogue_prices(lib, machines, seed=seed, horizon_h=horizon_h)
+    machines += [build_spot_twin(lib, m, p, n + i, seed, offsets) for i, (m, p) in enumerate(zip(machines, twin_pools))]
     for m in machines:
         m["markov_rate_per_hour"] = horizon_rates(m, horizon_h)
     hashes = {eid: lib.content_hash(eid) for eid in sorted({*TRANSIENT_BASES, *DISK_COMPONENTS, SPOT_COMPONENT})
@@ -306,18 +345,30 @@ def generate(lib: FaultLibrary, n: int = 1000, seed: int = 0, spot_fraction: flo
     return {"kind": "machine_catalogue", "seed": seed, "n": n, "spot_fraction": spot_fraction,
             "horizon_h": horizon_h, "capacity": recipe_capacity(lib), "pool_offsets_h": offsets,
             "price_assignments": prices, "library_hashes": hashes, "system": SYSTEM, "machines": machines,
-            **({"az_aware": True} if az_aware else {})}
+            **({"az_aware": True} if az_aware else {}), **({"spot_twins": True} if spot_twins else {})}
 
 
 def validate(lib: FaultLibrary, cat: dict[str, Any]) -> list[str]:
     errs = []
     if cat.get("az_aware"):
+        # twins share their parent's AZ, so each tier is balanced on its own
+        tiers = ("ondemand", "spot") if cat.get("spot_twins") else (None,)
         for region in US_REGIONS:
-            counts = Counter(m.get("az") for m in cat["machines"] if m["region"] == region)
-            expected = {f"{region}:az{i}" for i in (1, 2, 3)}
-            if not set(counts) <= expected or max((counts[z] for z in expected), default=0) - min(
-                    (counts[z] for z in expected), default=0) > 1:
-                errs.append(f"{region}: unbalanced or invalid AZ assignment")
+            for tier in tiers:
+                counts = Counter(m.get("az") for m in cat["machines"]
+                                 if m["region"] == region and tier in (None, m["tier"]))
+                expected = {f"{region}:az{i}" for i in (1, 2, 3)}
+                if not set(counts) <= expected or max((counts[z] for z in expected), default=0) - min(
+                        (counts[z] for z in expected), default=0) > 1:
+                    errs.append(f"{region}: unbalanced or invalid AZ assignment")
+    if cat.get("spot_twins"):
+        by_id = {m["id"]: m for m in cat["machines"]}
+        for m in cat["machines"]:
+            p = by_id.get(m.get("twin_of", ""))
+            if m["tier"] == "spot" and (p is None or p["tier"] != "ondemand" or p["region"] != m["region"]
+                                        or p.get("az") != m.get("az")
+                                        or any(m["price"][k] >= v for k, v in p["price"].items() if k.startswith("rho"))):
+                errs.append(f"{m['id']}: spot twin does not match or undercut its parent")
     keys = [(m["recipe_key"], m["draw"]) for m in cat["machines"]]
     if len(set(keys)) != len(keys):
         errs.append("duplicate (recipe, draw)")
@@ -406,7 +457,7 @@ def _slot_events(machine: dict[str, Any], slot: str, horizon: float, seed: int, 
 
 
 def trace(lib: FaultLibrary, cat: dict[str, Any], slots: dict[str, str], horizon_s: float, seed: int,
-          scenario_id: str | None = "scenario/canonical-central") -> list:
+          scenario_id: str | None = "scenario/canonical-central@v2") -> list:
     """Fault events for ``slots`` = {slot: catalogue machine id} (emulation).
 
     Node events follow each machine's full hazards (constant or piecewise, the

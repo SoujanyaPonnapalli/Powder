@@ -128,7 +128,7 @@ class ClusterSpec:
     handle: str = "auto"
     label: str = ""
     tidb_version: str = ""
-    scenario: str = "scenario/canonical-central-rho0"
+    scenario: str = "scenario/canonical-central-rho0@v2"
     seed: int = 1
     replication_factor: int = 3
     tikv_instance_type: str = "i4i.2xlarge"

@@ -831,6 +831,24 @@ def test_reference_ford10_planned_variants():
     assert strip(base) == strip(weekly)
 
 
+def test_v2_scenarios_use_ford_planned_cadence():
+    from powder.faults import FaultLibrary
+    from powder.faults.convert import planned_as_cause
+    lib = FaultLibrary.load()
+    strip = lambda s: {k: v for k, v in s.items() if k not in ("id", "version", "planned_downtime", "notes")}  # noqa: E731
+    v1 = [s for s in lib.query(kind="scenario") if s["id"].startswith("scenario/canonical-") and "@" not in s["id"]]
+    assert len(v1) == 12
+    for s in v1:
+        v2 = lib.get(s["id"] + "@v2", "scenario")
+        assert v2["planned_downtime"] == "planned_downtime/ford10-rate" and strip(v2) == strip(s)
+    az2 = lib.get("scenario/canonical-central-az-aware@v2", "scenario")
+    az3 = lib.get("scenario/canonical-central-az-aware@v3", "scenario")
+    assert az3["planned_downtime"] == "planned_downtime/ford10-rate" and strip(az3) == strip(az2)
+    # Ford's cadence: ~5.1 planned reboots per node-year instead of ~52
+    rate = planned_as_cause(lib, az3, "central")[0].rate_per_second * 8766 * 3600
+    assert 4.5 < rate < 5.5
+
+
 def test_no_machine_with_unknown_recoverability():
     from powder.faults import FaultLibrary
     lib = FaultLibrary.load()
@@ -921,6 +939,27 @@ def test_az_aware_catalogue_bindings_are_seeded_and_balanced():
     assert "az_aware" not in C.generate(LIB, n=12, seed=13)
 
 
+def test_spot_twin_catalogue():
+    from powder.faults import catalogue as C
+    cat = C.generate(LIB, n=60, seed=7, spot_fraction=0.0, az_aware=True, spot_twins=True)
+    assert C.validate(LIB, cat) == []
+    ms = cat["machines"]
+    assert len(ms) == 120 and [m["tier"] for m in ms] == ["ondemand"] * 60 + ["spot"] * 60
+    for parent, twin in zip(ms[:60], ms[60:]):
+        assert twin["twin_of"] == parent["id"] and twin["az"] == parent["az"]
+        assert twin["recipe"]["spot_pool"].startswith(parent["region"] + ":")
+        assert {c: d for c, d in twin["causes"].items() if c != "spot_interrupt"} == parent["causes"]
+        for rho in ("rho0", "rho1"):
+            assert math.isclose(C.machine_price(twin, rho), C.machine_price(parent, rho) * twin["price"]["discount"])
+            assert C.machine_price(twin, rho) < C.machine_price(parent, rho)
+    assert C.digest(cat) == C.digest(C.generate(LIB, n=60, seed=7, spot_fraction=0.0, az_aware=True, spot_twins=True))
+    try:
+        C.generate(LIB, n=10, seed=7, spot_fraction=0.3, spot_twins=True)
+        raise AssertionError("spot_twins with spot_fraction > 0 must be rejected")
+    except ValueError:
+        pass
+
+
 def test_simulator_time_varying_hazard_and_respawn():
     """The Python simulator samples TimeVaryingHazard from the current time; spawns redraw age clocks."""
     from dataclasses import replace
@@ -957,8 +996,8 @@ def test_catalogue_trace_follows_machine_hazards():
     n = sum(e.cause == "spot_interrupt" for e in ev)
     mu = 200 * C.piecewise_rate(C.machine_rates(m)["spot_interrupt"]).cumulative(0, H)
     assert abs(n - mu) < 4 * math.sqrt(mu) + 0.03 * mu, (n, mu)  # clocks pause during spawns: slightly fewer
-    ev2 = C.trace(LIB, cat, {"a": m["id"]}, 30 * 86400.0, seed=2)
-    assert any(e.kind == "planned" for e in ev2)
+    ev2 = C.trace(LIB, cat, {"a": m["id"]}, 30 * 86400.0, seed=2, scenario_id="scenario/canonical-central")
+    assert any(e.kind == "planned" for e in ev2)  # weekly cadence: certain within 30 days
     cfg = C.node_config(m, time_varying=True)
     assert hasattr(cfg.data_loss_dist, "sample_at")
 

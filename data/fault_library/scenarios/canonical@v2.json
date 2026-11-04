@@ -1,0 +1,626 @@
+[
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-optimistic@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "optimistic",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "availability-only: every library machine class, no prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-optimistic-rho0@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "optimistic",
+  "price_assignment": "price-assign/rho0-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=0 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-optimistic-rho0.5@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "optimistic",
+  "price_assignment": "price-assign/rho0.5-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=0.5 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-optimistic-rho1@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "optimistic",
+  "price_assignment": "price-assign/rho1-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=1 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-central@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "central",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "availability-only: every library machine class, no prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-central-rho0@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "central",
+  "price_assignment": "price-assign/rho0-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=0 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-central-rho0.5@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "central",
+  "price_assignment": "price-assign/rho0.5-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=0.5 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-central-rho1@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "central",
+  "price_assignment": "price-assign/rho1-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=1 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-pessimistic@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "pessimistic",
+  "price_assignment": null,
+  "price_policy": "none",
+  "notes": "availability-only: every library machine class, no prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-pessimistic-rho0@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "pessimistic",
+  "price_assignment": "price-assign/rho0-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=0 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-pessimistic-rho0.5@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "pessimistic",
+  "price_assignment": "price-assign/rho0.5-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=0.5 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ },
+ {
+  "kind": "scenario",
+  "region_outage": "region_outage/aws-us-from-azure",
+  "planned_downtime": "planned_downtime/ford10-rate",
+  "deployment": {
+   "instance_type": "i4i.2xlarge",
+   "fallback_instance_type": "m6id.2xlarge",
+   "regions": [
+    "us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2"
+   ],
+   "azs_per_region": 3,
+   "vcpu": 8,
+   "mem_gb": 64,
+   "storage_gb": 1875,
+   "storage": "1 x 1875 NVMe SSD (instance store)"
+  },
+  "system": {
+   "snapshot_download_time_dist": {
+    "type": "constant",
+    "value": 8.589934592
+   },
+   "spawn": {
+    "type": "uniform",
+    "low": 60.0,
+    "high": 180.0
+   },
+   "source": "exec10-simple-estimate"
+  },
+  "id": "scenario/canonical-pessimistic-rho1@v2",
+  "machines": [
+   "machine/ford10-google-storage",
+   "machine/ford10-google-storage-ge15min",
+   "machine/ford10-ge15min-x0.1",
+   "machine/ford10-ge15min-x10",
+   "machine/spot-i4i.2xlarge-us-east-1",
+   "machine/spot-i4i.2xlarge-us-east-2",
+   "machine/spot-i4i.2xlarge-us-west-1",
+   "machine/spot-i4i.2xlarge-us-west-2",
+   "machine/spot-m6id.2xlarge-us-east-1",
+   "machine/spot-m6id.2xlarge-us-east-2",
+   "machine/spot-m6id.2xlarge-us-west-1",
+   "machine/spot-m6id.2xlarge-us-west-2"
+  ],
+  "level": "pessimistic",
+  "price_assignment": "price-assign/rho1-seed0@2026-10-21",
+  "price_policy": "mean_over_window",
+  "notes": "priced: rho=1 assignment for on-demand classes; native spot prices; planned downtime at Ford's cadence (ford10-rate), not weekly",
+  "version": 2
+ }
+]

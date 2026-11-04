@@ -153,7 +153,7 @@ def catalogue_batch_sampler(lib, cat: dict, machine_ids: Sequence[str], scenario
     nodes = {}
     for i, mid in enumerate(machine_ids):
         m = by_id[mid]
-        cost = m["price"].get("per_hour") if m["tier"] == "spot" else m["price"].get(price)
+        cost = C.machine_price(m, price)
         if cost is None:
             raise ValueError(f"no {price} price for {mid}")
         cfg = C.node_config(m, horizon_h=cat["horizon_h"], planned=planned,

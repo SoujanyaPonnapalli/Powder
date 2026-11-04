@@ -4,6 +4,7 @@ The two recorded single-AZ compute outages set a pooled *proxy* AZ rate for
 12 logical AWS US AZs. Broad WAN events are retained as a separately labelled
 stress scenario, not treated as full all-region loss in the primary variant.
 This does not revise any existing library entry used by prior results.
+``az-aware@v3`` is the same scenario with planned downtime at Ford's cadence (the default from 2026-11-04).
 """
 from __future__ import annotations
 
@@ -73,6 +74,11 @@ def main():
     scenario["region_outage"] = az["id"]
     scenario["notes"] = "AZ-aware primary sensitivity; partial WAN retained as separate stress metadata"
     (LIB / "scenarios/az-aware@v2.json").write_text(json.dumps(scenario, indent=2) + "\n")
+    # @v3 (decision 2026-11-04): planned downtime at Ford's planned-reboot cadence, not weekly.
+    v3 = {**scenario, "id": "scenario/canonical-central-az-aware@v3", "version": 3,
+          "planned_downtime": "planned_downtime/ford10-rate",
+          "notes": scenario["notes"] + "; planned downtime at Ford's cadence (ford10-rate), not weekly"}
+    (LIB / "scenarios/az-aware@v3.json").write_text(json.dumps(v3, indent=2) + "\n")
     print(json.dumps({"profile": az["id"], "scenario": scenario["id"],
                       "az_rate_per_year": rates["central"] * H_PER_YEAR,
                       "az_mean_duration_minutes": durations["central"]["value"] / 60}, indent=2))

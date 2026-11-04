@@ -22,6 +22,17 @@ Follows exec #1 (`exec-01-canonical-failure-data.md`). Status: plan + first step
 - **Backblaze raw drive stats 2023-2025**: approved. Blocked by the egress allowlist (`www.backblaze.com`,
   `f001.backblazeb2.com`); the user can add the hosts or drop the zips into the repo root, as for SpotLake.
 
+## 0b. Decisions (user, 2026-11-04): the standard 2000-VM catalogue
+
+- **1000 on-demand + 1000 spot twins** (`catalogue/machines-od1000-spot1000-seed0-az.json.gz`,
+  `build_catalogue.py --spot-twins --az-aware`). The on-demand half is built as before (recipe cycling,
+  seeded draws, AZ binding, rho0/rho1 prices). Machine `m0{1000+i}` is the spot twin of `m0{i}`: the same
+  draws, region and AZ, plus `spot_interrupt` from a seeded random SpotLake pool of its region (any of the
+  region's 55-80 pools).
+- **Twin price** = the parent's assigned price (each of rho0/rho1) x the pool's spot-p50 / on-demand ratio
+  (0.14-0.72, median 0.40), so a twin always undercuts its parent; use `catalogue.machine_price`.
+- Pair with `scenario/canonical-central-az-aware@v3` (Ford planned cadence).
+
 ## 1. Rate models
 
 Every cause of a machine is one of four rate models (new `rate_model` field next to `rate_per_hour`;
