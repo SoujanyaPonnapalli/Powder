@@ -621,13 +621,24 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   kill; `systemctl stop` is a graceful shutdown that tries leader eviction for up to 20 s -> SIGKILL; simultaneous
   actions ran ~7 s apart -> run in parallel; log collection never created its directory on PD/TiKV/TiDB nodes;
   TiDB's default `token-limit` 1000 filled with statements retrying on dead Regions and stalled *all* queries when
-  ~half the keys were down -> topology sets 20000. **Open (decide before the paper's baseline runs):**
-  (1) round 3 (stores 10+11) still made 38 healthy partitions unavailable for ~40 s (e.g. a Region on stores 2,5,12
-  with its leader on 12), starting ~30 s after the kill while TiDB logs `regionMiss backoffer.maxSleep 40000ms` for the
-  dead Regions: cross-RSM interference under an open-loop client that abandons requests at 5 s. Real TiDB behaviour or
-  harness artefact is not settled; it directly affects any per-RSM availability claim. (2) Whether baseline runs keep
-  `token-limit` 20000 or TiDB's default. (3) One leader-only partition read 25 s (allowance 20 s). Evidence:
-  `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
+  ~half the keys were down -> topology sets 20000 (consistent with TiDB completing 0 queries/s in those rounds, not
+  proven directly). **Offline analysis of attempt 4 (2026-11-04):**
+  (a) *Why ~half the keys:* `SPLIT TABLE` does not scatter, so the 50 new Regions keep their parent's voters: the
+  probe table started on 2 voter sets of ~25 Regions each, and the self-test began ~10 s after the split while PD was
+  still rebalancing (end of attempt 4: 16/11/11/9/2/1). Balanced, 2 stores per AWS region and one replica per region
+  give 8 voter sets and a 2-store kill takes 2 of them (~25 %). Fix: scatter on split or gate on balance.
+  (b) *Why 60 s reads as 65-75 s:* the schedule clock offset was sampled *after* `start_generators` (seconds of ssh), so
+  every fault fired and was logged ~6 s late (fixed). Corrected, round 1 had TiKV down 03:40:43.6 -> ready 03:41:44.2
+  (60.6 s); the surviving peer re-campaigns only on its randomised election timeout (seen every ~18 s), so the lost
+  Regions elected leaders 10-14 s after the restart (03:41:54-58). Outage = down time + up to ~2x election timeout.
+  (c) *Healthy partitions down ~40 s in round 3:* NOT TiDB. For rows whose Region had no killed voter, clients logged
+  2,651 timeouts in the 39 s stall, but TiDB's slow log (>= 0.3 s) has only 8 statements for those rows, all < 0.4 s
+  with no backoff: the requests never ran long on the server. Most likely client side: go-sql-driver 1.8.1 closes the
+  connection on every deadline, so each request to a dead Region costs a reconnect, and requests wait for pool slots /
+  connection setup (neither appears in the slow log). Next: instrument `powder-load` (connection-acquire time per
+  request, `db.Stats()` per second, TiDB connection count) and re-run. (d) One leader-only partition read 25 s
+  (allowance 20 s), consistent with (b)'s election timing. (e) Whether baseline runs keep `token-limit` 20000.
+  Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
   --spec specs/smoke.yaml --experiment experiments/smoke.yaml`: deploy -> install -> 10 min at 3 x 500 req/s ->

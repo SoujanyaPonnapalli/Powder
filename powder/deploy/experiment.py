@@ -355,11 +355,14 @@ def run_experiment(spec: ClusterSpec, cfg: ExperimentConfig, rundir: RunDir, run
         log("  starting PD snapshotter")
         start_snapshotter(ctx)
         snap_started = True
+        sent = clock()
         now = float(ctx.ctl("date +%s.%N", timeout=30).stdout.strip())
+        # controller clock minus ours, sampled around the same call: measured after start_generators (as before G3) it
+        # absorbed their several seconds of ssh, so every scheduled fault fired (and was logged) ~6 s late
+        offset = {"v": now - (sent + clock()) / 2}
         start_at = now + START_LEAD_S
         log(f"  starting {len(_loadgens(ctx))} load generator(s); {cfg.workload.duration_s:.0f}s at {cfg.workload.rate_per_region:g} req/s each")
         dirs = start_generators(ctx, start_at)
-        offset = {"v": now - clock()}                              # controller clock minus ours
         applied = wait_generators(ctx, dirs, list(schedule or []), start_at, lambda: clock() + offset["v"])
         (exp / "faults" / "applied.jsonl").write_text("".join(json.dumps(a) + "\n" for a in applied))
         (exp / "faults" / "planned.jsonl").write_text("".join(json.dumps(a.__dict__) + "\n" for a in (schedule or [])))
