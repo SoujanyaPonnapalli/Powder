@@ -602,7 +602,13 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   cross-region; SSH over private IPs via the controller; 1.7 TB instance NVMe mounted at `/data` on both TiKV; teardown +
   `--verify` clean). Runs 1-3 found and fixed: peer-region `InvalidVpcPeeringConnectionID.NotFound` lag (code), VPC-scoped
   creates and untagged accepter side of cross-region peerings (`iam-deploy-policy.json`, now validated for G1's calls).
-- [x] Step 4 (code, 2026-11-03): `install_tidb.py` + `node_bootstrap.sh`, tested with a scripted runner. **G2 not run.**
+- [x] Step 4 (code, 2026-11-03): `install_tidb.py` + `node_bootstrap.sh`, tested with a scripted runner. **G2 passed on real AWS 2026-11-04**
+  (handle `HappyMongoose`, `specs/smoke.yaml`: 16 nodes, 3 regions): all 14 TiUP instances `Up`; every TiKV store has
+  `region/zone/host/machine_class`; `SELECT 1` and v8.5.8 through each of the 3 regional TiDBs; all 65 Regions have 3 peers
+  in 3 distinct AWS regions; teardown + `--verify` clean. Fixes found on the way: fetch TiUP's `root.json` trust anchor;
+  `machine_class` appended to `location-labels` (tiup rejects store labels not listed there; below `host` it cannot change
+  placement); chown `/data/tikv` to `tidb` after deploy (bootstrap made it root-owned); skip `deploy` when tiup already has
+  the cluster (re-runs continue); `start --wait-timeout 1200` (first-TiDB schema bootstrap took ~2.5 min cross-region).
 - [x] Step 5 (code, 2026-11-03): `powder-load` (Go) + probes, collection, `run_experiment.py`, `--self-test` planner/evaluator;
   validated on a real local TiDB. **G3 (self-test on AWS) not run.**
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,

@@ -27,13 +27,15 @@ from .remote import RemoteError, Runner, wait_for
 from .rundir import RunDir
 from .spec import ClusterSpec, plan_nodes
 from .state import RunState, utcnow
-from .topology import Host, label_value, machine_class_label, render_topology
+from .topology import TIKV_DATA_DIR, Host, label_value, machine_class_label, render_topology
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSIONS_FILE = ROOT / "third_party" / "tidb" / "VERSIONS"
 FETCH_SCRIPT = ROOT / "infra" / "tidb" / "fetch_tidb.sh"
 CONTROLLER_KEY = "~/.ssh/powder_run"
 CONTROLLER_HOME = "~/powder"
+TIUP_MIRROR = "https://tiup-mirrors.pingcap.com"       # same default as fetch_tidb.sh
+START_WAIT_S = 1200                                    # tiup cluster start --wait-timeout (default 120)
 PD_PORT, TIDB_PORT, TIDB_STATUS_PORT, GRAFANA_PORT, PROM_PORT = 2379, 4000, 10080, 3000, 9090
 
 
@@ -182,6 +184,8 @@ def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[st
     cache = f"~/.cache/powder/tidb/{tidb_v}"
     runner.run("controller", f"mkdir -p ~/.tiup/bin && tar xzf {cache}/tiup-{tiup_v}-linux-amd64.tar.gz -C ~/.tiup/bin "
                              f"&& chmod +x ~/.tiup/bin/tiup && ~/.tiup/bin/tiup --version", timeout=120)
+    # tiup needs the mirror's root.json (its trust anchor) next to the binary, as the official installer puts it (G2)
+    runner.run("controller", f"curl -fsSL --retry 3 -o ~/.tiup/bin/root.json {TIUP_MIRROR}/root.json", timeout=120)
     runner.run("controller", f"~/.tiup/bin/tiup install cluster:{cluster_v} ctl:{tidb_v}", timeout=600)
     runner.run("controller", "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client-core-8.0 >/dev/null",
                timeout=600)
@@ -203,11 +207,24 @@ def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[st
     fails = sum(1 for l in chk.stdout.splitlines() if re.search(r"\bFail\b", l))
     log(f"  check finished (exit {chk.returncode}, {fails} advisory failures, see install/check.txt)")
 
-    log(f"[{state.handle}] tiup cluster deploy {state.handle} {tidb_v}")
-    runner.run("controller", _tiup(cluster_v, f"deploy {state.handle} {tidb_v} {CONTROLLER_HOME}/topology.yaml {ssh} -y"),
-               timeout=deploy_timeout)
+    # a re-run after a failed start continues: tiup refuses to deploy a cluster name it already has
+    known = runner.run("controller", f"test -d ~/.tiup/storage/cluster/clusters/{state.handle}", timeout=30, check=False)
+    if known.returncode == 0:
+        log(f"[{state.handle}] tiup already has cluster {state.handle}; skipping deploy")
+    else:
+        log(f"[{state.handle}] tiup cluster deploy {state.handle} {tidb_v}")
+        runner.run("controller", _tiup(cluster_v, f"deploy {state.handle} {tidb_v} {CONTROLLER_HOME}/topology.yaml {ssh} -y"),
+                   timeout=deploy_timeout)
+    # node_bootstrap.sh creates the NVMe data dir as root before tiup creates the tidb user, and tiup does not chown
+    # an existing data dir: without this TiKV cannot open RocksDB (G2)
+    for n in plan_nodes(spec):
+        if n.role == "tikv":
+            runner.run(n.name, f"sudo chown -R tidb:tidb {TIKV_DATA_DIR}", timeout=60)
     log(f"[{state.handle}] tiup cluster start")
-    runner.run("controller", _tiup(cluster_v, f"start {state.handle}"), timeout=deploy_timeout)
+    # the first TiDB bootstraps the system schema with one cross-region DDL round per step (~2-3 s each, G2): far
+    # beyond tiup's default 120 s port wait
+    runner.run("controller", _tiup(cluster_v, f"start {state.handle} --wait-timeout {START_WAIT_S}"),
+               timeout=deploy_timeout)
 
     log(f"[{state.handle}] health gate")
     last: list[str] = []

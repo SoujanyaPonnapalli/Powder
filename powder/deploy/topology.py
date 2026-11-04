@@ -58,7 +58,9 @@ def topology_dict(spec: ClusterSpec, hosts: dict[str, Host]) -> dict:
         raise TopologyError(f"no host for: {', '.join(missing)}")
 
     pd_cfg = {
-        "replication.location-labels": list(LOCATION_LABELS),
+        # tiup refuses TiKV labels missing from location-labels (G2); machine_class sits below host, which is already
+        # unique per store, so it cannot change replica placement
+        "replication.location-labels": LOCATION_LABELS + ["machine_class"],
         "replication.isolation-level": "region",
         "replication.max-replicas": spec.replication_factor,
     }

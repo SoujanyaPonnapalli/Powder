@@ -117,12 +117,12 @@ def test_topology_structure():
     topo = yaml.safe_load(T.render_topology(sp, fake_hosts(sp)))
     assert len(topo["pd_servers"]) == 3 and len(topo["tikv_servers"]) == 6 and len(topo["tidb_servers"]) == 3
     pd = topo["server_configs"]["pd"]
-    assert pd["replication.location-labels"] == ["region", "zone", "host"]
+    assert pd["replication.location-labels"] == ["region", "zone", "host", "machine_class"]
     assert pd["replication.max-replicas"] == 3
     for kv in topo["tikv_servers"]:
         labels = kv["config"]["server.labels"]
         assert set(labels) == {"region", "zone", "host", "machine_class"}
-        assert set(pd["replication.location-labels"]) <= set(labels)       # every isolation label is set on every store
+        assert set(labels) == set(pd["replication.location-labels"])       # tiup deploy rejects any label not listed
         assert kv["data_dir"] == "/data/tikv"
         assert all(T._LABEL_RE.match(v) for v in labels.values())
     assert {kv["config"]["server.labels"]["machine_class"] for kv in topo["tikv_servers"]} == {

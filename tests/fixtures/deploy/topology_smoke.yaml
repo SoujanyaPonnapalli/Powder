@@ -12,6 +12,7 @@ server_configs:
     - region
     - zone
     - host
+    - machine_class
     replication.isolation-level: region
     replication.max-replicas: 3
   tikv: {}
