@@ -4,7 +4,8 @@
 
 For each fault-rate scale (every node fault rate x k: transient incl. planned, and permanent) and each
 price model: generate Markov-scored candidates once, solve the max-availability ILP with no budget,
-then again with a budget of 50% of the unrestricted solution's cost. Baselines: the exec-02 fixed-RF
+then again at budgets of 20/30/40/50/75% of the unrestricted solution's cost (``--budget-fractions``).
+A budget the candidate menu cannot meet is recorded as infeasible. Baselines: the exec-02 fixed-RF
 placements (``experiment_sizing.baseline``: one replica per region, AZ anti-affinity, fault-rate blind),
 price-blind (random) and cheapest-first, at RF 3/5/7 on the same machines. Availability is the ILP's
 *expected* per-RSM mean under the Markov model (exact rescoring for <= 5 nodes, binned otherwise):
@@ -42,6 +43,8 @@ def nines(a: float) -> float:
 
 
 def summarize(sol, machines, protocol, strategy, num_rsms: int, exact_cache: dict) -> dict:
+    if not sol.selected:
+        return {"status": str(sol.status), "feasible": False, "budget_per_hour": sol.budget_per_hour}
     by_id = {m.machine_id: m for m in machines}
     scorer = markov_candidate_scorer(protocol, strategy)
     total, rf, tiers, used = 0.0, Counter(), Counter(), set()
@@ -56,7 +59,7 @@ def summarize(sol, machines, protocol, strategy, num_rsms: int, exact_cache: dic
     for mid in used:
         tiers["spot" if int(mid[1:]) >= 1000 else "ondemand"] += 1
     mean = total / num_rsms
-    return {"status": str(sol.status), "cost_per_hour": sol.total_cost_per_hour, "budget_per_hour": sol.budget_per_hour,
+    return {"status": str(sol.status), "feasible": True, "cost_per_hour": sol.total_cost_per_hour, "budget_per_hour": sol.budget_per_hour,
             "mean_availability": mean, "nines": nines(mean), "rf_counts": dict(sorted(rf.items())),
             "machines_used": len(used), "tiers": dict(tiers)}
 
@@ -95,18 +98,21 @@ def run_one(a: argparse.Namespace, k: float, price: str) -> dict:
                                   scoring="markov", rescore_exact=False, rate_scale=k)
     exact: dict = {}
     free = summarize(r["solution"], r["machines"], protocol, strategy, a.num_rsms, exact)
-    budget = a.budget_fraction * free["cost_per_hour"]
-    sol = solve_candidate_ilp(r["candidates"], r["machines"],
-                              PlacementSolverConfig(num_rsms=a.num_rsms, objective="sum_availability",
-                                                    budget_per_hour=budget, unique_machine_cost=True))
-    capped = summarize(sol, r["machines"], protocol, strategy, a.num_rsms, exact)
+    capped = {}
+    for f in a.budget_fractions:
+        sol = solve_candidate_ilp(r["candidates"], r["machines"],
+                                  PlacementSolverConfig(num_rsms=a.num_rsms, objective="sum_availability",
+                                                        budget_per_hour=f * free["cost_per_hour"],
+                                                        unique_machine_cost=True))
+        capped[f"budget_{f:g}"] = summarize(sol, r["machines"], protocol, strategy, a.num_rsms, exact)
     row = {"rate_scale": k, "price": price, "candidates": len(r["candidates"]),
-           "binned_classes": r["binned_classes"],
-           "unrestricted": free, f"budget_{a.budget_fraction:g}": capped,
+           "binned_classes": r["binned_classes"], "budget_fractions": a.budget_fractions,
+           "unrestricted": free, **capped,
            "baselines": baselines(r["machines"], protocol, strategy, a.num_rsms, a.capacity, a.baseline_rfs)}
     row["seconds"] = time.time() - t
-    print(f"x{k:g} {price}: free {free['nines']:.2f} nines ${free['cost_per_hour']:.2f}/h | "
-          f"{a.budget_fraction:.0%} {capped['nines']:.2f} nines ${capped['cost_per_hour']:.2f}/h | " +
+    print(f"x{k:g} {price}: free {free['nines']:.2f} nines ${free['cost_per_hour']:.2f}/h | " +
+          " ".join(f"{key[7:]}: " + (f"{c['nines']:.2f}/${c['cost_per_hour']:.2f}" if c["feasible"] else "infeasible")
+                   for key, c in capped.items()) + " | " +
           " ".join(f"{n} {b['nines']:.2f}/${b['cost_per_hour']:.2f}" for n, b in row["baselines"].items()) +
           f" ({row['seconds']:.0f}s)", flush=True)
     return row
@@ -120,7 +126,7 @@ def main() -> int:
     ap.add_argument("--replicas", type=int, nargs="+", default=[3, 5])
     ap.add_argument("--capacity", type=int, default=5)
     ap.add_argument("--samples", type=int, default=400, help="random candidates per replica count")
-    ap.add_argument("--budget-fraction", type=float, default=0.5)
+    ap.add_argument("--budget-fractions", type=float, nargs="+", default=[0.2, 0.3, 0.4, 0.5, 0.75])
     ap.add_argument("--baseline-rfs", type=int, nargs="+", default=[3, 5, 7])
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 1, help="configurations run in parallel")
     ap.add_argument("--output", default="outputs/pilot-ilp-rate-scale")

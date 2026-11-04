@@ -3,8 +3,8 @@
     python scripts/render_pilot_frontiers.py [--input outputs/pilot-ilp-rate-scale/results.json]
     rsvg-convert --zoom 2 outputs/pilot-ilp-rate-scale/frontiers.svg -o outputs/pilot-ilp-rate-scale/frontiers.png
 
-Reuses the pilot's stored values; nothing is re-solved. The ILP line joins its 50%-budget and unrestricted
-points (two budgets only). The dashed grey step is the Pareto envelope over every plotted point.
+Reuses the pilot's stored values; nothing is re-solved. The ILP line joins its feasible budget points
+(fractions of the unrestricted cost) and the unrestricted point. Exact values are in each marker's <title>. The dashed grey step is the Pareto envelope over every plotted point.
 """
 
 from __future__ import annotations
@@ -49,7 +49,9 @@ def nice_ticks(lo, hi, n=5):
 
 
 def points(row):
-    pts = [("ILP", "50% budget", row["budget_0.5"]), ("ILP", "no budget", row["unrestricted"])]
+    pts = [("ILP", f"{float(key[7:]):.0%} budget", v) for key, v in row.items()
+           if key.startswith("budget_") and key != "budget_fractions" and v.get("feasible", True)]
+    pts.append(("ILP", "no budget", row["unrestricted"]))
     for name, b in row["baselines"].items():
         rf, policy = name.split("-")
         pts.append((policy, rf.upper().replace("RF", "RF "), b))
@@ -81,10 +83,10 @@ def render(data) -> str:
            text(ML, 28, "Cost vs. availability under scaled fault rates (50 RSMs, 2000-VM catalogue)", 16, INK,
                 weight=600),
            text(ML, 48, "Expected per-RSM availability from the Markov model (no region/AZ outages); "
-                "ILP at 50% budget and unrestricted vs. fixed-RF baselines", 11, INK2)]
+                "ILP at several budgets vs. fixed-RF baselines", 11, INK2)]
     # legend
     lx = ML
-    for shape, color, label in (("circle", BLUE, "ILP (50% budget → no budget)"),
+    for shape, color, label in (("circle", BLUE, "ILP across budgets"),
                                 ("square", ORANGE, "Price-blind baseline"),
                                 ("triangle", AQUA, "Cheapest-first baseline")):
         out.append(marker(lx + 6, 68, shape, color, label))
@@ -123,7 +125,7 @@ def render(data) -> str:
             for (c0, a0), (c1, a1) in zip(env, env[1:]):
                 d += f" H{sx(c1):.1f} V{sy(a1):.1f}"
             out.append(f'<path d="{d}" fill="none" stroke="{MUTED}" stroke-width="1.5" stroke-dasharray="4 3"/>')
-            ilp = [(c, a) for kind, _, c, a in pts if kind == "ILP"]
+            ilp = sorted((c, a) for kind, _, c, a in pts if kind == "ILP")
             out.append(f'<polyline points="{" ".join(f"{sx(c):.1f},{sy(a):.1f}" for c, a in ilp)}" fill="none" '
                        f'stroke="{BLUE}" stroke-width="2"/>')
             for kind, label, c, a in pts:
@@ -134,8 +136,6 @@ def render(data) -> str:
                 if kind != "ILP":
                     dy = 16 if kind == "blind" else -7  # blind markers sit just under the ILP line
                     out.append(text(sx(c) + 7, sy(a) + dy, label.replace("RF ", ""), 10, INK2))
-            c, a = ilp[0]
-            out.append(text(sx(c), sy(a) - 10, f"{a:.2f}", 10, INK, "middle", 600))
     out.append(text(ML, H - 12, "Numbers beside baseline markers are the replication factor (3/5/7). "
                     "Markov screening scores; RF 7 uses binned rates.", 10, MUTED))
     out.append("</svg>")
