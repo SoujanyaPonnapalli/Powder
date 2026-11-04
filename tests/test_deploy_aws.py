@@ -191,6 +191,30 @@ def test_peering_mesh_is_active_with_routes_on_both_sides(aws_env):
     assert len(ids) == 3                                               # C(3,2)
 
 
+def test_peering_waits_while_peer_region_says_not_found(aws_env, monkeypatch):
+    # real AWS (gate G1): the accepter region raises NotFound for a few seconds after a cross-region request
+    real_ec2 = aws.Clients.ec2
+    misses = {"n": 0}
+
+    class Lagging:
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        def describe_vpc_peering_connections(self, **kw):
+            if "VpcPeeringConnectionIds" in kw and misses["n"] < 6:
+                misses["n"] += 1
+                raise ClientError({"Error": {"Code": "InvalidVpcPeeringConnectionID.NotFound", "Message": "lag"}},
+                                  "DescribeVpcPeeringConnections")
+            return self._inner.describe_vpc_peering_connections(**kw)
+
+    monkeypatch.setattr(aws.Clients, "ec2", lambda self, region: Lagging(real_ec2(self, region)))
+    _, _, clients, state, _ = do_deploy(aws_env)
+    assert misses["n"] == 6 and state.stages["infra"] == "done"
+
+
 def test_security_group_is_never_world_open_for_ingress(aws_env):
     _, _, clients, state, _ = do_deploy(aws_env)
     for r in REGIONS:

@@ -33,6 +33,22 @@
       }
     },
     {
+      "Sid": "CreateInsideOwnVpcs",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSubnet",
+        "ec2:CreateRouteTable",
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateVpcPeeringConnection"
+      ],
+      "Resource": "arn:aws:ec2:*:*:vpc/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Project": "powder"
+        }
+      }
+    },
+    {
       "Sid": "RunInstancesTaggedAtLaunch",
       "Effect": "Allow",
       "Action": "ec2:RunInstances",
