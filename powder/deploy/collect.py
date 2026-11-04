@@ -128,8 +128,9 @@ def summarize_experiment(exp: Path, cfg: ExperimentConfig, table_id: int, replic
     have_log = log.lines > 0
 
     window = _window(exp, errors)
-    workload_files = sorted(glob.glob(str(exp / "workload" / "*" / "requests.jsonl*")))
-    probe_files = sorted(glob.glob(str(exp / "workload" / "*" / "probes.jsonl*")))
+    # not *.pool.jsonl next to them (powder-load's per-second connection-pool snapshots, a different schema)
+    workload_files = sorted(p for p in glob.glob(str(exp / "workload" / "*" / "requests.jsonl*")) if ".pool." not in p)
+    probe_files = sorted(p for p in glob.glob(str(exp / "workload" / "*" / "probes.jsonl*")) if ".pool." not in p)
     if window is None:
         ts = [r["ts"] for f in workload_files + probe_files for r in read_jsonl(f)]
         if not ts:

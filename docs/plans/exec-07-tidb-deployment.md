@@ -638,6 +638,23 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   connection setup (neither appears in the slow log). Next: instrument `powder-load` (connection-acquire time per
   request, `db.Stats()` per second, TiDB connection count) and re-run. (d) One leader-only partition read 25 s
   (allowance 20 s), consistent with (b)'s election timing. (e) Whether baseline runs keep `token-limit` 20000.
+  **Attempt 5 (2026-11-04, `HonestFerret`, instrumented, default `token-limit` 1000, 300 s rebalance wait): NOT
+  passed; healthy partitions down up to 23-31 s in all three rounds (lost ones 65-85 s).** Root cause, measured:
+  every timed-out request on a healthy Region spent its full 5 s acquiring a connection (`conn_ms` p50 5000 ms,
+  query time 0); client pools sat at 512/512 (load) and 100/100 (probes) with ~200 waits/s for the whole outage, and
+  single new-connection setups took up to 14.9 s; on the server, `tidb_server_tokens` was pinned at exactly 1000 on
+  all three TiDBs from ~10 s after each kill to ~13 s after the restart, while completed queries fell to ~1/s. Chain:
+  ~half the keys on a dead RSM -> each request to it is abandoned by the client at 5 s, but TiDB keeps retrying the
+  statement (Region backoff budget up to ~40 s) and keeps its token -> 1000 tokens fill in ~10 s -> every statement
+  on that TiDB, healthy keys and the `SET`s of each reconnect included, queues for a token (that wait is before
+  execution, so the slow log, which (c) relied on, cannot show it). So (c)'s "client side" was half right: the
+  visible wait is in the client pool, the cause is TiDB admission control fed by abandoned statements. The 300 s
+  rebalance wait did not diversify voter sets (still 2 RSMs: PD balances Region counts per store, not voter sets).
+  **Decide:** how the harness should treat abandoned work -- (1) a high `token-limit` (attempt 4: rounds 1-2 clean);
+  (2) bounded, non-abandoning clients (requests run to completion, counted unavailable after 5 s), which caps server
+  work at the pool size but moves the starvation into the client pool; (3) per-partition connection budgets in
+  `powder-load` (bulkheads) plus (1); or (4) accept it as TiDB behaviour and measure it (it is what an app with this
+  timeout policy would see). Data: `~/powder-runs/tidb/HonestFerret/experiments/selftest-20261104T211916Z/`.
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py

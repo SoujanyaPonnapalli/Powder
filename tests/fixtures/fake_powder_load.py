@@ -40,4 +40,9 @@ else:
             for t in range(int(D)):
                 for k in range(b):
                     f.write(json.dumps(rec(start + t + 0.3, int((k + 0.5) * keys / b), "probe")) + "\n")
+    # like the real binary: per-second pool snapshots next to the records (a different schema the collector must skip)
+    with open(flags["out"] + ".pool.jsonl", "w") as f:
+        for t in range(int(D)):
+            f.write(json.dumps({"ts": start + t, "open": 4, "in_use": 1, "idle": 3, "wait_count": 0, "wait_ms": 0,
+                                "dials": 4, "dial_errs": 0, "dial_ms": 8.0, "inflight": 1}) + "\n")
     print(json.dumps({"start": start, "end": start + D, "records": 0}))
