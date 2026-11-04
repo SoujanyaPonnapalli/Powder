@@ -7,7 +7,7 @@ package main
 //
 // <out>.pool.jsonl, one line per second:
 //   ts, open, in_use, idle, wait_count, wait_ms (cumulative), dials, dial_errs, dial_ms (cumulative), inflight,
-//   closed_idle, closed_lifetime
+//   abandoned (queries still running after their request was reported lost), closed_idle, closed_lifetime
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func (c *countingConnector) Connect(ctx context.Context) (driver.Conn, error) {
 func (c *countingConnector) Driver() driver.Driver { return c.inner.Driver() }
 
 // poolStats writes one snapshot per second to path until ctx is done (and a last one then).
-func poolStats(ctx context.Context, path string, db *sql.DB, cc *countingConnector, inflight *atomic.Int64) {
+func poolStats(ctx context.Context, path string, db *sql.DB, cc *countingConnector, inflight, abandoned *atomic.Int64) {
 	f, err := os.Create(path)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "pool stats: %v\n", err)
@@ -51,9 +51,9 @@ func poolStats(ctx context.Context, path string, db *sql.DB, cc *countingConnect
 	write := func() {
 		s := db.Stats()
 		fmt.Fprintf(f, `{"ts":%.3f,"open":%d,"in_use":%d,"idle":%d,"wait_count":%d,"wait_ms":%.1f,"dials":%d,`+
-			`"dial_errs":%d,"dial_ms":%.1f,"inflight":%d,"closed_idle":%d,"closed_lifetime":%d}`+"\n",
+			`"dial_errs":%d,"dial_ms":%.1f,"inflight":%d,"abandoned":%d,"closed_idle":%d,"closed_lifetime":%d}`+"\n",
 			epoch(time.Now()), s.OpenConnections, s.InUse, s.Idle, s.WaitCount, float64(s.WaitDuration)/1e6,
-			cc.dials.Load(), cc.errs.Load(), float64(cc.totalNs.Load())/1e6, inflight.Load(), s.MaxIdleClosed,
+			cc.dials.Load(), cc.errs.Load(), float64(cc.totalNs.Load())/1e6, inflight.Load(), abandoned.Load(), s.MaxIdleClosed,
 			s.MaxLifetimeClosed)
 	}
 	tick := time.NewTicker(time.Second)

@@ -68,6 +68,47 @@ func acquire(ctx context.Context, db *sql.DB) (*sql.Conn, float64, error) {
 	return conn, float64(time.Since(start)) / 1e6, err
 }
 
+// errSLO marks a request that did not finish within its SLO; Classify turns it into timeout/client_deadline.
+var errSLO = fmt.Errorf("no result within the request SLO: %w", context.DeadlineExceeded)
+
+// withSLO runs work on a pool connection with a per-request SLO, without ever cancelling a query in flight.
+//
+// The SLO bounds getting a connection plus getting the result. When it expires the request is reported lost
+// (errSLO) at once, but its query keeps its connection until TiDB answers (bounded server side by
+// max_execution_time and tikv-client.commit-timeout, and here by serverWait), and the connection then returns to the
+// pool. Cancelling instead closes the socket (MySQL cannot abandon a query on a live connection): at G3 every lost
+// request then cost a reconnect while TiDB kept the abandoned statement and its token for ~40 s, and healthy
+// requests starved. abandoned counts queries still running past their SLO.
+func withSLO(db *sql.DB, slo, serverWait time.Duration, abandoned *atomic.Int64,
+	work func(ctx context.Context, conn *sql.Conn) error) (connMS float64, err error) {
+	deadline := time.Now().Add(slo)
+	actx, cancel := context.WithDeadline(context.Background(), deadline)
+	conn, connMS, err := acquire(actx, db)
+	cancel()
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			err = errSLO
+		}
+		return connMS, err
+	}
+	done := make(chan error, 1)
+	go func() {
+		qctx, qcancel := context.WithTimeout(context.Background(), serverWait)
+		defer qcancel()
+		e := work(qctx, conn)
+		conn.Close()
+		done <- e
+	}()
+	select {
+	case err = <-done:
+		return connMS, err
+	case <-time.After(time.Until(deadline)):
+		abandoned.Add(1)
+		go func() { <-done; abandoned.Add(-1) }()
+		return connMS, errSLO
+	}
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: powder-load prepare|load|probe|version [flags]")
@@ -180,7 +221,8 @@ func runLoad(args []string) {
 	keys := fs.Int64("keys", 1_000_000, "row id space")
 	rate := fs.Float64("rate", 500, "requests per second (mean, for diurnal)")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
-	timeout := fs.Duration("timeout", 5*time.Second, "per-request deadline (includes waiting for a connection)")
+	timeout := fs.Duration("timeout", 5*time.Second, "per-request SLO: connection + result; later = lost, never retried")
+	serverWait := fs.Duration("server-wait", time.Minute, "how long a lost request's query may keep its connection")
 	keyDist := fs.String("key-dist", "uniform", "uniform|zipf|hot-range|shifting-hot-range")
 	arrival := fs.String("arrival", "constant", "constant|diurnal")
 	period := fs.Duration("period", 24*time.Hour, "diurnal period")
@@ -192,7 +234,7 @@ func runLoad(args []string) {
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at (synchronises load generators)")
 	out := fs.String("out", "requests.jsonl.gz", "output records (gzip JSONL)")
 	maxInflight := fs.Int("max-inflight", 20000, "cap on concurrent requests; beyond it requests are recorded as loadgen_saturated (other)")
-	maxConns := fs.Int("max-conns", 512, "connection pool size")
+	maxConns := fs.Int("max-conns", 1024, "connection pool size")
 	logOkEvery := fs.Int("log-ok-every", 1, "record every Nth successful request with weight N (failures are always recorded)")
 	payloadBytes := fs.Int("payload-bytes", 256, "write value size")
 	fs.Parse(args)
@@ -213,10 +255,10 @@ func runLoad(args []string) {
 	defer db.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
-	var inflight atomic.Int64
+	var inflight, abandoned atomic.Int64
 	statsCtx, stopStats := context.WithCancel(context.Background())
 	statsDone := make(chan struct{})
-	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight); close(statsDone) }()
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight, &abandoned); close(statsDone) }()
 
 	payload := make([]byte, *payloadBytes)
 	rng := rand.New(rand.NewSource(*seed))
@@ -250,27 +292,24 @@ func runLoad(args []string) {
 				defer func() { <-sem }()
 				inflight.Add(1)
 				defer inflight.Add(-1)
-				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
-				defer cancel()
 				start := time.Now()
 				op := "write"
 				if read {
 					op = "read"
 				}
-				conn, connMS, err := acquire(ctx, db)
-				if err == nil {
+				connMS, err := withSLO(db, *timeout, *serverWait, &abandoned, func(ctx context.Context, conn *sql.Conn) error {
 					if read {
 						var v []byte
-						err = conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
+						err := conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
 						if errors.Is(err, sql.ErrNoRows) {
-							err = nil
+							return nil
 						}
-					} else {
-						_, err = conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, payload, start.UnixMilli())
+						return err
 					}
-					conn.Close()
-				}
-				o := Classify(err, ctx.Err() == context.DeadlineExceeded)
+					_, err := conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, payload, start.UnixMilli())
+					return err
+				})
+				o := Classify(err, false)
 				rec := Record{TS: sched, Row: row, Op: op, Outcome: o, LatencyMS: float64(time.Since(start)) / 1e6,
 					ConnMS: connMS, Weight: 1}
 				if err != nil {
@@ -323,7 +362,8 @@ func runProbe(args []string) {
 	buckets := fs.Int("buckets", 50, "partitions to probe (one row in the middle of each key bucket)")
 	interval := fs.Duration("interval", time.Second, "probe period")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
-	timeout := fs.Duration("timeout", 5*time.Second, "per-probe deadline")
+	timeout := fs.Duration("timeout", 5*time.Second, "per-probe SLO: connection + result; later = lost, never retried")
+	serverWait := fs.Duration("server-wait", time.Minute, "how long a lost probe's queries may keep their connection")
 	rowOffset := fs.Int64("row-offset", 0, "added to each bucket's middle row, so concurrent probers never write the same row")
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at")
 	out := fs.String("out", "probes.jsonl.gz", "output records")
@@ -333,14 +373,14 @@ func runProbe(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db, cc := openDB(*dsn, *buckets*2, *timeout)
+	db, cc := openDB(*dsn, *buckets*4, *timeout)
 	defer db.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
-	var inflight atomic.Int64
+	var inflight, abandoned atomic.Int64
 	statsCtx, stopStats := context.WithCancel(context.Background())
 	statsDone := make(chan struct{})
-	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight); close(statsDone) }()
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight, &abandoned); close(statsDone) }()
 	var wg sync.WaitGroup
 	t0 := waitUntil(*startAt)
 	var probes atomic.Int64
@@ -360,32 +400,20 @@ func runProbe(args []string) {
 				defer wg.Done()
 				inflight.Add(1)
 				defer inflight.Add(-1)
-				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
-				defer cancel()
 				start := time.Now()
-				worst := Outcome{Outcome: OutcomeOK}
-				var errText string
-				consider := func(err error) {
-					o := Classify(err, ctx.Err() == context.DeadlineExceeded)
-					if severity[o.Outcome] > severity[worst.Outcome] {
-						worst, errText = o, err.Error()
+				connMS, err := withSLO(db, *timeout, *serverWait, &abandoned, func(ctx context.Context, conn *sql.Conn) error {
+					if _, err := conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli()); err != nil {
+						return err
 					}
-				}
-				conn, connMS, err := acquire(ctx, db)
+					var v []byte
+					if err := conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v); err != nil && !errors.Is(err, sql.ErrNoRows) {
+						return err
+					}
+					return nil
+				})
+				worst, errText := Classify(err, false), ""
 				if err != nil {
-					consider(err)
-				} else {
-					_, err = conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli())
-					if err != nil {
-						consider(err)
-					} else {
-						var v []byte
-						err = conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
-						if err != nil && !errors.Is(err, sql.ErrNoRows) {
-							consider(err)
-						}
-					}
-					conn.Close()
+					errText = err.Error()
 				}
 				w.Add(Record{TS: sched, Row: row, Op: "probe", Outcome: worst, LatencyMS: float64(time.Since(start)) / 1e6,
 					ConnMS: connMS, Err: errText, Weight: 1})

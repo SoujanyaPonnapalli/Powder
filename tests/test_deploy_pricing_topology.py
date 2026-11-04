@@ -119,6 +119,8 @@ def test_topology_structure():
     pd = topo["server_configs"]["pd"]
     assert pd["replication.location-labels"] == ["region", "zone", "host", "machine_class"]
     assert pd["replication.max-replicas"] == 3
+    tidb = topo["server_configs"]["tidb"]
+    assert tidb["tikv-client.commit-timeout"] == "5s" and "token-limit" not in tidb       # SLO-bounded commits, default tokens
     for kv in topo["tikv_servers"]:
         labels = kv["config"]["server.labels"]
         assert set(labels) == {"region", "zone", "host", "machine_class"}
