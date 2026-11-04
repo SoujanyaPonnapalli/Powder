@@ -5,7 +5,7 @@ results, and tear it all down. Design and decisions: `docs/plans/exec-07-tidb-de
 
 > **These scripts create billable AWS resources.** Every creating command refuses without `--yes` (or
 > `POWDER_ALLOW_SPEND=1`) and prints the estimated $/h first. The unattended Claude runner must never set it.
-> **Live AWS validation (plan gates G1-G5) has not been run yet**: everything below is tested against moto, fakes,
+> **Live AWS validation: gate G1 (infra deploy + teardown) passed 2026-11-04; G2-G5 not yet run**: the rest is tested against moto, fakes,
 > and a real TiDB on one machine, but not yet against real AWS. Start with gate G1 (two nodes, ~$1).
 
 ## Prerequisites

@@ -597,7 +597,11 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
 - [x] Step 2 (2026-11-02/03): `powder/deploy` library (spec, state, handles, netplan, pricing incl. fetched control-plane prices,
   topology), metric math (outcomes, availability, repartition), real-format Region-map loader and PD log parser written against
   captured v8.5.8 output, `python -m powder.deploy.plan` dry-run. Deviation: handle word lists are 101 x 92 (~9,300 names), not 200 x 200.
-- [x] Step 3 (code, 2026-11-03): `deploy_infra.py` / `teardown_infra.py`, moto-tested. **G1 not run (no AWS credentials).**
+- [x] Step 3 (code, 2026-11-03): `deploy_infra.py` / `teardown_infra.py`, moto-tested. **G1 passed on real AWS 2026-11-04** (handle
+  `AmberPheasant`: 8 nodes us-east-1 + us-west-2, 2x i4i.2xlarge; all private IPs ping from the controller, ~61 ms
+  cross-region; SSH over private IPs via the controller; 1.7 TB instance NVMe mounted at `/data` on both TiKV; teardown +
+  `--verify` clean). Runs 1-3 found and fixed: peer-region `InvalidVpcPeeringConnectionID.NotFound` lag (code), VPC-scoped
+  creates and untagged accepter side of cross-region peerings (`iam-deploy-policy.json`, now validated for G1's calls).
 - [x] Step 4 (code, 2026-11-03): `install_tidb.py` + `node_bootstrap.sh`, tested with a scripted runner. **G2 not run.**
 - [x] Step 5 (code, 2026-11-03): `powder-load` (Go) + probes, collection, `run_experiment.py`, `--self-test` planner/evaluator;
   validated on a real local TiDB. **G3 (self-test on AWS) not run.**
