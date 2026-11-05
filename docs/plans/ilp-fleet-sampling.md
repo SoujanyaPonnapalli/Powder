@@ -112,7 +112,35 @@ Implementation notes that differ from the plan:
 Follow-ups: the 10-round re-solve cap binds under reliability-ranked prices (table misranks there - run G1);
 warm-start the ILP with the best covering instead of comparing afterwards.
 
-## Does not block
+## v2: Gurobi + dominance lattices (2026-11-05, 1x and 30x only)
+
+`outputs/pilot-ilp-rate-scale/lattice/` (`frontiers.png` overlays the first sweep, dotted).
+
+- **Dominance moved out of candidate generation.** Replacing members by their best dominator funnelled
+  ~1,500 placements per budget onto half as many machines (130 -> 77 machines at $5.96/h; top-10 machines
+  held 54% of slots), which the 5-replica capacity cannot use together. Bases now stay in the pool.
+- **Lattice ascent on the chosen deployment.** Each selected placement gets a lattice slice (base, every
+  single dominating swap, a greedy top, 5 random multi-swaps; `fleets.lattice_slice`). Base and top get
+  exact MC; other elements are interpolated on the downtime-score gain between them and clipped to the
+  partial-order bounds implied by every exact score (`fleets.lattice_estimate`). A small Gurobi ILP over
+  these 36-3,000 columns picks one deployment; its picks get exact MC until all are exact. Adding full
+  lattices to the main ILP was ruled out: near-identical columns are the worst case for branch and bound.
+- **Main ILP on Gurobi** (`powder/faults/gurobi_ilp.py`): unique machine billing, disaggregated
+  `x_c <= cap * y_m` links, warm start from the best fleet covering, 120 s limit. First solves on 2.4-3.0k
+  candidates: 1.8-1.9 s vs HiGHS 5-22 s. At 30x Gurobi still hits the limit in many rounds.
+- **MC caches shared across prices** (availability does not depend on price): `cache/{table,exact}-x<k>.json`.
+
+Results vs the first sweep: 1x/30x configurations run 2.6-5.3x faster (568-3,783 s vs 913-12,659 s).
+Lattice ascent changes the main ILP by +0.27 nines at 1x rho1 10% (4.77 -> 5.04) and +0.13 at 30x rho1 20%
+(3.78 -> 3.91), and is within +0.01 elsewhere. Against the first sweep: 30x rho1 20% 3.91 vs 3.03,
+30x rho0 30-40% +0.11-0.12, most other points within +-0.03; 1x rho0 10% (4.63 vs 4.69) and 30x rho0 20%
+(3.75 vs 3.81) are lower (those budgets lost the dominated placements and hit the round cap). Time split
+over the four configurations: main ILP 4,108 s, main MC 2,250 s, ascent MC 792 s, ascent ILP 49 s.
+
+Follow-ups: dominators drawn only from the budget's pool machines (widening to the catalogue would add
+columns the budget can still afford); main ILP time at 30x (shorter limit or MIP-gap stop per round).
+
+
 
 The catalogue, scenarios and existing pilot outputs are unchanged. The candidate generator is additive
 (new module); `generate_candidates` stays for older studies. Column generation can later replace the

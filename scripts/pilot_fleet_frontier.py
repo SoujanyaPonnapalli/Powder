@@ -42,7 +42,8 @@ sys.path.insert(0, str(ROOT))
 from powder.faults import FaultLibrary  # noqa: E402
 from powder.faults import catalogue as C  # noqa: E402
 from powder.faults import fleets as F  # noqa: E402
-from powder.faults.centroid_table import CentroidTable  # noqa: E402
+from powder.faults.centroid_table import CentroidTable, load_cache, save_cache  # noqa: E402
+from powder.faults.gurobi_ilp import solve_unique_cost_gurobi  # noqa: E402
 from powder.faults.convert import scenario_network_config  # noqa: E402
 from powder.faults.ilp import solve_catalogue_placement  # noqa: E402
 from powder.faults.mc_scoring import node_config_batch_sampler  # noqa: E402
@@ -72,19 +73,20 @@ class Exact:
         self.by_id, self.protocol, self.strategy = by_id, protocol, strategy
         self.horizon_s, self.network, self.runs, self.threads = horizon_s, network, runs, threads
         self.cache_path = cache_path
-        self.memo: dict[tuple[str, ...], float] = {}
-        if cache_path and cache_path.exists():
-            self.memo = {tuple(k.split("|")): v for k, v in json.loads(cache_path.read_text()).items()}
+        self.seconds = 0.0
+        self.memo: dict[tuple[str, ...], float] = (
+            {tuple(k.split("|")): v for k, v in load_cache(cache_path).items()} if cache_path else {})
 
     def save(self) -> None:
         if self.cache_path:
-            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
-            self.cache_path.write_text(json.dumps({"|".join(k): v for k, v in self.memo.items()}))
+            save_cache(self.cache_path, {"|".join(k): v for k, v in self.memo.items()})
 
     def batch(self, placements) -> None:
+        t = time.time()
         todo = list(dict.fromkeys(tuple(sorted(p)) for p in placements if tuple(sorted(p)) not in self.memo))
         with ThreadPoolExecutor(self.threads) as pool:
             list(pool.map(self, todo))
+        self.seconds += time.time() - t
 
     def __call__(self, ids) -> float:
         ids = tuple(sorted(ids))
@@ -120,24 +122,59 @@ def summarize_placements(placements, price: dict, exact: Exact) -> dict:
             "machines_used": len(used), "spot": sum(int(m[1:]) >= 1000 for m in used)}
 
 
-def solve_exact(pool, machines, budget, exact: Exact, table_score, num_rsms, price, *, rounds=10,
-                time_limit=300.0):
-    """ILP on table scores; selected placements get exact MC; re-solve until the selection is all exact.
-    The model holds only the machines the pool uses, which keeps HiGHS fast."""
-    used = {m for ids in pool for m in ids}
-    ms = [m for m in machines if m.machine_id in used]
+def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget, *, warm=(), rounds=10,
+                time_limit=120.0, threads=1):
+    """Gurobi ILP on estimated scores (exact where known); selected placements get exact MC; re-solve until
+    the selection is all exact. Returns (solution, rounds, ILP seconds, MC seconds)."""
+    t_ilp = t_mc = 0.0
     sol = None
     for r in range(rounds):
-        cands = [PlacementCandidate(f"c{i}", ids, exact.memo.get(ids, table_score(ids)), sum(price[m] for m in ids))
+        cands = [PlacementCandidate(f"c{i}", ids, exact.memo.get(ids, estimate(ids)), sum(price[m] for m in ids))
                  for i, ids in enumerate(pool)]
-        sol = solve_candidate_ilp(cands, ms, PlacementSolverConfig(
-            num_rsms=num_rsms, objective="sum_availability", budget_per_hour=budget, unique_machine_cost=True,
-            time_limit_seconds=time_limit))
+        sol = solve_unique_cost_gurobi(cands, price, capacity=capacity, num_rsms=num_rsms, budget=budget,
+                                       warm_start=warm, time_limit=time_limit, threads=threads)
+        t_ilp += sol.solver_runtime_seconds
         missing = [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo]
         if not missing:
-            return sol, r + 1
+            return sol, r + 1, t_ilp, t_mc
+        t = time.time()
         exact.batch(missing)
-    return sol, rounds
+        t_mc += time.time() - t
+        warm = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
+    return sol, rounds, t_ilp, t_mc
+
+
+def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacity, budget, *, threads, seed):
+    """Move the chosen deployment up its dominance lattices: each selected placement's lattice slice
+    (fleets.lattice_slice) is estimated from its exact base and exact top (fleets.lattice_estimate), a small
+    Gurobi ILP over these columns picks one deployment under capacity and budget, and every pick gets exact MC
+    until the picks are all exact."""
+    rng = random.Random(seed)
+    feat = {f.machine_id: f for f in pool_feats}
+    lattices = {}
+    for it in sol.selected:
+        base = it.candidate.machine_ids
+        if base not in lattices:
+            lattices[base] = F.lattice_slice(base, pool_feats, u_of, rng)
+    exact.batch([*lattices, *(tuple(sorted(top)) for _, top in lattices.values())])
+    owner = {}
+    for base, (elems, top) in lattices.items():
+        for pl in elems:
+            owner.setdefault(pl, base)
+
+    def estimate(pl):
+        best = 0.0
+        for base, (elems, top) in lattices.items():
+            if pl in elems:
+                known = [(sl, exact.memo[p]) for p, sl in elems.items() if p in exact.memo]
+                best = max(best, F.lattice_estimate(elems[pl], base, top, exact.memo[base],
+                                                    exact.memo[tuple(sorted(top))], u_of, feat, known))
+        return best
+
+    pool = list(dict.fromkeys(pl for elems, _ in lattices.values() for pl in elems))
+    warm = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
+    out = solve_exact(pool, price, exact, estimate, num_rsms, capacity, budget, warm=warm, threads=threads)
+    return (*out, len(pool))
 
 
 def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
@@ -159,7 +196,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     price = {m.machine_id: m.node_config.cost_per_hour for m in machines}
     tag = f"x{k:g}-{price_model}"
     exact = Exact(by_id, protocol, strategy, horizon_s, network, exact_runs(k), a.threads,
-                  cache_path=ROOT / a.output / "cache" / f"exact-{tag}.json")
+                  cache_path=Path(a.cache_dir) / f"exact-x{k:g}.json")
     free_cost = old["solution"].total_cost_per_hour
     budgets = [f * free_cost for f in a.budget_fractions]
 
@@ -170,7 +207,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     table = CentroidTable([machines[i].node_config for i in med], {f.machine_id: int(l) for f, l in zip(feats, labels)},
                           REGIONS, {f.machine_id: f.region for f in feats}, protocol, strategy,
                           horizon_s=horizon_s, network=network, runs=max(2_000, exact_runs(k) // 5),
-                          cache_path=ROOT / a.output / "cache" / f"table-{tag}.json")
+                          cache_path=Path(a.cache_dir) / f"table-x{k:g}.json")
     with ThreadPoolExecutor(a.threads) as tp:
         u_c = [1 - x for x in tp.map(lambda j: table.availability([j, j, j], (1, 1, 1)), range(len(cent)))]
     lam = np.array([f.lam_t + f.lam_p for f in feats])
@@ -243,26 +280,44 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         placements: set = set()
         for ff, cover, rand, _ in raw:
             placements |= cover
-            placements |= {F.dominate(F.improve(p, ff, table.score), ff, u_of) for p in rand}
+            placements |= {F.improve(p, ff, table.score) for p in rand}
         log(f"budget ${b:.2f}: {len(fleets)} fleets, {len(placements)} placements, table {len(table.memo)}")
-        # this budget's fleets + the baselines; the best full covering is a guaranteed feasible fallback
+        # this budget's fleets + the baselines; Gurobi starts from the best full covering
         pool = list(dict.fromkeys([*placements, *base_pl]))
-        row_f = {"feasible": False}
-        rounds = 0
+        row_f, rounds, times = {"feasible": False}, 0, {}
+        covers = [c for *_, full in raw for c in full]
         if fleets:
-            # 100% = the random-menu ILP's unrestricted cost, as a cap: unbounded, the ILP buys dear machines
-            # for no measurable gain (no cost tie-break)
-            sol, rounds = solve_exact(pool, machines, b, exact, table.score, a.num_rsms, price)
-            row_f = summarize(sol, price, exact, a.num_rsms)
-            covers = [c for *_, full in raw for c in full]
-            if covers:
-                best = max(covers, key=lambda c: sum(map(table.score, c)))
-                exact.batch(best)
-                fb = summarize_placements(best, price, exact)
-                if not row_f["feasible"] or fb["mean_availability"] > row_f["mean_availability"]:
-                    row_f = {**fb, "source": "fleet covering (ILP had no better incumbent)"}
+            best_cover = max(covers, key=lambda c: sum(map(table.score, c))) if covers else []
+            if a.compare_highs:
+                cands = [PlacementCandidate(f"c{i}", ids, exact.memo.get(ids, table.score(ids)),
+                                            sum(price[m] for m in ids)) for i, ids in enumerate(pool)]
+                t = time.time()
+                hs = solve_candidate_ilp(cands, machines, PlacementSolverConfig(
+                    num_rsms=a.num_rsms, objective="sum_availability", budget_per_hour=b, unique_machine_cost=True,
+                    time_limit_seconds=300))
+                gs = solve_unique_cost_gurobi(cands, price, capacity=a.capacity, num_rsms=a.num_rsms, budget=b,
+                                              warm_start=best_cover, threads=a.threads)
+                times["highs_first_solve_s"] = time.time() - t - gs.solver_runtime_seconds
+                times["gurobi_first_solve_s"] = gs.solver_runtime_seconds
+                log(f"first solve on {len(pool)} candidates: HiGHS {times['highs_first_solve_s']:.1f}s "
+                    f"({'incumbent' if hs.selected else 'no incumbent'}), Gurobi {gs.solver_runtime_seconds:.1f}s "
+                    f"({gs.status})")
+            sol, rounds, t_ilp, t_mc = solve_exact(pool, price, exact, table.score, a.num_rsms, a.capacity, b,
+                                                   warm=best_cover, threads=a.threads)
+            main = summarize(sol, price, exact, a.num_rsms)
+            asc, a_rounds, a_ilp, a_mc, a_pool = lattice_ascent(
+                sol, [feat_of[m] for m in {m for ids in pool for m in ids}], u_of, exact, price, a.num_rsms,
+                a.capacity, b, threads=a.threads, seed=bi)
+            row_f = summarize(asc, price, exact, a.num_rsms)
+            if not row_f["feasible"] or (main["feasible"] and main["mean_availability"] > row_f["mean_availability"]):
+                row_f = {**main, "source": "main ILP (lattice ascent found nothing better)"}
+            row_f["main_ilp"] = main
+            times.update({"main_rounds": rounds, "main_ilp_s": t_ilp, "main_mc_s": t_mc, "ascent_rounds": a_rounds,
+                          "ascent_ilp_s": a_ilp, "ascent_mc_s": a_mc, "ascent_columns": a_pool})
+            log(f"main ILP {main['nines']:.3f} ({rounds} rounds, ILP {t_ilp:.0f}s, MC {t_mc:.0f}s) -> lattice "
+                f"{row_f['nines']:.3f} ({a_rounds} rounds on {a_pool} columns, ILP {a_ilp:.0f}s, MC {a_mc:.0f}s)")
         exact.save()
-        new_rows[f"{f:g}"] = {**row_f, "candidates": len(pool), "rounds": rounds}
+        new_rows[f"{f:g}"] = {**row_f, "candidates": len(pool), "rounds": rounds, "times": times}
         log(f"new ILP {f:.0%}: " + (f"{row_f['nines']:.2f} nines ${row_f['cost_per_hour']:.2f}/h, {len(pool)} cands, "
                                    f"{rounds} rounds{' (covering)' if 'source' in row_f else ''}"
                                    if row_f["feasible"] else "infeasible"))
@@ -304,8 +359,11 @@ def main() -> int:
                     help="MC threads per configuration (default: cores / configurations, at least 2)")
     ap.add_argument("--output", default="outputs/pilot-ilp-rate-scale")
     ap.add_argument("--resume", action="store_true", help="reuse finished configurations' rows/*.json")
+    ap.add_argument("--cache-dir", default=None, help="MC caches (default: <output>/cache); shared across prices")
+    ap.add_argument("--compare-highs", action="store_true", help="also time one HiGHS solve per budget")
     a = ap.parse_args()
     configs = [(k, p) for k in a.scales for p in a.prices]
+    a.cache_dir = str(ROOT / (a.cache_dir or f"{a.output}/cache"))
     if a.threads is None:
         a.threads = max(2, (os.cpu_count() or 1) // len(configs))
     done = {c: ROOT / a.output / "rows" / f"x{c[0]:g}-{c[1]}.json" for c in configs}
@@ -316,7 +374,8 @@ def main() -> int:
     rows = [json.loads(done[c].read_text()) for c in configs]
     out = ROOT / a.output
     out.mkdir(parents=True, exist_ok=True)
-    meta = {k: v for k, v in vars(a).items() if k not in ("output", "workers", "threads", "resume")}
+    meta = {k: v for k, v in vars(a).items()
+            if k not in ("output", "workers", "threads", "resume", "cache_dir", "compare_highs")}
     (out / "results-fleet.json").write_text(json.dumps(
         {"catalogue": CATALOGUE, "scenario": SCENARIO, "params": meta, "protocol": "raft, election Exp(0.2/s)",
          "strategy": "node replacement after 600 s", "scoring": "exact Rust MC, region/AZ outages on",

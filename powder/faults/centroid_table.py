@@ -10,6 +10,7 @@ sees exact MC of the real machines.
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter
 from dataclasses import replace
 from pathlib import Path
@@ -30,9 +31,7 @@ class CentroidTable:
         self.horizon_s, self.network = horizon_s, network
         self.runs, self.seed = runs, seed
         self.cache_path = cache_path
-        self.memo: dict[str, float] = {}
-        if cache_path and cache_path.exists():
-            self.memo = json.loads(cache_path.read_text())
+        self.memo: dict[str, float] = load_cache(cache_path) if cache_path else {}
         self.computed = 0
 
     @staticmethod
@@ -63,5 +62,23 @@ class CentroidTable:
 
     def save(self) -> None:
         if self.cache_path:
-            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
-            self.cache_path.write_text(json.dumps(self.memo, sort_keys=True))
+            save_cache(self.cache_path, self.memo)
+
+
+def load_cache(path: Path) -> dict:
+    """``path`` plus older variants ``<stem>-*.json`` next to it (e.g. per-price files of the same scale)."""
+    memo: dict = {}
+    for f in sorted(path.parent.glob(f"{path.stem}-*.json")) + [path]:
+        if f.exists():
+            memo.update(json.loads(f.read_text()))
+    return memo
+
+
+def save_cache(path: Path, memo: dict) -> None:
+    """Merge into what is on disk and replace atomically (processes may share one cache file)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    merged = json.loads(path.read_text()) if path.exists() else {}
+    merged.update(memo)
+    tmp = path.with_suffix(f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(merged, sort_keys=True))
+    os.replace(tmp, path)

@@ -56,7 +56,8 @@ def nice_ticks(lo, hi, n=5):
 def points(row):
     if "new_ilp" in row:  # fleet pilot: exact MC for every point
         pts = [(kind, "no budget" if f == "1" else f"{float(f):.0%} budget", v)
-               for kind, key in (("ILP", "new_ilp"), ("old", "old_ilp")) for f, v in row[key].items() if v["feasible"]]
+               for kind, key in (("ILP", "new_ilp"), ("old", "old_ilp"), ("prev", "prev_ilp"))
+               for f, v in row.get(key, {}).items() if v["feasible"]]
         for name, b in row["baselines"].items():
             rf, policy = name.split("-")
             pts.append((policy, rf.upper().replace("RF", "RF "), b))
@@ -79,13 +80,18 @@ def pareto(pts):
     return out
 
 
-def render(data) -> str:
+def render(data, compare=None) -> str:
     rows = data["rows"]
     fleet = "new_ilp" in rows[0]
+    if compare:  # overlay an earlier fleet sweep of the same configurations
+        prev = {(r["rate_scale"], r["price"]): r["new_ilp"] for r in compare["rows"]}
+        rows = [{**r, "prev_ilp": prev[(r["rate_scale"], r["price"])]} for r in rows
+                if (r["rate_scale"], r["price"]) in prev]
     scales = sorted({r["rate_scale"] for r in rows})
     prices = [p for p in PRICES if any(r["price"] == p for r in rows)]
     by = {(r["rate_scale"], r["price"]): r for r in rows}
     W = ML + len(scales) * PW + (len(scales) - 1) * GX + 24
+    W = max(W, ML + 1000)  # room for the title, subtitle, legend and footnote when there are few columns
     H = MT + len(prices) * PH + (len(prices) - 1) * GY + 78
     xmax = max(c for r in rows for _, _, c, _ in points(r)) * 1.08
     xt = nice_ticks(0, xmax, 4)
@@ -101,8 +107,9 @@ def render(data) -> str:
                  "ILP at several budgets vs. fixed-RF baselines"), 11, INK2)]
     # legend
     lx = ML
-    items = ((("circle", BLUE, "Fleet ILP across budgets"), ("hollow", MUTED, "Random-menu ILP")) if fleet
-             else (("circle", BLUE, "ILP across budgets"),))
+    items = ((("circle", BLUE, "Fleet ILP + lattice ascent" if compare else "Fleet ILP across budgets"),)
+             + ((("hollow", BLUE, "Fleet ILP, previous sweep"),) if compare else ())
+             + (("hollow", MUTED, "Random-menu ILP"),) if fleet else (("circle", BLUE, "ILP across budgets"),))
     for shape, color, label in items + (("square", ORANGE, "Price-blind baseline"),
                                         ("triangle", AQUA, "Cheapest-first baseline")):
         out.append(marker(lx + 6, 68, shape, color, label))
@@ -141,6 +148,10 @@ def render(data) -> str:
                 old = sorted((c, a) for kind, _, c, a in pts if kind == "old")
                 out.append(f'<polyline points="{" ".join(f"{sx(c):.1f},{sy(a):.1f}" for c, a in old)}" fill="none" '
                            f'stroke="{MUTED}" stroke-width="1.5" stroke-dasharray="4 3"/>')
+                prv = sorted((c, a) for kind, _, c, a in pts if kind == "prev")
+                if prv:
+                    out.append(f'<polyline points="{" ".join(f"{sx(c):.1f},{sy(a):.1f}" for c, a in prv)}" '
+                               f'fill="none" stroke="{BLUE}" stroke-width="1.2" stroke-dasharray="2 3"/>')
             else:
                 env = pareto(pts)
                 d = f"M{sx(env[0][0]):.1f},{sy(env[0][1]):.1f}"
@@ -151,10 +162,10 @@ def render(data) -> str:
             out.append(f'<polyline points="{" ".join(f"{sx(c):.1f},{sy(a):.1f}" for c, a in ilp)}" fill="none" '
                        f'stroke="{BLUE}" stroke-width="2"/>')
             for kind, label, c, a in sorted(pts, key=lambda p: p[0] == "ILP"):  # fleet ILP drawn on top
-                shape, color = {"ILP": ("circle", BLUE), "old": ("hollow", MUTED), "blind": ("square", ORANGE),
-                                "cheap": ("triangle", AQUA)}[kind]
-                name = {"ILP": "Fleet ILP" if fleet else "ILP", "old": "Random-menu ILP", "blind": "Price-blind",
-                        "cheap": "Cheapest-first"}[kind]
+                shape, color = {"ILP": ("circle", BLUE), "old": ("hollow", MUTED), "prev": ("hollow", BLUE),
+                                "blind": ("square", ORANGE), "cheap": ("triangle", AQUA)}[kind]
+                name = {"ILP": "Fleet ILP" if fleet else "ILP", "old": "Random-menu ILP", "prev": "Previous fleet ILP",
+                        "blind": "Price-blind", "cheap": "Cheapest-first"}[kind]
                 out.append(marker(sx(c), sy(a), shape, color, f"{name} {label}: {a:.2f} nines, ${c:.2f}/h"))
                 if kind in ("blind", "cheap"):
                     dy = 16 if kind == "blind" else -7  # blind markers sit just under the ILP line
@@ -170,9 +181,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", default="outputs/pilot-ilp-rate-scale/results-fleet.json")
     ap.add_argument("--output", default="outputs/pilot-ilp-rate-scale/frontiers.svg")
+    ap.add_argument("--compare", default=None, help="earlier results-fleet.json to overlay (dotted blue)")
     a = ap.parse_args()
     data = json.loads((ROOT / a.input).read_text())
-    (ROOT / a.output).write_text(render(data) + "\n")
+    compare = json.loads((ROOT / a.compare).read_text()) if a.compare else None
+    (ROOT / a.output).write_text(render(data, compare) + "\n")
     print(a.output)
     return 0
 

@@ -111,3 +111,42 @@ def test_swap_neighbors_keep_azs_and_improve_never_worsens():
     score = lambda ids: -sum(by[m].lam_t for m in ids)  # noqa: E731
     q = F.improve(p, fleet, score)
     assert score(q) >= score(p)
+
+
+def test_lattice_slice_elements_dominate_the_base_and_stay_valid():
+    feats = synthetic()
+    by = {f.machine_id: f for f in feats}
+    fleet = feats[:120]
+    u = {f.machine_id: f.lam_t + f.lam_p for f in feats}
+    total = 0
+    for p in F.pack_pass(fleet, 5, 10, 5, u, random.Random(4), noise=0.5, near=0.5):
+        elems, top = F.lattice_slice(p, fleet, u, random.Random(0))
+        assert elems[tuple(sorted(p))] == p and tuple(sorted(top)) in elems
+        for pl, slots in elems.items():
+            assert tuple(sorted(slots)) == pl and F.slot_leq(p, slots, by)
+            assert len({by[m].az for m in pl}) == 5 and max(Counter(by[m].region for m in pl).values()) <= 2
+            assert sum(by[m].price for m in pl) <= sum(by[m].price for m in p) + 1e-12
+        total += len(elems)
+    assert total > 10
+
+
+def test_lattice_estimate_is_bounded_monotone_and_respects_known_scores():
+    feats = synthetic()
+    by = {f.machine_id: f for f in feats}
+    fleet = feats[:120]
+    u = {f.machine_id: f.lam_t + f.lam_p for f in feats}
+    for p in F.pack_pass(fleet, 3, 20, 5, u, random.Random(5), noise=0.5, near=0.5):
+        elems, top = F.lattice_slice(p, fleet, u, random.Random(1))
+        if top == p:
+            continue
+        est = {pl: F.lattice_estimate(s, p, top, 0.9, 0.99, u, by) for pl, s in elems.items()}
+        assert all(0.9 <= v <= 0.99 for v in est.values())
+        assert est[tuple(sorted(p))] == 0.9 and est[tuple(sorted(top))] == 0.99
+        for s in elems.values():                    # below the top: no higher than the top's estimate
+            if F.slot_leq(s, top, by):
+                assert F.lattice_estimate(s, p, top, 0.9, 0.99, u, by) <= 0.99
+        single = next((s for pl, s in elems.items()
+                       if sum(a != b for a, b in zip(s, p)) == 1 and F.slot_leq(s, top, by)), None)
+        if single is not None:                      # an exact score below raises the floor of what is above
+            assert F.lattice_estimate(top, p, top, 0.9, 0.99, u, by, known=[(single, 0.995)]) >= 0.995
+        return

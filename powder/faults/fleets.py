@@ -286,6 +286,83 @@ def improve(ids: tuple[str, ...], fleet: Sequence[MachineFeatures],
     return best
 
 
+# --------------------------------------------------------------------------- dominance lattices
+
+def valid_dominators(slots: Sequence[str], i: int, feat: dict[str, MachineFeatures],
+                     pool: Sequence[MachineFeatures]) -> list[MachineFeatures]:
+    """Machines that dominate ``slots[i]`` and can replace it: not already a member, an AZ unused by the
+    other members, and no regional majority afterwards."""
+    others = [feat[s] for j, s in enumerate(slots) if j != i]
+    used_az = {f.az for f in others}
+    regions = Counter(f.region for f in others)
+    members = set(slots)
+    cur = feat[slots[i]]
+    return [f for f in pool if f.machine_id not in members and f.az not in used_az
+            and regions[f.region] + 1 <= len(slots) // 2 and f.dominates(cur)]
+
+
+def lattice_slice(ids: tuple[str, ...], pool: Sequence[MachineFeatures], u: dict[str, float], rng: random.Random,
+                  multi: int = 5) -> tuple[dict[tuple[str, ...], tuple[str, ...]], tuple[str, ...]]:
+    """A bounded slice of the dominance lattice above placement ``ids``: the base, every single-member
+    dominating swap, a greedy top (repeatedly the swap with the largest downtime-score gain, climbing
+    dominator chains) and ``multi`` random multi-member swaps. Returns {placement: slot vector aligned to
+    the base's member order} and the top's slot vector."""
+    feat = {f.machine_id: f for f in pool}
+    base = tuple(ids)
+    out = {tuple(sorted(base)): base}
+    for i in range(len(base)):
+        for d in valid_dominators(base, i, feat, pool):
+            s = list(base)
+            s[i] = d.machine_id
+            out[tuple(sorted(s))] = tuple(s)
+    top = list(base)
+    while True:
+        best = None
+        for i in range(len(top)):
+            for d in valid_dominators(top, i, feat, pool):
+                gain = u[top[i]] - u[d.machine_id]
+                if best is None or gain > best[0]:
+                    best = (gain, i, d.machine_id)
+        if best is None:
+            break
+        top[best[1]] = best[2]
+    out[tuple(sorted(top))] = tuple(top)
+    for _ in range(multi):
+        s = list(base)
+        for i in rng.sample(range(len(s)), len(s)):
+            if rng.random() < 0.5:
+                ds = valid_dominators(s, i, feat, pool)
+                if ds:
+                    s[i] = ds[rng.randrange(len(ds))].machine_id
+        out[tuple(sorted(s))] = tuple(s)
+    return out, tuple(top)
+
+
+def slot_leq(lo: Sequence[str], hi: Sequence[str], feat: dict[str, MachineFeatures]) -> bool:
+    """``hi`` is ``lo`` with some members replaced by machines that dominate them (lattice order)."""
+    return all(a == b or feat[b].dominates(feat[a]) for a, b in zip(lo, hi))
+
+
+def lattice_estimate(q: Sequence[str], base: Sequence[str], top: Sequence[str], a_base: float, a_top: float,
+                     u: dict[str, float], feat: dict[str, MachineFeatures],
+                     known: Sequence[tuple[Sequence[str], float]] = ()) -> float:
+    """Availability of lattice element ``q`` without MC: linear in the downtime-score gain between the base
+    (exact, a lower bound for the whole lattice by monotonicity) and the top (exact), then clipped to the
+    bounds that exact scores of other elements imply (a scored element below ``q`` is a lower bound, one
+    above it an upper bound). Bounds from the top are rigorous only for elements below it."""
+    a_top = max(a_top, a_base)
+    g_top = sum(u[b] - u[t] for b, t in zip(base, top))
+    g_q = sum(u[b] - u[x] for b, x in zip(base, q))
+    frac = min(1.0, max(0.0, g_q / g_top)) if g_top > 0 else 0.0
+    est = a_base + frac * (a_top - a_base)
+    lo = max([a_base] + [a for s, a in known if slot_leq(s, q, feat)])
+    hi_list = [a for s, a in known if slot_leq(q, s, feat)]
+    if slot_leq(q, top, feat):
+        hi_list.append(a_top)
+    hi = min(hi_list) if hi_list else math.inf
+    return min(max(est, lo), max(hi, lo))
+
+
 def dominate(ids: tuple[str, ...], fleet: Sequence[MachineFeatures], u: dict[str, float]) -> tuple[str, ...]:
     """Replace each member by the best fleet machine that dominates it (no dearer, no less reliable) and keeps
     the placement's AZs distinct and regions without a majority. The bill and availability cannot worsen."""
