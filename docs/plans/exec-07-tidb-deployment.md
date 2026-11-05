@@ -702,6 +702,15 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   interrupts TiDB's own pessimistic-lock rollback (`pessimisticRollback failed: query interrupted by signal 1`, 516x),
   the orphaned lock stays until its TTL, and the prober rewrites the same row every second (kill -> new orphan); the
   workload (random keys) is unaffected. Candidate fix: optimistic transactions for powder-load writes.
+  **Optimistic-writes run (2026-11-05, `RoyalSalmon`): did not fix (4).** The session really runs optimistic (checked
+  on a local v8.5.8 with powder-load's driver params: `@@session.tidb_txn_mode = optimistic`), yet TiDB still logged
+  962 `pessimisticRollback failed` (vs ~800 with the default mode); likely TiDB retries a conflicted autocommit
+  statement pessimistically regardless (unconfirmed). Rounds 1-2 passed with 0 s on healthy partitions; round 3 failed:
+  its dead voter set held `mysql.tidb_background_subtask` (table 281474976710650) and the same schema-lease stall
+  followed (`[domain:8027]`, from 23 s after the kill until ~6 s after the restart, every TiDB, every table). So (3) is
+  general: a quorum loss on a Region holding TiDB's reserved system tables stops all commits once the lease lapses
+  (2 of the 6 rounds in the last two runs; the other 4 rounds had 0-3 s on healthy partitions). Data:
+  `~/powder-runs/tidb/RoyalSalmon/`.
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
