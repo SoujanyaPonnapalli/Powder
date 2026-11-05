@@ -83,12 +83,34 @@ machines do not pack into a small fleet.
 
 ## Checklist
 
-- [ ] fleets.py: features + k-means + knapsack sweep (+ tests)
-- [ ] RF mix + packing passes + dominance (+ tests)
-- [ ] centroid_table.py with common random numbers and disk cache
-- [ ] G1 ranking check on one fleet
-- [ ] pilot_fleet_frontier.py; G2 at 1x/30x rho0
-- [ ] full sweep (G3), render frontier with old/new ILP overlay
+- [x] fleets.py: features + k-means + knapsack sweep (+ tests)
+- [x] RF mix + packing passes + dominance (+ tests)
+- [x] centroid_table.py with common random numbers and disk cache
+- [ ] G1 ranking check on one fleet (not run separately; the ILP's exact re-solve loop absorbs table error)
+- [x] pilot_fleet_frontier.py; full sweep 4 scales x 2 prices x 7 budgets (2026-11-05)
+- [x] render frontier with random-menu ILP overlay (`outputs/pilot-ilp-rate-scale/frontiers.png`)
+
+## Results (2026-11-05, `outputs/pilot-ilp-rate-scale/results-fleet.json`)
+
+Exact Rust MC with region/AZ outages for every point. The fleet ILP is feasible at every budget including
+10% (the random-menu ILP is not) and beats every baseline that fits its budget. Against the random-menu ILP it
+gains most at 20-40% budgets (e.g. 1x rho0 20%: 5.97 vs 5.18 nines; 30x rho0 30%: 4.38 vs 2.84) and trails it
+at 3/56 points, all reliability-ranked prices at 75-100% budgets (by 0.01-0.07 nines).
+
+Implementation notes that differ from the plan:
+
+- Within a fleet the per-RSM cost target is moot (the fleet already fits the budget), so packing maximizes the
+  table score only; random passes use the per-machine score, then all neighbour table keys are computed in a
+  parallel batch before steepest-ascent swaps (Python only orchestrates; each MC call is a Rust process).
+- Each budget's ILP sees its own fleets' placements plus the baselines, over only the machines they use
+  (cumulative pools with all 2000 machines hit the time limit with no incumbent). If the best full fleet
+  covering beats the ILP's incumbent it is reported instead; then each budget reports the best result at or
+  below it (a deployment that fits a smaller budget fits a larger one).
+- 100% = the random-menu ILP's unrestricted cost, as a cap: unbounded, the ILP buys dear machines for no gain.
+- Exact MC runs: max(20k, 100k / sqrt(scale)); table runs one fifth. Sweep time ~3.5 h on 8 cores.
+
+Follow-ups: the 10-round re-solve cap binds under reliability-ranked prices (table misranks there - run G1);
+warm-start the ILP with the best covering instead of comparing afterwards.
 
 ## Does not block
 

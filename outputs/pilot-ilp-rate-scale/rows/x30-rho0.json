@@ -1,0 +1,234 @@
+{
+ "rate_scale": 30,
+ "price": "rho0",
+ "budgets": {
+  "0.1": 2.979788780531666,
+  "0.2": 5.959577561063332,
+  "0.3": 8.939366341594997,
+  "0.4": 11.919155122126664,
+  "0.5": 14.89894390265833,
+  "0.75": 22.348415853987493,
+  "1": 29.79788780531666
+ },
+ "free_cost_old": 29.79788780531666,
+ "exact_runs": 20000,
+ "table_runs": 4000,
+ "table_entries": 7716,
+ "exact_scored": 824,
+ "fleets_per_budget": [
+  6,
+  10,
+  11,
+  11,
+  12,
+  11,
+  11
+ ],
+ "new_ilp": {
+  "0.1": {
+   "feasible": true,
+   "cost_per_hour": 2.97752490195134,
+   "mean_availability": 0.9855169709261447,
+   "nines": 1.8391405974977155,
+   "rf_counts": {
+    "3": 50
+   },
+   "machines_used": 30,
+   "spot": 30,
+   "candidates": 1076,
+   "rounds": 4
+  },
+  "0.2": {
+   "feasible": true,
+   "cost_per_hour": 5.9581770772520795,
+   "mean_availability": 0.9998465673817247,
+   "nines": 3.8140823038089167,
+   "rf_counts": {
+    "3": 5,
+    "5": 45
+   },
+   "machines_used": 48,
+   "spot": 48,
+   "candidates": 2036,
+   "rounds": 10
+  },
+  "0.3": {
+   "feasible": true,
+   "cost_per_hour": 7.233159129557222,
+   "mean_availability": 0.9999580933755469,
+   "nines": 4.377717319848966,
+   "rf_counts": {
+    "5": 50
+   },
+   "machines_used": 52,
+   "spot": 52,
+   "source": "fleet covering (ILP had no better incumbent)",
+   "candidates": 2289,
+   "rounds": 10
+  },
+  "0.4": {
+   "feasible": true,
+   "cost_per_hour": 9.41479954523538,
+   "mean_availability": 0.9999648009673275,
+   "nines": 4.453469271487342,
+   "rf_counts": {
+    "5": 50
+   },
+   "machines_used": 54,
+   "spot": 47,
+   "source": "fleet covering (ILP had no better incumbent)",
+   "candidates": 2621,
+   "rounds": 8
+  },
+  "0.5": {
+   "feasible": true,
+   "cost_per_hour": 14.853842186061994,
+   "mean_availability": 0.9999724035251824,
+   "nines": 4.559146391305145,
+   "rf_counts": {
+    "5": 35,
+    "7": 15
+   },
+   "machines_used": 56,
+   "spot": 30,
+   "candidates": 2780,
+   "rounds": 9
+  },
+  "0.75": {
+   "feasible": true,
+   "cost_per_hour": 21.882740836830514,
+   "mean_availability": 0.9999739862069457,
+   "nines": 4.584796318989605,
+   "rf_counts": {
+    "5": 15,
+    "7": 35
+   },
+   "machines_used": 64,
+   "spot": 20,
+   "candidates": 2665,
+   "rounds": 2
+  },
+  "1": {
+   "feasible": true,
+   "cost_per_hour": 29.52720648514826,
+   "mean_availability": 0.999974606598438,
+   "nines": 4.5952791195013125,
+   "rf_counts": {
+    "5": 5,
+    "7": 45
+   },
+   "machines_used": 68,
+   "spot": 14,
+   "candidates": 2642,
+   "rounds": 2,
+   "note": "budget capped at the random-menu ILP's unrestricted cost"
+  }
+ },
+ "old_ilp": {
+  "0.1": {
+   "feasible": false,
+   "status": "2"
+  },
+  "0.2": {
+   "feasible": true,
+   "cost_per_hour": 5.954583206783942,
+   "mean_availability": 0.9941755107260171,
+   "nines": 2.234742150167232,
+   "rf_counts": {
+    "3": 40,
+    "5": 10
+   },
+   "machines_used": 34,
+   "spot": 32
+  },
+  "0.3": {
+   "feasible": true,
+   "cost_per_hour": 8.91202287582877,
+   "mean_availability": 0.9985445245225403,
+   "nines": 2.8369951073626782,
+   "rf_counts": {
+    "3": 15,
+    "5": 35
+   },
+   "machines_used": 44,
+   "spot": 39
+  },
+  "0.4": {
+   "feasible": true,
+   "cost_per_hour": 11.903340549292263,
+   "mean_availability": 0.9995458552425602,
+   "nines": 3.3428056948591105,
+   "rf_counts": {
+    "5": 50
+   },
+   "machines_used": 50,
+   "spot": 39
+  },
+  "0.5": {
+   "feasible": true,
+   "cost_per_hour": 14.893172516063979,
+   "mean_availability": 0.9999435984389603,
+   "nines": 4.248708875776497,
+   "rf_counts": {
+    "5": 50
+   },
+   "machines_used": 50,
+   "spot": 31
+  },
+  "0.75": {
+   "feasible": true,
+   "cost_per_hour": 22.250645151544404,
+   "mean_availability": 0.9999694673960038,
+   "nines": 4.515236154988585,
+   "rf_counts": {
+    "5": 50
+   },
+   "machines_used": 50,
+   "spot": 14
+  },
+  "1": {
+   "feasible": true,
+   "cost_per_hour": 29.79788780531666,
+   "mean_availability": 0.999970763674553,
+   "nines": 4.534077212369209,
+   "rf_counts": {
+    "5": 50
+   },
+   "machines_used": 50,
+   "spot": 6
+  }
+ },
+ "baselines": {
+  "rf3-blind": {
+   "cost_per_hour": 11.69733343127754,
+   "mean_availability": 0.9893174436912462,
+   "nines": 1.971324809297884
+  },
+  "rf3-cheap": {
+   "cost_per_hour": 2.7575640102844408,
+   "mean_availability": 0.9261530793117683,
+   "nines": 1.1316676094378946
+  },
+  "rf5-blind": {
+   "cost_per_hour": 20.16938852395609,
+   "mean_availability": 0.9998371559751789,
+   "nines": 3.7882281722223197
+  },
+  "rf5-cheap": {
+   "cost_per_hour": 5.333971325533853,
+   "mean_availability": 0.9979942830953352,
+   "nines": 2.697730365143189
+  },
+  "rf7-blind": {
+   "cost_per_hour": 27.727914026823257,
+   "mean_availability": 0.9999670583526789,
+   "nines": 4.4822546867510615
+  },
+  "rf7-cheap": {
+   "cost_per_hour": 7.8202390754617594,
+   "mean_availability": 0.999889881538463,
+   "nines": 3.9581398647566663
+  }
+ },
+ "seconds": 12659.46639585495
+}
