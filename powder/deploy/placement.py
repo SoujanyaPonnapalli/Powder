@@ -37,17 +37,19 @@ def user_range(first_user_id: int) -> tuple[bytes, bytes]:
     return table_prefix(first_user_id), table_prefix(RESERVED_ID_FLOOR)
 
 
-def rule_bundles(first_user_id: int, replicas: int, location_labels: list[str], system_regions: int,
+def rule_bundles(first_user_id: int, replicas: int, location_labels: list[str],
                  data_isolation: str = "region") -> list[dict]:
     """The complete placement-rule set (``POST /pd/api/v1/config/placement-rule`` replaces all groups with it)."""
     start, end = user_range(first_user_id)
-    # system stores: one per deployment region (more in the control-plane region when there are fewer regions than
-    # replicas), so isolate by region only when that is satisfiable
-    sys_isolation = "region" if system_regions >= replicas else ""
+    # No isolation level on the system rule. When the rules are applied, every system Region still has all its
+    # replicas on experiment stores in all regions, and PD's isolation filter counts those orphan peers: no system store
+    # qualified, PD added nothing, and the orphans are only removed once the rule is met (first live run: 67 Regions
+    # stuck for 15 min; dropping the isolation level moved all 66 in 10 s). With one system store per region the
+    # replicas still end up one per region (location_labels spread them, and count == number of system stores).
     return [
         {"group_id": "pd", "group_index": 0, "group_override": False, "rules": [{
             "group_id": "pd", "id": "default", "index": 0, "start_key": "", "end_key": "", "role": "voter",
-            "count": replicas, "location_labels": location_labels, "isolation_level": sys_isolation,
+            "count": replicas, "location_labels": location_labels, "isolation_level": "",
             "label_constraints": [{"key": "machine_class", "op": "in", "values": [SYSTEM_CLASS]}]}]},
         {"group_id": "powder", "group_index": 10, "group_override": True, "rules": [{
             "group_id": "powder", "id": "experiment-data", "index": 0, "start_key": start.hex(), "end_key": end.hex(),

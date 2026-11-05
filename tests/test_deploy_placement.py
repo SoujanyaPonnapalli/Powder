@@ -17,18 +17,18 @@ def stores():
 
 
 def test_rules_pin_everything_to_system_stores_except_the_user_range():
-    pd, powder = PL.rule_bundles(114, 3, LABELS, system_regions=3)
+    pd, powder = PL.rule_bundles(114, 3, LABELS)
     default = pd["rules"][0]
     assert (pd["group_id"], default["id"], default["start_key"], default["end_key"]) == ("pd", "default", "", "")
     assert default["label_constraints"] == [{"key": "machine_class", "op": "in", "values": ["system"]}]
-    assert default["count"] == 3 and default["isolation_level"] == "region"
+    # no isolation level on the system rule: with the orphan peers it deadlocked PD at the first live run
+    assert default["count"] == 3 and default["isolation_level"] == ""
     data = powder["rules"][0]
     assert powder["group_override"] and powder["group_index"] > pd["group_index"]       # overrides the default rule
     assert data["label_constraints"] == [{"key": "machine_class", "op": "notIn", "values": ["system"]}]
     lo, hi = PL.user_range(114)
     assert (data["start_key"], data["end_key"]) == (lo.hex(), hi.hex())
-    # fewer system regions than replicas: the system rule cannot isolate by region
-    assert PL.rule_bundles(114, 3, LABELS, system_regions=2)[0]["rules"][0]["isolation_level"] == ""
+    assert data["isolation_level"] == "region"                 # experiment data keeps one replica per AWS region
 
 
 def test_user_range_holds_user_rows_but_not_system_tables_or_reserved_ids():

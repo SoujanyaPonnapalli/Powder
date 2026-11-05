@@ -164,8 +164,7 @@ def pin_system_data(spec: ClusterSpec, hosts: dict[str, Host], rundir: RunDir, r
     tidb = next(hosts[n.name].private_ip for n in plan_nodes(spec) if n.role == "tidb")
     r = runner.run("controller", f'mysql -h {tidb} -P {TIDB_PORT} -u root -N -e "{MAX_SYSTEM_ID_SQL}"', timeout=60)
     first_user = int(r.stdout.strip().splitlines()[-1]) + 1
-    sys_regions = len({n.region for n in plan_nodes(spec) if n.role == "systikv"})
-    rules = rule_bundles(first_user, spec.replication_factor, LOCATION_LABELS + ["machine_class"], sys_regions)
+    rules = rule_bundles(first_user, spec.replication_factor, LOCATION_LABELS + ["machine_class"])
     path = rundir.install_dir / "placement-rules.json"
     path.write_text(json.dumps(rules, indent=1))
     runner.put("controller", path, f"{CONTROLLER_HOME}/placement-rules.json")
