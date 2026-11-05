@@ -38,7 +38,7 @@ func fatal(format string, a ...any) {
 	os.Exit(2)
 }
 
-func openDB(dsn string, conns int, reqTimeout time.Duration) (*sql.DB, *countingConnector) {
+func openDB(dsn string, conns int, reqTimeout time.Duration, txnMode string) (*sql.DB, *countingConnector) {
 	cfg := mysql.NewConfig()
 	cfg.User, cfg.Net, cfg.Addr, cfg.DBName = "root", "tcp", dsn, "powder"
 	cfg.Timeout = 5 * time.Second
@@ -48,6 +48,12 @@ func openDB(dsn string, conns int, reqTimeout time.Duration) (*sql.DB, *counting
 	// max_execution_time does the same for reads (TiDB applies it to SELECT only).
 	cfg.Params = map[string]string{"innodb_lock_wait_timeout": fmt.Sprint(int(math.Ceil(reqTimeout.Seconds()))),
 		"max_execution_time": fmt.Sprint(reqTimeout.Milliseconds())}
+	if txnMode != "" {
+		// optimistic (the default): a single-statement write takes no pessimistic lock first. At G3 a KILL QUERY
+		// interrupted TiDB's own pessimistic-lock rollback ("pessimisticRollback failed: query interrupted"), the
+		// orphaned lock outlived the kill, and a prober rewriting the same row every second kept hitting it.
+		cfg.Params["tidb_txn_mode"] = "'" + txnMode + "'"
+	}
 	c, err := mysql.NewConnector(cfg)
 	if err != nil {
 		fatal("dsn: %v", err)
@@ -62,11 +68,18 @@ func openDB(dsn string, conns int, reqTimeout time.Duration) (*sql.DB, *counting
 }
 
 // newClient opens the request pool (sized to the partition budgets) and a small admin pool for KILL QUERY.
-func newClient(dsn string, partitions, budget int, slo, serverWait time.Duration) (*Client, *countingConnector) {
-	db, cc := openDB(dsn, partitions*budget, slo)
-	admin, _ := openDB(dsn, 16, slo)
+func newClient(dsn string, partitions, budget int, slo, serverWait time.Duration, txnMode string) (*Client, *countingConnector) {
+	db, cc := openDB(dsn, partitions*budget, slo, txnMode)
+	admin, _ := openDB(dsn, 16, slo, "")
 	return &Client{DB: db, Admin: admin, SLO: slo, ServerWait: serverWait, Slots: NewSlots(partitions, budget),
 		Stats: &ClientStats{}}, cc
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
 
 func main() {
@@ -184,6 +197,7 @@ func runLoad(args []string) {
 	timeout := fs.Duration("timeout", 5*time.Second, "per-request SLO: connection + result; later = lost, never retried")
 	serverWait := fs.Duration("server-wait", time.Minute, "cap on a lost request's query if its KILL QUERY fails")
 	buckets := fs.Int("buckets", 50, "key partitions (as the prober and the analysis use them) for connection budgets")
+	txnMode := fs.String("txn-mode", envOr("POWDER_TXN_MODE", "optimistic"), "tidb_txn_mode for writes: optimistic|pessimistic")
 	perPartition := fs.Int("conns-per-partition", 0, "connection budget per partition (0 = rate/buckets x timeout + 2, capped by -max-conns)")
 	maxConns := fs.Int("max-conns", 600, "cap on all partition budgets together: with the prober's 7 per partition this keeps one "+
 		"TiDB below its 1000 tokens even if every partition is dead, so KILL QUERY can always run")
@@ -219,7 +233,7 @@ func runLoad(args []string) {
 		budget = min(PartitionBudget(*rate/float64(*buckets), *timeout), max(2, *maxConns / *buckets))
 	}
 	fmt.Fprintf(os.Stderr, "connection budget: %d per partition x %d partitions\n", budget, *buckets)
-	cl, cc := newClient(*dsn, *buckets, budget, *timeout, *serverWait)
+	cl, cc := newClient(*dsn, *buckets, budget, *timeout, *serverWait, *txnMode)
 	defer cl.DB.Close()
 	defer cl.Admin.Close()
 	sigCtx, stop := signalContext()
@@ -334,6 +348,7 @@ func runProbe(args []string) {
 	timeout := fs.Duration("timeout", 5*time.Second, "per-probe SLO: connection + result; later = lost, never retried")
 	serverWait := fs.Duration("server-wait", time.Minute, "cap on a lost probe's queries if its KILL QUERY fails")
 	rowOffset := fs.Int64("row-offset", 0, "added to each bucket's middle row, so concurrent probers never write the same row")
+	txnMode := fs.String("txn-mode", envOr("POWDER_TXN_MODE", "optimistic"), "tidb_txn_mode for writes: optimistic|pessimistic")
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at")
 	out := fs.String("out", "probes.jsonl.gz", "output records")
 	fs.Parse(args)
@@ -342,7 +357,7 @@ func runProbe(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	cl, cc := newClient(*dsn, *buckets, PartitionBudget(1/interval.Seconds(), *timeout), *timeout, *serverWait)
+	cl, cc := newClient(*dsn, *buckets, PartitionBudget(1/interval.Seconds(), *timeout), *timeout, *serverWait, *txnMode)
 	defer cl.DB.Close()
 	defer cl.Admin.Close()
 	sigCtx, stop := signalContext()
