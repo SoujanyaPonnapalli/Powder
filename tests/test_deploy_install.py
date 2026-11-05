@@ -214,7 +214,8 @@ def test_install_sequence_and_artifacts(tmp_path):
     # TiDB's own data is pinned to the system stores after the health gate, before the install completes
     rules = json.loads((rd.install_dir / "placement-rules.json").read_text())
     assert [g["group_id"] for g in rules] == ["pd", "powder"]
-    assert any("config/placement-rule" in c and "-X POST" in c for _, c in runner.calls)
+    post = next(c for _, c in runner.calls if "config/placement-rule" in c and "-X POST" in c)
+    assert "@~" not in post                                    # curl does not expand ~ after @
     assert json.loads(rd.manifest_path.read_text())["first_user_table_id"] == FIRST_USER
     assert order[4] < min(chowns) and max(chowns) < order[5]
     assert any("go build" in c for _, c in runner.calls) and any("sha256sum -c" in c for _, c in runner.calls)

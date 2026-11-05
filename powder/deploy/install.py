@@ -171,9 +171,9 @@ def pin_system_data(spec: ClusterSpec, hosts: dict[str, Host], rundir: RunDir, r
     runner.put("controller", path, f"{CONTROLLER_HOME}/placement-rules.json")
     pd = pd_url(spec, hosts)
     log(f"[{spec.handle}] pinning TiDB's data (ids < {first_user}, meta, reserved) to the system stores")
-    runner.run("controller", f"curl -sf -X POST -H 'Content-Type: application/json' "
-                             f"--data @{CONTROLLER_HOME}/placement-rules.json {pd}/pd/api/v1/config/placement-rule",
-               timeout=60)
+    # cd first: curl does not expand the ~ in --data @~/... (first live run)
+    runner.run("controller", f"cd {CONTROLLER_HOME} && curl -sf -X POST -H 'Content-Type: application/json' "
+                             f"--data @placement-rules.json {pd}/pd/api/v1/config/placement-rule", timeout=60)
     last: list[str] = []
 
     def placed() -> bool:
