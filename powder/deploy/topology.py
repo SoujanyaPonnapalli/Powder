@@ -17,6 +17,7 @@ from dataclasses import dataclass
 
 import yaml
 
+from .placement import SYSTEM_CLASS
 from .spec import ClusterSpec, plan_nodes
 
 LOCATION_LABELS = ["region", "zone", "host"]
@@ -51,9 +52,16 @@ def machine_class_label(machine_id: str) -> str:
     return label_value(machine_id.split("/", 1)[-1])
 
 
+def store_labels(n, h: Host) -> dict[str, str]:
+    """Labels of a TiKV store: experiment stores carry their machine class, system stores ``system``."""
+    cls = SYSTEM_CLASS if n.role == "systikv" else machine_class_label(n.machine or "unknown")
+    return {"region": label_value(h.region), "zone": label_value(h.az or h.region), "host": label_value(n.name),
+            "machine_class": cls}
+
+
 def topology_dict(spec: ClusterSpec, hosts: dict[str, Host]) -> dict:
     nodes = plan_nodes(spec)
-    missing = [n.name for n in nodes if n.role in ("controller", "pd", "tikv", "tidb") and n.name not in hosts]
+    missing = [n.name for n in nodes if n.role in ("controller", "pd", "tikv", "systikv", "tidb") and n.name not in hosts]
     if missing:
         raise TopologyError(f"no host for: {', '.join(missing)}")
 
@@ -79,16 +87,11 @@ def topology_dict(spec: ClusterSpec, hosts: dict[str, Host]) -> dict:
             topo["pd_servers"].append({"host": h.private_ip, "name": n.name})
         elif n.role == "tidb":
             topo["tidb_servers"].append({"host": h.private_ip})
-        elif n.role == "tikv":
+        elif n.role in ("tikv", "systikv"):
             topo["tikv_servers"].append({
                 "host": h.private_ip,
                 "data_dir": TIKV_DATA_DIR,
-                "config": {"server.labels": {
-                    "region": label_value(h.region),
-                    "zone": label_value(h.az or h.region),
-                    "host": label_value(n.name),
-                    "machine_class": machine_class_label(n.machine or "unknown"),
-                }},
+                "config": {"server.labels": store_labels(n, h)},
             })
     ctl = hosts["controller"]
     topo["monitoring_servers"] = [{"host": ctl.private_ip}]

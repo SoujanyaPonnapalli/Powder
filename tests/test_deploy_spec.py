@@ -129,7 +129,7 @@ def test_plan_nodes_counts_roles_and_pd_spread():
     by = {}
     for n in nodes:
         by.setdefault(n.role, []).append(n)
-    assert {k: len(v) for k, v in by.items()} == {"controller": 1, "pd": 3, "tikv": 6, "tidb": 3, "loadgen": 3}
+    assert {k: len(v) for k, v in by.items()} == {"controller": 1, "pd": 3, "tikv": 6, "systikv": 3, "tidb": 3, "loadgen": 3}
     assert [n.region for n in by["pd"]] == ["us-east-1", "us-east-2", "us-west-2"]     # one per region
     assert all(n.instance_type == "i4i.2xlarge" and n.machine for n in by["tikv"])
     assert all(n.instance_type == "m6i.xlarge" for n in nodes if n.role != "tikv")

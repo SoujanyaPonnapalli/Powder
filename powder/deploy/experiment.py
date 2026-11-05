@@ -304,7 +304,7 @@ def collect_everything(ctx: Context, dirs: dict[str, str], t0: float, t1: float)
     ctx.soft("Prometheus export", prometheus)
 
     for n in plan_nodes(ctx.spec):
-        if n.role not in ("pd", "tikv", "tidb"):
+        if n.role not in ("pd", "tikv", "systikv", "tidb"):
             continue
 
         def logs(n=n):
