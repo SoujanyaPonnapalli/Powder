@@ -1,0 +1,115 @@
+{
+ "catalogue": "data/fault_library/catalogue/machines-od1000-spot1000-seed0-az.json.gz",
+ "scenario": "scenario/canonical-central-az-aware@v3",
+ "params": {
+  "scales": [
+   10.0
+  ],
+  "prices": [
+   "rho0"
+  ],
+  "num_rsms": 50,
+  "capacity": 5,
+  "budget_fractions": [
+   0.1
+  ],
+  "clusters": 16,
+  "fleet_sizes": 4,
+  "fleet_repeats": 2,
+  "passes": 4
+ },
+ "protocol": "raft, election Exp(0.2/s)",
+ "strategy": "node replacement after 600 s",
+ "scoring": "exact Rust MC, region/AZ outages on",
+ "rows": [
+  {
+   "rate_scale": 10.0,
+   "price": "rho0",
+   "budgets": {
+    "0.1": 2.7528494171556406
+   },
+   "free_cost_old": 27.528494171556403,
+   "exact_runs": 31622,
+   "table_runs": 6324,
+   "table_entries": 10894,
+   "exact_scored": 1442,
+   "fleets_per_budget": [
+    2
+   ],
+   "new_ilp": {
+    "0.1": {
+     "feasible": true,
+     "cost_per_hour": 2.748646571645115,
+     "mean_availability": 0.9948038306870387,
+     "nines": 2.284316706235113,
+     "rf_counts": {
+      "3": 50
+     },
+     "machines_used": 30,
+     "spot": 30,
+     "main_ilp": {
+      "feasible": true,
+      "cost_per_hour": 2.7491521378177315,
+      "mean_availability": 0.9946966701472733,
+      "nines": 2.2754513601030113,
+      "rf_counts": {
+       "3": 50
+      },
+      "machines_used": 30,
+      "spot": 30
+     },
+     "candidates": 569,
+     "rounds": 2,
+     "times": {
+      "main_rounds": 2,
+      "main_ilp_s": 0.46684718132019043,
+      "main_mc_s": 2.650315761566162,
+      "ascent_rounds": 2,
+      "ascent_ilp_s": 0.012329339981079102,
+      "ascent_mc_s": 1.325953483581543,
+      "ascent_columns": 49
+     }
+    }
+   },
+   "old_ilp": {
+    "0.1": {
+     "feasible": false,
+     "status": "2"
+    }
+   },
+   "baselines": {
+    "rf3-blind": {
+     "cost_per_hour": 11.69733343127754,
+     "mean_availability": 0.99881682646349,
+     "nines": 2.9269515525644207
+    },
+    "rf3-cheap": {
+     "cost_per_hour": 2.7575640102844408,
+     "mean_availability": 0.9915606808001849,
+     "nines": 2.0736925865128546
+    },
+    "rf5-blind": {
+     "cost_per_hour": 20.16938852395609,
+     "mean_availability": 0.9999853543892304,
+     "nines": 4.834292512112949
+    },
+    "rf5-cheap": {
+     "cost_per_hour": 5.333971325533853,
+     "mean_availability": 0.9999315839303775,
+     "nines": 4.16484187885446
+    },
+    "rf7-blind": {
+     "cost_per_hour": 27.727914026823257,
+     "mean_availability": 0.9999903796725745,
+     "nines": 5.01681014660541
+    },
+    "rf7-cheap": {
+     "cost_per_hour": 7.8202390754617594,
+     "mean_availability": 0.9999863412130646,
+     "nines": 4.864587869517243
+    }
+   },
+   "seconds": 24.414386510849
+  }
+ ]
+}
