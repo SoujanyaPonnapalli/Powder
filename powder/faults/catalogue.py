@@ -201,9 +201,9 @@ def machine_rates(machine: dict[str, Any]) -> dict[str, MachineRate]:
     return {c: machine_rate_from_dict(d) for c, d in machine["causes"].items()}
 
 
-def horizon_rates(machine: dict[str, Any], horizon_h: float = DEFAULT_HORIZON_H) -> dict[str, float]:
-    """Average hazard per hour of each cause over [0, horizon] (the Markov approximation)."""
-    return {c: mr.mean_rate(horizon_h) for c, mr in machine_rates(machine).items()}
+def horizon_rates(machine: dict[str, Any], horizon_h: float = DEFAULT_HORIZON_H, t0_h: float = 0.0) -> dict[str, float]:
+    """Average hazard per hour of each cause over [t0, t0 + horizon] (the Markov approximation)."""
+    return {c: mr.mean_rate(horizon_h, t0_h) for c, mr in machine_rates(machine).items()}
 
 
 def reliability_score(machine: dict[str, Any], horizon_h: float = DEFAULT_HORIZON_H, rebuild_s: float = REBUILD_S) -> float:
@@ -246,7 +246,7 @@ def time_varying_hazard(machine: dict[str, Any], causes: Iterable[str], horizon_
 
 def node_config(machine: dict[str, Any], *, horizon_h: float = DEFAULT_HORIZON_H, cost_per_hour: float | None = None,
                 planned: Iterable[CauseRate] = (), system: dict[str, Any] | None = None,
-                time_varying: bool = False) -> NodeConfig:
+                time_varying: bool = False, t0_h: float = 0.0) -> NodeConfig:
     """A catalogue machine as a NodeConfig.
 
     Default: the exponential approximation (each cause's average hazard over
@@ -256,10 +256,12 @@ def node_config(machine: dict[str, Any], *, horizon_h: float = DEFAULT_HORIZON_H
     time; age clocks restart with a fresh age on replacement) for the Python
     simulator. Planned downtime stays a constant-rate transient cause; recovery
     durations are mixed by horizon-average weights in both modes.
+    ``t0_h``: average over the window [t0, t0 + horizon] instead of [0, horizon]
+    (exponential mode; used to re-optimize over time, scripts/reconfig_cadence.py).
     """
     sysd = {**DEFAULT_SYSTEM, **{k: v for k, v in (system or SYSTEM).items() if k != "source"}}
     planned = list(planned)
-    r = horizon_rates(machine, horizon_h)
+    r = horizon_rates(machine, horizon_h, t0_h)
     trans = [(r[c] / 3600.0, from_spec(machine["durations"][c])) for c in TRANSIENT_CAUSES if r.get(c, 0) > 0]
     trans += [(p.rate_per_second, p.duration) for p in planned if p.rate_per_second > 0]
     lam_t = sum(x for x, _ in trans)

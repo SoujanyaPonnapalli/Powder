@@ -473,6 +473,63 @@ def time_averaged_distribution(
     return _normalize_probability_result(integral / float(time))
 
 
+def time_averaged_availability_uniformization(
+    model: MarkovModel,
+    time: float,
+    *,
+    backend: Literal["numpy", "cupy"] = "numpy",
+    tol: float = 1e-13,
+) -> tuple[float, dict]:
+    """Time-averaged availability over ``[0, time)`` from the initial distribution, by uniformization.
+
+    With ``Lam >= max_i |Q_ii|`` and ``P = I + Q / Lam``, ``p(s) = sum_k Pois(k; Lam s) p0 P^k`` and
+
+        (1/T) int_0^T p(s) ds = (1 / (Lam T)) sum_k P(N_{Lam T} > k) p0 P^k,   N ~ Poisson(Lam T).
+
+    Only the live mass ``a_k = live . p0 P^k`` is needed, so the cost is about ``Lam T`` sparse
+    matrix-vector products (truncated where the Poisson tail drops below ``tol``). Every step is a
+    probability vector (P is stochastic), so the iteration is unconditionally stable, which makes it suitable
+    for the stiff Powder chains on a GPU (``backend="cupy"``) where ``expm_multiply`` is CPU-only.
+
+    Returns ``(availability, info)`` with the iteration count, ``Lam`` and the truncation tail.
+    """
+    from scipy.stats import poisson
+
+    if time <= 0:
+        raise ValueError(f"time must be positive; got {time!r}")
+    p0 = _normalized_distribution(model.initial_distribution, model.num_states, name="initial_distribution")
+    diag = -model.Q.diagonal()
+    lam = float(diag.max()) * (1.0 + 1e-9)
+    if lam <= 0:
+        return float(p0[model.live_mask].sum()), {"iterations": 0, "Lambda": 0.0, "tail": 0.0}
+    lt = lam * float(time)
+    kmax = int(poisson.isf(tol, lt)) + 1
+    weights = poisson.sf(np.arange(kmax), lt)          # P(N > k), k = 0..kmax-1
+    PT = (sparse.eye(model.num_states, format="csr") + model.Q.T.tocsr() / lam).tocsr()
+    live = model.live_mask.astype(np.float64)
+
+    if backend == "cupy":
+        cp, cpsparse, _ = _load_cupy_sparse_modules()
+        PT_d = cpsparse.csr_matrix(PT)
+        v = cp.asarray(p0)
+        live_d = cp.asarray(live)
+        w_d = cp.asarray(weights)
+        acc = cp.zeros((), dtype=cp.float64)
+        for k in range(kmax):
+            acc += w_d[k] * live_d.dot(v)
+            v = PT_d @ v
+        total = float(acc.get())
+    elif backend == "numpy":
+        v = p0.copy()
+        total = 0.0
+        for k in range(kmax):
+            total += weights[k] * float(live @ v)
+            v = PT @ v
+    else:
+        raise ValueError(f"unknown backend {backend!r}")
+    return total / lt, {"iterations": kmax, "Lambda": lam, "Lambda_T": lt, "tail": float(poisson.sf(kmax - 1, lt))}
+
+
 def total_variation_distance(p: np.ndarray, q: np.ndarray) -> float:
     """Return the total variation distance between two distributions."""
     p = np.asarray(p, dtype=np.float64)

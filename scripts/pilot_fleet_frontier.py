@@ -51,6 +51,9 @@ from powder.placement_optimizer import PlacementCandidate, PlacementSolverConfig
 from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProtocol  # noqa: E402
 from scripts.experiment_sizing import baseline  # noqa: E402
 
+# Every new_ilp / main_ilp row carries ``placements``: one sorted machine-id list per RSM, so later studies
+# (scripts/figs/) can re-score the chosen deployment under other strategies or horizons.
+
 CATALOGUE = "data/fault_library/catalogue/machines-od1000-spot1000-seed0-az.json.gz"
 SCENARIO = "scenario/canonical-central-az-aware@v3"
 REGIONS = ("us-east-1", "us-east-2", "us-west-1", "us-west-2")
@@ -110,7 +113,8 @@ def summarize(sol, price: dict, exact: Exact, num_rsms: int) -> dict:
     mean = total / num_rsms
     return {"feasible": True, "cost_per_hour": sum(price[m] for m in used), "mean_availability": mean,
             "nines": nines(mean), "rf_counts": dict(sorted(rf.items())), "machines_used": len(used),
-            "spot": sum(int(m[1:]) >= 1000 for m in used)}
+            "spot": sum(int(m[1:]) >= 1000 for m in used),
+            "placements": [list(item.candidate.machine_ids) for item in sol.selected for _ in range(item.count)]}
 
 
 def summarize_placements(placements, price: dict, exact: Exact) -> dict:
@@ -119,7 +123,8 @@ def summarize_placements(placements, price: dict, exact: Exact) -> dict:
     mean = sum(exact(p) for p in placements) / len(placements)
     return {"feasible": True, "cost_per_hour": sum(price[m] for m in used), "mean_availability": mean,
             "nines": nines(mean), "rf_counts": dict(sorted(Counter(len(p) for p in placements).items())),
-            "machines_used": len(used), "spot": sum(int(m[1:]) >= 1000 for m in used)}
+            "machines_used": len(used), "spot": sum(int(m[1:]) >= 1000 for m in used),
+            "placements": [sorted(p) for p in placements]}
 
 
 def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget, *, warm=(), rounds=10,
@@ -269,7 +274,8 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     exact.batch(base_pl)
     for name, (cost, pls) in base_raw.items():
         mean = sum(exact(p) for p in pls) / a.num_rsms
-        baselines[name] = {"cost_per_hour": cost, "mean_availability": mean, "nines": nines(mean)}
+        baselines[name] = {"cost_per_hour": cost, "mean_availability": mean, "nines": nines(mean),
+                           "placements": [list(p) for p in pls]}
     exact.save()
     matched = {}
     if a.cheapest_budgets:  # extra budgets at the cheapest-first baselines' costs

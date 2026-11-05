@@ -45,12 +45,13 @@ def scenario_machine_types(lib: FaultLibrary, scenario_id: str, *, copies: int =
 
 def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: str = "scenario/canonical-central@v2",
                        price: str = "rho0", capacity: int = 10, horizon_h: float | None = None,
-                       rate_scale: float = 1.0):
+                       rate_scale: float = 1.0, t0_h: float = 0.0):
     """One optimizer ``Machine`` per catalogue machine (exponential approximation, planned downtime folded in).
 
     ``price``: which assignment to use (``rho0`` / ``rho1``); native-priced spot machines use their pool price.
     ``capacity``: RSM replicas a machine can host.
     ``rate_scale``: multiplies every node fault rate (transient incl. planned, and permanent); a stress knob.
+    ``t0_h``: average each cause's hazard over [t0, t0 + horizon] instead of [0, horizon].
     """
     from powder.placement_optimizer import Machine
     from powder.simulation.distributions import Exponential
@@ -62,7 +63,7 @@ def catalogue_machines(lib: FaultLibrary, cat: dict[str, Any], *, scenario_id: s
     out = []
     for m in cat["machines"]:
         p = C.machine_price(m, price)
-        cfg = C.node_config(m, horizon_h=h, planned=planned, cost_per_hour=p or 0.0)
+        cfg = C.node_config(m, horizon_h=h, planned=planned, cost_per_hour=p or 0.0, t0_h=t0_h)
         if rate_scale != 1.0:
             cfg = replace(cfg, **{f: Exponential(d.rate * rate_scale) for f, d in
                                   (("failure_dist", cfg.failure_dist), ("data_loss_dist", cfg.data_loss_dist))
