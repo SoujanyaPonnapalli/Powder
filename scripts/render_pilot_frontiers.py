@@ -80,13 +80,19 @@ def pareto(pts):
     return out
 
 
-def render(data, compare=None) -> str:
+def render(data, compare=None, show_main=False) -> str:
     rows = data["rows"]
     fleet = "new_ilp" in rows[0]
+    prev_label = "Fleet ILP, previous sweep"
     if compare:  # overlay an earlier fleet sweep of the same configurations
         prev = {(r["rate_scale"], r["price"]): r["new_ilp"] for r in compare["rows"]}
         rows = [{**r, "prev_ilp": prev[(r["rate_scale"], r["price"])]} for r in rows
                 if (r["rate_scale"], r["price"]) in prev]
+    elif show_main:  # the same run's main ILP, before lattice ascent
+        rows = [{**r, "prev_ilp": {f: v["main_ilp"] for f, v in r["new_ilp"].items() if "main_ilp" in v}}
+                for r in rows]
+        prev_label = "Fleet ILP"
+    compare = compare or show_main
     scales = sorted({r["rate_scale"] for r in rows})
     prices = [p for p in PRICES if any(r["price"] == p for r in rows)]
     by = {(r["rate_scale"], r["price"]): r for r in rows}
@@ -107,8 +113,9 @@ def render(data, compare=None) -> str:
                  "ILP at several budgets vs. fixed-RF baselines"), 11, INK2)]
     # legend
     lx = ML
-    items = ((("circle", BLUE, "Fleet ILP + lattice ascent" if compare else "Fleet ILP across budgets"),)
-             + ((("hollow", BLUE, "Fleet ILP, previous sweep"),) if compare else ())
+    items = ((("circle", BLUE, ("Fleet ILP + lattice ascent" if show_main else "Fleet ILP + lattice ascent")
+                if compare else "Fleet ILP across budgets"),)
+             + ((("hollow", BLUE, prev_label),) if compare else ())
              + (("hollow", MUTED, "Random-menu ILP"),) if fleet else (("circle", BLUE, "ILP across budgets"),))
     for shape, color, label in items + (("square", ORANGE, "Price-blind baseline"),
                                         ("triangle", AQUA, "Cheapest-first baseline")):
@@ -164,7 +171,8 @@ def render(data, compare=None) -> str:
             for kind, label, c, a in sorted(pts, key=lambda p: p[0] == "ILP"):  # fleet ILP drawn on top
                 shape, color = {"ILP": ("circle", BLUE), "old": ("hollow", MUTED), "prev": ("hollow", BLUE),
                                 "blind": ("square", ORANGE), "cheap": ("triangle", AQUA)}[kind]
-                name = {"ILP": "Fleet ILP" if fleet else "ILP", "old": "Random-menu ILP", "prev": "Previous fleet ILP",
+                name = {"ILP": ("Lattice" if compare else "Fleet ILP") if fleet else "ILP", "old": "Random-menu ILP",
+                        "prev": prev_label,
                         "blind": "Price-blind", "cheap": "Cheapest-first"}[kind]
                 out.append(marker(sx(c), sy(a), shape, color, f"{name} {label}: {a:.2f} nines, ${c:.2f}/h"))
                 if kind in ("blind", "cheap"):
@@ -182,10 +190,12 @@ def main() -> int:
     ap.add_argument("--input", default="outputs/pilot-ilp-rate-scale/results-fleet.json")
     ap.add_argument("--output", default="outputs/pilot-ilp-rate-scale/frontiers.svg")
     ap.add_argument("--compare", default=None, help="earlier results-fleet.json to overlay (dotted blue)")
+    ap.add_argument("--show-main", action="store_true",
+                    help="overlay this run's main ILP before lattice ascent (dotted blue)")
     a = ap.parse_args()
     data = json.loads((ROOT / a.input).read_text())
     compare = json.loads((ROOT / a.compare).read_text()) if a.compare else None
-    (ROOT / a.output).write_text(render(data, compare) + "\n")
+    (ROOT / a.output).write_text(render(data, compare, a.show_main) + "\n")
     print(a.output)
     return 0
 
