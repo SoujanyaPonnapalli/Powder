@@ -23,7 +23,6 @@ LOCATION_LABELS = ["region", "zone", "host"]
 DEPLOY_DIR = "/tidb-deploy"
 DATA_DIR = "/tidb-data"
 TIKV_DATA_DIR = "/data/tikv"      # instance-store NVMe mounted by node_bootstrap.sh
-COMMIT_TIMEOUT = "5s"             # = the clients' request SLO (TiDB default 41s)
 _LABEL_RE = re.compile(r"^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$")
 
 
@@ -66,16 +65,12 @@ def topology_dict(spec: ClusterSpec, hosts: dict[str, Host]) -> dict:
         "replication.max-replicas": spec.replication_factor,
     }
     pd_cfg.update(spec.pd_config)       # explicit spec settings win (e.g. schedule.max-store-down-time)
-    # Requests have a 5 s SLO and are never retried. TiDB must stop working on them too: reads stop at the clients'
-    # max_execution_time, but a commit is not interruptible and kept retrying a quorum-less Region for the default
-    # 41 s, holding a token (G3: all 1000 tokens pinned, healthy keys starved). Raft election settings stay default.
-    tidb_cfg = {"tikv-client.commit-timeout": COMMIT_TIMEOUT}
-    tidb_cfg.update(spec.tidb_config)
-
+    # TiDB runs with its defaults. Requests that miss their 5 s SLO are ended by powder-load with KILL QUERY (G3: a
+    # 5 s tikv-client.commit-timeout did not stop writes, which wait in prewrite, not commit).
     topo: dict = {
         "global": {"user": "tidb", "ssh_port": 22, "deploy_dir": DEPLOY_DIR, "data_dir": DATA_DIR,
                    "arch": "amd64"},
-        "server_configs": {"pd": pd_cfg, "tikv": dict(spec.tikv_config), "tidb": tidb_cfg},
+        "server_configs": {"pd": pd_cfg, "tikv": dict(spec.tikv_config), "tidb": dict(spec.tidb_config)},
         "pd_servers": [], "tidb_servers": [], "tikv_servers": [],
     }
     for n in nodes:

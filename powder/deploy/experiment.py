@@ -219,6 +219,7 @@ def start_generators(ctx: Context, start_at: float) -> dict[str, str]:
         probe = (f"{ctx.loadgen_bin} probe {common} --buckets {int(w.regions_target)} --interval {c.prober_interval_s}s "
                  f"--timeout {c.request_timeout_s}s --row-offset {i} --out {d}/probes.jsonl.gz")
         load = (f"{ctx.loadgen_bin} load {common} --rate {w.rate_per_region} --timeout {c.request_timeout_s}s "
+                f"--buckets {int(w.regions_target)} "
                 f"--key-dist {w.key_dist} --arrival {w.arrival} --seed {ctx.spec.seed} --out {d}/requests.jsonl.gz")
         cmd = f"mkdir -p {d} && cd {d} && rm -f *.done"
         for name, run in (("probe", probe), ("load", load)):

@@ -61,52 +61,12 @@ func openDB(dsn string, conns int, reqTimeout time.Duration) (*sql.DB, *counting
 	return db, cc
 }
 
-// acquire takes a pool connection and reports how long that took (pool wait + any new-connection setup).
-func acquire(ctx context.Context, db *sql.DB) (*sql.Conn, float64, error) {
-	start := time.Now()
-	conn, err := db.Conn(ctx)
-	return conn, float64(time.Since(start)) / 1e6, err
-}
-
-// errSLO marks a request that did not finish within its SLO; Classify turns it into timeout/client_deadline.
-var errSLO = fmt.Errorf("no result within the request SLO: %w", context.DeadlineExceeded)
-
-// withSLO runs work on a pool connection with a per-request SLO, without ever cancelling a query in flight.
-//
-// The SLO bounds getting a connection plus getting the result. When it expires the request is reported lost
-// (errSLO) at once, but its query keeps its connection until TiDB answers (bounded server side by
-// max_execution_time and tikv-client.commit-timeout, and here by serverWait), and the connection then returns to the
-// pool. Cancelling instead closes the socket (MySQL cannot abandon a query on a live connection): at G3 every lost
-// request then cost a reconnect while TiDB kept the abandoned statement and its token for ~40 s, and healthy
-// requests starved. abandoned counts queries still running past their SLO.
-func withSLO(db *sql.DB, slo, serverWait time.Duration, abandoned *atomic.Int64,
-	work func(ctx context.Context, conn *sql.Conn) error) (connMS float64, err error) {
-	deadline := time.Now().Add(slo)
-	actx, cancel := context.WithDeadline(context.Background(), deadline)
-	conn, connMS, err := acquire(actx, db)
-	cancel()
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			err = errSLO
-		}
-		return connMS, err
-	}
-	done := make(chan error, 1)
-	go func() {
-		qctx, qcancel := context.WithTimeout(context.Background(), serverWait)
-		defer qcancel()
-		e := work(qctx, conn)
-		conn.Close()
-		done <- e
-	}()
-	select {
-	case err = <-done:
-		return connMS, err
-	case <-time.After(time.Until(deadline)):
-		abandoned.Add(1)
-		go func() { <-done; abandoned.Add(-1) }()
-		return connMS, errSLO
-	}
+// newClient opens the request pool (sized to the partition budgets) and a small admin pool for KILL QUERY.
+func newClient(dsn string, partitions, budget int, slo, serverWait time.Duration) (*Client, *countingConnector) {
+	db, cc := openDB(dsn, partitions*budget, slo)
+	admin, _ := openDB(dsn, 16, slo)
+	return &Client{DB: db, Admin: admin, SLO: slo, ServerWait: serverWait, Slots: NewSlots(partitions, budget),
+		Stats: &ClientStats{}}, cc
 }
 
 func main() {
@@ -222,7 +182,11 @@ func runLoad(args []string) {
 	rate := fs.Float64("rate", 500, "requests per second (mean, for diurnal)")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
 	timeout := fs.Duration("timeout", 5*time.Second, "per-request SLO: connection + result; later = lost, never retried")
-	serverWait := fs.Duration("server-wait", time.Minute, "how long a lost request's query may keep its connection")
+	serverWait := fs.Duration("server-wait", time.Minute, "cap on a lost request's query if its KILL QUERY fails")
+	buckets := fs.Int("buckets", 50, "key partitions (as the prober and the analysis use them) for connection budgets")
+	perPartition := fs.Int("conns-per-partition", 0, "connection budget per partition (0 = rate/buckets x timeout + 2, capped by -max-conns)")
+	maxConns := fs.Int("max-conns", 600, "cap on all partition budgets together: with the prober's 7 per partition this keeps one "+
+		"TiDB below its 1000 tokens even if every partition is dead, so KILL QUERY can always run")
 	keyDist := fs.String("key-dist", "uniform", "uniform|zipf|hot-range|shifting-hot-range")
 	arrival := fs.String("arrival", "constant", "constant|diurnal")
 	period := fs.Duration("period", 24*time.Hour, "diurnal period")
@@ -234,7 +198,6 @@ func runLoad(args []string) {
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at (synchronises load generators)")
 	out := fs.String("out", "requests.jsonl.gz", "output records (gzip JSONL)")
 	maxInflight := fs.Int("max-inflight", 20000, "cap on concurrent requests; beyond it requests are recorded as loadgen_saturated (other)")
-	maxConns := fs.Int("max-conns", 1024, "connection pool size")
 	logOkEvery := fs.Int("log-ok-every", 1, "record every Nth successful request with weight N (failures are always recorded)")
 	payloadBytes := fs.Int("payload-bytes", 256, "write value size")
 	fs.Parse(args)
@@ -251,14 +214,19 @@ func runLoad(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db, cc := openDB(*dsn, *maxConns, *timeout)
-	defer db.Close()
+	budget := *perPartition
+	if budget <= 0 {
+		budget = min(PartitionBudget(*rate/float64(*buckets), *timeout), max(2, *maxConns / *buckets))
+	}
+	fmt.Fprintf(os.Stderr, "connection budget: %d per partition x %d partitions\n", budget, *buckets)
+	cl, cc := newClient(*dsn, *buckets, budget, *timeout, *serverWait)
+	defer cl.DB.Close()
+	defer cl.Admin.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
-	var inflight, abandoned atomic.Int64
 	statsCtx, stopStats := context.WithCancel(context.Background())
 	statsDone := make(chan struct{})
-	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight, &abandoned); close(statsDone) }()
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", cl.DB, cc, cl.Stats); close(statsDone) }()
 
 	payload := make([]byte, *payloadBytes)
 	rng := rand.New(rand.NewSource(*seed))
@@ -290,14 +258,15 @@ func runLoad(args []string) {
 			go func(row int64, read bool, sched float64) {
 				defer wg.Done()
 				defer func() { <-sem }()
-				inflight.Add(1)
-				defer inflight.Add(-1)
+				cl.Stats.Inflight.Add(1)
+				defer cl.Stats.Inflight.Add(-1)
 				start := time.Now()
 				op := "write"
 				if read {
 					op = "read"
 				}
-				connMS, err := withSLO(db, *timeout, *serverWait, &abandoned, func(ctx context.Context, conn *sql.Conn) error {
+				part := int(row * int64(*buckets) / *keys)
+				connMS, err := cl.Do(part, func(ctx context.Context, conn *sql.Conn) error {
 					if read {
 						var v []byte
 						err := conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
@@ -363,7 +332,7 @@ func runProbe(args []string) {
 	interval := fs.Duration("interval", time.Second, "probe period")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
 	timeout := fs.Duration("timeout", 5*time.Second, "per-probe SLO: connection + result; later = lost, never retried")
-	serverWait := fs.Duration("server-wait", time.Minute, "how long a lost probe's queries may keep their connection")
+	serverWait := fs.Duration("server-wait", time.Minute, "cap on a lost probe's queries if its KILL QUERY fails")
 	rowOffset := fs.Int64("row-offset", 0, "added to each bucket's middle row, so concurrent probers never write the same row")
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at")
 	out := fs.String("out", "probes.jsonl.gz", "output records")
@@ -373,14 +342,14 @@ func runProbe(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db, cc := openDB(*dsn, *buckets*4, *timeout)
-	defer db.Close()
+	cl, cc := newClient(*dsn, *buckets, PartitionBudget(1/interval.Seconds(), *timeout), *timeout, *serverWait)
+	defer cl.DB.Close()
+	defer cl.Admin.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
-	var inflight, abandoned atomic.Int64
 	statsCtx, stopStats := context.WithCancel(context.Background())
 	statsDone := make(chan struct{})
-	go func() { poolStats(statsCtx, *out+".pool.jsonl", db, cc, &inflight, &abandoned); close(statsDone) }()
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", cl.DB, cc, cl.Stats); close(statsDone) }()
 	var wg sync.WaitGroup
 	t0 := waitUntil(*startAt)
 	var probes atomic.Int64
@@ -396,12 +365,12 @@ func runProbe(args []string) {
 			row := int64((float64(b)+0.5)*float64(*keys)/float64(*buckets)) + *rowOffset
 			wg.Add(1)
 			probes.Add(1)
-			go func(row int64, sched float64) {
+			go func(b int, row int64, sched float64) {
 				defer wg.Done()
-				inflight.Add(1)
-				defer inflight.Add(-1)
+				cl.Stats.Inflight.Add(1)
+				defer cl.Stats.Inflight.Add(-1)
 				start := time.Now()
-				connMS, err := withSLO(db, *timeout, *serverWait, &abandoned, func(ctx context.Context, conn *sql.Conn) error {
+				connMS, err := cl.Do(b, func(ctx context.Context, conn *sql.Conn) error {
 					if _, err := conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli()); err != nil {
 						return err
 					}
@@ -417,7 +386,7 @@ func runProbe(args []string) {
 				}
 				w.Add(Record{TS: sched, Row: row, Op: "probe", Outcome: worst, LatencyMS: float64(time.Since(start)) / 1e6,
 					ConnMS: connMS, Err: errText, Weight: 1})
-			}(row, epoch(sched))
+			}(b, row, epoch(sched))
 		}
 	}
 	wg.Wait()

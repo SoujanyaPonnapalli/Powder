@@ -669,6 +669,17 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   connection budgets in `powder-load` (bulkheads): a dead partition can only exhaust its own budget, which also caps
   the dead statements per TiDB below 1000 tokens (e.g. 8 per partition x 25 dead partitions + probes ~ 250); and
   revert `commit-timeout` to the default since it has no effect. Data: `~/powder-runs/tidb/YoungMeerkat/`.
+  **Harness policy after attempt 6 (user decision, 2026-11-05):** each request has a 5 s SLO; past it the request is
+  lost, never retried, and its query is ended with `KILL QUERY` over a separate admin pool, so the connection stays
+  open and serves again when quorum returns; TiDB runs with all defaults (`commit-timeout` reverted, default
+  `token-limit` and Raft election). Measured locally (`infra/tidb/local_kill_check/run.sh`, v8.5.8, 2 of 3 TiKV paused):
+  an unkilled write gives up after 53.3 s, a write killed at 5 s returns at 5.03 s, connection reusable;
+  `performance.max-txn-ttl = 5000` changes nothing (it bounds lock lifetime, not the writer's retries). TiDB closes
+  the connection itself when a killed write's commit result is undetermined (`conn.go: result undetermined, close this
+  connection`; ~13 % of kills locally), so those cost a reconnect. Per-partition connection budgets (bulkheads):
+  rate/partition x SLO + 2, capped so load (600) + probes (7 per partition) stay below one TiDB's 1000 tokens even if
+  every partition dies -- otherwise the KILLs themselves cannot run (local check at 3 x 100 req/s on one TiDB: 636 of
+  853 kills timed out; at 3 x 30 req/s: 554 kills, 0 failures, 0 requests lost to a full budget).
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
