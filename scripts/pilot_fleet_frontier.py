@@ -272,7 +272,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     new_rows, fleet_counts = {}, []
     for bi, (f, b) in enumerate(zip(a.budget_fractions, budgets)):
         fleets = F.fleets_for_budget(feats, u, b, num_rsms=a.num_rsms, capacity=a.capacity,
-                                     sizes=a.fleet_sizes, repeats=a.fleet_repeats)
+                                     sizes=a.fleet_sizes, repeats=a.fleet_repeats, alpha=a.alpha)
         fleet_counts.append(len(fleets))
         raw = [fleet_raw((1000 * bi + i, fl)) for i, fl in enumerate(fleets)]
         table_batch({n for ff, _, rand, _ in raw for p in rand for n in (p, *F.swap_neighbors(p, ff))})
@@ -353,6 +353,7 @@ def main() -> int:
     ap.add_argument("--clusters", type=int, default=16)
     ap.add_argument("--fleet-sizes", type=int, default=4)
     ap.add_argument("--fleet-repeats", type=int, default=2)
+    ap.add_argument("--alpha", type=float, default=0.9, help="fleets must spend at least alpha x budget")
     ap.add_argument("--passes", type=int, default=4, help="randomized packing passes per fleet (split by RF mix)")
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 1, help="configurations in parallel")
     ap.add_argument("--threads", type=int, default=None,
