@@ -4,8 +4,9 @@ Scope: October Goals, execution order #7 ("Add TiDB to the repo and run a test d
 Goal 6.2 ("Make TiDB deployment script"), and the plumbing that #8 (failure emulator), #9 (PD queries
 the ILP) and #10 (timing benchmarks) will sit on.
 
-Status: **v3 (2026-11-03): steps 1-7 implemented and committed on `exec07-tidb-deployment`; live AWS gates G1-G5 NOT yet
-run** (the machine this was built on has no AWS credentials). Everything is tested against moto (emulated EC2), fakes, the
+Status: **v4 (2026-11-05): live AWS gates G1-G5 all passed (branch `exec07-g1-live`; fixes and evidence in §12).
+Exec #7 is done.** v3 (2026-11-03): steps 1-7 implemented and committed on `exec07-tidb-deployment`, then tested only
+offline (the machine this was built on had no AWS credentials). Everything is tested against moto (emulated EC2), fakes, the
 real TiDB output captured in `tests/fixtures/tidb/`, and a real TiDB on one machine (`infra/tidb/local_pipeline_check.py`).
 Section 14 lists what changed from the earlier drafts and what the first live runs must verify. Earlier revisions: v2.2
 repartitioning metrics, experiments name their handle, simplified teardown; v2.1 random handles, per-RSM attribution; v2
@@ -680,6 +681,13 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   rate/partition x SLO + 2, capped so load (600) + probes (7 per partition) stay below one TiDB's 1000 tokens even if
   every partition dies -- otherwise the KILLs themselves cannot run (local check at 3 x 100 req/s on one TiDB: 636 of
   853 kills timed out; at 3 x 30 req/s: 554 kills, 0 failures, 0 requests lost to a full budget).
+  **G3 PASSED on real AWS 2026-11-05 (attempt 7, handle `VividHawk`, `run_all.py --self-test`, TiDB defaults).**
+  All three rounds: partitions whose Region lost quorum down 65-74 s for a 60 s hold (outage + TiKV restart + Raft
+  election); every other partition down <= 3 s (round 1) and 0 s (rounds 2-3). Healthy requests never waited for a
+  connection (`conn_ms` p99 < 14 ms). ~20.7k kills per load generator and ~5.5k per prober, 0 failed; at most 31
+  queries ever ran past their SLO; TiDB tokens peaked at 729/459/537 (< 1000); ~3 % of kills cost a reconnect
+  (undetermined commits). Budget 12 per partition x 50. Data: `~/powder-runs/tidb/VividHawk/`. **Exec #7: G1-G5 all
+  passed.**
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
@@ -696,7 +704,8 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   questions above).
 - [x] Step 7 (2026-11-03): `infra/tidb/README.md`, `iam-deploy-policy.json` (draft, unvalidated), `CLAUDE.md`, unattended-runner
   safety line, `deploy`/`dev` extras. The `--older-than` cron is documented, not installed.
-- [ ] **Owner: run gates G1 -> G5 (§10) on real AWS.** First `deploy_infra.py --dry-run`, then G1 (~$1).
+- [x] **Owner: run gates G1 -> G5 (§10) on real AWS.** Done 2026-11-04/05 from the work VM (instance role): G1, G2, G4, G5
+  passed first time after fixes; G3 passed on attempt 7 (see Step 5).
 
 ## 13. Open questions (owner)
 
