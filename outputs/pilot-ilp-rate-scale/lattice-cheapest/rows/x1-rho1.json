@@ -1,0 +1,183 @@
+{
+ "rate_scale": 1.0,
+ "price": "rho1",
+ "budgets": {
+  "0.0861027": 2.647965995155228,
+  "0.168142": 5.170960022042365,
+  "0.247721": 7.618314304101063
+ },
+ "matched_budgets": {
+  "0.0861027": "rf3-cheap",
+  "0.168142": "rf5-cheap",
+  "0.247721": "rf7-cheap"
+ },
+ "free_cost_old": 30.753585254695174,
+ "exact_runs": 100000,
+ "table_runs": 20000,
+ "table_entries": 11470,
+ "exact_scored": 2783,
+ "fleets_per_budget": [
+  3,
+  10,
+  11
+ ],
+ "new_ilp": {
+  "0.0861027": {
+   "feasible": true,
+   "cost_per_hour": 2.647427339503089,
+   "mean_availability": 0.9999473755385879,
+   "nines": 4.278812335944118,
+   "rf_counts": {
+    "3": 50
+   },
+   "machines_used": 30,
+   "spot": 30,
+   "main_ilp": {
+    "feasible": true,
+    "cost_per_hour": 2.647427339503089,
+    "mean_availability": 0.9999473755385879,
+    "nines": 4.278812335944118,
+    "rf_counts": {
+     "3": 50
+    },
+    "machines_used": 30,
+    "spot": 30
+   },
+   "candidates": 752,
+   "rounds": 10,
+   "times": {
+    "main_rounds": 10,
+    "main_ilp_s": 2.623699188232422,
+    "main_mc_s": 52.70751094818115,
+    "ascent_rounds": 1,
+    "ascent_ilp_s": 0.0029799938201904297,
+    "ascent_mc_s": 0.0,
+    "ascent_columns": 29
+   }
+  },
+  "0.168142": {
+   "feasible": true,
+   "cost_per_hour": 5.1300310873784385,
+   "mean_availability": 0.9999985386772527,
+   "nines": 5.83525385533774,
+   "rf_counts": {
+    "3": 25,
+    "5": 25
+   },
+   "machines_used": 40,
+   "spot": 40,
+   "main_ilp": {
+    "feasible": true,
+    "cost_per_hour": 5.170237773278506,
+    "mean_availability": 0.9999983696618661,
+    "nines": 5.787722313096148,
+    "rf_counts": {
+     "3": 25,
+     "5": 25
+    },
+    "machines_used": 40,
+    "spot": 40
+   },
+   "candidates": 2343,
+   "rounds": 10,
+   "times": {
+    "main_rounds": 10,
+    "main_ilp_s": 14.211833238601685,
+    "main_mc_s": 60.05716061592102,
+    "ascent_rounds": 4,
+    "ascent_ilp_s": 0.05547904968261719,
+    "ascent_mc_s": 9.382054805755615,
+    "ascent_columns": 124
+   }
+  },
+  "0.247721": {
+   "feasible": true,
+   "cost_per_hour": 7.453676092681959,
+   "mean_availability": 0.9999988275591867,
+   "nines": 5.930909071935329,
+   "rf_counts": {
+    "5": 40,
+    "7": 10
+   },
+   "machines_used": 54,
+   "spot": 54,
+   "main_ilp": {
+    "feasible": true,
+    "cost_per_hour": 7.560908049100544,
+    "mean_availability": 0.9999987155167659,
+    "nines": 5.8912715600478265,
+    "rf_counts": {
+     "5": 40,
+     "7": 10
+    },
+    "machines_used": 54,
+    "spot": 54
+   },
+   "candidates": 2712,
+   "rounds": 10,
+   "times": {
+    "main_rounds": 10,
+    "main_ilp_s": 48.64652705192566,
+    "main_mc_s": 57.19619679450989,
+    "ascent_rounds": 6,
+    "ascent_ilp_s": 1.402824878692627,
+    "ascent_mc_s": 27.640040159225464,
+    "ascent_columns": 216
+   }
+  }
+ },
+ "old_ilp": {
+  "0.0861027": {
+   "feasible": false,
+   "status": "2"
+  },
+  "0.168142": {
+   "feasible": false,
+   "status": "2"
+  },
+  "0.247721": {
+   "feasible": true,
+   "cost_per_hour": 7.596897985735416,
+   "mean_availability": 0.9999983950453317,
+   "nines": 5.794537229673484,
+   "rf_counts": {
+    "3": 50
+   },
+   "machines_used": 30,
+   "spot": 21
+  }
+ },
+ "baselines": {
+  "rf3-blind": {
+   "cost_per_hour": 12.469831059108852,
+   "mean_availability": 0.9999863618101841,
+   "nines": 4.865243269351543
+  },
+  "rf3-cheap": {
+   "cost_per_hour": 2.647965995155228,
+   "mean_availability": 0.9999027838463387,
+   "nines": 4.012261565700384
+  },
+  "rf5-blind": {
+   "cost_per_hour": 22.821348299349115,
+   "mean_availability": 0.9999988890888158,
+   "nines": 5.95432066092723
+  },
+  "rf5-cheap": {
+   "cost_per_hour": 5.170960022042365,
+   "mean_availability": 0.9999976609541374,
+   "nines": 5.630961262731765
+  },
+  "rf7-blind": {
+   "cost_per_hour": 30.21849665702864,
+   "mean_availability": 0.9999990749131286,
+   "nines": 6.033817482379572
+  },
+  "rf7-cheap": {
+   "cost_per_hour": 7.618314304101063,
+   "mean_availability": 0.9999983163013196,
+   "nines": 5.773735628491571
+  }
+ },
+ "seconds": 441.69228625297546
+}

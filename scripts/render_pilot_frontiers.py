@@ -179,7 +179,9 @@ def render(data, compare=None, show_main=False) -> str:
                     dy = 16 if kind == "blind" else -7  # blind markers sit just under the ILP line
                     out.append(text(sx(c) + 7, sy(a) + dy, label.replace("RF ", ""), 10, INK2))
     out.append(text(ML, H - 12, "Numbers beside baseline markers are the replication factor (3/5/7). " +
-                    ("Budgets: 10-100% of the random-menu ILP's unrestricted cost." if fleet else
+                    ("Budgets: 10-100% of the random-menu ILP's unrestricted cost" +
+                     (", plus the cheapest-first baselines' costs." if any(r.get("matched_budgets") for r in rows)
+                      else ".") if fleet else
                      "Markov screening scores; RF 7 uses binned rates."), 10, MUTED))
     out.append("</svg>")
     return "\n".join(out)

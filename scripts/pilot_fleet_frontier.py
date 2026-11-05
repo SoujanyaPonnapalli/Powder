@@ -177,6 +177,21 @@ def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacit
     return (*out, len(pool))
 
 
+def carry_forward(new_rows: dict) -> None:
+    """A deployment that fits a smaller budget fits every larger one: report the best at or below each budget
+    (keys are budget fractions)."""
+    best = None
+    for f in sorted(new_rows, key=float):
+        r = new_rows[f]
+        if best is not None and best["feasible"] and (not r["feasible"]
+                                                     or best["mean_availability"] > r["mean_availability"]):
+            new_rows[f] = {**{k: v for k, v in best.items() if k != "from"},
+                           "source": f"carried from the {float(best['from']):.0%} budget",
+                           "candidates": r.get("candidates"), "rounds": r.get("rounds")}
+        elif r["feasible"]:
+            best = {**r, "from": f}
+
+
 def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     t0 = time.time()
     lib = FaultLibrary.load()
@@ -198,7 +213,8 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     exact = Exact(by_id, protocol, strategy, horizon_s, network, exact_runs(k), a.threads,
                   cache_path=Path(a.cache_dir) / f"exact-x{k:g}.json")
     free_cost = old["solution"].total_cost_per_hour
-    budgets = [f * free_cost for f in a.budget_fractions]
+    fracs = list(a.budget_fractions)
+    budgets = [f * free_cost for f in fracs]
 
     # clusters + centroid table + downtime score u
     feats = F.features(machines)
@@ -228,12 +244,19 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         mean = sum(exact(p) for p in pls) / a.num_rsms
         baselines[name] = {"cost_per_hour": cost, "mean_availability": mean, "nines": nines(mean)}
     exact.save()
+    matched = {}
+    if a.cheapest_budgets:  # extra budgets at the cheapest-first baselines' costs
+        for rf in (3, 5, 7):
+            f = baselines[f"rf{rf}-cheap"]["cost_per_hour"] / free_cost
+            matched[f"{f:g}"] = f"rf{rf}-cheap"
+            fracs.append(f)
+        budgets = [f * free_cost for f in fracs]
     log("baselines scored")
 
     # old ILP at each budget, exact-rescored
     old_sols = {f"{f:g}": solve_candidate_ilp(old["candidates"], machines, PlacementSolverConfig(
         num_rsms=a.num_rsms, objective="sum_availability", budget_per_hour=None if f >= 1 else b,
-        unique_machine_cost=True)) for f, b in zip(a.budget_fractions, budgets)}
+        unique_machine_cost=True)) for f, b in zip(fracs, budgets)}
     exact.batch(it.candidate.machine_ids for sol in old_sols.values() for it in sol.selected)
     old_rows = {f: summarize(sol, price, exact, a.num_rsms) for f, sol in old_sols.items()}
     exact.save()
@@ -270,7 +293,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             list(tp.map(lambda kv: table.availability(*kv), todo))
 
     new_rows, fleet_counts = {}, []
-    for bi, (f, b) in enumerate(zip(a.budget_fractions, budgets)):
+    for bi, (f, b) in enumerate(zip(fracs, budgets)):
         fleets = F.fleets_for_budget(feats, u, b, num_rsms=a.num_rsms, capacity=a.capacity,
                                      sizes=a.fleet_sizes, repeats=a.fleet_repeats, alpha=a.alpha)
         fleet_counts.append(len(fleets))
@@ -321,21 +344,12 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         log(f"new ILP {f:.0%}: " + (f"{row_f['nines']:.2f} nines ${row_f['cost_per_hour']:.2f}/h, {len(pool)} cands, "
                                    f"{rounds} rounds{' (covering)' if 'source' in row_f else ''}"
                                    if row_f["feasible"] else "infeasible"))
-    row = {"rate_scale": k, "price": price_model, "budgets": dict(zip([f"{f:g}" for f in a.budget_fractions], budgets)),
+    row = {"rate_scale": k, "price": price_model, "budgets": dict(zip([f"{f:g}" for f in fracs], budgets)),
+           "matched_budgets": matched,
            "free_cost_old": free_cost, "exact_runs": exact.runs, "table_runs": table.runs,
            "table_entries": len(table.memo), "exact_scored": len(exact.memo), "fleets_per_budget": fleet_counts,
            "new_ilp": new_rows, "old_ilp": old_rows, "baselines": baselines, "seconds": time.time() - t0}
-    # a deployment that fits a smaller budget fits every larger one: report the best at or below each budget
-    best = None
-    for f in sorted(new_rows, key=float):
-        r = new_rows[f]
-        if best is not None and best["feasible"] and (not r["feasible"]
-                                                     or best["mean_availability"] > r["mean_availability"]):
-            new_rows[f] = {**{k: v for k, v in best.items() if k != "from"},
-                           "source": f"carried from the {float(best['from']):.0%} budget",
-                           "candidates": r.get("candidates"), "rounds": r.get("rounds")}
-        elif r["feasible"]:
-            best = {**r, "from": f}
+    carry_forward(new_rows)
     rows_dir = ROOT / a.output / "rows"
     rows_dir.mkdir(parents=True, exist_ok=True)
     (rows_dir / f"{tag}.json").write_text(json.dumps(row, indent=1, default=str) + "\n")
@@ -349,7 +363,9 @@ def main() -> int:
     ap.add_argument("--prices", nargs="+", default=["rho0", "rho1"])
     ap.add_argument("--num-rsms", type=int, default=50)
     ap.add_argument("--capacity", type=int, default=5)
-    ap.add_argument("--budget-fractions", type=float, nargs="+", default=[0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0])
+    ap.add_argument("--budget-fractions", type=float, nargs="*", default=[0.1, 0.2, 0.3, 0.4, 0.5, 0.75, 1.0])
+    ap.add_argument("--cheapest-budgets", action="store_true",
+                    help="add budgets equal to the RF 3/5/7 cheapest-first baselines' costs")
     ap.add_argument("--clusters", type=int, default=16)
     ap.add_argument("--fleet-sizes", type=int, default=4)
     ap.add_argument("--fleet-repeats", type=int, default=2)

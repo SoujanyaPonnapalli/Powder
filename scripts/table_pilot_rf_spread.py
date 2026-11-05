@@ -42,23 +42,26 @@ def main() -> int:
                             ("lattice", r["new_ilp"][f])):
                 if not p.get("feasible"):
                     cells.append("infeasible")
-                    rows.append([k, price, f, round(b, 2), name, "", "", "", "", ""])
+                    rows.append([k, price, f, round(b, 2), name, "", "", "", "", "",
+                                 r.get("matched_budgets", {}).get(f, "")])
                     continue
                 s3, s5, s7 = spread(p, n)
                 cells.append(f"{p['nines']:.2f}, ${p['cost_per_hour']:.1f}, {s3}/{s5}/{s7}")
                 rows.append([k, price, f, round(b, 2), name, round(p["nines"], 3), round(p["cost_per_hour"], 2),
-                             s3, s5, s7])
-            md.append(f"| {float(f):.0%} (${b:.2f}) | " + " | ".join(cells) + " |")
+                             s3, s5, s7, r.get("matched_budgets", {}).get(f, "")])
+            tag = r.get("matched_budgets", {}).get(f)
+            label = f"${b:.2f} (= {tag})" if tag else f"{float(f):.0%} (${b:.2f})"
+            md.append(f"| {label} | " + " | ".join(cells) + " |")
         md += ["", "Baselines: " + "; ".join(
             f"{name} {p['nines']:.2f} at ${p['cost_per_hour']:.1f}" for name, p in r["baselines"].items()), ""]
         for name, p in r["baselines"].items():
             rf = int(name.split("-")[0][2:])
             rows.append([k, price, "", "", f"baseline {name}", round(p["nines"], 3), round(p["cost_per_hour"], 2),
-                         *spread(p, n, rf)])
+                         *spread(p, n, rf), ""])
     with open(path.parent / "rf_spread.csv", "w", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(["fault_scale", "price", "budget_fraction", "budget_per_hour", "strategy", "nines",
-                    "cost_per_hour", "rsms_rf3", "rsms_rf5", "rsms_rf7"])
+                    "cost_per_hour", "rsms_rf3", "rsms_rf5", "rsms_rf7", "budget_matches"])
         w.writerows(rows)
     (path.parent / "rf_spread.md").write_text("\n".join(md) + "\n")
     print(path.parent / "rf_spread.md")
