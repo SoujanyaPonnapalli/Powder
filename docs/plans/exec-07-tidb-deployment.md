@@ -688,6 +688,20 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   queries ever ran past their SLO; TiDB tokens peaked at 729/459/537 (< 1000); ~3 % of kills cost a reconnect
   (undetermined commits). Budget 12 per partition x 50. Data: `~/powder-runs/tidb/VividHawk/`. **Exec #7: G1-G5 all
   passed.**
+  **What the extra seconds are (VividHawk round 1, from TiKV/TiDB logs):** (1) TiKV restart is fast: start sent
+  t+120.4, "ready to serve" t+122.3-122.5. (2) The rest is Raft: elections start only on a timer; the surviving peer
+  retries pre-vote every randomised 10-20 s (`raft-election-timeout-ticks` 10 x 1 s, range [10, 20) s) and nothing
+  triggers an attempt when peers return, so the 26 lost Regions elected leaders 10.2-18.3 s (median 12.2) after the
+  restart; the first ok probe was issued ~4.3 s before its election (it completed within its 5 s SLO), hence 65-74 s
+  measured for a 60 s hold. (3) Round 1's dead voter set held `mysql.tidb_mdl_info` (table 281474976710651, confirmed
+  on a local v8.5.8): schema reload needs it with metadata locks on (default), and one schema lease (45 s) after the
+  kill every TiDB refused commits on all tables (`[domain:8027] Information schema is out of date`), t+114-122,
+  cluster-wide; rounds 2-3 did not hold it (round 2 lost `tidb_ddl_history`, harmless). So per-RSM availability depends
+  on where TiDB's system tables live -- decide for exec #8/#9 whether system Regions are pinned to non-faulted stores
+  or modelled. (4) After the restart, mostly the us-west-2 prober kept failing on healthy rows until t+167: `KILL QUERY`
+  interrupts TiDB's own pessimistic-lock rollback (`pessimisticRollback failed: query interrupted by signal 1`, 516x),
+  the orphaned lock stays until its TTL, and the prober rewrites the same row every second (kill -> new orphan); the
+  workload (random keys) is unaffected. Candidate fix: optimistic transactions for powder-load writes.
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
