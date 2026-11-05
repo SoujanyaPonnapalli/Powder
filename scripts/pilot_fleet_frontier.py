@@ -123,10 +123,19 @@ def summarize_placements(placements, price: dict, exact: Exact) -> dict:
 
 
 def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget, *, warm=(), rounds=10,
-                time_limit=120.0, threads=1):
+                time_limit=120.0, threads=1, feat_of=None, seed=0, u_of=None, prefetch=None, max_added=400):
     """Gurobi ILP on estimated scores (exact where known); selected placements get exact MC; re-solve until
-    the selection is all exact. Returns (solution, rounds, ILP seconds, MC seconds)."""
+    the selection is all exact. With ``feat_of``, each solve also adds *consolidation columns*: valid
+    placements built only from chosen machines with free slots (fleets.spare_placements), which cost nothing
+    extra and let the next solve regroup RSMs onto under-used machines and drop others. At most ``max_added``
+    per round (lowest summed downtime score ``u_of``); ``prefetch`` batch-computes their estimates.
+    Returns (solution, rounds, ILP seconds, MC seconds, consolidation columns added)."""
     t_ilp = t_mc = 0.0
+    pool = list(dict.fromkeys(pool))
+    seen = set(pool)
+    rng = random.Random(seed)
+    added_total = 0
+    last_added: set = set()
     sol = None
     for r in range(rounds):
         cands = [PlacementCandidate(f"c{i}", ids, exact.memo.get(ids, estimate(ids)), sum(price[m] for m in ids))
@@ -135,13 +144,30 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
                                        warm_start=warm, time_limit=time_limit, threads=threads)
         t_ilp += sol.solver_runtime_seconds
         missing = [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo]
-        if not missing:
-            return sol, r + 1, t_ilp, t_mc
-        t = time.time()
-        exact.batch(missing)
-        t_mc += time.time() - t
+        added = []
+        chosen = {it.candidate.machine_ids for it in sol.selected}
+        if last_added and not (last_added & chosen):
+            feat_of = None  # the last consolidation columns were not used: stop generating more
+        if feat_of is not None and sol.selected:
+            used = Counter(m for it in sol.selected for m in it.candidate.machine_ids for _ in range(it.count))
+            added = [p for p in F.spare_placements({m: capacity - n for m, n in used.items()}, feat_of, rng)
+                     if p not in seen]
+            if u_of is not None and len(added) > max_added:
+                added = sorted(added, key=lambda p: sum(u_of[m] for m in p))[:max_added]
+            if prefetch is not None and added:
+                prefetch(added)
+            pool += added
+            seen.update(added)
+            added_total += len(added)
+            last_added = set(added)
+        if not missing and not added:
+            return sol, r + 1, t_ilp, t_mc, added_total
+        if missing:
+            t = time.time()
+            exact.batch(missing)
+            t_mc += time.time() - t
         warm = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
-    return sol, rounds, t_ilp, t_mc
+    return sol, rounds, t_ilp, t_mc, added_total
 
 
 def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacity, budget, *, threads, seed):
@@ -173,8 +199,9 @@ def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacit
 
     pool = list(dict.fromkeys(pl for elems, _ in lattices.values() for pl in elems))
     warm = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
-    out = solve_exact(pool, price, exact, estimate, num_rsms, capacity, budget, warm=warm, threads=threads)
-    return (*out, len(pool))
+    sol, rounds, t_ilp, t_mc, _ = solve_exact(pool, price, exact, estimate, num_rsms, capacity, budget, warm=warm,
+                                              threads=threads)
+    return sol, rounds, t_ilp, t_mc, len(pool)
 
 
 def carry_forward(new_rows: dict) -> None:
@@ -325,8 +352,9 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                 log(f"first solve on {len(pool)} candidates: HiGHS {times['highs_first_solve_s']:.1f}s "
                     f"({'incumbent' if hs.selected else 'no incumbent'}), Gurobi {gs.solver_runtime_seconds:.1f}s "
                     f"({gs.status})")
-            sol, rounds, t_ilp, t_mc = solve_exact(pool, price, exact, table.score, a.num_rsms, a.capacity, b,
-                                                   warm=best_cover, threads=a.threads)
+            sol, rounds, t_ilp, t_mc, consolidated = solve_exact(
+                pool, price, exact, table.score, a.num_rsms, a.capacity, b, warm=best_cover, threads=a.threads,
+                feat_of=feat_of if a.consolidate else None, seed=bi, u_of=u_of, prefetch=table_batch)
             main = summarize(sol, price, exact, a.num_rsms)
             asc, a_rounds, a_ilp, a_mc, a_pool = lattice_ascent(
                 sol, [feat_of[m] for m in {m for ids in pool for m in ids}], u_of, exact, price, a.num_rsms,
@@ -335,9 +363,11 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             if not row_f["feasible"] or (main["feasible"] and main["mean_availability"] > row_f["mean_availability"]):
                 row_f = {**main, "source": "main ILP (lattice ascent found nothing better)"}
             row_f["main_ilp"] = main
-            times.update({"main_rounds": rounds, "main_ilp_s": t_ilp, "main_mc_s": t_mc, "ascent_rounds": a_rounds,
+            times.update({"main_rounds": rounds, "main_ilp_s": t_ilp, "main_mc_s": t_mc,
+                          "consolidation_columns": consolidated, "ascent_rounds": a_rounds,
                           "ascent_ilp_s": a_ilp, "ascent_mc_s": a_mc, "ascent_columns": a_pool})
-            log(f"main ILP {main['nines']:.3f} ({rounds} rounds, ILP {t_ilp:.0f}s, MC {t_mc:.0f}s) -> lattice "
+            log(f"main ILP {main['nines']:.3f} ({rounds} rounds, ILP {t_ilp:.0f}s, MC {t_mc:.0f}s, "
+                f"+{consolidated} consolidation columns) -> lattice "
                 f"{row_f['nines']:.3f} ({a_rounds} rounds on {a_pool} columns, ILP {a_ilp:.0f}s, MC {a_mc:.0f}s)")
         exact.save()
         new_rows[f"{f:g}"] = {**row_f, "candidates": len(pool), "rounds": rounds, "times": times}
@@ -378,6 +408,8 @@ def main() -> int:
     ap.add_argument("--resume", action="store_true", help="reuse finished configurations' rows/*.json")
     ap.add_argument("--cache-dir", default=None, help="MC caches (default: <output>/cache); shared across prices")
     ap.add_argument("--compare-highs", action="store_true", help="also time one HiGHS solve per budget")
+    ap.add_argument("--no-consolidate", dest="consolidate", action="store_false",
+                    help="skip consolidation columns from machines with free slots")
     a = ap.parse_args()
     configs = [(k, p) for k in a.scales for p in a.prices]
     a.cache_dir = str(ROOT / (a.cache_dir or f"{a.output}/cache"))

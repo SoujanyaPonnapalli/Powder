@@ -137,6 +137,13 @@ Lattice ascent changes the main ILP by +0.27 nines at 1x rho1 10% (4.77 -> 5.04)
 (3.75 vs 3.81) are lower (those budgets lost the dominated placements and hit the round cap). Time split
 over the four configurations: main ILP 4,108 s, main MC 2,250 s, ascent MC 792 s, ascent ILP 49 s.
 
+**Consolidation columns (2026-11-05).** After each main solve, valid placements built only from chosen
+machines with free slots (`fleets.spare_placements`; at most 400 per round by downtime score, table entries
+batched) are added; generation stops once a round's columns go unused. Machine utilization in the 1x/30x
+solutions is already 100% except 1x rho0 at the full budget (80%), and there the 400-4,000 added columns are
+not used: with the budget slack and availability saturated, dropping a machine buys nothing. Under-use at
+slack budgets needs a cost tie-break (min cost at near-max availability), not more candidates.
+
 Follow-ups: dominators drawn only from the budget's pool machines (widening to the catalogue would add
 columns the budget can still afford); main ILP time at 30x (shorter limit or MIP-gap stop per round).
 

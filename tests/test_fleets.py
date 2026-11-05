@@ -150,3 +150,17 @@ def test_lattice_estimate_is_bounded_monotone_and_respects_known_scores():
         if single is not None:                      # an exact score below raises the floor of what is above
             assert F.lattice_estimate(top, p, top, 0.9, 0.99, u, by, known=[(single, 0.995)]) >= 0.995
         return
+
+
+def test_spare_placements_use_only_spare_machines_and_stay_valid():
+    feats = synthetic()
+    by = {f.machine_id: f for f in feats}
+    spare = {f.machine_id: 1 for f in feats[:24]}
+    spare[feats[0].machine_id] = 0
+    pls = F.spare_placements(spare, by, random.Random(0))
+    assert pls and all(len(p) in (3, 5, 7) for p in pls)
+    for p in pls:
+        assert all(spare[m] > 0 for m in p)
+        assert len({by[m].az for m in p}) == len(p)
+        assert max(Counter(by[m].region for m in p).values()) <= len(p) // 2
+    assert F.spare_placements({feats[0].machine_id: 2, feats[1].machine_id: 2}, by, random.Random(0)) == []

@@ -286,6 +286,35 @@ def improve(ids: tuple[str, ...], fleet: Sequence[MachineFeatures],
     return best
 
 
+def spare_placements(spare: dict[str, int], feat: dict[str, MachineFeatures], rng: random.Random, *,
+                     rfs: Sequence[int] = (3, 5, 7), max_enumerate: int = 5_000,
+                     samples: int = 2_000) -> list[tuple[str, ...]]:
+    """Valid placements built only from machines with free slots in a solution (``spare``: id -> free slots):
+    distinct AZs and no regional majority. Using them costs nothing extra, so they let the ILP consolidate
+    RSMs onto under-used machines and drop others. All combinations when there are at most
+    ``max_enumerate`` per RF, else ``samples`` random draws."""
+    from itertools import combinations
+
+    ids = sorted(m for m, s in spare.items() if s > 0)
+    out: set[tuple[str, ...]] = set()
+
+    def valid(p) -> bool:
+        return (len({feat[m].az for m in p}) == len(p)
+                and max(Counter(feat[m].region for m in p).values()) <= len(p) // 2)
+
+    for r in rfs:
+        if len(ids) < r:
+            continue
+        if math.comb(len(ids), r) <= max_enumerate:
+            out.update(p for p in combinations(ids, r) if valid(p))
+        else:
+            for _ in range(samples):
+                p = tuple(sorted(rng.sample(ids, r)))
+                if valid(p):
+                    out.add(p)
+    return sorted(out)
+
+
 # --------------------------------------------------------------------------- dominance lattices
 
 def valid_dominators(slots: Sequence[str], i: int, feat: dict[str, MachineFeatures],
