@@ -1,0 +1,12 @@
+{
+ "id": "x1-rho1-n3",
+ "n": 3,
+ "rung": "indep_homog",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "availability": 0.9999994543771292,
+ "steady_availability": 0.9999994346096768,
+ "states": 27,
+ "status": "ok",
+ "seconds": 0.21712970733642578
+}

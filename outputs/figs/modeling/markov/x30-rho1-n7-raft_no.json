@@ -1,0 +1,26 @@
+{
+ "id": "x30-rho1-n7",
+ "n": 7,
+ "rung": "raft_no",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "build_s": 26.644356966018677,
+ "states": 606527,
+ "nnz": 9826794,
+ "availability": 0.9999725294123902,
+ "uniformization": {
+  "iterations": 79690,
+  "Lambda": 0.8985304868727848,
+  "Lambda_T": 77633.0340658086,
+  "backend": "cupy",
+  "unavailability": 2.7470587609729805e-05,
+  "tail": 9.979055665765051e-14
+ },
+ "solve_s": 31.06282949447632,
+ "steady_backend": "cudss",
+ "steady_error": "cuDSSError('ALLOC_FAILED (2)')",
+ "steady_s": 92.5089898109436,
+ "backend": "cupy",
+ "status": "ok",
+ "seconds": 150.2162003517151
+}

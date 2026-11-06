@@ -148,6 +148,20 @@ def estimated_states(n: int, rung: str) -> float:
     return float(k ** n * leader)
 
 
+def steady_backend(requested: str) -> str:
+    """Fastest available sparse direct solver: cuDSS (GPU), then MKL Pardiso, then SciPy (SuperLU)."""
+    from powder.markov_solver import SparseSolverUnavailable, resolve_sparse_solver_backend
+
+    if requested != "auto":
+        return requested
+    for b in ("cudss", "pardiso"):
+        try:
+            return resolve_sparse_solver_backend(b)
+        except SparseSolverUnavailable:
+            continue
+    return "scipy"
+
+
 def cmd_markov(a) -> int:
     from powder.markov_builders import build_leaderless_model, build_raft_model
     from powder.markov_solver import availability, steady_state, time_averaged_availability_uniformization
@@ -196,11 +210,12 @@ def cmd_markov(a) -> int:
                     rec["solve_s"] = time.time() - t1
                     t2 = time.time()
                     try:
-                        rec["steady_availability"] = availability(model, steady_state(model, backend=a.steady_backend))
+                        rec["steady_backend"] = steady_backend(a.steady_backend)
+                        rec["steady_availability"] = availability(model, steady_state(model, backend=rec["steady_backend"], normalization="pin"))
                     except Exception as e:  # noqa: BLE001 - steady state is a cross-check only
                         rec["steady_error"] = repr(e)
                     rec["steady_s"] = time.time() - t2
-                    rec["backend"] = a.backend
+                    rec["backend"] = info.get("backend", a.backend)
                 rec["status"] = "ok"
             except StopIteration:
                 pass
@@ -253,8 +268,10 @@ def main() -> int:
     s.add_argument("--rfs", type=int, nargs="+", default=[3, 5, 7])
     s.add_argument("--cache-dir", default=str(HERE.parents[1] / "outputs/figs/cache"))
     m = sub.add_parser("markov")
-    m.add_argument("--backend", choices=["numpy", "cupy"], default="numpy")
-    m.add_argument("--steady-backend", default="scipy")
+    m.add_argument("--backend", choices=["numpy", "cupy", "auto"], default="auto",
+                   help="uniformization: auto = GPU from 1M nonzeros, else the CPU loop")
+    m.add_argument("--steady-backend", default="auto",
+                   help="sparse direct solver for steady state: cudss (GPU), pardiso (MKL), scipy, or auto")
     m.add_argument("--n", type=int, nargs="*")
     m.add_argument("--ids", nargs="*", help="only these RSM ids (rsms.json)")
     m.add_argument("--rungs", nargs="+", default=list(LADDER))

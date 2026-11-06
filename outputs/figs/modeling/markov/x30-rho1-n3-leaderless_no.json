@@ -1,0 +1,26 @@
+{
+ "id": "x30-rho1-n3",
+ "n": 3,
+ "rung": "leaderless_no",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "build_s": 0.021879911422729492,
+ "states": 215,
+ "nnz": 1562,
+ "availability": 0.999918517848539,
+ "uniformization": {
+  "iterations": 31463,
+  "Lambda": 0.34927207486973977,
+  "Lambda_T": 30177.107268745516,
+  "backend": "numpy",
+  "unavailability": 8.148215146095743e-05,
+  "tail": 1.0003965919611307e-13
+ },
+ "solve_s": 0.21663975715637207,
+ "steady_backend": "cudss",
+ "steady_availability": 0.9999177591412547,
+ "steady_s": 0.015640735626220703,
+ "backend": "numpy",
+ "status": "ok",
+ "seconds": 0.2541835308074951
+}

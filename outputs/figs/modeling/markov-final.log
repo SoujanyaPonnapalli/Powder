@@ -1,0 +1,44 @@
+x1-rho1-n3 indep_homog: 5.4562e-07 unavail, 27 states (0.2s)
+x1-rho1-n3 indep_hetero: 6.4198e-07 unavail, 27 states (0.2s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n3 leaderless_no: 5.2430e-08 unavail, 215 states (1.2s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n3 raft_no: 1.5709e-06 unavail, 323 states (0.3s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n3 raft_full: 1.5710e-06 unavail, 3024 states (2.4s)
+x1-rho1-n5 indep_homog: 9.5705e-10 unavail, 243 states (0.3s)
+x1-rho1-n5 indep_hetero: 1.0754e-09 unavail, 243 states (0.3s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n5 leaderless_no: 2.1182e-11 unavail, 7775 states (5.6s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n5 raft_no: 9.3641e-07 unavail, 14255 states (19.1s)
+x1-rho1-n5 raft_full: not tractable (0.0s)
+x1-rho1-n7 indep_homog: 2.4358e-13 unavail, 2187 states (0.5s)
+x1-rho1-n7 indep_hetero: 2.6945e-13 unavail, 2187 states (0.5s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n7 leaderless_no: 3.5527e-15 unavail, 279935 states (45.1s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x1-rho1-n7 raft_no: 9.0690e-07 unavail, 606527 states (150.6s)
+x1-rho1-n7 raft_full: not tractable (0.0s)
+x30-rho1-n3 indep_homog: 8.6477e-04 unavail, 27 states (0.2s)
+x30-rho1-n3 indep_hetero: 1.1895e-03 unavail, 27 states (0.2s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n3 leaderless_no: 8.1482e-05 unavail, 215 states (0.3s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n3 raft_no: 1.3038e-04 unavail, 323 states (0.3s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n3 raft_full: 1.3052e-04 unavail, 3024 states (2.4s)
+x30-rho1-n5 indep_homog: 1.3323e-05 unavail, 243 states (0.3s)
+x30-rho1-n5 indep_hetero: 1.5850e-05 unavail, 243 states (0.3s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n5 leaderless_no: 3.3767e-07 unavail, 7775 states (5.5s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n5 raft_no: 3.1469e-05 unavail, 14255 states (19.1s)
+x30-rho1-n5 raft_full: not tractable (0.0s)
+x30-rho1-n7 indep_homog: 1.6266e-07 unavail, 2187 states (0.5s)
+x30-rho1-n7 indep_hetero: 1.7353e-07 unavail, 2187 states (0.5s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n7 leaderless_no: 2.6348e-09 unavail, 279935 states (44.7s)
+No multithreading interface library was specified using the DirectSolverOptions. The performance of CPU operations like planning will be significantly lower than if you provide a multithreading library.
+x30-rho1-n7 raft_no: 2.7471e-05 unavail, 606527 states (150.2s)
+x30-rho1-n7 raft_full: not tractable (0.0s)

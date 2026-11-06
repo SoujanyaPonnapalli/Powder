@@ -80,9 +80,9 @@ def whatif(path: str) -> None:
 
 # ------------------------------------------------------------------------------------------------ Fig 13
 
-RUNG_LABEL = {"indep_homog": "Homogeneous\nEC storage", "indep_hetero": "+ Hetero-\ngeneous",
-              "leaderless_no": "+ Node up /\nout-of-date", "raft_no": "+ Leader\nelection",
-              "raft_full": "+ Full\npipeline", "mc_nonet": "MC\n(no outages)", "mc_net": "MC\n(+ region/AZ)"}
+RUNG_LABEL = {"indep_homog": "Homog.\nEC", "indep_hetero": "+Hetero-\ngeneous", "leaderless_no": "+Up /\nstale",
+              "raft_no": "+Leader\nelection", "raft_full": "+Full\npipeline", "mc_nonet": "MC, no\noutages",
+              "mc_net": "MC"}
 
 
 def ladder() -> None:
@@ -133,7 +133,7 @@ def ladder() -> None:
         se = mcs["net"]["se"] / max(1e-300, (1 - mcs["net"]["availability"])) / math.log(10)
         ax.axhspan(-1.96 * se, 1.96 * se, color=GRID, zorder=0)
         ax.axhline(0, color=INK, linewidth=0.8)
-        ax.set_xticks(list(x), names, fontsize=6.5)
+        ax.set_xticks(list(x), names, fontsize=6.5, linespacing=0.95)
         ax.set_title(f"{r['rate_scale']:g}x faults, {r['n']}-node RSM (MC {ref:.2f} nines)", fontsize=8.5,
                      color=INK, loc="left")
     for row in axes:

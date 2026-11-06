@@ -1,0 +1,22 @@
+{
+ "indep_homog": {
+  "mean_abs_error_nines": 2.179802014776373,
+  "rsms": 6
+ },
+ "indep_hetero": {
+  "mean_abs_error_nines": 2.158105721098869,
+  "rsms": 6
+ },
+ "leaderless_no": {
+  "mean_abs_error_nines": 3.616557895113024,
+  "rsms": 6
+ },
+ "raft_no": {
+  "mean_abs_error_nines": 0.1631064189038569,
+  "rsms": 6
+ },
+ "raft_full": {
+  "mean_abs_error_nines": 0.41627111364807856,
+  "rsms": 2
+ }
+}

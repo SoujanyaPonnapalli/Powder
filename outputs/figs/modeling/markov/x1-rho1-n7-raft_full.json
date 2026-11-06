@@ -1,0 +1,10 @@
+{
+ "id": "x1-rho1-n7",
+ "n": 7,
+ "rung": "raft_full",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "status": "not tractable",
+ "estimated_states": 859963392.0,
+ "seconds": 7.867813110351562e-06
+}

@@ -1,0 +1,10 @@
+{
+ "id": "x30-rho1-n5",
+ "n": 5,
+ "rung": "raft_full",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "status": "not tractable",
+ "estimated_states": 4478976.0,
+ "seconds": 6.198883056640625e-06
+}

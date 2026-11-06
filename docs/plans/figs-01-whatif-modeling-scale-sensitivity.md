@@ -188,11 +188,45 @@ Steps 1, 2 and 3A each produce a figure the same day. Steps 4 and 3B are long, s
 
 ## Checklist
 
-- [ ] 0 placements persisted in rows; 30x and 1x rho1 (and rho0) reruns saved; rerun-vs-committed nines recorded
-- [ ] 1 what-if timeout JSON + figure (30x rho1 50%; variants 1x rho1, 30x rho0)
-- [ ] 2 Markov ladder JSON + figure (1x and 30x, N = 3/5/7) + runtime table
-- [ ] 3A past-run timing table
+- [x] 0 placements persisted; 30x rho1 (10/40/50%) and 1x rho1 (sensitivity grid) saved; rho0 reruns not needed yet
+- [x] 1 what-if timeout JSON + figure (30x rho1 50%); variants (1x rho1, 30x rho0) not run
+- [x] 2 Markov ladder JSON + figure (1x and 30x, N = 3/5/7) + runtime table (GPU VM, torn down)
+- [x] 3A past-run timing table + figure
 - [ ] 3B scalability sweep + figure
 - [ ] 4 sensitivity sweep + figure
 - [x] 5 reconfiguration cadence simulator + smoke test (not run)
 - [x] GPU VM tooling (`infra/gpu/gpu_vm.sh`) + uniformization solver (+ test)
+
+## Results (2026-11-06)
+
+**Step 0.** The 30x rho1 rerun (with consolidation columns, b698a12) gives 4.51 nines at $12.29/h (40%) and 4.52 at
+$15.29/h (50%), vs committed 4.50 / 4.50 (50% was carried from 40%). Accepted (within 0.05).
+
+**Figure 1** (`outputs/figs/whatif/x30-rho1-b0.5-h24.*`). 24 h, 500k runs per placement (10 unique placements,
+66 machines). Availability is flat: 4.51 nines at 5 min to 4.50 at 60 min, with overlapping 95% CIs. Replacements
+fall from 145 to 10 per day (14.5 to 1.0 TB/day at 100 GB per replica). The MC's billed overhead is about $0:
+a replacement overlaps the failed node only briefly, so the cost of short timeouts is data movement.
+
+**Figure 2** (`outputs/figs/modeling/ladder.*`). Error vs MC with outages, 24 h:
+- Independent-node storage models: off by +0.6 to +6.6 nines (worse with N).
+- Leaderless NO_ORPHANS: worst of all (+1.6 to +8.4).
+- Raft NO_ORPHANS: within 0.16 nines on 5 of 6 RSMs. The exception is 30x 3-node (+0.67), whose recovery times
+  are heavy-tailed empirical distributions.
+- Region/AZ outages matter little over 24 h (MC with vs without: <= 0.15 nines).
+
+Solver notes:
+- 24 h averages use uniformization: the 7-node Raft chain (0.61M states) takes 31 s on the A10G, plus a 27 s
+  Python build.
+- Steady state (cross-check only) needs a sparse direct solve. The old dense normalization row ruined fill-in;
+  pinning the initial state (`steady_state(normalization="pin")`) fixes it. cuDSS then solves 14k states in 1.1 s
+  (SciPy SuperLU: 198 s).
+- The 7-node chains exceed cuDSS's 24 GB (ALLOC_FAILED) and Pardiso's in-core memory on 64 GB (error -2): LU
+  fill-in on a 7-dimensional lattice. Those steady states are recorded as failed.
+
+**Figure 3A** (`outputs/figs/scalability/past_runs.*`):
+- 43 fleet-ILP solves (50 RSMs, 30-86 machines; median 89 s); 332 exec-02 type-count solves.
+- Optimizer cost at daily reconfiguration: <= $0.51/month (median fleet-ILP solve). Savings: median $9.4k/month.
+- Past runs span only 30-100 machines, so they cannot show a scaling slope; that needs a controlled sweep (3B).
+
+**Figure 4.** The sweep over m = 0.25..4 is running (`outputs/figs/sensitivity/rows`); then
+`scripts/figs/sensitivity.py` + `render.py sensitivity`.

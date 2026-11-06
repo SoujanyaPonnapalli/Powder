@@ -1,0 +1,26 @@
+{
+ "id": "x1-rho1-n3",
+ "n": 3,
+ "rung": "leaderless_no",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "build_s": 0.004391670227050781,
+ "states": 215,
+ "nnz": 1562,
+ "availability": 0.9999999475699567,
+ "uniformization": {
+  "iterations": 31461,
+  "Lambda": 0.34924665500053376,
+  "Lambda_T": 30174.910992046116,
+  "backend": "numpy",
+  "unavailability": 5.243004328803142e-08,
+  "tail": 9.901366607942741e-14
+ },
+ "solve_s": 0.6766824722290039,
+ "steady_backend": "cudss",
+ "steady_availability": 0.9999999471032784,
+ "steady_s": 0.5309731960296631,
+ "backend": "numpy",
+ "status": "ok",
+ "seconds": 1.21205472946167
+}

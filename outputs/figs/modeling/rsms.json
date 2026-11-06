@@ -1,0 +1,98 @@
+[
+ {
+  "id": "x1-rho1-n3",
+  "rate_scale": 1.0,
+  "price": "rho1",
+  "n": 3,
+  "machines": [
+   "m01214",
+   "m01394",
+   "m01821"
+  ],
+  "source": "0.125",
+  "candidates": 57,
+  "exact_720h": 0.9999950488118018
+ },
+ {
+  "id": "x1-rho1-n5",
+  "rate_scale": 1.0,
+  "price": "rho1",
+  "n": 5,
+  "machines": [
+   "m01000",
+   "m01276",
+   "m01429",
+   "m01640",
+   "m01953"
+  ],
+  "source": "0.25",
+  "candidates": 60,
+  "exact_720h": 0.9999989356910688
+ },
+ {
+  "id": "x1-rho1-n7",
+  "rate_scale": 1.0,
+  "price": "rho1",
+  "n": 7,
+  "machines": [
+   "m01094",
+   "m01181",
+   "m01308",
+   "m01575",
+   "m01676",
+   "m01850",
+   "m01938"
+  ],
+  "source": "0.5",
+  "candidates": 13,
+  "exact_720h": 0.9999990671188155
+ },
+ {
+  "id": "x30-rho1-n3",
+  "rate_scale": 30.0,
+  "price": "rho1",
+  "n": 3,
+  "machines": [
+   "m01159",
+   "m01482",
+   "m01750"
+  ],
+  "source": "0.1",
+  "candidates": 9,
+  "exact_720h": 0.9919150095564019
+ },
+ {
+  "id": "x30-rho1-n5",
+  "rate_scale": 30.0,
+  "price": "rho1",
+  "n": 5,
+  "machines": [
+   "m00242",
+   "m00474",
+   "m00862",
+   "m01197",
+   "m01400"
+  ],
+  "source": "0.4",
+  "candidates": 8,
+  "exact_720h": 0.9999680366823411
+ },
+ {
+  "id": "x30-rho1-n7",
+  "rate_scale": 30.0,
+  "price": "rho1",
+  "n": 7,
+  "machines": [
+   "m01235",
+   "m01302",
+   "m01592",
+   "m01622",
+   "m01738",
+   "m01821",
+   "m01923"
+  ],
+  "source": "0.5",
+  "candidates": 13,
+  "exact_720h": 0.9999714795099673
+ }
+]

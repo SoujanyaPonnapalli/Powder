@@ -1,0 +1,26 @@
+{
+ "id": "x1-rho1-n7",
+ "n": 7,
+ "rung": "raft_no",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "build_s": 26.840896606445312,
+ "states": 606527,
+ "nnz": 9826794,
+ "availability": 0.9999990931023821,
+ "uniformization": {
+  "iterations": 79687,
+  "Lambda": 0.8984932360744011,
+  "Lambda_T": 77629.81559682825,
+  "backend": "cupy",
+  "unavailability": 9.068976178840565e-07,
+  "tail": 9.90999415504212e-14
+ },
+ "solve_s": 31.169142961502075,
+ "steady_backend": "cudss",
+ "steady_error": "cuDSSError('ALLOC_FAILED (2)')",
+ "steady_s": 92.60814261436462,
+ "backend": "cupy",
+ "status": "ok",
+ "seconds": 150.61820721626282
+}

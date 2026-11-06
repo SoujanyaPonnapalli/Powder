@@ -3,7 +3,7 @@
 import numpy as np
 
 from powder.markov_builders import build_raft_model
-from powder.markov_solver import time_averaged_availability_uniformization, time_averaged_distribution
+from powder.markov_solver import steady_state, time_averaged_availability_uniformization, time_averaged_distribution
 from powder.scenario import QualityLevel
 from powder.simulation import Exponential, NodeConfig, NodeReplacementStrategy, RaftLikeProtocol
 
@@ -28,3 +28,11 @@ def test_uniformization_matches_expm():
         assert abs((1 - got) - (1 - ref)) <= 1e-7 * (1 - ref) + 1e-14
     assert np.isclose(time_averaged_availability_uniformization(m, 60.0)[0],
                       float(time_averaged_distribution(m, 60.0)[m.live_mask].sum()), rtol=0, atol=1e-12)
+
+
+def test_pinned_steady_state_matches_dense_row():
+    m = build_raft_model(_configs(), RaftLikeProtocol(election_time_dist=Exponential(0.2)),
+                         NodeReplacementStrategy(failure_timeout=600.0), QualityLevel.NO_ORPHANS)
+    a = steady_state(m, backend="scipy")
+    b = steady_state(m, backend="scipy", normalization="pin")
+    assert np.allclose(a, b, rtol=1e-9, atol=1e-15)

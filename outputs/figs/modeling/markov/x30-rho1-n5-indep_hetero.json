@@ -1,0 +1,12 @@
+{
+ "id": "x30-rho1-n5",
+ "n": 5,
+ "rung": "indep_hetero",
+ "horizon_h": 24.0,
+ "timeout_s": 600.0,
+ "availability": 0.999984149765613,
+ "steady_availability": 0.9999833697432436,
+ "states": 243,
+ "status": "ok",
+ "seconds": 0.340975284576416
+}

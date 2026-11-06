@@ -278,8 +278,15 @@ def steady_state(
     backend: SparseSolverBackend = "auto",
     residual_threshold: float = DEFAULT_RESIDUAL_THRESHOLD,
     return_residual: bool = False,
+    normalization: Literal["dense_row", "pin"] = "dense_row",
 ) -> np.ndarray | tuple[np.ndarray, SteadyStateResidual]:
     """Compute the steady-state distribution pi with pi @ Q = 0, sum(pi)=1.
+
+    ``normalization="dense_row"`` (default) replaces the last balance equation by sum(pi) = 1. That row is
+    dense, which wrecks the fill-in of sparse direct solvers on large chains (Pardiso runs out of memory and
+    cuDSS returns garbage on 0.3M-0.6M-state Raft chains). ``"pin"`` keeps the system sparse: it replaces the
+    initial state's equation by pi_init = 1, solves, and normalizes (exact for an irreducible chain); use it
+    for large models.
 
     Replaces the last row of Q^T with the normalization constraint and
     solves the resulting linear system. The SciPy backend uses a sparse
@@ -309,13 +316,25 @@ def steady_state(
             stationary distribution (matrix singular after modification).
     """
     n = model.num_states
-    QT = model.Q.T.tolil(copy=True)
-    QT.rows[-1] = list(range(n))
-    QT.data[-1] = [1.0] * n
     b = np.zeros(n, dtype=np.float64)
-    b[-1] = 1.0
+    if normalization == "pin":
+        j = model.initial_state_id
+        QT = model.Q.T.tocsr(copy=True)
+        keep = np.ones(n)
+        keep[j] = 0.0
+        QT = (sparse.diags(keep) @ QT + sparse.csr_matrix(([1.0], ([j], [j])), shape=(n, n))).tocsr()
+        b[j] = 1.0
+    elif normalization == "dense_row":
+        QT = model.Q.T.tolil(copy=True)
+        QT.rows[-1] = list(range(n))
+        QT.data[-1] = [1.0] * n
+        b[-1] = 1.0
+    else:
+        raise ValueError(f"unknown normalization {normalization!r}")
     try:
         pi_raw = _sparse_solve(QT.tocsr(), b, backend=backend)
+        if normalization == "pin":
+            pi_raw = pi_raw / pi_raw.sum()
     except SparseSolverUnavailable:
         raise
     except RuntimeError as exc:
@@ -477,8 +496,9 @@ def time_averaged_availability_uniformization(
     model: MarkovModel,
     time: float,
     *,
-    backend: Literal["numpy", "cupy"] = "numpy",
+    backend: Literal["numpy", "cupy", "auto"] = "numpy",
     tol: float = 1e-13,
+    gpu_min_nnz: int = 1_000_000,
 ) -> tuple[float, dict]:
     """Time-averaged availability over ``[0, time)`` from the initial distribution, by uniformization.
 
@@ -486,12 +506,14 @@ def time_averaged_availability_uniformization(
 
         (1/T) int_0^T p(s) ds = (1 / (Lam T)) sum_k P(N_{Lam T} > k) p0 P^k,   N ~ Poisson(Lam T).
 
-    Only the live mass ``a_k = live . p0 P^k`` is needed, so the cost is about ``Lam T`` sparse
-    matrix-vector products (truncated where the Poisson tail drops below ``tol``). Every step is a
-    probability vector (P is stochastic), so the iteration is unconditionally stable, which makes it suitable
-    for the stiff Powder chains on a GPU (``backend="cupy"``) where ``expm_multiply`` is CPU-only.
+    Only the *unavailable* mass ``d_k = dead . p0 P^k`` is accumulated (not 1 - live mass), so very small
+    unavailabilities (1e-11 and below) keep their relative precision. The cost is about ``Lam T`` sparse
+    matrix-vector products (truncated where the Poisson tail drops below ``tol``); every iterate is a probability
+    vector, so the iteration is unconditionally stable for the stiff Powder chains. ``backend="cupy"`` runs it on
+    the GPU (``expm_multiply`` is CPU-only); ``"auto"`` uses the GPU only from ``gpu_min_nnz`` nonzeros, below
+    which kernel-launch overhead makes the CPU loop faster.
 
-    Returns ``(availability, info)`` with the iteration count, ``Lam`` and the truncation tail.
+    Returns ``(availability, info)`` with the iteration count, ``Lam``, the truncation tail and the backend.
     """
     from scipy.stats import poisson
 
@@ -506,28 +528,37 @@ def time_averaged_availability_uniformization(
     kmax = int(poisson.isf(tol, lt)) + 1
     weights = poisson.sf(np.arange(kmax), lt)          # P(N > k), k = 0..kmax-1
     PT = (sparse.eye(model.num_states, format="csr") + model.Q.T.tocsr() / lam).tocsr()
-    live = model.live_mask.astype(np.float64)
+    dead = (~model.live_mask).astype(np.float64)
+    if backend == "auto":
+        backend = "numpy"
+        if PT.nnz >= gpu_min_nnz:
+            try:
+                _load_cupy_sparse_modules()
+                backend = "cupy"
+            except SparseSolverUnavailable:
+                pass
 
     if backend == "cupy":
         cp, cpsparse, _ = _load_cupy_sparse_modules()
         PT_d = cpsparse.csr_matrix(PT)
         v = cp.asarray(p0)
-        live_d = cp.asarray(live)
-        w_d = cp.asarray(weights)
-        acc = cp.zeros((), dtype=cp.float64)
+        dead_d = cp.asarray(dead)
+        d = cp.empty(kmax, dtype=cp.float64)
         for k in range(kmax):
-            acc += w_d[k] * live_d.dot(v)
+            d[k] = dead_d.dot(v)
             v = PT_d @ v
-        total = float(acc.get())
+        dk = cp.asnumpy(d)
     elif backend == "numpy":
         v = p0.copy()
-        total = 0.0
+        dk = np.empty(kmax)
         for k in range(kmax):
-            total += weights[k] * float(live @ v)
+            dk[k] = dead @ v
             v = PT @ v
     else:
         raise ValueError(f"unknown backend {backend!r}")
-    return total / lt, {"iterations": kmax, "Lambda": lam, "Lambda_T": lt, "tail": float(poisson.sf(kmax - 1, lt))}
+    unavailable = float(np.dot(weights, dk)) / lt
+    return 1.0 - unavailable, {"iterations": kmax, "Lambda": lam, "Lambda_T": lt, "backend": backend,
+                               "unavailability": unavailable, "tail": float(poisson.sf(kmax - 1, lt))}
 
 
 def total_variation_distance(p: np.ndarray, q: np.ndarray) -> float:
