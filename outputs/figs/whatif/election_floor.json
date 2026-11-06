@@ -1,0 +1,38 @@
+{
+ "30x": {
+  "slow": {
+   "unavailability": 3.104767899801964e-05,
+   "nines": 4.50797086041648
+  },
+  "fast": {
+   "unavailability": 1.5640454195553488e-06,
+   "nines": 5.805750639283486
+  },
+  "floor": {
+   "unavailability": 2.83957247464084e-05,
+   "nines": 4.546747042304889
+  },
+  "fast_nonet": {
+   "unavailability": 2.0541011277463995e-07,
+   "nines": 6.687378178905374
+  }
+ },
+ "1x": {
+  "slow": {
+   "unavailability": 9.190711672268925e-07,
+   "nines": 6.036650858240494
+  },
+  "fast": {
+   "unavailability": 2.7338666919174416e-08,
+   "nines": 7.5632226667333455
+  },
+  "floor": {
+   "unavailability": 9.859114912373757e-07,
+   "nines": 6.006162071466541
+  },
+  "fast_nonet": {
+   "unavailability": 8.828802133820091e-10,
+   "nines": 9.054098216236907
+  }
+ }
+}
