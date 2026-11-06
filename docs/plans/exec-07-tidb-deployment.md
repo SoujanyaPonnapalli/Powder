@@ -711,6 +711,18 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
   general: a quorum loss on a Region holding TiDB's reserved system tables stops all commits once the lease lapses
   (2 of the 6 rounds in the last two runs; the other 4 rounds had 0-3 s on healthy partitions). Data:
   `~/powder-runs/tidb/RoyalSalmon/`.
+  **System data pinned (user decision 2026-11-05; G3 passed 2026-11-06, `FluffyTiger`).** Deployments get dedicated
+  system TiKV stores (`control_plane.system_tikv_per_region`, default 1, role `systikv`, label `machine_class=system`,
+  control-plane instance type) that faults never target; install applies PD placement rules
+  (`powder/deploy/placement.py`): everything defaults to the system stores, an overriding rule puts the user-table
+  range `[t{first user id}, t{2^47})` on the experiment stores, and install waits until every Region is placed. Live
+  findings: curl does not expand `~` after `@`; and an isolation level on the system rule deadlocked PD (its isolation
+  filter counted the orphan peers that still occupied every AWS region, so no system store qualified: 67 Regions
+  stuck 15 min; without it all 66 moved in 10 s -- one system store per region still gives one replica per region).
+  Result: all three rounds' dead voter sets held only workload Regions; lost-quorum partitions 65-75 s for a 60 s
+  hold, **every other partition 0 s**; 0 schema-lease errors; ~20.7k kills per load generator, 0 failed; tokens peaked
+  at 479. `pessimisticRollback failed` still appears (307) but caused no healthy downtime without the stall. Writes
+  still default to optimistic (`--txn-mode`); it did not change (4). Data: `~/powder-runs/tidb/FluffyTiger/`.
   Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
   repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
