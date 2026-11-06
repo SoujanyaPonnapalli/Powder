@@ -234,10 +234,58 @@ def reconfig(directory: str) -> None:
     save(fig, Path(directory) / "reconfig_cadence")
 
 
+# ------------------------------------------------------------------------------------------------ election timeout
+
+def _per(rate_per_h: float) -> str:
+    return f"{rate_per_h * 24:g}/day" if rate_per_h < 1 else f"{rate_per_h:g}/h"
+
+
+def election(path: str = str(K.ROOT / "outputs/figs/whatif/election_timeout.json")) -> None:
+    d = json.loads(Path(path).read_text())
+    T = d["timeouts_s"]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(6.4, 6.0), sharex=True)
+    colors = {"1x": BLUE, "30x": ORANGE}
+    for tag, dep in d["deployments"].items():
+        rs = dep["results"]
+        y = [r["nines"] for r in rs]
+        err = [[r["nines"] - r["nines_ci95"][0] for r in rs], [r["nines_ci95"][1] - r["nines"] for r in rs]]
+        ax.errorbar(T, y, yerr=err, color=colors[tag], marker="o", markersize=5, linewidth=2, capsize=2,
+                    label=f"{tag} faults (MC)")
+        ax.plot(T, [r["network"]["noisy"]["nines_with_stalls"] for r in rs], color=colors[tag], linestyle="--",
+                linewidth=1.2, label=f"{tag} + noisy-network stalls")
+        ax2.plot(T, [r["failure_elections_per_rsm_day"] for r in rs], color=colors[tag], marker="o", markersize=5,
+                 linewidth=2, label=f"failure-driven, {tag} faults (MC)")
+    scen_col = {"calm": AQUA, "typical": VIOLET, "noisy": MAGENTA}
+    rs = d["deployments"]["1x"]["results"]
+    for name, col in scen_col.items():
+        sc = d["scenarios"][name]
+        ax2.plot(T, [max(r["network"][name]["spurious_per_day"], 1e-7) for r in rs], color=col, linestyle=":",
+                 marker="s", markersize=4, linewidth=1.5,
+                 label=f"spurious, {name} (stalls {_per(sc['rate_per_h'])}, Pareto x_m={sc['x_m'] * 1000:g} ms, "
+                       f"a={sc['alpha']:g})")
+    for a in (ax, ax2):
+        a.axvline(10, color=INK, linestyle=":", linewidth=0.8)
+    ax.text(10, ax.get_ylim()[1], " TiKV default (10 ticks x 1 s)", fontsize=7, color=INK2, va="top")
+    ax.set_ylabel("Availability (nines)")
+    ax.legend(fontsize=7, loc="lower left")
+    ax.set_title(f"What-if: Raft election timeout T (downtime Uniform(T, 2T) + {d['vote_round_s']:g} s vote; "
+                 f"{d['horizon_h']:g} h, {d['runs'] // 1000}k runs/RSM, 50% budget)", fontsize=8.5, loc="left", color=INK)
+    ax2.set_yscale("log")
+    ax2.set_xscale("log")
+    ax2.set_xticks(T, [f"{t:g}s" for t in T])
+    ax2.minorticks_off()
+    ax2.set_ylabel("Leader elections\nper RSM per day")
+    ax2.set_xlabel("Election timeout T")
+    ax2.legend(fontsize=6.5, loc="upper center", bbox_to_anchor=(0.5, -0.22), ncol=2)
+    fig.text(0.01, -0.13, "Stall scenarios are assumptions (pre-vote + check-quorum on; heartbeat T/5). Stall downtime "
+             f"counts only waits beyond the {d.get('client_slo_s', 5):g} s client SLO.", fontsize=6.5, color=MUTED)
+    save(fig, Path(path).parent / "election_timeout")
+
+
 def main() -> int:
     cmd, *rest = sys.argv[1:] or ["help"]
     fns = {"whatif": whatif, "ladder": ladder, "sensitivity": sensitivity, "scalability": scalability,
-           "reconfig": reconfig}
+           "reconfig": reconfig, "election": election}
     if cmd not in fns:
         print(__doc__)
         return 2

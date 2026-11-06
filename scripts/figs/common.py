@@ -48,9 +48,14 @@ def machines(rate_scale: float, price: str, capacity: int = 5) -> dict:
     return {m.machine_id: m for m in ms}
 
 
-def protocol():
-    from powder.simulation import Exponential, RaftLikeProtocol
-    return RaftLikeProtocol(election_time_dist=Exponential(0.2))
+def protocol(election_timeout_s: float | None = None, vote_round_s: float = 0.1):
+    """Raft. Default: the pipeline's Exp(0.2/s) election time (mean 5 s). With ``election_timeout_s`` = T:
+    a follower times out after a randomized Uniform(T, 2T) (Raft's randomized timeout), plus one vote round."""
+    from powder.simulation import Exponential, RaftLikeProtocol, Uniform
+    if election_timeout_s is None:
+        return RaftLikeProtocol(election_time_dist=Exponential(0.2))
+    T = float(election_timeout_s)
+    return RaftLikeProtocol(election_time_dist=Uniform(T + vote_round_s, 2 * T + vote_round_s))
 
 
 def strategy(timeout_s: float = 600.0):
@@ -78,6 +83,7 @@ class MCStats:
     cost_mean: float         # $ per run over the horizon (replacements billed by the engine)
     spawned_mean: float      # replacement nodes per run
     seconds: float
+    elections_mean: float = 0.0  # leader elections per run
 
     @property
     def se(self) -> float:
@@ -85,7 +91,7 @@ class MCStats:
 
 
 def mc_stats(configs, *, timeout_s: float, horizon_s: float, runs: int, seed: int, chunk: int = 100_000,
-             with_network: bool = True) -> MCStats:
+             with_network: bool = True, proto=None) -> MCStats:
     """Rust MC of one RSM, in chunks of ``chunk`` runs on disjoint seed ranges (bounded memory)."""
     import time
 
@@ -96,10 +102,11 @@ def mc_stats(configs, *, timeout_s: float, horizon_s: float, runs: int, seed: in
 
     nodes = {f"n{i}": NodeState(node_id=f"n{i}", config=c) for i, c in enumerate(configs)}
     cluster = ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=len(nodes))
-    t0, n, s1, s2, c1, sp = time.time(), 0, 0.0, 0.0, 0.0, 0.0
+    t0, n, s1, s2, c1, sp, el = time.time(), 0, 0.0, 0.0, 0.0, 0.0, 0.0
+    proto = proto or protocol()
     while n < runs:
         k = min(chunk, runs - n)
-        r = run_monte_carlo(cluster, strategy(timeout_s), protocol(), num_simulations=k, max_time=horizon_s,
+        r = run_monte_carlo(cluster, strategy(timeout_s), proto, num_simulations=k, max_time=horizon_s,
                             stop_on_data_loss=False, seed=seed + n, network_config=network() if with_network else None)
         a = np.asarray(r.availability_samples, dtype=float)
         if a.size != k:
@@ -107,10 +114,11 @@ def mc_stats(configs, *, timeout_s: float, horizon_s: float, runs: int, seed: in
         s1, s2 = s1 + a.sum(), s2 + (a * a).sum()
         c1 += float(np.sum(r.cost_samples))
         sp += float(np.sum(r.nodes_spawned_samples))
+        el += float(np.sum(r.leader_election_samples))
         n += k
     mean = s1 / n
     var = max(0.0, (s2 - n * mean * mean) / (n - 1))
-    return MCStats(n, mean, math.sqrt(var), c1 / n, sp / n, time.time() - t0)
+    return MCStats(n, mean, math.sqrt(var), c1 / n, sp / n, time.time() - t0, el / n)
 
 
 def load_row(path: Path) -> dict:

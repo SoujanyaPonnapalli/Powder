@@ -1,0 +1,497 @@
+{
+ "timeouts_s": [
+  1,
+  2,
+  5,
+  10,
+  20,
+  30,
+  60
+ ],
+ "runs": 500000,
+ "horizon_h": 24.0,
+ "vote_round_s": 0.1,
+ "client_slo_s": 5.0,
+ "election_model": "Uniform(T, 2T) + vote round",
+ "scenarios": {
+  "calm": {
+   "rate_per_h": 0.041666666666666664,
+   "x_m": 0.05,
+   "alpha": 2.0
+  },
+  "typical": {
+   "rate_per_h": 1.0,
+   "x_m": 0.05,
+   "alpha": 1.5
+  },
+  "noisy": {
+   "rate_per_h": 10.0,
+   "x_m": 0.1,
+   "alpha": 1.2
+  }
+ },
+ "scenario_note": "stall parameters are assumptions, not library-sourced measurements",
+ "deployments": {
+  "1x": {
+   "row": "outputs/figs/sensitivity/rows/x1-rho1.json",
+   "budget": "0.5",
+   "rate_scale": 1.0,
+   "price": "rho1",
+   "rf_counts": {
+    "5": 20,
+    "7": 30
+   },
+   "unique_placements": 10,
+   "results": [
+    {
+     "timeout_s": 1,
+     "mean_availability": 0.999999681453109,
+     "se": 1.860408502417769e-08,
+     "nines": 6.496826629283909,
+     "nines_ci95": [
+      6.449758315449029,
+      6.549623264227572
+     ],
+     "failure_elections_per_rsm_day": 0.0154424,
+     "network": {
+      "calm": {
+       "spurious_per_day": 0.0012501562630143211,
+       "loss_spurious_per_day": 1.0368000000000053e-24,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 6.496826629283909
+      },
+      "typical": {
+       "spurious_per_day": 0.15719520380255594,
+       "loss_spurious_per_day": 1.0368000000000053e-24,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 6.496826629283909
+      },
+      "noisy": {
+       "spurious_per_day": 9.801781729455596,
+       "loss_spurious_per_day": 1.0368000000000053e-24,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 6.496826629283909
+      }
+     }
+    },
+    {
+     "timeout_s": 2,
+     "mean_availability": 0.9999994135877437,
+     "se": 1.8692146028601923e-08,
+     "nines": 6.231796961300307,
+     "nines_ci95": [
+      6.205477892533313,
+      6.259814499222306
+     ],
+     "failure_elections_per_rsm_day": 0.015442000000000003,
+     "network": {
+      "calm": {
+       "spurious_per_day": 0.0003125390657535803,
+       "loss_spurious_per_day": 5.184000000000027e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 6.231796961300307
+      },
+      "typical": {
+       "spurious_per_day": 0.055576897289394356,
+       "loss_spurious_per_day": 5.184000000000027e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 6.231796961300307
+      },
+      "noisy": {
+       "spurious_per_day": 4.2664733029416135,
+       "loss_spurious_per_day": 5.184000000000027e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 6.231796961300307
+      }
+     }
+    },
+    {
+     "timeout_s": 5,
+     "mean_availability": 0.9999986100286723,
+     "se": 1.9256682934179028e-08,
+     "nines": 5.856994158270147,
+     "nines_ci95": [
+      5.8453586521617655,
+      5.868950001957186
+     ],
+     "failure_elections_per_rsm_day": 0.015441000000000002,
+     "network": {
+      "calm": {
+       "spurious_per_day": 5.0006250520572855e-05,
+       "loss_spurious_per_day": 2.0736000000000105e-25,
+       "stall_unavailability": 1.8326267453598812e-09,
+       "nines_with_stalls": 5.856421933913377
+      },
+      "typical": {
+       "spurious_per_day": 0.014059966457577944,
+       "loss_spurious_per_day": 2.0736000000000105e-25,
+       "stall_unavailability": 4.926521855921971e-07,
+       "nines_with_stalls": 5.725236521428876
+      },
+      "noisy": {
+       "spurious_per_day": 1.4208264130634012,
+       "loss_spurious_per_day": 2.0736000000000105e-25,
+       "stall_unavailability": 4.838917942280893e-05,
+       "nines_with_stalls": 4.302952516877601
+      }
+     }
+    },
+    {
+     "timeout_s": 10,
+     "mean_availability": 0.9999972708784024,
+     "se": 2.109714141537309e-08,
+     "nines": 5.563977113655794,
+     "nines_ci95": [
+      5.557446235526724,
+      5.570607703862461
+     ],
+     "failure_elections_per_rsm_day": 0.0154394,
+     "network": {
+      "calm": {
+       "spurious_per_day": 1.2501562630143214e-05,
+       "loss_spurious_per_day": 1.0368000000000052e-25,
+       "stall_unavailability": 3.79568228227925e-09,
+       "nines_with_stalls": 5.563373513355361
+      },
+      "typical": {
+       "spurious_per_day": 0.004970948812704382,
+       "loss_spurious_per_day": 1.0368000000000052e-25,
+       "stall_unavailability": 1.1562904160526232e-06,
+       "nines_with_stalls": 5.410562921320967
+      },
+      "noisy": {
+       "spurious_per_day": 0.6184506171191779,
+       "loss_spurious_per_day": 1.0368000000000052e-25,
+       "stall_unavailability": 0.00012363795712573932,
+       "nines_with_stalls": 3.898366054147114
+      }
+     }
+    },
+    {
+     "timeout_s": 20,
+     "mean_availability": 0.9999945930174722,
+     "se": 2.7169915668432894e-08,
+     "nines": 5.26704503380565,
+     "nines_ci95": [
+      5.262788620789261,
+      5.271343576114726
+     ],
+     "failure_elections_per_rsm_day": 0.0154366,
+     "network": {
+      "calm": {
+       "spurious_per_day": 3.1253906575358035e-06,
+       "loss_spurious_per_day": 5.184000000000026e-26,
+       "stall_unavailability": 4.787782643415258e-09,
+       "nines_with_stalls": 5.266660644267042
+      },
+      "typical": {
+       "spurious_per_day": 0.001757495807197243,
+       "loss_spurious_per_day": 5.184000000000026e-26,
+       "stall_unavailability": 1.6291956434744079e-06,
+       "nines_with_stalls": 5.152663171794966
+      },
+      "noisy": {
+       "spurious_per_day": 0.26919626655196793,
+       "loss_spurious_per_day": 5.184000000000026e-26,
+       "stall_unavailability": 0.00018954282908577286,
+       "nines_with_stalls": 3.7100771801487804
+      }
+     }
+    },
+    {
+     "timeout_s": 30,
+     "mean_availability": 0.9999919156255607,
+     "se": 3.498622870690297e-08,
+     "nines": 5.092353579722567,
+     "nines_ci95": [
+      5.088685357049109,
+      5.096053049768101
+     ],
+     "failure_elections_per_rsm_day": 0.0154338,
+     "network": {
+      "calm": {
+       "spurious_per_day": 1.3890625144603573e-06,
+       "loss_spurious_per_day": 3.456000000000018e-26,
+       "stall_unavailability": 5.120068585750627e-09,
+       "nines_with_stalls": 5.092078615504951
+      },
+      "typical": {
+       "spurious_per_day": 0.0009566595450475752,
+       "loss_spurious_per_day": 3.456000000000018e-26,
+       "stall_unavailability": 1.8394133054549126e-06,
+       "nines_with_stalls": 5.003322533220478
+      },
+      "noisy": {
+       "spurious_per_day": 0.16548533808594246,
+       "loss_spurious_per_day": 3.456000000000018e-26,
+       "stall_unavailability": 0.0002241563633444492,
+       "nines_with_stalls": 3.6340615975047643
+      }
+     }
+    },
+    {
+     "timeout_s": 60,
+     "mean_availability": 0.9999838865592513,
+     "se": 6.194332426616828e-08,
+     "nines": 4.7928117135459205,
+     "nines_ci95": [
+      4.7895517286131435,
+      4.796096354399501
+     ],
+     "failure_elections_per_rsm_day": 0.015425199999999998,
+     "network": {
+      "calm": {
+       "spurious_per_day": 3.472656286150893e-07,
+       "loss_spurious_per_day": 1.728000000000009e-26,
+       "stall_unavailability": 5.453152386453527e-09,
+       "nines_with_stalls": 4.792664763346167
+      },
+      "typical": {
+       "spurious_per_day": 0.00033823022579498895,
+       "loss_spurious_per_day": 1.728000000000009e-26,
+       "stall_unavailability": 2.1138635034705794e-06,
+       "nines_with_stalls": 4.739277557070832
+      },
+      "noisy": {
+       "spurious_per_day": 0.07203167714398338,
+       "loss_spurious_per_day": 1.728000000000009e-26,
+       "stall_unavailability": 0.0002772755395421108,
+       "nines_with_stalls": 3.532556202315335
+      }
+     }
+    }
+   ]
+  },
+  "30x": {
+   "row": "outputs/figs/deployments/rows/x30-rho1.json",
+   "budget": "0.5",
+   "rate_scale": 30.0,
+   "price": "rho1",
+   "rf_counts": {
+    "5": 10,
+    "7": 40
+   },
+   "unique_placements": 10,
+   "results": [
+    {
+     "timeout_s": 1,
+     "mean_availability": 0.9999890903289799,
+     "se": 2.819576010949922e-07,
+     "nines": 4.962188345314096,
+     "nines_ci95": [
+      4.940727929030707,
+      4.984764592936295
+     ],
+     "failure_elections_per_rsm_day": 0.5079296,
+     "network": {
+      "calm": {
+       "spurious_per_day": 0.0012501562630143211,
+       "loss_spurious_per_day": 5.18400000000007e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 4.962188345314096
+      },
+      "typical": {
+       "spurious_per_day": 0.15719520380255594,
+       "loss_spurious_per_day": 5.18400000000007e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 4.962188345314096
+      },
+      "noisy": {
+       "spurious_per_day": 9.801781729455596,
+       "loss_spurious_per_day": 5.18400000000007e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 4.962188345314096
+      }
+     }
+    },
+    {
+     "timeout_s": 2,
+     "mean_availability": 0.9999802705591695,
+     "se": 2.8214265527150705e-07,
+     "nines": 4.704885223296542,
+     "nines_ci95": [
+      4.692879790777656,
+      4.717231986280976
+     ],
+     "failure_elections_per_rsm_day": 0.507917,
+     "network": {
+      "calm": {
+       "spurious_per_day": 0.0003125390657535803,
+       "loss_spurious_per_day": 2.592000000000035e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 4.704885223296542
+      },
+      "typical": {
+       "spurious_per_day": 0.055576897289394356,
+       "loss_spurious_per_day": 2.592000000000035e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 4.704885223296542
+      },
+      "noisy": {
+       "spurious_per_day": 4.2664733029416135,
+       "loss_spurious_per_day": 2.592000000000035e-25,
+       "stall_unavailability": 0.0,
+       "nines_with_stalls": 4.704885223296542
+      }
+     }
+    },
+    {
+     "timeout_s": 5,
+     "mean_availability": 0.9999538132022294,
+     "se": 2.833666292604984e-07,
+     "nines": 4.335482147274523,
+     "nines_ci95": [
+      4.330290884448777,
+      4.340736214426175
+     ],
+     "failure_elections_per_rsm_day": 0.507878,
+     "network": {
+      "calm": {
+       "spurious_per_day": 5.0006250520572855e-05,
+       "loss_spurious_per_day": 1.0368000000000137e-25,
+       "stall_unavailability": 1.8326267453598812e-09,
+       "nines_with_stalls": 4.335464915426477
+      },
+      "typical": {
+       "spurious_per_day": 0.014059966457577944,
+       "loss_spurious_per_day": 1.0368000000000137e-25,
+       "stall_unavailability": 4.926521855921971e-07,
+       "nines_with_stalls": 4.330874270073205
+      },
+      "noisy": {
+       "spurious_per_day": 1.4208264130634012,
+       "loss_spurious_per_day": 1.0368000000000137e-25,
+       "stall_unavailability": 4.838917942280893e-05,
+       "nines_with_stalls": 4.024219162723361
+      }
+     }
+    },
+    {
+     "timeout_s": 10,
+     "mean_availability": 0.9999097231702367,
+     "se": 2.875997494945831e-07,
+     "nines": 4.0444237003751535,
+     "nines_ci95": [
+      4.041720363199499,
+      4.0471439703722245
+     ],
+     "failure_elections_per_rsm_day": 0.5078149999999999,
+     "network": {
+      "calm": {
+       "spurious_per_day": 1.2501562630143214e-05,
+       "loss_spurious_per_day": 5.184000000000069e-26,
+       "stall_unavailability": 3.79568228227925e-09,
+       "nines_with_stalls": 4.044405440881114
+      },
+      "typical": {
+       "spurious_per_day": 0.004970948812704382,
+       "loss_spurious_per_day": 5.184000000000069e-26,
+       "stall_unavailability": 1.1562904160526232e-06,
+       "nines_with_stalls": 4.038896459565487
+      },
+      "noisy": {
+       "spurious_per_day": 0.6184506171191779,
+       "loss_spurious_per_day": 5.184000000000069e-26,
+       "stall_unavailability": 0.00012363795712573932,
+       "nines_with_stalls": 3.669759193725099
+      }
+     }
+    },
+    {
+     "timeout_s": 20,
+     "mean_availability": 0.9998215662614716,
+     "se": 3.03780441396502e-07,
+     "nines": 3.748523025120286,
+     "nines_ci95": [
+      3.747076254667854,
+      3.7499746313305033
+     ],
+     "failure_elections_per_rsm_day": 0.5076798,
+     "network": {
+      "calm": {
+       "spurious_per_day": 3.1253906575358035e-06,
+       "loss_spurious_per_day": 2.5920000000000343e-26,
+       "stall_unavailability": 4.787782643415258e-09,
+       "nines_with_stalls": 3.7485113721689354
+      },
+      "typical": {
+       "spurious_per_day": 0.001757495807197243,
+       "loss_spurious_per_day": 2.5920000000000343e-26,
+       "stall_unavailability": 1.6291956434744079e-06,
+       "nines_with_stalls": 3.744575677193274
+      },
+      "noisy": {
+       "spurious_per_day": 0.26919626655196793,
+       "loss_spurious_per_day": 2.5920000000000343e-26,
+       "stall_unavailability": 0.00018954282908577286,
+       "nines_with_stalls": 3.4341798358912903
+      }
+     }
+    },
+    {
+     "timeout_s": 30,
+     "mean_availability": 0.9997334397212465,
+     "se": 3.2887095890910054e-07,
+     "nines": 3.5742045661127424,
+     "nines_ci95": [
+      3.573155637569348,
+      3.5752560342127886
+     ],
+     "failure_elections_per_rsm_day": 0.5075468,
+     "network": {
+      "calm": {
+       "spurious_per_day": 1.3890625144603573e-06,
+       "loss_spurious_per_day": 1.7280000000000235e-26,
+       "stall_unavailability": 5.120068585750627e-09,
+       "nines_with_stalls": 3.5741962242990586
+      },
+      "typical": {
+       "spurious_per_day": 0.0009566595450475752,
+       "loss_spurious_per_day": 1.7280000000000235e-26,
+       "stall_unavailability": 1.8394133054549126e-06,
+       "nines_with_stalls": 3.5712179867786773
+      },
+      "noisy": {
+       "spurious_per_day": 0.16548533808594246,
+       "loss_spurious_per_day": 1.7280000000000235e-26,
+       "stall_unavailability": 0.0002241563633444492,
+       "nines_with_stalls": 3.309169213164867
+      }
+     }
+    },
+    {
+     "timeout_s": 60,
+     "mean_availability": 0.9994692523599268,
+     "se": 4.3993275829792504e-07,
+     "nines": 3.275111928213229,
+     "nines_ci95": [
+      3.2744069331638266,
+      3.2758180695499473
+     ],
+     "failure_elections_per_rsm_day": 0.5071481999999999,
+     "network": {
+      "calm": {
+       "spurious_per_day": 3.472656286150893e-07,
+       "loss_spurious_per_day": 8.640000000000117e-27,
+       "stall_unavailability": 5.453152386453527e-09,
+       "nines_with_stalls": 3.2751074660891613
+      },
+      "typical": {
+       "spurious_per_day": 0.00033823022579498895,
+       "loss_spurious_per_day": 8.640000000000117e-27,
+       "stall_unavailability": 2.1138635034705794e-06,
+       "nines_with_stalls": 3.2733856541034867
+      },
+      "noisy": {
+       "spurious_per_day": 0.07203167714398338,
+       "loss_spurious_per_day": 8.640000000000117e-27,
+       "stall_unavailability": 0.0002772755395421108,
+       "nines_with_stalls": 3.0925761805191585
+      }
+     }
+    }
+   ]
+  }
+ },
+ "seconds": 416.2253324985504
+}
