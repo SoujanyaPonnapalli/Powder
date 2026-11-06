@@ -113,7 +113,8 @@ def render(data, compare=None, show_main=False) -> str:
                  "ILP at several budgets vs. fixed-RF baselines"), 11, INK2)]
     # legend
     lx = ML
-    items = ((("circle", BLUE, ("Fleet ILP + lattice ascent" if show_main else "Fleet ILP + lattice ascent")
+    tiebreak = fleet and any("max_availability" in v for r in rows for v in r["new_ilp"].values())
+    items = ((("circle", BLUE, ("Fleet ILP + lattice + cost tie-break" if tiebreak else "Fleet ILP + lattice ascent")
                 if compare else "Fleet ILP across budgets"),)
              + ((("hollow", BLUE, prev_label),) if compare else ())
              + (("hollow", MUTED, "Random-menu ILP"),) if fleet else (("circle", BLUE, "ILP across budgets"),))

@@ -5,6 +5,9 @@ activation per machine, each active machine billed once, capacity per machine, h
 summed unavailability), plus what HiGHS lacked at 3-11k candidates: a warm start, a MIP gap, Gurobi's
 search, and the disaggregated link ``x_c <= cap * y_m`` for every member m of c, which stops the LP
 relaxation from billing a fraction of a machine for a candidate that uses it.
+
+``minimize_cost`` turns it into the cost tie-break: minimize the price of the active machines subject to
+summed unavailability (ppm) <= ``max_unavailability_ppm`` (and the budget).
 """
 
 from __future__ import annotations
@@ -19,7 +22,8 @@ from powder.placement_optimizer import PlacementCandidate, PlacementSolution, Se
 def solve_unique_cost_gurobi(candidates: Sequence[PlacementCandidate], price: dict[str, float], *,
                              capacity: int, num_rsms: int, budget: float | None,
                              warm_start: Sequence[tuple[str, ...]] = (), time_limit: float = 120.0,
-                             mip_gap: float = 1e-5, threads: int = 1, seed: int = 0) -> PlacementSolution:
+                             mip_gap: float = 1e-5, threads: int = 1, seed: int = 0, minimize_cost: bool = False,
+                             max_unavailability_ppm: float | None = None) -> PlacementSolution:
     import gurobipy as gp
 
     t0 = time.time()
@@ -42,8 +46,14 @@ def solve_unique_cost_gurobi(candidates: Sequence[PlacementCandidate], price: di
         model.addConstr(gp.quicksum(x[j] for j in js) <= capacity * y[m])
     if budget is not None:
         model.addConstr(gp.quicksum(price[m] * y[m] for m in used) <= budget)
-    model.setObjective(gp.quicksum((1.0 - c.availability) * 1e6 * x[j] for j, c in enumerate(candidates)),
-                       gp.GRB.MINIMIZE)
+    unavailability = gp.quicksum((1.0 - c.availability) * 1e6 * x[j] for j, c in enumerate(candidates))
+    if minimize_cost:
+        if max_unavailability_ppm is None:
+            raise ValueError("minimize_cost needs max_unavailability_ppm")
+        model.addConstr(unavailability <= max_unavailability_ppm)
+        model.setObjective(gp.quicksum(price[m] * y[m] for m in used), gp.GRB.MINIMIZE)
+    else:
+        model.setObjective(unavailability, gp.GRB.MINIMIZE)
     if warm_start:
         index = {c.machine_ids: j for j, c in enumerate(candidates)}
         counts = Counter(tuple(sorted(p)) for p in warm_start)

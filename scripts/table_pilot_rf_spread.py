@@ -35,7 +35,9 @@ def main() -> int:
     for r in data["rows"]:
         k, price = r["rate_scale"], r["price"]
         md += [f"## {k:g}x fault rates, {PRICES[price]}", "",
-               "| Budget | Random-menu ILP | Fleet ILP | Lattice |", "|---|---|---|---|"]
+               "| Budget | Random-menu ILP | Fleet ILP | Lattice" +
+               (" + cost tie-break" if any("max_availability" in v for v in r["new_ilp"].values()) else "") +
+               " |", "|---|---|---|---|"]
         for f, b in r["budgets"].items():
             cells = []
             for name, p in (("random-menu ILP", r["old_ilp"][f]), ("fleet ILP", r["new_ilp"][f].get("main_ilp", {})),

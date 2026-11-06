@@ -175,6 +175,53 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
     return sol, rounds, t_ilp, t_mc, added_total
 
 
+def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsms, capacity, budget, *,
+                  tolerance_nines: float, rounds=15, time_limit=120.0, threads=1, pessimism=1.5):
+    """Cheapest deployment within ``tolerance_nines`` of the best one found (``final_placements``, all exact):
+    minimize the price of the active machines subject to summed unavailability <= 10**tolerance x the best
+    deployment's. Unscored placements enter with ``pessimism`` x their estimated unavailability (table
+    estimates of cheap placements run optimistic); picks get exact MC and the model re-solves. Only a round
+    whose picks are all exact *and* within the cap counts; the cheapest such round is returned, or None.
+    Returns (solution or None, rounds, ILP seconds, MC seconds)."""
+    final = [tuple(sorted(p)) for p in final_placements]
+    cap = sum(1.0 - exact(p) for p in final) * 1e6 * 10 ** tolerance_nines
+    pool = list(dict.fromkeys([*pool, *final]))
+    warm, t_ilp, t_mc = final, 0.0, 0.0
+    best = None
+
+    def score(ids):
+        if ids in exact.memo:
+            return exact.memo[ids]
+        return 1.0 - pessimism * (1.0 - estimate(ids))
+
+    def verified(sol):
+        picks = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
+        return (all(p in exact.memo for p in picks)
+                and sum(1.0 - exact.memo[p] for p in picks) * 1e6 <= cap * (1 + 1e-9))
+
+    r = 0
+    for r in range(rounds):
+        cands = [PlacementCandidate(f"c{i}", ids, score(ids), sum(price[m] for m in ids))
+                 for i, ids in enumerate(pool)]
+        sol = solve_unique_cost_gurobi(cands, price, capacity=capacity, num_rsms=num_rsms, budget=budget,
+                                       warm_start=warm, time_limit=time_limit, threads=threads,
+                                       minimize_cost=True, max_unavailability_ppm=cap)
+        t_ilp += sol.solver_runtime_seconds
+        if not sol.selected:
+            break
+        missing = [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo]
+        if missing:
+            t = time.time()
+            exact.batch(missing)
+            t_mc += time.time() - t
+        if verified(sol) and (best is None or sol.total_cost_per_hour < best.total_cost_per_hour):
+            best = sol
+        if not missing:
+            break
+        warm = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
+    return best, r + 1, t_ilp, t_mc
+
+
 def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacity, budget, *, threads, seed):
     """Move the chosen deployment up its dominance lattices: each selected placement's lattice slice
     (fleets.lattice_slice) is estimated from its exact base and exact top (fleets.lattice_estimate), a small
@@ -369,16 +416,29 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             if not row_f["feasible"] or (main["feasible"] and main["mean_availability"] > row_f["mean_availability"]):
                 row_f = {**main, "source": "main ILP (lattice ascent found nothing better)"}
             row_f["main_ilp"] = main
+            if a.tiebreak_nines > 0 and row_f["feasible"]:
+                tb, tb_rounds, tb_ilp, tb_mc = cost_tiebreak(
+                    pool, row_f["placements"], price, exact, table.score, a.num_rsms, a.capacity, b,
+                    tolerance_nines=a.tiebreak_nines, threads=a.threads)
+                tbs = summarize(tb, price, exact, a.num_rsms) if tb is not None else {"feasible": False}
+                if (tbs["feasible"] and tbs["cost_per_hour"] < row_f["cost_per_hour"] - 1e-9
+                        and tbs["nines"] >= row_f["nines"] - a.tiebreak_nines - 1e-9):
+                    best_avail = {k: v for k, v in row_f.items() if k != "main_ilp"}
+                    row_f = {**tbs, "main_ilp": main, "max_availability": best_avail,
+                             "source": f"cost tie-break within {a.tiebreak_nines:g} nines of the best"}
+                times.update({"tiebreak_rounds": tb_rounds, "tiebreak_ilp_s": tb_ilp, "tiebreak_mc_s": tb_mc})
+                log(f"cost tie-break: ${row_f.get('max_availability', row_f)['cost_per_hour']:.2f} -> "
+                    f"${row_f['cost_per_hour']:.2f}/h at {row_f['nines']:.3f} nines ({tb_rounds} rounds)")
             times.update({"main_rounds": rounds, "main_ilp_s": t_ilp, "main_mc_s": t_mc,
                           "consolidation_columns": consolidated, "ascent_rounds": a_rounds,
                           "ascent_ilp_s": a_ilp, "ascent_mc_s": a_mc, "ascent_columns": a_pool})
             log(f"main ILP {main['nines']:.3f} ({rounds} rounds, ILP {t_ilp:.0f}s, MC {t_mc:.0f}s, "
                 f"+{consolidated} consolidation columns) -> lattice "
-                f"{row_f['nines']:.3f} ({a_rounds} rounds on {a_pool} columns, ILP {a_ilp:.0f}s, MC {a_mc:.0f}s)")
+                f"{row_f.get('max_availability', row_f)['nines']:.3f} ({a_rounds} rounds on {a_pool} columns, ILP {a_ilp:.0f}s, MC {a_mc:.0f}s)")
         exact.save()
         new_rows[f"{f:g}"] = {**row_f, "candidates": len(pool), "rounds": rounds, "times": times}
         log(f"new ILP {f:.0%}: " + (f"{row_f['nines']:.2f} nines ${row_f['cost_per_hour']:.2f}/h, {len(pool)} cands, "
-                                   f"{rounds} rounds{' (covering)' if 'source' in row_f else ''}"
+                                   f"{rounds} rounds{' (' + row_f['source'] + ')' if 'source' in row_f else ''}"
                                    if row_f["feasible"] else "infeasible"))
     row = {"rate_scale": k, "price": price_model, "budgets": dict(zip([f"{f:g}" for f in fracs], budgets)),
            "matched_budgets": matched,
@@ -414,6 +474,8 @@ def main() -> int:
     ap.add_argument("--resume", action="store_true", help="reuse finished configurations' rows/*.json")
     ap.add_argument("--cache-dir", default=None, help="MC caches (default: <output>/cache); shared across prices")
     ap.add_argument("--compare-highs", action="store_true", help="also time one HiGHS solve per budget")
+    ap.add_argument("--tiebreak-nines", type=float, default=0.01,
+                    help="report the cheapest deployment within this many nines of the best (0 = off)")
     ap.add_argument("--no-consolidate", dest="consolidate", action="store_false",
                     help="skip consolidation columns from machines with free slots")
     a = ap.parse_args()
