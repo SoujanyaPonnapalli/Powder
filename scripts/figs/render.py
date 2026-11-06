@@ -1,0 +1,249 @@
+"""Render the paper figures from the JSON the figure scripts write (PNG + SVG next to the data).
+
+    python scripts/figs/render.py whatif outputs/figs/whatif/x30-rho1-b0.5-h24.json
+    python scripts/figs/render.py ladder            # outputs/figs/modeling/{markov,mc}
+    python scripts/figs/render.py sensitivity       # outputs/figs/sensitivity/sensitivity.json
+    python scripts/figs/render.py scalability       # outputs/figs/scalability/past_runs.json
+    python scripts/figs/render.py reconfig DIR      # outputs/reconfig-cadence*/summary.json
+
+Palette: the dataviz reference categorical order (blue, orange, aqua, yellow, ...); text in ink tokens.
+"""
+
+from __future__ import annotations
+
+import glob
+import json
+import math
+import sys
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import common as K  # noqa: E402
+
+BLUE, ORANGE, AQUA, YELLOW, MAGENTA, GREEN, VIOLET, RED = (
+    "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#6250d6", "#e34948")
+GB_PER_REPLICA = 100.0  # copied per replacement (same assumption as reconfig_cadence.py)
+INK, INK2, MUTED, GRID = "#0b0b0b", "#52514e", "#8a8984", "#e4e3df"
+
+plt.rcParams.update({
+    "font.size": 9, "axes.edgecolor": MUTED, "axes.labelcolor": INK, "xtick.color": INK2, "ytick.color": INK2,
+    "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True, "grid.color": GRID,
+    "grid.linewidth": 0.6, "axes.axisbelow": True, "legend.frameon": False, "svg.fonttype": "none",
+})
+
+
+def save(fig, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for ext in ("png", "svg"):  # append (names like b0.5-h24 contain dots)
+        fig.savefig(path.parent / f"{path.name}.{ext}", dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"wrote {path.parent / (path.name + '.png')}")
+
+
+# ------------------------------------------------------------------------------------------------ Fig 4
+
+def whatif(path: str) -> None:
+    d = json.loads(Path(path).read_text())
+    rs = d["results"]
+    labels = [f"{r['timeout_min']:g} min" for r in rs]
+    y = [r["nines"] for r in rs]
+    lo = [r["nines"] - r["nines_ci95"][0] for r in rs]
+    hi = [r["nines_ci95"][1] - r["nines"] for r in rs]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(6.2, 4.6), sharex=True, gridspec_kw={"height_ratios": [2.2, 1]})
+    x = range(len(rs))
+    ax.bar(x, y, width=0.55, color="white", edgecolor=BLUE, hatch="////", linewidth=1.2, label="Expected (MC estimator)")
+    ax.errorbar(x, y, yerr=[lo, hi], fmt="none", ecolor=INK, capsize=4, linewidth=1)
+    for i, r in enumerate(rs):
+        ax.text(i, r["nines_ci95"][1] + 0.01, f"{r['nines']:.2f}", ha="center", va="bottom", color=INK, fontsize=8)
+    floor = min(r["nines_ci95"][0] for r in rs)
+    ax.set_ylim(max(0, floor - 0.25), max(r["nines_ci95"][1] for r in rs) + 0.15)
+    ax.set_ylabel("Availability (nines)\n-log10(1-A)")
+    ax.legend(loc="upper right", fontsize=8)
+    ax.set_title(f"What-if: node replacement timeout ({d['rate_scale']:g}x faults, {d['price']}, "
+                 f"{float(d['budget']):.0%} budget, {d['horizon_h']:g} h, {d['runs'] // 1000}k runs/RSM)",
+                 fontsize=9, color=INK, loc="left")
+    ax2.bar(x, [r["replacements_per_day"] for r in rs], width=0.55, color=ORANGE)
+    for i, r in enumerate(rs):
+        ax2.text(i, r["replacements_per_day"], f"{r['replacements_per_day'] * GB_PER_REPLICA / 1000:.1f} TB/day",
+                 ha="center", va="bottom", fontsize=7, color=INK2)
+    ax2.set_ylabel("Replacements\nper day")
+    ax2.set_ylim(0, max(r["replacements_per_day"] for r in rs) * 1.25)
+    ax2.set_xticks(list(x), labels)
+    ax2.set_xlabel("Node replacement timeout")
+    save(fig, Path(path).parent / Path(path).name.removesuffix(".json"))
+
+
+# ------------------------------------------------------------------------------------------------ Fig 13
+
+RUNG_LABEL = {"indep_homog": "Homogeneous\nEC storage", "indep_hetero": "+ Hetero-\ngeneous",
+              "leaderless_no": "+ Node up /\nout-of-date", "raft_no": "+ Leader\nelection",
+              "raft_full": "+ Full\npipeline", "mc_nonet": "MC\n(no outages)", "mc_net": "MC\n(+ region/AZ)"}
+
+
+def ladder() -> None:
+    base = K.ROOT / "outputs/figs/modeling"
+    rsms = json.loads((base / "rsms.json").read_text())
+    scales = sorted({r["rate_scale"] for r in rsms})
+    ns = sorted({r["n"] for r in rsms})
+    fig, axes = plt.subplots(len(scales), len(ns), figsize=(3.2 * len(ns), 2.8 * len(scales)), squeeze=False,
+                             sharey=True)
+    summary = {}
+    for r in rsms:
+        ax = axes[scales.index(r["rate_scale"])][ns.index(r["n"])]
+        mcs = {}
+        for net in ("net", "nonet"):
+            p = base / "mc" / f"{r['id']}-{net}.json"
+            if p.exists():
+                mcs[net] = json.loads(p.read_text())
+        if "net" not in mcs:
+            ax.set_title(f"{r['id']}: MC missing", fontsize=8)
+            continue
+        ref = K.nines(mcs["net"]["availability"])
+        names, vals, colors, notes = [], [], [], []
+        for rung in ("indep_homog", "indep_hetero", "leaderless_no", "raft_no", "raft_full"):
+            p = base / "markov" / f"{r['id']}-{rung}.json"
+            if not p.exists():
+                continue
+            m = json.loads(p.read_text())
+            names.append(RUNG_LABEL[rung])
+            if m["status"] != "ok":
+                vals.append(0.0)
+                colors.append("none")
+                notes.append(m["status"])
+                continue
+            vals.append(K.nines(m["availability"]) - ref)
+            colors.append(BLUE)
+            notes.append("")
+            summary.setdefault(rung, []).append(abs(vals[-1]))
+        if "nonet" in mcs:
+            names.append(RUNG_LABEL["mc_nonet"])
+            vals.append(K.nines(mcs["nonet"]["availability"]) - ref)
+            colors.append(AQUA)
+            notes.append("")
+        x = range(len(vals))
+        ax.bar(x, vals, color=colors, edgecolor=[c if c != "none" else MUTED for c in colors], width=0.6)
+        for i, (v, note) in enumerate(zip(vals, notes)):
+            ax.text(i, v if not note else 0, note or f"{v:+.2f}", ha="center", va="bottom" if v >= 0 else "top",
+                    fontsize=6.5, color=INK2, rotation=90 if note else 0)
+        se = mcs["net"]["se"] / max(1e-300, (1 - mcs["net"]["availability"])) / math.log(10)
+        ax.axhspan(-1.96 * se, 1.96 * se, color=GRID, zorder=0)
+        ax.axhline(0, color=INK, linewidth=0.8)
+        ax.set_xticks(list(x), names, fontsize=6.5)
+        ax.set_title(f"{r['rate_scale']:g}x faults, {r['n']}-node RSM (MC {ref:.2f} nines)", fontsize=8.5,
+                     color=INK, loc="left")
+    for row in axes:
+        row[0].set_ylabel("Estimate - MC (nines)")
+    fig.suptitle("Modeling stability: availability estimate error vs Monte Carlo (24 h, region/AZ outages)",
+                 fontsize=9.5, color=INK, x=0.01, ha="left")
+    fig.tight_layout()
+    save(fig, base / "ladder")
+    (base / "ladder_summary.json").write_text(json.dumps(
+        {k: {"mean_abs_error_nines": sum(v) / len(v), "rsms": len(v)} for k, v in summary.items()}, indent=1) + "\n")
+
+
+# ------------------------------------------------------------------------------------------------ Fig 11
+
+def sensitivity() -> None:
+    path = K.ROOT / "outputs/figs/sensitivity/sensitivity.json"
+    d = json.loads(path.read_text())
+    pts = sorted(d["points"], key=lambda p: p["assumed_multiplier"])
+    ms = [p["assumed_multiplier"] for p in pts]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(6.2, 5), sharex=True)
+    y = [p["true_nines"] for p in pts]
+    err = [[p["true_nines"] - p["true_nines_ci95"][0] for p in pts], [p["true_nines_ci95"][1] - p["true_nines"] for p in pts]]
+    ax.errorbar(ms, y, yerr=err, color=BLUE, marker="o", markersize=5, linewidth=2, capsize=3,
+                label="True availability (1x rates)")
+    ax.plot(ms, [p["believed_nines"] for p in pts], color=MUTED, linestyle=":", marker="o", markersize=3,
+            linewidth=1, label="Believed by the optimizer")
+    ax.axhline(d["sla_nines"], color=RED, linestyle="--", linewidth=1)
+    ax.text(ms[0], d["sla_nines"], f" SLA {d['sla_nines']:g} nines", color=INK2, va="bottom", fontsize=8)
+    bad = [m for m, p in zip(ms, pts) if not p["true_meets_sla"]]
+    if bad:
+        ax.axvspan(min(bad) / 1.1, max(bad) * 1.1, color=RED, alpha=0.08, linewidth=0)
+    for a in (ax, ax2):
+        a.axvline(1.0, color=INK, linestyle=":", linewidth=0.8)
+    ax.set_ylabel("Availability (nines)")
+    ax.legend(fontsize=8, loc="lower right")
+    ax.set_title("Sensitivity to reliability input error (truth = 1x, rho1 prices)", fontsize=9, loc="left", color=INK)
+    ax2.plot(ms, [p["cost_per_hour"] for p in pts], color=ORANGE, marker="o", markersize=5, linewidth=2)
+    ax2.set_ylabel("Cluster cost ($/h)")
+    ax2.set_xscale("log")
+    ax2.set_xticks(ms, [f"{m:g}x" for m in ms])
+    ax2.minorticks_off()
+    ax2.set_xlabel("Assumed failure rate / true failure rate   (<- optimistic | pessimistic ->)")
+    save(fig, path.parent / path.name.removesuffix(".json"))
+
+
+# ------------------------------------------------------------------------------------------------ Fig 10
+
+def scalability() -> None:
+    path = K.ROOT / "outputs/figs/scalability/past_runs.json"
+    recs = json.loads(path.read_text())["records"]
+    groups = {}
+    for r in recs:
+        if r["cluster_nodes"]:
+            groups.setdefault(f"{r['pipeline']}, {r['num_rsms']} RSMs", []).append(r)
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(9, 3.4))
+    for color, (name, rs) in zip((BLUE, ORANGE, AQUA, VIOLET), sorted(groups.items())):
+        ax.scatter([r["cluster_nodes"] for r in rs], [r["wall_s"] / 3600 for r in rs], s=22, color=color,
+                   edgecolor="white", linewidth=0.8, label=name)
+        ax2.scatter([r["cluster_nodes"] for r in rs], [r["optimizer_usd_per_month_daily"] for r in rs], s=22,
+                    color=color, edgecolor="white", linewidth=0.8, label=f"optimizer: {name}")
+        sv = [r for r in rs if r["savings_usd_per_month"] and r["savings_usd_per_month"] > 0]
+        ax2.scatter([r["cluster_nodes"] for r in sv], [r["savings_usd_per_month"] for r in sv], s=22, marker="^",
+                    facecolor="none", edgecolor=color, linewidth=1, label=f"savings: {name}")
+    for a in (ax, ax2):
+        a.set_xscale("log")
+        a.set_yscale("log")
+        a.set_xlabel("Cluster size (machines used)")
+    ax.set_ylabel("Optimizer wall time per solve (h)")
+    ax2.set_ylabel("$ per month (daily reconfiguration)")
+    ax.legend(fontsize=7, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=1)
+    ax2.legend(fontsize=6.5, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2)
+    fig.suptitle("Optimizer cost vs savings, past runs (wall time on one 8-vCPU VM)", fontsize=9.5, x=0.01,
+                 ha="left", color=INK)
+    fig.tight_layout()
+    save(fig, path.with_name("scalability_past"))
+
+
+# ------------------------------------------------------------------------------------------------ Fig 8
+
+def reconfig(directory: str) -> None:
+    rows = sorted(json.loads((Path(directory) / "summary.json").read_text()), key=lambda r: r["cadence_h"])
+    x = [r["cadence_h"] for r in rows]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(6.2, 4.8), sharex=True)
+    ax.plot(x, [r["sla_violation_min_per_month"] for r in rows], color=BLUE, marker="o", markersize=6, linewidth=2,
+            label="SLA violation")
+    ax.plot(x, [r["downtime_min_per_month"] for r in rows], color=MUTED, marker="o", markersize=3, linewidth=1,
+            linestyle=":", label="Expected downtime")
+    ax.set_ylabel("Minutes / month / RSM")
+    ax.legend(fontsize=8)
+    ax.set_title("How often must we reconfigure?", fontsize=9, loc="left", color=INK)
+    ax2.plot(x, [max(r["gb_moved_per_day"], 1e-3) for r in rows], color=ORANGE, marker="o", markersize=6, linewidth=2)
+    ax2.set_yscale("log")
+    ax2.set_ylabel("Reconfig overhead\n(GB moved / day)")
+    ax2.set_xscale("log")
+    ax2.set_xticks(x, [r["label"] for r in rows])
+    ax2.minorticks_off()
+    ax2.set_xlabel("Reconfiguration interval")
+    save(fig, Path(directory) / "reconfig_cadence")
+
+
+def main() -> int:
+    cmd, *rest = sys.argv[1:] or ["help"]
+    fns = {"whatif": whatif, "ladder": ladder, "sensitivity": sensitivity, "scalability": scalability,
+           "reconfig": reconfig}
+    if cmd not in fns:
+        print(__doc__)
+        return 2
+    fns[cmd](*rest)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

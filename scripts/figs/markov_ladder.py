@@ -162,7 +162,7 @@ def cmd_markov(a) -> int:
     out_dir = OUT / "markov"
     out_dir.mkdir(parents=True, exist_ok=True)
     for r in rsms:
-        if a.n and r["n"] not in a.n:
+        if (a.n and r["n"] not in a.n) or (a.ids and r["id"] not in a.ids):
             continue
         cfgs = configs[r["id"]]
         for rung in a.rungs:
@@ -256,6 +256,7 @@ def main() -> int:
     m.add_argument("--backend", choices=["numpy", "cupy"], default="numpy")
     m.add_argument("--steady-backend", default="scipy")
     m.add_argument("--n", type=int, nargs="*")
+    m.add_argument("--ids", nargs="*", help="only these RSM ids (rsms.json)")
     m.add_argument("--rungs", nargs="+", default=list(LADDER))
     m.add_argument("--max-states", type=float, default=6e6)
     m.add_argument("--force", action="store_true")

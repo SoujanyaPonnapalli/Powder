@@ -8,6 +8,7 @@
 #   infra/gpu/gpu_vm.sh down      # terminate + delete every resource, then verify nothing is left
 #   infra/gpu/gpu_vm.sh status
 #
+# POWDER_GPU_AZ picks the zone (on InsufficientInstanceCapacity: down, then retry another zone).
 # Billable (~$1.6/h). Everything is tagged Project=powder (required by the work VM's powder-deploy policy) and
 # Handle=$HANDLE. The instance shuts itself down (and so terminates) after $POWDER_GPU_MAX_MIN minutes as a
 # backstop. Never leave it running unattended; always finish with `down`.
@@ -32,10 +33,12 @@ sshv() { ssh -i "$KEY" -o StrictHostKeyChecking=accept-new -o ServerAliveInterva
 up() {
   load
   if [[ -n ${INSTANCE:-} ]]; then echo "already up: $INSTANCE ($(ip))"; return; fi
+  if [[ -s $STATE ]]; then echo "partial resources in $STATE: run '$0 down' first" >&2; exit 1; fi
   : > "$STATE"
+  trap 'echo "up failed; clean up with: $0 down" >&2' ERR
   local az my_ip ami
-  az=$(ec2 describe-instance-type-offerings --location-type availability-zone \
-        --filters Name=instance-type,Values="$TYPE" --query 'InstanceTypeOfferings[0].Location' --output text)
+  az=${POWDER_GPU_AZ:-$(ec2 describe-instance-type-offerings --location-type availability-zone \
+        --filters Name=instance-type,Values="$TYPE" --query 'InstanceTypeOfferings[0].Location' --output text)}
   my_ip=$(curl -s https://checkip.amazonaws.com)
   ami=$(ec2 describe-images --owners amazon --filters "Name=name,Values=$AMI_NAME" \
         --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text)
@@ -74,7 +77,7 @@ up() {
       --instance-initiated-shutdown-behavior terminate \
       --metadata-options HttpTokens=required,HttpEndpoint=enabled \
       --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=150,VolumeType=gp3,DeleteOnTermination=true}' \
-      --tag-specifications "$(tags instance)" "$(tags volume)" --query 'Instances[0].InstanceId' --output text)
+      --tag-specifications "$(tags instance)" "$(tags volume)" "$(tags network-interface)" --query 'Instances[0].InstanceId' --output text)
   save INSTANCE "$INSTANCE"
   ec2 wait instance-running --instance-ids "$INSTANCE"
   echo "instance $INSTANCE at $(ip); self-terminates after $MAX_MIN min"
