@@ -45,7 +45,7 @@ SCENARIOS = {  # assumed leader-side stall processes (per node): rate per hour, 
     "typical": {"rate_per_h": 1.0, "x_m": 0.05, "alpha": 1.5},
     "noisy": {"rate_per_h": 10.0, "x_m": 0.1, "alpha": 1.2},
 }
-DEPLOYMENTS = {"1x": ("outputs/figs/sensitivity/rows/x1-rho1.json", "0.5"),
+DEPLOYMENTS = {"1x": ("outputs/figs/deployments/rows/x1-rho1.json", "0.5"),
                "30x": ("outputs/figs/deployments/rows/x30-rho1.json", "0.5")}
 
 

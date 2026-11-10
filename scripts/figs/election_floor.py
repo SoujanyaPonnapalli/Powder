@@ -8,7 +8,7 @@ from powder.simulation import Exponential, RaftLikeProtocol
 from powder.markov_builders.common import extract_rates
 
 rows = {"30x": ("outputs/figs/deployments/rows/x30-rho1.json", 30.0),
-        "1x": ("outputs/figs/sensitivity/rows/x1-rho1.json", 1.0)}
+        "1x": ("outputs/figs/deployments/rows/x1-rho1.json", 1.0)}
 out = {}
 for tag, (path, scale) in rows.items():
     dep = K.deployment(K.load_row(path), "0.5")
