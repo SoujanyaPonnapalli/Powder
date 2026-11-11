@@ -200,6 +200,16 @@ class PlacementSolution:
     solver_runtime_seconds: float | None = None
     mip_gap: float | None = None
     best_bound: float | None = None
+    # Populated by transition-aware solves. For these solves total_cost_per_hour
+    # is the operating rate plus one-time migration amortized over horizon_h.
+    shard_placements: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    machine_cost_per_hour: float | None = None
+    replication_cost_per_hour: float | None = None
+    migration_usd: float | None = None
+    gb_moved: float | None = None
+    replica_moves: int | None = None
+    replica_removals: int | None = None
+    horizon_h: float | None = None
 
     @cached_property
     def total_rsms(self) -> int:

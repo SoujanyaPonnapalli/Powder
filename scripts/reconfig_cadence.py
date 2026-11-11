@@ -16,9 +16,12 @@ availability = long-run availability of each placement under the block-average h
 catalogue horizon, region/AZ outages on), i.e. a quasi-stationary approximation. Expected downtime per RSM is
 summed per 30-day month; SLA violation = downtime above the ``--sla-nines`` error budget, averaged over RSMs.
 
-Reconfiguration overhead: replicas added between consecutive deployments (RSMs matched to minimize moves;
-powder.faults.reconfig), x ``--gb-per-replica`` GB, billed at the library's AWS transfer prices from the
-cheapest surviving member; and the optimizer's own CPU time per solve.
+Reconfiguration overhead in the legacy mode: replicas added between consecutive deployments (RSMs
+matched to minimize moves; powder.faults.reconfig), x ``--gb-per-replica`` GB, billed at the library's
+AWS transfer prices from the cheapest surviving member. With ``--workload-json``, ``--write-gb-per-s``,
+or ``--max-replica-moves``, named shards instead incur recurring replication and one-time migration in
+the optimization budget; the one-time bill is amortized over the next decision window. Both modes report
+optimizer CPU time per solve.
 
 Resumable: every solve and every block score is cached under ``--output``.
 """
@@ -26,6 +29,7 @@ Resumable: every solve and every block score is cached under ``--output``.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -48,13 +52,83 @@ from powder.faults import reconfig as R  # noqa: E402
 from powder.faults.centroid_table import CentroidTable  # noqa: E402
 from powder.faults.convert import scenario_network_config  # noqa: E402
 from powder.faults.ilp import catalogue_machines  # noqa: E402
+from powder.faults.gurobi_ilp import TransitionProblem  # noqa: E402
 from powder.faults.prices import transfer_per_gb  # noqa: E402
+from powder.faults.transition_costs import ShardSpec, migration_cost, replication_per_hour  # noqa: E402
 from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProtocol  # noqa: E402
 from scripts.experiment_sizing import baseline  # noqa: E402
 from scripts.pilot_fleet_frontier import CATALOGUE, REGIONS, SCENARIO, Exact, lattice_ascent, nines, solve_exact  # noqa: E402
 
 TRANSFER = "price-transfer/aws-us@2026-10-21"
 MONTH_H = 30 * 24.0
+
+
+def workload_specs(path: str | None, num_rsms: int, write_gb_per_s: float | None,
+                   gb_per_replica: float) -> tuple[ShardSpec, ...]:
+    """Load the stable shard order, or make a uniform workload for the opt-in mode."""
+    if path is not None and write_gb_per_s is not None:
+        raise ValueError("--workload-json and --write-gb-per-s cannot be combined")
+    if num_rsms <= 0:
+        raise ValueError("--num-rsms must be positive")
+    if path is not None:
+        data = json.loads(Path(path).read_text())
+        records = data.get("shards") if isinstance(data, dict) else data
+        if not isinstance(records, list):
+            raise ValueError("--workload-json must contain an array of shards or a {'shards': [...]} object")
+        if len(records) != num_rsms:
+            raise ValueError(f"workload has {len(records)} shards, expected --num-rsms={num_rsms}")
+        if any(not isinstance(r, dict) for r in records):
+            raise ValueError("every shard must be a JSON object")
+        try:
+            specs = tuple(ShardSpec(r["shard_id"], float(r["write_gb_per_s"]),
+                                    float(r["partition_gb"]), ()) for r in records)
+        except KeyError as exc:
+            raise ValueError(f"missing workload field {exc.args[0]}") from exc
+    else:
+        rate = 0.0 if write_gb_per_s is None else write_gb_per_s
+        specs = tuple(ShardSpec(str(i), rate, gb_per_replica, ()) for i in range(num_rsms))
+    if len({s.shard_id for s in specs}) != len(specs):
+        raise ValueError("workload shard_id values must be unique")
+    return specs
+
+
+def transition_diagnostics(shard_placements: tuple[tuple[str, tuple[str, ...]], ...],
+                           transition: TransitionProblem, price: dict[str, float]) -> dict:
+    """Independently check actual named-shard moves and all-in cost, never rematching RSMs."""
+    if len(shard_placements) != len(transition.shards):
+        raise ValueError("transition solution must contain one placement per shard")
+    used: set[str] = set()
+    replication = migration = gb = 0.0
+    moves = removals = 0
+    placements = []
+    for (sid, ids), shard in zip(shard_placements, transition.shards):
+        if sid != shard.shard_id:
+            raise ValueError("transition solution shard order differs from workload order")
+        if not ids or len(set(ids)) != len(ids):
+            raise ValueError(f"invalid placement for shard {sid}")
+        used.update(ids)
+        placements.append(list(ids))
+        replication += replication_per_hour(ids, shard.write_gb_per_s,
+                                            transition.locations, transition.traffic_price)
+        if shard.old_placement:
+            change = migration_cost(shard.old_placement, ids, shard.partition_gb,
+                                    transition.locations, transition.region_price)
+            moves += change.replica_additions
+            removals += change.replica_removals
+            gb += change.gb_moved
+            migration += change.migration_usd
+    machine = sum(price[m] for m in used)
+    return {"placements": placements, "machine_cost_per_hour": machine,
+            "replication_cost_per_hour": replication, "migration_usd": migration,
+            "gb_moved": gb, "replica_moves": moves, "replica_removals": removals,
+            "horizon_h": transition.horizon_h,
+            "cost_per_hour": machine + replication + migration / transition.horizon_h}
+
+
+def transition_feasible(diag: dict, budget: float, max_replica_moves: int | None) -> bool:
+    """Guard post-solve choices against the *actual* budget and aggregate move cap."""
+    return (diag["cost_per_hour"] <= budget + 1e-7 * max(1.0, budget)
+            and (max_replica_moves is None or diag["replica_moves"] <= max_replica_moves))
 
 
 def cpu_seconds() -> float:
@@ -77,6 +151,17 @@ class Study:
         (self.out / "blocks").mkdir(parents=True, exist_ok=True)
         loc = {m["id"]: (m["region"], m.get("az") or m["region"]) for m in self.cat["machines"]}
         self.location = loc.__getitem__
+        self.locations = loc
+        self.transition_mode = (getattr(a, "workload_json", None) is not None
+                                or getattr(a, "write_gb_per_s", None) is not None
+                                or getattr(a, "max_replica_moves", None) is not None)
+        self.transition_specs = (workload_specs(a.workload_json, a.num_rsms, a.write_gb_per_s, a.gb_per_replica)
+                                 if self.transition_mode else ())
+        self.transition_key = ""
+        if self.transition_mode:
+            config = {k: v for k, v in vars(a).items() if k not in ("threads", "output")}
+            config["workload"] = [(s.shard_id, s.write_gb_per_s, s.partition_gb) for s in self.transition_specs]
+            self.transition_key = hashlib.sha256(json.dumps(config, sort_keys=True).encode()).hexdigest()[:16]
         self.t0 = time.time()
 
     def log(self, msg: str) -> None:
@@ -97,13 +182,31 @@ class Study:
         Hysteresis: the new deployment replaces ``previous`` only if its believed downtime is at least
         ``--min-gain`` (fraction) below the previous deployment's, both scored on this window's hazards."""
         a = self.a
-        path = self.out / "solves" / f"c{cadence_h:g}-t{t0_h:g}-w{window_h:g}.json"
+        name = f"c{cadence_h:g}-t{t0_h:g}-w{window_h:g}"
+        if self.transition_mode:
+            name += f"-transition-{self.transition_key}"
+        path = self.out / "solves" / f"{name}.json"
         if path.exists():
-            return json.loads(path.read_text())
+            cached = json.loads(path.read_text())
+            if not self.transition_mode or cached.get("old_placements") == (previous or []):
+                return cached
         wall, cpu = time.time(), cpu_seconds()
         machines = self.machines(t0_h, window_h)
         by_id = {m.machine_id: m for m in machines}
         price = {m.machine_id: m.node_config.cost_per_hour for m in machines}
+        transition = None
+        if self.transition_mode:
+            old = previous or [() for _ in self.transition_specs]
+            if len(old) != len(self.transition_specs):
+                raise ValueError("previous deployment has a different shard count")
+            shards = tuple(ShardSpec(s.shard_id, s.write_gb_per_s, s.partition_gb, tuple(p))
+                           for s, p in zip(self.transition_specs, old))
+            traffic_price = lambda src, dst, same_az: transfer_per_gb(  # noqa: E731
+                self.lib, TRANSFER, src, dst, same_az=same_az)
+            region_price = lambda src, dst: (0.0 if src == dst else transfer_per_gb(  # noqa: E731
+                self.lib, TRANSFER, src, dst))
+            transition = TransitionProblem(shards, self.locations, traffic_price, region_price, window_h,
+                                           a.max_replica_moves if previous else None)
         exact = Exact(by_id, self.protocol, self.strategy, self.score_horizon_s, self.network, a.exact_runs, a.threads)
         feats = F.features(machines)
         labels, cent = F.kmeans_log(feats, k=a.clusters, seed=0)
@@ -134,8 +237,12 @@ class Study:
             with ThreadPoolExecutor(a.threads) as tp:
                 list(tp.map(lambda kv: table.availability(*kv), todo))
 
+        # The legacy 90%-of-budget compute lower bound leaves no room for
+        # replication traffic. In transition mode the knapsack is a compute-only
+        # candidate heuristic; enforce the full bill in the shard-aware MILP.
         fleets = F.fleets_for_budget(feats, u, a.budget_per_hour, num_rsms=a.num_rsms, capacity=a.capacity,
-                                     sizes=a.fleet_sizes, repeats=a.fleet_repeats, alpha=a.alpha)
+                                     sizes=a.fleet_sizes, repeats=a.fleet_repeats,
+                                     alpha=0.0 if transition is not None else a.alpha)
         placements, covers = set(), []
         for i, fl in enumerate(fleets):
             rng = random.Random(i)
@@ -154,38 +261,76 @@ class Study:
             placements |= {F.improve(p, ff, table.score) for p in rand}
         prev = [tuple(sorted(p)) for p in previous] if previous else []
         prev_cost = sum(price[m] for m in {m for p in prev for m in p})
+        prev_diag = (transition_diagnostics(tuple((s.shard_id, p) for s, p in zip(self.transition_specs, prev)),
+                                            transition, price) if transition is not None and prev else None)
+        prev_ok = (transition_feasible(prev_diag, a.budget_per_hour, transition.max_replica_moves)
+                   if prev_diag is not None else prev_cost <= a.budget_per_hour)
         pool = list(dict.fromkeys([*placements, *base_pl, *prev]))
-        warm = prev if prev and prev_cost <= a.budget_per_hour else (
+        warm = prev if prev and prev_ok else (
             max(covers, key=lambda c: sum(map(table.score, c))) if covers else [])
         if not pool:
             raise RuntimeError(f"t={t0_h}: no candidate placements under ${a.budget_per_hour}/h")
         sol, rounds, t_ilp, t_mc, _ = solve_exact(pool, price, exact, table.score, a.num_rsms, a.capacity,
-                                                  a.budget_per_hour, warm=warm, threads=a.threads, feat_of=feat_of,
+                                                  a.budget_per_hour, warm=warm, threads=a.threads,
+                                                  feat_of=None if transition is not None else feat_of,
                                                   seed=int(t0_h), u_of=u_of, prefetch=table_batch,
-                                                  time_limit=a.ilp_time_limit)
+                                                  time_limit=a.ilp_time_limit,
+                                                  **({"transition": transition} if transition is not None else {}))
         best = sol
         if sol.selected:
             asc, *_ = lattice_ascent(sol, [feat_of[m] for m in {m for ids in pool for m in ids}], u_of, exact, price,
-                                     a.num_rsms, a.capacity, a.budget_per_hour, threads=a.threads, seed=int(t0_h))
+                                     a.num_rsms, a.capacity, a.budget_per_hour, threads=a.threads, seed=int(t0_h),
+                                     **({"transition": transition} if transition is not None else {}))
             score = lambda s: sum(exact(it.candidate.machine_ids) * it.count for it in s.selected)  # noqa: E731
-            if asc.selected and score(asc) >= score(sol):
+            asc_ok = True
+            if transition is not None and asc.selected:
+                asc_diag = transition_diagnostics(asc.shard_placements, transition, price)
+                asc_ok = transition_feasible(asc_diag, a.budget_per_hour, transition.max_replica_moves)
+            if asc.selected and asc_ok and score(asc) >= score(sol):
                 best = asc
         if not best.selected:
-            raise RuntimeError(f"t={t0_h}: ILP infeasible at ${a.budget_per_hour}/h")
-        dep = [list(it.candidate.machine_ids) for it in best.selected for _ in range(it.count)]
+            detail = (f", max_replica_moves={transition.max_replica_moves}, horizon_h={window_h:g}"
+                      if transition is not None else "")
+            raise RuntimeError(f"t={t0_h}: ILP {best.status}; no incumbent within "
+                               f"${a.budget_per_hour}/h{detail} (also check candidate capacity)")
+        diag = None
+        if transition is not None:
+            diag = transition_diagnostics(best.shard_placements, transition, price)
+            if not transition_feasible(diag, a.budget_per_hour, transition.max_replica_moves):
+                raise RuntimeError(f"t={t0_h}: ILP result violates all-in budget or replica-move cap")
+            for reported, calculated in (("total_cost_per_hour", "cost_per_hour"),
+                                          ("machine_cost_per_hour", "machine_cost_per_hour"),
+                                          ("replication_cost_per_hour", "replication_cost_per_hour"),
+                                          ("migration_usd", "migration_usd"),
+                                          ("gb_moved", "gb_moved"),
+                                          ("replica_moves", "replica_moves"),
+                                          ("replica_removals", "replica_removals")):
+                value = getattr(best, reported, None)
+                if value is not None and not math.isclose(value, diag[calculated], rel_tol=1e-7, abs_tol=1e-7):
+                    raise RuntimeError(f"t={t0_h}: ILP {reported} disagrees with selected deployment")
+            dep = diag["placements"]
+        else:
+            dep = [list(it.candidate.machine_ids) for it in best.selected for _ in range(it.count)]
         believed = sum(exact(p) for p in dep) / len(dep)
         kept = False
-        if prev and prev_cost <= a.budget_per_hour:
+        if prev and prev_ok:
             exact.batch(prev)
             prev_believed = sum(exact(p) for p in prev) / len(prev)
             if (1 - believed) > (1 - prev_believed) * (1 - a.min_gain):
                 dep, believed, kept = [list(p) for p in prev], prev_believed, True
+                if transition is not None:
+                    diag = prev_diag
         used = {m for p in dep for m in p}
-        rec = {"t0_h": t0_h, "window_h": window_h, "placements": dep, "cost_per_hour": sum(price[m] for m in used),
+        rec = {"t0_h": t0_h, "window_h": window_h, "placements": dep,
+               "cost_per_hour": diag["cost_per_hour"] if diag is not None else sum(price[m] for m in used),
                "believed_availability": believed, "believed_nines": nines(believed), "machines_used": len(used),
                "kept_previous": kept,
                "candidates": len(pool), "rounds": rounds, "ilp_s": t_ilp, "mc_s": t_mc,
                "wall_s": time.time() - wall, "cpu_s": cpu_seconds() - cpu}
+        if diag is not None:
+            rec.update({k: v for k, v in diag.items() if k != "placements"})
+            rec["shard_ids"] = [s.shard_id for s in self.transition_specs]
+            rec["old_placements"] = previous or []
         path.write_text(json.dumps(rec) + "\n")
         self.log(f"solve t={t0_h:g}h w={window_h:g}h: {rec['believed_nines']:.2f} believed nines"
                  f"{' (kept previous)' if kept else ''}, "
@@ -220,11 +365,17 @@ class Study:
             rec = self.solve(cadence_h, t, window, prev)
             solves.append(rec)
             prev = rec["placements"]
-        # migrations between consecutive deployments
-        tprice = lambda s, d: transfer_per_gb(self.lib, TRANSFER, s[0], d[0], same_az=(s == d))  # noqa: E731
-        migs = [None] + [R.migration([tuple(p) for p in x["placements"]], [tuple(p) for p in y["placements"]],
-                                     gb_per_replica=a.gb_per_replica, location=self.location, price_per_gb=tprice)
-                         for x, y in zip(solves, solves[1:])]
+        # Named transition metrics come from the chosen, guarded solve, not legacy Hungarian matching.
+        if self.transition_mode:
+            migs = [None] + [{"replicas_added": s["replica_moves"],
+                              "replicas_removed": s["replica_removals"],
+                              "gb_moved": s["gb_moved"], "transfer_cost": s["migration_usd"]}
+                             for s in solves[1:]]
+        else:
+            tprice = lambda s, d: transfer_per_gb(self.lib, TRANSFER, s[0], d[0], same_az=(s == d))  # noqa: E731
+            migs = [None] + [R.migration([tuple(p) for p in x["placements"]], [tuple(p) for p in y["placements"]],
+                                         gb_per_replica=a.gb_per_replica, location=self.location, price_per_gb=tprice)
+                             for x, y in zip(solves, solves[1:])]
         # ground truth per block
         block_rows = []
         for b0, b1 in blocks:
@@ -249,7 +400,14 @@ class Study:
                            "sla_violation_min": float(np.mean(viol)),
                            "rsms_violating": int(sum(v > 0 for v in viol))})
         days = a.horizon_h / 24.0
-        gb = sum(m.gb_moved for m in migs if m)
+        if self.transition_mode:
+            gb = sum(m["gb_moved"] for m in migs if m)
+            transfer = sum(m["transfer_cost"] for m in migs if m)
+            moved = sum(m["replicas_added"] for m in migs if m)
+        else:
+            gb = sum(m.gb_moved for m in migs if m)
+            transfer = sum(m.transfer_cost for m in migs if m)
+            moved = sum(m.replicas_added for m in migs if m)
         out = {
             "cadence_h": cadence_h, "label": R.cadence_label(cadence_h), "reconfigurations": len(starts),
             "sla_violation_min_per_month": float(np.mean([m["sla_violation_min"] * MONTH_H / m["hours"]
@@ -257,17 +415,30 @@ class Study:
             "downtime_min_per_month": float(np.mean([m["mean_downtime_min"] * MONTH_H / m["hours"] for m in months])),
             "mean_availability": float(np.mean([r["mean_availability"] for r in block_rows])),
             "gb_moved_per_day": gb / days,
-            "transfer_cost_per_day": sum(m.transfer_cost for m in migs if m) / days,
-            "replicas_moved_per_day": sum(m.replicas_added for m in migs if m) / days,
+            "transfer_cost_per_day": transfer / days,
+            "replicas_moved_per_day": moved / days,
             "optimizer_cpu_h_per_day": sum(s["cpu_s"] for s in solves) / 3600.0 / days,
             "deployment_changes": sum(not s.get("kept_previous") for s in solves[1:]),
             "mean_cost_per_hour": float(np.mean([s["cost_per_hour"] for s in solves])),
             "months": months,
             "solves": [{k: v for k, v in s.items() if k != "placements"} for s in solves],
-            "migrations": [m.__dict__ if m else None for m in migs],
+            "migrations": [m if self.transition_mode else m.__dict__ if m else None for m in migs],
             "blocks": [{k: v for k, v in r.items() if k != "downtime_min_per_rsm"} for r in block_rows],
         }
-        (self.out / f"cadence-{out['label']}.json").write_text(json.dumps(out, indent=1) + "\n")
+        if self.transition_mode:
+            out.update({
+                "transition_aware": True,
+                "mean_cost_per_hour": sum(s["cost_per_hour"] * s["window_h"] for s in solves) / a.horizon_h,
+                "mean_machine_cost_per_hour": sum(s["machine_cost_per_hour"] * s["window_h"]
+                                                  for s in solves) / a.horizon_h,
+                "mean_replication_cost_per_hour": sum(s["replication_cost_per_hour"] * s["window_h"]
+                                                      for s in solves) / a.horizon_h,
+                "migration_cost_total": transfer,
+                "gb_moved_total": gb,
+            })
+            out["replication_cost_per_day"] = out["mean_replication_cost_per_hour"] * 24.0
+        suffix = f"-transition-{self.transition_key}" if self.transition_mode else ""
+        (self.out / f"cadence-{out['label']}{suffix}.json").write_text(json.dumps(out, indent=1) + "\n")
         self.log(f"cadence {out['label']}: {out['sla_violation_min_per_month']:.3f} SLA-violation min/month, "
                  f"{out['downtime_min_per_month']:.3f} downtime min/month, {out['gb_moved_per_day']:.1f} GB/day, "
                  f"{out['optimizer_cpu_h_per_day']:.2f} optimizer CPU-h/day")
@@ -287,6 +458,11 @@ def main() -> int:
     ap.add_argument("--timeout-s", type=float, default=600.0)
     ap.add_argument("--sla-nines", type=float, default=5.0)
     ap.add_argument("--gb-per-replica", type=float, default=100.0)
+    ap.add_argument("--workload-json", help="named shard workload: JSON array or {'shards': [...]} object")
+    ap.add_argument("--write-gb-per-s", type=float, default=None,
+                    help="uniform shard write rate (opt in to transition-aware optimization)")
+    ap.add_argument("--max-replica-moves", type=int, default=None,
+                    help="total replicas added per reconfiguration; inactive on the initial solve")
     ap.add_argument("--min-gain", type=float, default=0.05,
                     help="switch deployments only if believed downtime drops by at least this fraction")
     ap.add_argument("--clusters", type=int, default=16)
@@ -310,12 +486,23 @@ def main() -> int:
         a.exact_runs, a.table_runs, a.eval_runs, a.ilp_time_limit = 2_000, 1_000, 2_000, 20.0
         if a.output == "outputs/reconfig-cadence":
             a.output = "outputs/reconfig-cadence-smoke"
+    if a.max_replica_moves is not None and a.max_replica_moves < 0:
+        ap.error("--max-replica-moves must be nonnegative")
+    if a.workload_json is not None or a.write_gb_per_s is not None or a.max_replica_moves is not None:
+        try:
+            workload_specs(a.workload_json, a.num_rsms, a.write_gb_per_s, a.gb_per_replica)
+        except ValueError as exc:
+            ap.error(str(exc))
+        default_output = "outputs/reconfig-cadence-smoke" if a.smoke else "outputs/reconfig-cadence"
+        if a.output == default_output:
+            a.output += "-transition"
     s = Study(a)
     meta = {k: v for k, v in vars(a).items() if k not in ("threads",)}
-    (s.out / "params.json").write_text(json.dumps({**meta, "catalogue": CATALOGUE, "scenario": SCENARIO,
-                                                   "transfer": TRANSFER}, indent=1) + "\n")
+    suffix = f"-transition-{s.transition_key}" if s.transition_mode else ""
+    (s.out / f"params{suffix}.json").write_text(json.dumps({**meta, "catalogue": CATALOGUE, "scenario": SCENARIO,
+                                                       "transfer": TRANSFER}, indent=1) + "\n")
     rows = [s.run_cadence(c) for c in sorted(a.cadences_h)]
-    (s.out / "summary.json").write_text(json.dumps(
+    (s.out / f"summary{suffix}.json").write_text(json.dumps(
         [{k: v for k, v in r.items() if k not in ("solves", "migrations", "blocks", "months")} for r in rows],
         indent=1) + "\n")
     return 0
