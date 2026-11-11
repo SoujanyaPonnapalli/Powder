@@ -8,6 +8,9 @@
 
 2. This script: per m, the cheapest saved deployment whose *believed* availability (exact MC at scale m)
    meets the SLA; then its true availability (exact MC at 1x, same horizon, error bars from per-placement s.e.).
+   The true estimate uses seeds disjoint from the optimizer's (``SEED_OFFSET``) and 1M runs: the optimizer's
+   100k-run scores of 3-replica placements near 5 nines are optimistic (rare long outages are often missed, and the
+   ILP picks the luckiest estimates), so reusing its seeds would repeat the bias.
 
     python scripts/figs/sensitivity.py [--sla-nines 5] [--runs 200000]
 """
@@ -24,6 +27,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common as K  # noqa: E402
+
+SEED_OFFSET = 10**9  # disjoint from pilot_fleet_frontier's per-placement seeds
 
 
 def choose(row: dict, sla_nines: float) -> tuple[str, dict, bool]:
@@ -44,7 +49,7 @@ def main() -> int:
     ap.add_argument("--rows", default=str(K.ROOT / "outputs/figs/sensitivity/rows"))
     ap.add_argument("--price", default="rho1")
     ap.add_argument("--sla-nines", type=float, default=5.0)
-    ap.add_argument("--runs", type=int, default=200_000)
+    ap.add_argument("--runs", type=int, default=1_000_000)
     ap.add_argument("--horizon-h", type=float, default=720.0, help="as the optimizer scores")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--output", default=str(K.ROOT / "outputs/figs/sensitivity/sensitivity.json"))
@@ -60,7 +65,7 @@ def main() -> int:
 
         def run(p):
             return p, K.mc_stats([truth[x].node_config for x in p], timeout_s=600, horizon_s=a.horizon_h * 3600,
-                                 runs=a.runs, seed=K.placement_seed(p))
+                                 runs=a.runs, seed=K.placement_seed(p) + SEED_OFFSET)
 
         with ThreadPoolExecutor(a.threads) as pool:
             stats = dict(pool.map(run, counts))

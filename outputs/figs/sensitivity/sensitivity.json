@@ -1,0 +1,174 @@
+{
+ "sla_nines": 5.0,
+ "price": "rho1",
+ "horizon_h": 720.0,
+ "runs": 1000000,
+ "points": [
+  {
+   "assumed_multiplier": 0.25,
+   "budget": "0.1",
+   "cost_per_hour": 2.563922448126308,
+   "believed_nines": 5.781485689934016,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "true_availability": 0.9999288961008861,
+   "true_se": 2.0748354766119686e-06,
+   "true_nines": 4.1481065832754975,
+   "true_nines_ci95": [
+    4.123952118183906,
+    4.173683993745166
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 0.35,
+   "budget": "0.106807",
+   "cost_per_hour": 2.587570042230532,
+   "believed_nines": 5.56638201568918,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "true_availability": 0.9999330662341411,
+   "true_se": 2.0223816036278227e-06,
+   "true_nines": 4.174354739829661,
+   "true_nines_ci95": [
+    4.149368259089091,
+    4.2008670107578965
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 0.5,
+   "budget": "0.0933484",
+   "cost_per_hour": 2.5944883485310553,
+   "believed_nines": 5.019781644107115,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "true_availability": 0.9999294094952843,
+   "true_se": 2.062367467468757e-06,
+   "true_nines": 4.151253712927128,
+   "true_nines_ci95": [
+    4.127070584970267,
+    4.176863266061694
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 0.7,
+   "budget": "0.125",
+   "cost_per_hour": 3.2938473739956127,
+   "believed_nines": 5.291757462098621,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "true_availability": 0.999988923341214,
+   "true_se": 7.29519186585341e-07,
+   "true_nines": 4.955591222427837,
+   "true_nines_ci95": [
+    4.902863643346938,
+    5.015616672157661
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 1.0,
+   "budget": "0.1",
+   "cost_per_hour": 2.993629037653578,
+   "believed_nines": 5.348447171204809,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "true_availability": 0.9999804616847793,
+   "true_se": 1.0039172021501412e-06,
+   "true_nines": 4.70911288800151,
+   "true_nines_ci95": [
+    4.6674405011649736,
+    4.755212480982181
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 1.4,
+   "budget": "0.175",
+   "cost_per_hour": 3.773716316321883,
+   "believed_nines": 5.601193727591418,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 45,
+    "5": 5
+   },
+   "true_availability": 0.9999965977603034,
+   "true_se": 3.1345475988061203e-07,
+   "true_nines": 5.4682350924695635,
+   "true_nines_ci95": [
+    5.396140223891889,
+    5.554727735852867
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 2.0,
+   "budget": "0.165886",
+   "cost_per_hour": 3.682041167975589,
+   "believed_nines": 5.371607320690738,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "true_availability": 0.9999959390756099,
+   "true_se": 3.5975424960637494e-07,
+   "true_nines": 5.3913750965162,
+   "true_nines_ci95": [
+    5.321842069269293,
+    5.474203145922301
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 2.8,
+   "budget": "0.25",
+   "cost_per_hour": 6.36540399142446,
+   "believed_nines": 5.437414076116674,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "5": 45,
+    "7": 5
+   },
+   "true_availability": 0.9999986416173909,
+   "true_se": 1.4471191872647395e-08,
+   "true_nines": 5.866977887197724,
+   "true_nines_ci95": [
+    5.85800303269464,
+    5.876142131037708
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 4.0,
+   "budget": "0.2",
+   "cost_per_hour": 5.494544144689511,
+   "believed_nines": 5.209915367028631,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 10,
+    "5": 35,
+    "7": 5
+   },
+   "true_availability": 0.9999981738399683,
+   "true_se": 1.2874635795655347e-07,
+   "true_nines": 5.73846116663754,
+   "true_nines_ci95": [
+    5.682249366603022,
+    5.803045720903516
+   ],
+   "true_meets_sla": true
+  }
+ ]
+}

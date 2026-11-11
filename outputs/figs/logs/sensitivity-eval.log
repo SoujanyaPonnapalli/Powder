@@ -1,0 +1,9 @@
+m=0.25: budget 0.1 $2.56/h believed 5.78 -> true 4.15 nines
+m=0.35: budget 0.106807 $2.59/h believed 5.57 -> true 4.17 nines
+m=0.5: budget 0.0933484 $2.59/h believed 5.02 -> true 4.15 nines
+m=0.7: budget 0.125 $3.29/h believed 5.29 -> true 4.96 nines
+m=1: budget 0.1 $2.99/h believed 5.35 -> true 4.71 nines
+m=1.4: budget 0.175 $3.77/h believed 5.60 -> true 5.47 nines
+m=2: budget 0.165886 $3.68/h believed 5.37 -> true 5.39 nines
+m=2.8: budget 0.25 $6.37/h believed 5.44 -> true 5.87 nines
+m=4: budget 0.2 $5.49/h believed 5.21 -> true 5.74 nines
