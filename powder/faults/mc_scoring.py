@@ -177,19 +177,20 @@ def catalogue_batch_sampler(lib, cat: dict, machine_ids: Sequence[str], scenario
 
 
 def node_config_batch_sampler(configs: Sequence, protocol, strategy, *, horizon_s: float, network=None):
-    """One fixed-horizon Rust MC RSM job over explicit NodeConfigs (e.g. scaled catalogue machines)."""
-    from powder.mc_backend import run_monte_carlo
+    """One fixed-horizon Rust MC RSM job over explicit NodeConfigs (e.g. scaled catalogue machines).
+    The engine returns only its aggregates (``--summary-only``), not one record per run."""
+    from powder.mc_backend import run_monte_carlo_summary
     from powder.simulation import ClusterState, NetworkState, NodeState
 
     nodes = {f"n{i}": NodeState(node_id=f"n{i}", config=cfg) for i, cfg in enumerate(configs)}
     cluster = ClusterState(nodes=nodes, network=NetworkState(), target_cluster_size=len(nodes))
 
     def sample(count: int, seed: int) -> BatchSummary:
-        runs = run_monte_carlo(cluster, strategy, protocol, num_simulations=count,
-                               max_time=horizon_s, stop_on_data_loss=False, seed=seed,
-                               network_config=network)
-        if len(runs.availability_samples) != count:
+        summary = run_monte_carlo_summary(cluster, strategy, protocol, num_simulations=count,
+                                          max_time=horizon_s, stop_on_data_loss=False, seed=seed,
+                                          network_config=network)
+        if summary["num_runs"] != count:
             raise ValueError("Rust MC returned fewer runs than requested")
-        return BatchSummary.from_samples(runs.availability_samples)
+        return BatchSummary(count, float(summary["availability_mean"]), float(summary["availability_std"]))
 
     return sample

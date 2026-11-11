@@ -537,6 +537,51 @@ def _run_simulations(
     return result["runs"]
 
 
+def run_monte_carlo_summary(
+    cluster: ClusterState,
+    strategy: ClusterStrategy,
+    protocol: Protocol,
+    num_simulations: int,
+    max_time: Seconds | None = None,
+    network_config: NetworkConfig | None = None,
+    stop_on_data_loss: bool = True,
+    seed: int | None = None,
+) -> dict[str, Any]:
+    """Run a Monte Carlo block and return only the engine's aggregate record.
+
+    Same job and seeding as :func:`run_monte_carlo`, but the engine is called with
+    ``--summary-only``: it emits ``num_runs``, ``availability_mean``,
+    ``availability_std`` (sample), percentiles, cost and data-loss aggregates instead
+    of one record per run. Parsing per-run records costs Python far more than the
+    simulation when many short jobs run in parallel.
+    """
+    job = build_job(
+        cluster,
+        strategy,
+        protocol,
+        num_simulations=num_simulations,
+        max_time=max_time,
+        stop_on_data_loss=stop_on_data_loss,
+        base_seed=seed,
+        network_config=network_config,
+    )
+    completed = subprocess.run(
+        [str(ensure_binary()), "--config", "-", "--summary-only"],
+        input=json.dumps(job),
+        capture_output=True,
+        text=True,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(
+            f"the Monte Carlo engine exited {completed.returncode}:\n"
+            f"{completed.stderr.strip()}"
+        )
+    result: dict[str, Any] = json.loads(completed.stdout)
+    if result.get("error"):
+        raise RuntimeError(f"the Monte Carlo engine rejected the job: {result['error']}")
+    return result["summary"]
+
+
 class MonteCarloRunner:
     """Runs multiple simulations and aggregates results.
 

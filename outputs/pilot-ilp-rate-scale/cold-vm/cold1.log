@@ -1,0 +1,16 @@
+[x1 rho0     12s] clusters + table seeds done; budgets [8.94]
+[x1 rho0     36s] baselines scored
+[x1 rho0     38s] old ILP rescored
+[x1 rho0     83s] budget $8.94: 11 fleets, 2377 placements, table 2433
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2879381
+Academic license 2879381 - for non-commercial use only - registered to re___@berkeley.edu
+[x1 rho0     95s] cost tie-break: $8.88 -> $8.66/h at 6.021 nines (1 rounds)
+[x1 rho0     95s] main ILP 6.027 (3 rounds, ILP 1s, MC 1s, +0 consolidation columns) -> lattice 6.029 (7 rounds on 196 columns, ILP 0s, MC 5s)
+[x1 rho0     95s] new ILP 30%: 6.02 nines $8.66/h, 2654 cands, 3 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho0     95s] done
+
+real	1m35.127s
+user	18m32.052s
+sys	0m22.943s

@@ -164,3 +164,16 @@ def test_spare_placements_use_only_spare_machines_and_stay_valid():
         assert len({by[m].az for m in p}) == len(p)
         assert max(Counter(by[m].region for m in p).values()) <= len(p) // 2
     assert F.spare_placements({feats[0].machine_id: 2, feats[1].machine_id: 2}, by, random.Random(0)) == []
+
+
+def test_improve_many_matches_improve_and_prefetches_each_step():
+    feats = synthetic()
+    by = {f.machine_id: f for f in feats}
+    fleet = feats[:72]
+    u = {f.machine_id: f.lam_t for f in feats}
+    score = lambda ids: -sum(by[m].lam_t for m in ids)  # noqa: E731
+    pls = F.pack_pass(fleet, 5, 8, 5, u, random.Random(2), noise=0.5, near=0.5)
+    batches = []
+    got = F.improve_many([(p, fleet) for p in pls], score, prefetch=lambda s: batches.append(len(s)))
+    assert got == [F.improve(p, fleet, score) for p in pls]
+    assert 1 <= len(batches) <= 2 and batches[0] > len(pls)

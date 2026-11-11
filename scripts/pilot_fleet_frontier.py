@@ -407,15 +407,16 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                                      sizes=a.fleet_sizes, repeats=a.fleet_repeats, alpha=a.alpha)
         fleet_counts.append(len(fleets))
         raw = [fleet_raw((1000 * bi + i, fl)) for i, fl in enumerate(fleets)]
-        table_batch({n for ff, _, rand, _ in raw for p in rand for n in (p, *F.swap_neighbors(p, ff))})
-        table.save()
-        placements: set = set()
+        # improvement swaps step by step over all placements, each step's table entries in one parallel batch
+        items = [(p, ff) for ff, _, rand, _ in raw for p in sorted(rand)]
+        placements: set = set(F.improve_many(items, table.score, prefetch=table_batch))
         for ff, cover, rand, _ in raw:
             placements |= cover
-            placements |= {F.improve(p, ff, table.score) for p in rand}
         log(f"budget ${b:.2f}: {len(fleets)} fleets, {len(placements)} placements, table {len(table.memo)}")
         # this budget's fleets + the baselines; Gurobi starts from the best full covering
         pool = list(dict.fromkeys([*placements, *base_pl]))
+        table_batch(pool)  # every candidate's estimate up front, in parallel, before the ILP reads them
+        table.save()
         row_f, rounds, times = {"feasible": False}, 0, {}
         covers = [c for *_, full in raw for c in full]
         if fleets:

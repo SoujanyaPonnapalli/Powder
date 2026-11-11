@@ -392,6 +392,31 @@ def lattice_estimate(q: Sequence[str], base: Sequence[str], top: Sequence[str], 
     return min(max(est, lo), max(hi, lo))
 
 
+def improve_many(items: Sequence[tuple[tuple[str, ...], Sequence[MachineFeatures]]],
+                 score: Callable[[tuple[str, ...]], float], prefetch: Callable[[Iterable], None] | None = None,
+                 steps: int = 2) -> list[tuple[str, ...]]:
+    """:func:`improve` for many (placement, fleet) pairs at once, step by step: each step collects every
+    placement's one-swap neighbours, hands them to ``prefetch`` (e.g. a parallel batch of table entries),
+    then applies each placement's best improving swap. Same result as calling :func:`improve` on each, but
+    the expensive scores of a step are computed together instead of one at a time."""
+    cur = [ids for ids, _ in items]
+    active = list(range(len(items)))
+    for _ in range(steps):
+        nbrs = {i: swap_neighbors(cur[i], items[i][1]) for i in active}
+        if prefetch is not None:
+            prefetch({p for i in active for p in (cur[i], *nbrs[i])})
+        still = []
+        for i in active:
+            best = max(nbrs[i], key=score, default=None)
+            if best is not None and score(best) > score(cur[i]):
+                cur[i] = best
+                still.append(i)
+        active = still
+        if not active:
+            break
+    return cur
+
+
 def dominate(ids: tuple[str, ...], fleet: Sequence[MachineFeatures], u: dict[str, float]) -> tuple[str, ...]:
     """Replace each member by the best fleet machine that dominates it (no dearer, no less reliable) and keeps
     the placement's AZs distinct and regions without a majority. The bill and availability cannot worsen."""
