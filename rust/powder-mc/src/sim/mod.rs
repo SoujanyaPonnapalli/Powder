@@ -8,6 +8,7 @@ pub mod cluster;
 pub mod distributions;
 pub mod events;
 pub mod ids;
+pub mod joint;
 pub mod metrics;
 pub mod network;
 pub mod node;

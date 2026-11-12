@@ -12,9 +12,10 @@ import math
 import time
 from collections import Counter
 from dataclasses import dataclass
-from typing import Callable, Mapping, Sequence
+from typing import Callable, Literal, Mapping, Sequence
 
 from powder.placement_optimizer import PlacementCandidate, PlacementSolution, SelectedCandidate
+from .composed_availability import CandidateTimeline
 from .transition_costs import ShardSpec, edge_average_per_gb, migration_cost
 
 
@@ -101,11 +102,19 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
                             warm_start: Sequence[tuple[str, ...]] = (), time_limit: float = 120.0,
                             mip_gap: float = 1e-5, threads: int = 1, seed: int = 0,
                             minimize_cost: bool = False,
-                            max_unavailability_ppm: float | None = None) -> PlacementSolution:
+                            max_unavailability_ppm: float | None = None,
+                            composed: CandidateTimeline | None = None,
+                            composed_objective: Literal["single", "full"] = "single",
+                            shard_weights: Mapping[str, float] | None = None,
+                            min_single_access: float | None = None,
+                            min_full_access: float | None = None) -> PlacementSolution:
     """Choose one candidate per named shard under an all-in hourly budget.
 
-    Candidate-menu optima only: no implicit matching or reassignment of old
-    shards. ``shard_placements`` gives the selected deployment in shard order.
+    With ``composed``, candidate outcomes come from the SAME shared-fault
+    trajectory; ``single`` maximizes weighted one-shard access, ``full`` uses
+    scenario AND variables for simultaneous access to every shard. These are
+    candidate-menu optima, not a claim of a globally optimal fault model.
+    Legacy calls without ``composed`` retain the original availability goal.
     """
     import gurobipy as gp
 
@@ -127,6 +136,31 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
         raise ValueError("supply old placements for every shard or none")
     if transition.max_replica_moves is not None and not all(has_old):
         raise ValueError("movement cap requires old placements")
+    if composed is None:
+        if (composed_objective != "single" or shard_weights is not None
+                or min_single_access is not None or min_full_access is not None):
+            raise ValueError("composed objectives and floors require a shared CandidateTimeline")
+        weights = None
+    else:
+        if composed_objective not in ("single", "full"):
+            raise ValueError("composed_objective must be single or full")
+        if set(composed.local_ok) != {s.shard_id for s in shards}:
+            raise ValueError("candidate timeline must contain every and only modeled shard")
+        weights = ({s.shard_id: 1.0 / len(shards) for s in shards}
+                   if shard_weights is None else dict(shard_weights))
+        if (set(weights) != set(composed.local_ok)
+                or any(not math.isfinite(v) or v < 0 for v in weights.values())
+                or not math.isclose(sum(weights.values()), 1.0, abs_tol=1e-9, rel_tol=0)):
+            raise ValueError("shard_weights must be nonnegative and sum to one")
+        for floor in (min_single_access, min_full_access):
+            if floor is not None and (not math.isfinite(floor) or not 0 <= floor <= 1):
+                raise ValueError("composed access floors must lie in [0,1]")
+        if minimize_cost and min_single_access is None and min_full_access is None:
+            raise ValueError("minimize_cost with composed scores requires an access floor")
+        if max_unavailability_ppm is not None:
+            raise ValueError("use min_single_access or min_full_access with composed scores")
+        if len(shards) * len(composed.seconds) > 2_000_000:
+            raise ValueError("full scenario model exceeds 2,000,000 shard-interval rows; reduce the menu")
     used = sorted({m for c in candidates for m in c.machine_ids})
     if any(m not in price or not math.isfinite(price[m]) or price[m] < 0 for m in used):
         raise ValueError("all candidate machines need finite nonnegative prices")
@@ -147,6 +181,8 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
                 shard.partition_gb) or shard.partition_gb < 0:
             raise ValueError("shard sizes and write rates must be finite and nonnegative")
         for j, c in enumerate(candidates):
+            if composed is not None and c.machine_ids not in composed.local_ok[shard.shard_id]:
+                continue  # candidate not evaluated for this shard on the shared trace
             moved = migration_cost(shard.old_placement, c.machine_ids, shard.partition_gb,
                                    transition.locations, transition.region_price) if has_old[i] else None
             additions = moved.replica_additions if moved else 0
@@ -184,14 +220,42 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
     if transition.max_replica_moves is not None:
         model.addConstr(gp.quicksum(vals[1] * x[i, j] for (i, j), vals in arcs.items())
                         <= transition.max_replica_moves)
-    unavailability = gp.quicksum((1 - candidates[j].availability) * 1e6 * x[i, j] for i, j in arcs)
-    if minimize_cost:
-        if max_unavailability_ppm is None:
-            raise ValueError("minimize_cost needs max_unavailability_ppm")
-        model.addConstr(unavailability <= max_unavailability_ppm)
-        model.setObjective(effective_rate, gp.GRB.MINIMIZE)
+    if composed is None:
+        unavailability = gp.quicksum((1 - candidates[j].availability) * 1e6 * x[i, j] for i, j in arcs)
+        if minimize_cost:
+            if max_unavailability_ppm is None:
+                raise ValueError("minimize_cost needs max_unavailability_ppm")
+            model.addConstr(unavailability <= max_unavailability_ppm)
+            model.setObjective(effective_rate, gp.GRB.MINIMIZE)
+        else:
+            model.setObjective(unavailability, gp.GRB.MINIMIZE)
     else:
-        model.setObjective(unavailability, gp.GRB.MINIMIZE)
+        single_success = gp.quicksum(
+            weights[shards[i].shard_id] * composed.candidate_access(shards[i].shard_id, candidates[j].machine_ids)
+            * x[i, j] for i, j in arcs)
+        full_success = None
+        if composed_objective == "full" or min_full_access is not None:
+            z = model.addVars(len(composed.seconds), vtype=gp.GRB.BINARY, name="all_shards_work")
+            for k, global_ok in enumerate(composed.global_ok):
+                model.addConstr(z[k] <= int(global_ok))
+                if global_ok:
+                    for i, shard in enumerate(shards):
+                        model.addConstr(z[k] <= gp.quicksum(
+                            int(composed.local_ok[shard.shard_id][candidates[j].machine_ids][k]) * x[i, j]
+                            for j in range(len(candidates)) if (i, j) in arcs))
+            full_success = gp.quicksum(
+                composed.seconds[k] / composed.horizon_seconds * z[k]
+                for k in range(len(composed.seconds)))
+        if min_single_access is not None:
+            model.addConstr(single_success >= min_single_access)
+        if min_full_access is not None:
+            model.addConstr(full_success >= min_full_access)
+        if minimize_cost:
+            model.setObjective(effective_rate, gp.GRB.MINIMIZE)
+        elif composed_objective == "single":
+            model.setObjective((1 - single_success) * 1e6, gp.GRB.MINIMIZE)
+        else:
+            model.setObjective((1 - full_success) * 1e6, gp.GRB.MINIMIZE)
     if len(warm_start) == len(shards):
         index = {c.machine_ids: j for j, c in enumerate(candidates)}
         pairs = [(i, index.get(tuple(sorted(p)))) for i, p in enumerate(warm_start)]
@@ -207,7 +271,8 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
         model.Status, str(model.Status))
     if not model.SolCount:
         return PlacementSolution(status, "no incumbent", "sum_availability", float("nan"), float("nan"), budget, (),
-                                 solver_runtime_seconds=time.time() - t0, horizon_h=transition.horizon_h)
+                                 solver_runtime_seconds=time.time() - t0, horizon_h=transition.horizon_h,
+                                 composed_objective=composed_objective if composed is not None else None)
     picks = [(i, j) for i, j in arcs if x[i, j].X > 0.5]
     picks.sort()
     counts = Counter(j for _, j in picks)
@@ -216,8 +281,12 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
     machine_usd_h = sum(price[m] for m in active)
     traffic_usd_h = sum(arcs[i, j][0] for i, j in picks)
     migration_usd = sum(arcs[i, j][4] for i, j in picks)
+    composed_result = (composed.compose({shards[i].shard_id: candidates[j].machine_ids for i, j in picks},
+                                        weights) if composed is not None else None)
+    quality = (sum(candidates[j].availability for _, j in picks) if composed_result is None else
+               (composed_result.single_access if composed_objective == "single" else composed_result.full_access))
     return PlacementSolution(status, "", "sum_availability",
-                             sum(candidates[j].availability for _, j in picks),
+                             quality,
                              machine_usd_h + traffic_usd_h + migration_usd / transition.horizon_h,
                              budget, selected, solver_runtime_seconds=time.time() - t0,
                              mip_gap=model.MIPGap, best_bound=model.ObjBound,
@@ -228,4 +297,9 @@ def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Map
                              gb_moved=sum(arcs[i, j][3] for i, j in picks),
                              replica_moves=sum(arcs[i, j][1] for i, j in picks),
                              replica_removals=sum(arcs[i, j][2] for i, j in picks),
-                             horizon_h=transition.horizon_h)
+                             horizon_h=transition.horizon_h,
+                             composed_objective=composed_objective if composed_result is not None else None,
+                             single_access_availability=(composed_result.single_access if composed_result else None),
+                             full_access_availability=(composed_result.full_access if composed_result else None),
+                             global_access_availability=(composed_result.global_access if composed_result else None),
+                             per_shard_access=(composed_result.per_shard if composed_result else None))

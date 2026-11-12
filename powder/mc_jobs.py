@@ -11,6 +11,7 @@ Nothing here simulates anything; it is purely a translation layer.
 
 from __future__ import annotations
 
+import math
 import os
 import shutil
 import subprocess
@@ -108,6 +109,34 @@ def ensure_binary() -> Path:
             capture_output=True,
         )
         return binary_path()
+
+
+def build_joint_job(
+    *, horizon_seconds: float, deadline_seconds: float,
+    schema_lease_seconds: float, pd_election_seconds: float,
+    hosts: dict[str, dict[str, str]], pd_members: list[str], pd_leader: str,
+    frontends: dict[str, str], frontend: str, system_regions: list[list[str]],
+    shards: dict[str, list[list[str]]], selected: dict[str, int],
+    events: list[dict[str, Any]] | None = None, job_id: str | None = None,
+) -> dict[str, Any]:
+    """Build an opt-in deterministic whole-fleet replay job.
+
+    ``shards`` maps IDs to candidate replica-host menus; ``selected`` chooses
+    an index per shard for the reported fleet availability. Host IDs are
+    physical identities shared across services and candidates. Events toggle
+    host/region/az/global outages on one clock. Rust validates the full job.
+    No stochastic generator, TiDB protocol emulation or repair is implied.
+    """
+    return {
+        "mode": "joint", "job_id": job_id,
+        "horizon_seconds": horizon_seconds, "deadline_seconds": deadline_seconds,
+        "schema_lease_seconds": schema_lease_seconds,
+        "pd_election_seconds": pd_election_seconds,
+        "hosts": hosts, "pd_members": pd_members, "pd_leader": pd_leader,
+        "frontends": frontends, "frontend": frontend,
+        "system_regions": system_regions, "shards": shards,
+        "selected": selected, "events": events or [],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -286,13 +315,22 @@ def build_job(
     network_config: NetworkConfig | None = None,
     mode: str = "monte_carlo",
     job_id: str | None = None,
+    episode_threshold_seconds: float | None = None,
 ) -> dict[str, Any]:
     """Assemble a complete job for the Rust engine.
 
     Node configurations are registered once and referenced by name, so a
     heterogeneous cluster stays compact and a homogeneous one carries a
-    single config.
+    single config. Episode timing is a per-RSM fixed-horizon sensitivity
+    statistic; it does not change availability or model TiDB dependencies.
     """
+    if episode_threshold_seconds is not None:
+        if not math.isfinite(episode_threshold_seconds) or episode_threshold_seconds < 0:
+            raise ValueError("episode_threshold_seconds must be finite and >= 0")
+        if max_time is None or stop_on_data_loss:
+            raise ValueError("episode timing requires max_time and stop_on_data_loss=False")
+        if mode == "stratified":
+            raise ValueError("episode timing is not supported for stratified jobs")
     config_names: dict[int, str] = {}
     node_configs: dict[str, Any] = {}
 
@@ -348,6 +386,8 @@ def build_job(
             "base_seed": base_seed,
         },
     }
+    if episode_threshold_seconds is not None:
+        job["run"]["episode_threshold_seconds"] = episode_threshold_seconds
     if job_id is not None:
         job["job_id"] = job_id
     if network_config is not None:

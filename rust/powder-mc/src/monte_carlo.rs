@@ -13,7 +13,7 @@
 
 use crate::sim::cluster::ClusterState;
 use crate::sim::distributions::Seconds;
-use crate::sim::metrics::MetricsSnapshot;
+use crate::sim::metrics::{EpisodeMetrics, MetricsSnapshot};
 use crate::sim::network::NetworkConfig;
 use crate::sim::protocol::Protocol;
 use crate::sim::simulator::{EndReason, SimulationResult, Simulator};
@@ -371,6 +371,8 @@ pub struct MonteCarloResults {
     pub time_to_first_unavailability_samples: Vec<Option<Seconds>>,
     /// Total simulated time per run.
     pub total_time_samples: Vec<Seconds>,
+    /// Per-run episode stats, allocated only when a threshold is requested.
+    pub episode_samples: Option<Vec<EpisodeMetrics>>,
 }
 
 impl MonteCarloResults {
@@ -560,7 +562,10 @@ impl MonteCarloResults {
             "Dataloss failures",
             &self.dataloss_failure_samples,
         ));
-        lines.push(counter_summary("Nodes spawned", &self.nodes_spawned_samples));
+        lines.push(counter_summary(
+            "Nodes spawned",
+            &self.nodes_spawned_samples,
+        ));
         lines.push(counter_summary(
             "Unavailability incidents",
             &self.unavailability_incident_samples,
@@ -594,6 +599,9 @@ impl MonteCarloResults {
         self.time_to_first_unavailability_samples
             .push(m.time_to_first_unavailability);
         self.total_time_samples.push(m.total_time());
+        if let Some(samples) = self.episode_samples.as_mut() {
+            samples.push(m.episode_metrics.expect("episode timing was enabled"));
+        }
     }
 
     /// Samples for a convergence metric, as floats.
@@ -667,12 +675,22 @@ pub fn run_single_simulation(
 pub struct MonteCarloRunner {
     /// Experiment configuration.
     pub config: MonteCarloConfig,
+    episode_threshold_seconds: Option<Seconds>,
 }
 
 impl MonteCarloRunner {
     /// Build a runner.
     pub fn new(config: MonteCarloConfig) -> Self {
-        MonteCarloRunner { config }
+        MonteCarloRunner {
+            config,
+            episode_threshold_seconds: None,
+        }
+    }
+
+    /// Enable optional per-RSM episode timing (validated by the job schema).
+    pub fn with_episode_threshold(mut self, threshold: Option<Seconds>) -> Self {
+        self.episode_threshold_seconds = threshold;
+        self
     }
 
     /// Run `num_simulations` simulations and aggregate.
@@ -684,6 +702,7 @@ impl MonteCarloRunner {
         mut progress: Option<&mut dyn FnMut(usize, usize)>,
     ) -> MonteCarloResults {
         let mut results = MonteCarloResults::new();
+        results.episode_samples = self.episode_threshold_seconds.map(|_| Vec::new());
         self.run_batch(scenario, &mut results, self.config.num_simulations, 0);
         if let Some(callback) = progress.as_mut() {
             callback(self.config.num_simulations, self.config.num_simulations);
@@ -721,8 +740,12 @@ impl MonteCarloRunner {
             self.config.log_events,
         );
 
+        simulator.set_episode_threshold(self.episode_threshold_seconds);
         for i in 0..num_runs {
-            let seed = self.config.base_seed.map(|base| base + (start_index + i) as u64);
+            let seed = self
+                .config
+                .base_seed
+                .map(|base| base + (start_index + i) as u64);
             simulator.reset(
                 &template,
                 (scenario.strategy)(),
@@ -753,6 +776,7 @@ impl MonteCarloRunner {
         mut progress: Option<&mut dyn FnMut(usize, usize, bool)>,
     ) -> ConvergenceResult {
         let mut results = MonteCarloResults::new();
+        results.episode_samples = self.episode_threshold_seconds.map(|_| Vec::new());
         let mut run_count = 0usize;
 
         // Phase one: the minimum batch, so there is a variance to work with.
@@ -1185,8 +1209,11 @@ mod tests {
         for i in 0..20 {
             r.availability_samples.push(0.99);
             r.cost_samples.push(1.0);
-            r.time_to_actual_loss_samples
-                .push(if i < 4 { Some(1000.0 * (i + 1) as f64) } else { None });
+            r.time_to_actual_loss_samples.push(if i < 4 {
+                Some(1000.0 * (i + 1) as f64)
+            } else {
+                None
+            });
         }
 
         let c = ConvergenceCriteria {

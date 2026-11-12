@@ -37,6 +37,57 @@ from .simulation.protocol import Protocol
 from .simulation.strategy import ClusterStrategy
 
 
+def run_joint_replay(job: dict[str, Any]) -> dict[str, Any]:
+    """Evaluate one fixed-horizon shared fault trace in the opt-in Rust mode.
+
+    Returns the ``joint`` result with per-shard, uniform single and full
+    access, four per-class success fractions and exact request-start masks.
+    Only starts whose deadline is within the horizon enter the denominator.
+    """
+    if job.get("mode") != "joint":
+        raise ValueError("run_joint_replay requires mode=joint")
+    completed = subprocess.run(
+        [str(ensure_binary()), "--config", "-"], input=json.dumps(job),
+        capture_output=True, text=True,
+    )
+    # The CLI prints a structured JSON error to stdout and exits 1 for
+    # rejected jobs; surface that validation message before the exit status.
+    try:
+        result = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"the Monte Carlo engine exited {completed.returncode}:\n"
+                           f"{completed.stderr.strip()}") from exc
+    if result.get("error"):
+        raise RuntimeError(f"the Monte Carlo engine rejected the joint job: {result['error']}")
+    if completed.returncode != 0:
+        raise RuntimeError(f"the Monte Carlo engine exited {completed.returncode}:\n"
+                           f"{completed.stderr.strip()}")
+    if "joint" not in result:
+        raise RuntimeError("the Monte Carlo engine lacks joint replay; rebuild it with "
+                           "cargo build --release --manifest-path rust/Cargo.toml")
+    return result["joint"]
+
+
+def joint_candidate_timeline(record: dict[str, Any]):
+    """Translate Rust replay masks to CandidateTimeline without resampling.
+
+    The candidate masks are *end-to-end* all-class request-start success,
+    including the global gates: deadline retries may make a global-only
+    success and a local-only success occur at disjoint times. Thus the AND
+    with ``global_ok`` is exact (end-to-end success implies global success).
+    """
+    from .faults.composed_availability import CandidateTimeline
+
+    timeline = record["timeline"]
+    return CandidateTimeline(
+        seconds=tuple(timeline["seconds"]),
+        global_ok=tuple(timeline["global_ok"]),
+        local_ok={shard: {tuple(c["machine_ids"]): tuple(c["local_ok"])
+                          for c in candidates}
+                  for shard, candidates in timeline["candidates"].items()},
+    )
+
+
 class ConvergenceMetric(Enum):
     """Metrics that can be targeted for convergence."""
 
@@ -245,6 +296,8 @@ class MonteCarloConfig:
             experiments concurrently, or drive the binary in ``--stream``
             mode, which has a worker pool.
         base_seed: Base seed for reproducibility (each run gets base_seed + run_index).
+        episode_threshold_seconds: Optional strict outage-duration threshold for
+            fixed-horizon per-RSM runs, not a TiDB availability correction.
     """
 
     num_simulations: int
@@ -252,6 +305,7 @@ class MonteCarloConfig:
     stop_on_data_loss: bool = True
     parallel_workers: int = 1
     base_seed: int | None = None
+    episode_threshold_seconds: float | None = None
 
     def __post_init__(self) -> None:
         if self.max_time is None and not self.stop_on_data_loss:
@@ -259,6 +313,14 @@ class MonteCarloConfig:
                 "max_time is required when stop_on_data_loss is False, "
                 "otherwise simulations would run indefinitely"
             )
+        if self.episode_threshold_seconds is not None:
+            if (
+                not math.isfinite(self.episode_threshold_seconds)
+                or self.episode_threshold_seconds < 0
+            ):
+                raise ValueError("episode_threshold_seconds must be finite and >= 0")
+            if self.max_time is None or self.stop_on_data_loss:
+                raise ValueError("episode timing requires max_time and stop_on_data_loss=False")
 
 
 @dataclass
@@ -287,6 +349,9 @@ class MonteCarloResults:
     leader_election_samples: list[int] = field(default_factory=list)
     time_to_first_unavailability_samples: list[Seconds | None] = field(default_factory=list)
     total_time_samples: list[Seconds] = field(default_factory=list)
+    # None when the optional statistic was not requested; never reconstruct
+    # episode tails from aggregate availability or incident counts.
+    episode_samples: list[dict[str, Any]] | None = None
 
     def availability_mean(self) -> float:
         """Calculate mean availability across all runs."""
@@ -441,6 +506,25 @@ class MonteCarloResults:
         cdf = np.arange(1, len(sorted_samples) + 1) / len(sorted_samples)
         return sorted_samples, cdf
 
+    def episode_summary(self) -> dict[str, float] | None:
+        """Per-run means of measured RSM episodes, if timing was enabled."""
+        samples = self.episode_samples
+        if samples is None:
+            return None
+        avg = lambda key: sum(s[key] for s in samples) / len(samples) if samples else 0.0
+        return {
+            "threshold_seconds": samples[0]["threshold_seconds"] if samples else 0.0,
+            "unavailable_seconds_mean": avg("total_unavailable_seconds"),
+            "count_above_threshold_mean": avg("count_above_threshold"),
+            "max_duration_seconds_mean": avg("max_duration_seconds"),
+            "post_threshold_seconds_mean": avg("post_threshold_seconds"),
+            "long_episode_seconds_mean": avg("long_episode_seconds"),
+            "end_censored_fraction": (
+                sum(s["end_censored_duration_seconds"] is not None for s in samples) / len(samples)
+                if samples else 0.0
+            ),
+        }
+
     def summary(self) -> str:
         """Generate a text summary of results."""
         lines = [
@@ -475,6 +559,13 @@ class MonteCarloResults:
         lines.append(_counter_summary("Nodes spawned", self.nodes_spawned_samples))
         lines.append(_counter_summary("Unavailability incidents", self.unavailability_incident_samples))
         lines.append(_counter_summary("Leader elections", self.leader_election_samples))
+        episode = self.episode_summary()
+        if episode is not None:
+            lines.append(
+                f"  Per-RSM outage tail beyond {episode['threshold_seconds']:g}s: "
+                f"mean={episode['post_threshold_seconds_mean']:.2f}s; "
+                f"long incidents mean={episode['count_above_threshold_mean']:.2f}"
+            )
 
         return "\n".join(lines)
 
@@ -494,6 +585,7 @@ def _run_simulations(
     stop_on_data_loss: bool,
     num_simulations: int,
     base_seed: int | None,
+    episode_threshold_seconds: float | None = None,
 ) -> list[dict[str, Any]]:
     """Run a block of simulations through the Rust engine.
 
@@ -516,6 +608,7 @@ def _run_simulations(
         stop_on_data_loss=stop_on_data_loss,
         base_seed=base_seed,
         network_config=network_config,
+        episode_threshold_seconds=episode_threshold_seconds,
     )
 
     binary = ensure_binary()
@@ -546,6 +639,7 @@ def run_monte_carlo_summary(
     network_config: NetworkConfig | None = None,
     stop_on_data_loss: bool = True,
     seed: int | None = None,
+    episode_threshold_seconds: float | None = None,
 ) -> dict[str, Any]:
     """Run a Monte Carlo block and return only the engine's aggregate record.
 
@@ -564,6 +658,7 @@ def run_monte_carlo_summary(
         stop_on_data_loss=stop_on_data_loss,
         base_seed=seed,
         network_config=network_config,
+        episode_threshold_seconds=episode_threshold_seconds,
     )
     completed = subprocess.run(
         [str(ensure_binary()), "--config", "-", "--summary-only"],
@@ -579,7 +674,11 @@ def run_monte_carlo_summary(
     result: dict[str, Any] = json.loads(completed.stdout)
     if result.get("error"):
         raise RuntimeError(f"the Monte Carlo engine rejected the job: {result['error']}")
-    return result["summary"]
+    summary = result["summary"]
+    if episode_threshold_seconds is not None and "episode_summary" not in summary:
+        raise RuntimeError("the Monte Carlo engine lacks episode metrics; rebuild it with "
+                           "cargo build --release --manifest-path rust/Cargo.toml")
+    return summary
 
 
 class MonteCarloRunner:
@@ -622,6 +721,8 @@ class MonteCarloRunner:
             Aggregated MonteCarloResults.
         """
         results = MonteCarloResults()
+        if self.config.episode_threshold_seconds is not None:
+            results.episode_samples = []
         self._run_batch(
             cluster=cluster,
             strategy=strategy,
@@ -668,6 +769,8 @@ class MonteCarloRunner:
             ConvergenceResult with the aggregated results and convergence status.
         """
         results = MonteCarloResults()
+        if self.config.episode_threshold_seconds is not None:
+            results.episode_samples = []
         run_count = 0
 
         # Phase 1: Run minimum batch
@@ -764,6 +867,7 @@ class MonteCarloRunner:
             stop_on_data_loss=self.config.stop_on_data_loss,
             num_simulations=num_runs,
             base_seed=base_seed,
+            episode_threshold_seconds=self.config.episode_threshold_seconds,
         )
         for run in runs:
             self._collect_result(run, results)
@@ -794,6 +898,11 @@ class MonteCarloRunner:
         results.total_time_samples.append(
             run["time_available"] + run["time_unavailable"]
         )
+        if results.episode_samples is not None:
+            if "episode_metrics" not in run:
+                raise RuntimeError("the Monte Carlo engine lacks episode metrics; rebuild it with "
+                                   "cargo build --release --manifest-path rust/Cargo.toml")
+            results.episode_samples.append(run["episode_metrics"])
 
 
 def _get_metric_samples(
@@ -1013,6 +1122,7 @@ def run_monte_carlo(
     stop_on_data_loss: bool = True,
     parallel_workers: int = 1,
     seed: int | None = None,
+    episode_threshold_seconds: float | None = None,
 ) -> MonteCarloResults:
     """Convenience function to run Monte Carlo simulations.
 
@@ -1029,6 +1139,7 @@ def run_monte_carlo(
         parallel_workers: Accepted for compatibility and ignored; see
             MonteCarloConfig.
         seed: Base random seed.
+        episode_threshold_seconds: Optional strict per-RSM outage duration threshold.
 
     Returns:
         MonteCarloResults with aggregated statistics.
@@ -1039,6 +1150,7 @@ def run_monte_carlo(
         stop_on_data_loss=stop_on_data_loss,
         parallel_workers=parallel_workers,
         base_seed=seed,
+        episode_threshold_seconds=episode_threshold_seconds,
     )
 
     runner = MonteCarloRunner(config)
@@ -1067,6 +1179,7 @@ def run_monte_carlo_converged(
     max_runs: int = 10_000_000,
     batch_size: int = 10,
     progress_callback: Callable[[int, int, bool], None] | None = None,
+    episode_threshold_seconds: float | None = None,
 ) -> ConvergenceResult:
     """Convenience function to run adaptive Monte Carlo simulations.
 
@@ -1103,6 +1216,7 @@ def run_monte_carlo_converged(
         max_runs: Maximum runs safety cap (default 10,000,000).
         batch_size: Runs per batch between convergence checks (default 10).
         progress_callback: Optional callback(completed, estimated_total, converged).
+        episode_threshold_seconds: Optional strict per-RSM outage duration threshold.
 
     Returns:
         ConvergenceResult with aggregated statistics and convergence info.
@@ -1126,6 +1240,7 @@ def run_monte_carlo_converged(
         stop_on_data_loss=stop_on_data_loss,
         parallel_workers=parallel_workers,
         base_seed=seed,
+        episode_threshold_seconds=episode_threshold_seconds,
     )
 
     runner = MonteCarloRunner(config)

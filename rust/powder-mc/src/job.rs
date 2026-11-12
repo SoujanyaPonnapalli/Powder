@@ -4,17 +4,18 @@ use std::time::Instant;
 
 use serde::{Deserialize, Serialize};
 
-use crate::config::{ConfigError, Job, JobMode, ResolvedJob};
+use crate::config::StrategySpec;
+use crate::config::{ConfigError, Job, JobMode, JointJob, ResolvedJob};
 use crate::monte_carlo::{
-    MetricConvergenceStatus, MonteCarloResults, MonteCarloRunner,
-    ScenarioFactory,
+    MetricConvergenceStatus, MonteCarloResults, MonteCarloRunner, ScenarioFactory,
 };
 use crate::sim::cluster::ClusterState;
 use crate::sim::distributions::Seconds;
+use crate::sim::joint::{replay, JointRecord};
+use crate::sim::metrics::EpisodeMetrics;
 use crate::sim::protocol::Protocol;
 use crate::sim::simulator::Simulator;
 use crate::sim::strategy::ClusterStrategy;
-use crate::config::StrategySpec;
 use crate::stratified::{run_stratified, StratifiedRecord, StratifiedScenario};
 
 /// One processed event, as emitted when event logging is on.
@@ -59,9 +60,26 @@ pub struct RunRecord {
     pub total_unavailability_incidents: u64,
     /// Count of leader elections.
     pub total_leader_elections: u64,
+    /// Per-RSM episode timings, only when a threshold was requested.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub episode_metrics: Option<EpisodeMetrics>,
     /// Every processed event, when event logging is on.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub event_log: Option<Vec<EventRecord>>,
+}
+
+/// Means across fixed-horizon per-RSM runs, not TiDB write availability.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EpisodeSummaryRecord {
+    /// Strict duration threshold, in seconds.
+    pub threshold_seconds: Seconds,
+    pub unavailable_seconds_mean: Seconds,
+    pub count_above_threshold_mean: f64,
+    pub max_duration_seconds_mean: Seconds,
+    pub post_threshold_seconds_mean: Seconds,
+    pub long_episode_seconds_mean: Seconds,
+    /// Fraction of runs with an episode open at the end horizon.
+    pub end_censored_fraction: f64,
 }
 
 /// Aggregate statistics over a job's runs.
@@ -101,6 +119,9 @@ pub struct SummaryRecord {
     pub unavailability_incidents_mean: f64,
     /// Mean leader elections per run.
     pub leader_elections_mean: f64,
+    /// Optional episode-level means, omitted for legacy jobs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub episode_summary: Option<EpisodeSummaryRecord>,
 }
 
 /// Convergence state for one metric, in serialisable form.
@@ -171,6 +192,9 @@ pub struct JobResult {
     /// Outcome of a `stratified` job.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stratified: Option<StratifiedRecord>,
+    /// Opt-in whole-fleet deterministic replay, absent for legacy jobs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub joint: Option<JointRecord>,
     /// Wall-clock seconds the job took.
     pub elapsed_seconds: f64,
 }
@@ -185,12 +209,13 @@ impl JobResult {
             summary: None,
             convergence: None,
             stratified: None,
+            joint: None,
             elapsed_seconds,
         }
     }
 }
 
-fn summarize(results: &MonteCarloResults) -> SummaryRecord {
+fn summarize(results: &MonteCarloResults, threshold: Option<Seconds>) -> SummaryRecord {
     let mean_u64 = |xs: &[u64]| -> f64 {
         if xs.is_empty() {
             return 0.0;
@@ -198,7 +223,29 @@ fn summarize(results: &MonteCarloResults) -> SummaryRecord {
         xs.iter().map(|&v| v as f64).sum::<f64>() / xs.len() as f64
     };
 
+    let episode_summary = results.episode_samples.as_ref().map(|samples| {
+        let n = samples.len() as f64;
+        let average = |f: &dyn Fn(&EpisodeMetrics) -> f64| -> f64 {
+            if samples.is_empty() {
+                0.0
+            } else {
+                samples.iter().map(f).sum::<f64>() / n
+            }
+        };
+        EpisodeSummaryRecord {
+            threshold_seconds: threshold.expect("episode samples require a threshold"),
+            unavailable_seconds_mean: average(&|m| m.total_unavailable_seconds),
+            count_above_threshold_mean: average(&|m| m.count_above_threshold as f64),
+            max_duration_seconds_mean: average(&|m| m.max_duration_seconds),
+            post_threshold_seconds_mean: average(&|m| m.post_threshold_seconds),
+            long_episode_seconds_mean: average(&|m| m.long_episode_seconds),
+            end_censored_fraction: average(&|m| {
+                f64::from(m.end_censored_duration_seconds.is_some())
+            }),
+        }
+    });
     SummaryRecord {
+        episode_summary,
         num_runs: results.len(),
         availability_mean: results.availability_mean(),
         availability_std: results.availability_std(),
@@ -240,6 +287,7 @@ fn run_records(results: &MonteCarloResults) -> Vec<RunRecord> {
                 total_nodes_spawned: results.nodes_spawned_samples[i],
                 total_unavailability_incidents: results.unavailability_incident_samples[i],
                 total_leader_elections: results.leader_election_samples[i],
+                episode_metrics: results.episode_samples.as_ref().map(|xs| xs[i]),
                 event_log: None,
             }
         })
@@ -261,6 +309,7 @@ fn run_single(resolved: &ResolvedJob) -> RunRecord {
         resolved.run.log_events,
     );
 
+    simulator.set_episode_threshold(resolved.episode_threshold_seconds);
     let result = if resolved.run.stop_on_data_loss {
         simulator.run_until_data_loss(resolved.run.max_time)
     } else if let Some(horizon) = resolved.run.max_time {
@@ -301,6 +350,7 @@ fn run_single(resolved: &ResolvedJob) -> RunRecord {
         total_nodes_spawned: m.total_nodes_spawned,
         total_unavailability_incidents: m.total_unavailability_incidents,
         total_leader_elections: m.total_leader_elections,
+        episode_metrics: m.episode_metrics,
         event_log,
     }
 }
@@ -346,6 +396,7 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
                 summary: None,
                 convergence: None,
                 stratified: Some(record),
+                joint: None,
                 elapsed_seconds: elapsed(),
             },
             Err(message) => JobResult::failed(resolved.job_id.clone(), message, elapsed()),
@@ -358,10 +409,12 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
             (Some(vec![record]), None, None)
         }
         JobMode::MonteCarlo => {
-            let results = MonteCarloRunner::new(resolved.run.clone()).run(&scenario, None);
+            let results = MonteCarloRunner::new(resolved.run.clone())
+                .with_episode_threshold(resolved.episode_threshold_seconds)
+                .run(&scenario, None);
             (
                 Some(run_records(&results)),
-                Some(summarize(&results)),
+                Some(summarize(&results, resolved.episode_threshold_seconds)),
                 None,
             )
         }
@@ -371,6 +424,7 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
                 .clone()
                 .expect("resolve() rejects converged jobs without criteria");
             let outcome = MonteCarloRunner::new(resolved.run.clone())
+                .with_episode_threshold(resolved.episode_threshold_seconds)
                 .run_until_converged(&scenario, &criteria, None);
             let record = ConvergenceRecord {
                 converged: outcome.converged,
@@ -383,7 +437,10 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
             };
             (
                 Some(run_records(&outcome.results)),
-                Some(summarize(&outcome.results)),
+                Some(summarize(
+                    &outcome.results,
+                    resolved.episode_threshold_seconds,
+                )),
                 Some(record),
             )
         }
@@ -397,6 +454,7 @@ pub fn execute(resolved: &ResolvedJob) -> JobResult {
         summary,
         convergence,
         stratified: None,
+        joint: None,
         elapsed_seconds: started.elapsed().as_secs_f64(),
     }
 }
@@ -407,16 +465,44 @@ pub fn run_job(job: &Job) -> JobResult {
     let started = Instant::now();
     match job.resolve() {
         Ok(resolved) => execute(&resolved),
-        Err(ConfigError(message)) => JobResult::failed(
-            job.job_id.clone(),
-            message,
-            started.elapsed().as_secs_f64(),
-        ),
+        Err(ConfigError(message)) => {
+            JobResult::failed(job.job_id.clone(), message, started.elapsed().as_secs_f64())
+        }
     }
 }
 
 /// Parse one JSON job and run it.
 pub fn run_job_json(text: &str) -> JobResult {
+    // Joint jobs use a deliberately separate schema; legacy jobs are parsed
+    // and executed exactly as before. This also works in NDJSON stream mode.
+    let joint_probe = (text.contains("joint") || text.contains("\\u"))
+        .then(|| serde_json::from_str::<serde_json::Value>(text).ok())
+        .flatten();
+    if let Some(value) = joint_probe {
+        if value.get("mode").and_then(|m| m.as_str()) == Some("joint") {
+            let started = Instant::now();
+            let id = value
+                .get("job_id")
+                .and_then(|v| v.as_str())
+                .map(str::to_owned);
+            return match serde_json::from_value::<JointJob>(value)
+                .map_err(|e| e.to_string())
+                .and_then(|job| replay(&job))
+            {
+                Ok(record) => JobResult {
+                    job_id: id,
+                    error: None,
+                    runs: None,
+                    summary: None,
+                    convergence: None,
+                    stratified: None,
+                    joint: Some(record),
+                    elapsed_seconds: started.elapsed().as_secs_f64(),
+                },
+                Err(message) => JobResult::failed(id, message, started.elapsed().as_secs_f64()),
+            };
+        }
+    }
     match serde_json::from_str::<Job>(text) {
         Ok(job) => run_job(&job),
         Err(e) => JobResult::failed(None, format!("invalid job JSON: {e}"), 0.0),
@@ -484,11 +570,104 @@ mod tests {
     }
 
     #[test]
+    fn thresholded_jobs_measure_episodes_without_changing_availability() {
+        let run = r#""run": {"max_time": 15300.0, "stop_on_data_loss": false,
+                          "num_simulations": 2, "base_seed": 1,
+                          "episode_threshold_seconds": 600.0},"#;
+        for mode in ["single", "monte_carlo", "converged"] {
+            let extra = if mode == "converged" {
+                format!(
+                    r#""mode": "{mode}", {run}
+                    "convergence": {{"min_runs": 2, "max_runs": 2}},"#
+                )
+            } else {
+                format!(r#""mode": "{mode}", {run}"#)
+            };
+            let result = run_job_json(&minimal_job(&extra));
+            assert!(result.error.is_none(), "{mode}: {:?}", result.error);
+            for r in result.runs.as_ref().unwrap() {
+                let e = r.episode_metrics.unwrap();
+                assert!((r.time_unavailable - 900.0).abs() < 1e-8);
+                assert_eq!(e.total_unavailable_seconds, 900.0);
+                assert_eq!(e.max_duration_seconds, 600.0);
+                assert_eq!(e.count_above_threshold, 0); // equality is not above
+                assert_eq!(e.post_threshold_seconds, 0.0);
+                assert_eq!(e.end_censored_duration_seconds, Some(300.0));
+                assert_eq!(r.total_unavailability_incidents, 2);
+            }
+            if let Some(summary) = result.summary {
+                let episodes = summary.episode_summary.unwrap();
+                assert!((episodes.unavailable_seconds_mean - 900.0).abs() < 1e-8);
+                assert_eq!(episodes.max_duration_seconds_mean, 600.0);
+                assert_eq!(episodes.end_censored_fraction, 1.0);
+            }
+        }
+        let baseline = run_job_json(&minimal_job(
+            r#""mode": "single", "run": {"max_time": 15300.0,
+                "stop_on_data_loss": false, "base_seed": 1},"#,
+        ));
+        let with_threshold = run_job_json(&minimal_job(&format!(r#""mode": "single", {run}"#)));
+        assert_eq!(
+            baseline.runs.as_ref().unwrap()[0].availability,
+            with_threshold.runs.as_ref().unwrap()[0].availability
+        );
+        assert!(baseline.runs.as_ref().unwrap()[0].episode_metrics.is_none());
+        let json = serde_json::to_value(&baseline).unwrap();
+        assert!(json["runs"][0].get("episode_metrics").is_none());
+        let summary_json = serde_json::to_value(run_job_json(&minimal_job(
+            r#""mode": "monte_carlo", "run": {"max_time": 100.0, "stop_on_data_loss": false},"#,
+        )))
+        .unwrap();
+        assert!(summary_json["summary"].get("episode_summary").is_none());
+    }
+
+    #[test]
+    fn initially_unavailable_run_counts_the_full_left_and_right_censored_episode() {
+        let text = minimal_job(
+            r#""mode": "single", "run": {"max_time": 100.0,
+                "stop_on_data_loss": false, "episode_threshold_seconds": 10.0},"#,
+        )
+        .replace(
+            "\"config\": \"standard\"",
+            "\"config\": \"standard\", \"is_available\": false",
+        );
+        let result = run_job_json(&text);
+        assert!(result.error.is_none(), "{:?}", result.error);
+        let r = &result.runs.unwrap()[0];
+        assert_eq!(r.time_unavailable, 100.0);
+        assert_eq!(r.time_to_first_unavailability, Some(0.0));
+        let e = r.episode_metrics.unwrap();
+        assert!(e.start_censored);
+        assert_eq!(e.end_censored_duration_seconds, Some(100.0));
+        assert_eq!(e.count_above_threshold, 1);
+        assert_eq!(e.post_threshold_seconds, 90.0);
+    }
+
+    #[test]
+    fn invalid_episode_thresholds_and_nonfixed_runs_are_rejected() {
+        for threshold in ["-1", "1e999"] {
+            let text = minimal_job(&format!(
+                r#""mode": "single", "run": {{"max_time": 100.0,
+                    "stop_on_data_loss": false, "episode_threshold_seconds": {threshold}}},"#
+            ));
+            assert!(run_job_json(&text).error.is_some());
+        }
+        let text = minimal_job(
+            r#""mode": "single", "run": {
+            "max_time": 100.0, "episode_threshold_seconds": 1.0},"#,
+        );
+        assert!(run_job_json(&text)
+            .error
+            .unwrap()
+            .contains("stop_on_data_loss=false"));
+    }
+
+    #[test]
     fn fixed_horizon_runs_continue_after_data_loss() {
         for mode in ["single", "monte_carlo"] {
             let text = minimal_job(&format!(
                 r#""mode": "{mode}",
-                   "run": {{"max_time": 1000.0, "stop_on_data_loss": false, "num_simulations": 2, "base_seed": 1}},"#,
+                   "run": {{"max_time": 1000.0, "stop_on_data_loss": false, "num_simulations": 2, "base_seed": 1, "episode_threshold_seconds": 45.0}},"#,
             ))
             .replace("863999999.0", "10.0");
             let result = run_job_json(&text);
@@ -496,7 +675,13 @@ mod tests {
             for run in result.runs.unwrap() {
                 assert_eq!(run.end_reason, "data_loss");
                 assert_eq!(run.end_time, 1000.0);
-                assert!(run.availability < 0.05, "loss must count through the horizon");
+                let episode = run.episode_metrics.unwrap();
+                assert_eq!(episode.end_censored_duration_seconds, Some(990.0));
+                assert_eq!(episode.post_threshold_seconds, 945.0);
+                assert!(
+                    run.availability < 0.05,
+                    "loss must count through the horizon"
+                );
             }
         }
     }
@@ -546,10 +731,7 @@ mod tests {
         assert!(convergence.total_runs >= 5);
         assert_eq!(convergence.metric_statuses.len(), 1);
         assert_eq!(convergence.metric_statuses[0].metric, "availability");
-        assert_eq!(
-            result.runs.as_ref().unwrap().len(),
-            convergence.total_runs
-        );
+        assert_eq!(result.runs.as_ref().unwrap().len(), convergence.total_runs);
     }
 
     #[test]

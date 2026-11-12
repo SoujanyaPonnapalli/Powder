@@ -143,6 +143,15 @@ impl Simulator {
         }
     }
 
+    /// Configure optional episode timing before initialize() or a run.
+    pub fn set_episode_threshold(&mut self, threshold: Option<Seconds>) {
+        assert!(
+            !self.initialized,
+            "episode threshold must be set before initialization"
+        );
+        self.metrics = MetricsCollector::with_episode_threshold(threshold);
+    }
+
     /// Re-arm this simulator for another run, keeping every buffer.
     ///
     /// A Monte Carlo experiment runs the same scenario thousands of times.
@@ -243,6 +252,8 @@ impl Simulator {
         self.scratch_actions = actions;
 
         self.retry_pending_syncs(None);
+        self.metrics
+            .record_initial_availability(self.protocol.can_commit(&self.cluster));
         self.initialized = true;
     }
 
@@ -325,8 +336,7 @@ impl Simulator {
             return;
         }
 
-        let can_commit =
-            can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
+        let can_commit = can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
 
         if can_commit {
             let commit_amount = elapsed * self.protocol.commit_rate();
@@ -464,8 +474,7 @@ impl Simulator {
 
         let log_replay_rate = config.log_replay_rate_dist.sample(&mut self.rng);
 
-        let can_commit =
-            can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
+        let can_commit = can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
         let commit_rate_eff = if can_commit {
             self.protocol.commit_rate()
         } else {
@@ -559,8 +568,7 @@ impl Simulator {
             return None; // Donor unreachable, sync paused.
         }
 
-        let can_commit =
-            can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
+        let can_commit = can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
         let commit_rate_eff = if can_commit {
             self.protocol.commit_rate()
         } else {
@@ -604,7 +612,8 @@ impl Simulator {
     /// later.
     fn cancel_syncs_from_donor(&mut self, donor_id: Sym) {
         let mut dependents = std::mem::take(&mut self.scratch_donor);
-        self.cluster.fill_nodes_syncing_from(donor_id, &mut dependents);
+        self.cluster
+            .fill_nodes_syncing_from(donor_id, &mut dependents);
 
         for i in 0..dependents.len() {
             let node_index = dependents[i];
@@ -642,8 +651,7 @@ impl Simulator {
     /// Run after each event, because commit ability and donor availability
     /// may both have changed.
     fn reschedule_active_syncs(&mut self, can_commit: Option<bool>) {
-        let can_commit =
-            can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
+        let can_commit = can_commit.unwrap_or_else(|| self.protocol.can_commit(&self.cluster));
 
         let mut indices = std::mem::take(&mut self.scratch_resched);
         self.cluster.fill_active_and_standby_indices(&mut indices);
@@ -988,8 +996,12 @@ impl Simulator {
         let loss = node_config.data_loss_dist.respawned(now, &mut self.rng);
         let node_config = if fail.is_some() || loss.is_some() {
             let mut c = (*node_config).clone();
-            if let Some(d) = fail { c.failure_dist = d; }
-            if let Some(d) = loss { c.data_loss_dist = d; }
+            if let Some(d) = fail {
+                c.failure_dist = d;
+            }
+            if let Some(d) = loss {
+                c.data_loss_dist = d;
+            }
             std::rc::Rc::new(c)
         } else {
             node_config
@@ -1162,8 +1174,7 @@ impl Simulator {
                 // Bill from the moment the node is requested, matching cloud
                 // providers; it moves to its real group on spawn completion.
                 let region = self.cluster.intern(&node_config.region);
-                let mut provisioning_node =
-                    NodeState::new(node_id, region, node_config.clone());
+                let mut provisioning_node = NodeState::new(node_id, region, node_config.clone());
                 provisioning_node.is_available = false;
                 provisioning_node.has_data = false;
                 self.cluster.add_provisioning_node(provisioning_node);
@@ -1272,7 +1283,11 @@ impl Simulator {
                     self.finish_at(end_time.unwrap());
                     break EndReason::TimeLimit;
                 }
-                let hit = self.forced.as_mut().expect("checked above").fire(&self.cluster);
+                let hit = self
+                    .forced
+                    .as_mut()
+                    .expect("checked above")
+                    .fire(&self.cluster);
                 // A candidate that hits no node changes nothing.
                 let Some((kind, node_id)) = hit else { continue };
                 let event_type = match kind {

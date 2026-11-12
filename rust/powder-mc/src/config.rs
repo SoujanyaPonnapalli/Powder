@@ -15,10 +15,13 @@ use crate::sim::distributions::{Distribution, PiecewisePart, Seconds, TimeVaryin
 use crate::sim::network::NetworkConfig;
 use crate::sim::node::{NodeConfig, NodeConfigRef, NodeState};
 use crate::sim::protocol::{LeaderlessProtocol, Protocol, RaftLikeProtocol};
-use crate::stratified::StratifiedSpec;
 use crate::sim::strategy::{
     AdaptiveReplacementStrategy, ClusterStrategy, Delay, NoOpStrategy, NodeReplacementStrategy,
 };
+use crate::stratified::StratifiedSpec;
+
+/// Separate opt-in whole-fleet replay schema; legacy RSM jobs stay unchanged.
+pub use crate::sim::joint::JointJob;
 
 /// A malformed or inconsistent job.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -175,11 +178,9 @@ impl DistributionSpec {
         Ok(match self {
             &DistributionSpec::Exponential { rate } => Distribution::exponential(rate)?,
             &DistributionSpec::Weibull { shape, scale } => Distribution::weibull(shape, scale)?,
-            &DistributionSpec::Normal {
-                mean,
-                std,
-                min_val,
-            } => Distribution::normal(mean, std, min_val)?,
+            &DistributionSpec::Normal { mean, std, min_val } => {
+                Distribution::normal(mean, std, min_val)?
+            }
             &DistributionSpec::Uniform { low, high } => Distribution::uniform(low, high)?,
             &DistributionSpec::Constant { value } => Distribution::constant(value),
             &DistributionSpec::Lognormal { mu, sigma } => Distribution::lognormal(mu, sigma)?,
@@ -193,18 +194,36 @@ impl DistributionSpec {
             }
             DistributionSpec::Mixture { components } => {
                 let weights: Vec<f64> = components.iter().map(|c| c.weight).collect();
-                let dists = components.iter().map(|c| c.dist.build()).collect::<Result<Vec<_>>>()?;
+                let dists = components
+                    .iter()
+                    .map(|c| c.dist.build())
+                    .collect::<Result<Vec<_>>>()?;
                 Distribution::mixture(&weights, dists)?
             }
-            DistributionSpec::TimeVarying { parts, constant_rate, mean_horizon } => {
+            DistributionSpec::TimeVarying {
+                parts,
+                constant_rate,
+                mean_horizon,
+            } => {
                 let parts = parts
                     .iter()
                     .map(|p| {
-                        PiecewisePart::new(p.edges.clone(), p.rates.clone(), p.periodic, p.offset,
-                                           p.age_start.as_ref().map(|a| (a.edges.clone(), a.weights.clone())))
+                        PiecewisePart::new(
+                            p.edges.clone(),
+                            p.rates.clone(),
+                            p.periodic,
+                            p.offset,
+                            p.age_start
+                                .as_ref()
+                                .map(|a| (a.edges.clone(), a.weights.clone())),
+                        )
                     })
                     .collect::<std::result::Result<Vec<_>, _>>()?;
-                Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable::new(parts, *constant_rate, *mean_horizon)?))
+                Distribution::TimeVarying(std::sync::Arc::new(TimeVaryingTable::new(
+                    parts,
+                    *constant_rate,
+                    *mean_horizon,
+                )?))
             }
         })
     }
@@ -497,6 +516,9 @@ pub struct RunSpec {
     /// Whether to retain and emit event logs.
     #[serde(default)]
     pub log_events: bool,
+    /// Optional strict outage-duration threshold, in seconds; not a repair timeout.
+    #[serde(default)]
+    pub episode_threshold_seconds: Option<Seconds>,
     /// Accepted for schema parity with the Python config and ignored:
     /// parallelism here is per job, not per simulation.
     #[serde(default)]
@@ -515,6 +537,7 @@ impl Default for RunSpec {
             num_simulations: 1,
             base_seed: None,
             log_events: false,
+            episode_threshold_seconds: None,
             parallel_workers: None,
         }
     }
@@ -583,9 +606,7 @@ impl ConvergenceSpec {
         for name in &self.metrics {
             match ConvergenceMetric::from_name(name) {
                 Some(m) => metrics.push(m),
-                None => {
-                    return Err(ConfigError(format!("Unknown convergence metric: {name}")))
-                }
+                None => return Err(ConfigError(format!("Unknown convergence metric: {name}"))),
             }
         }
         Ok(ConvergenceCriteria {
@@ -674,6 +695,8 @@ pub struct ResolvedJob {
     pub network_config: Option<NetworkConfig>,
     /// Engine run configuration.
     pub run: MonteCarloConfig,
+    /// Optional strict episode-duration threshold, in seconds.
+    pub episode_threshold_seconds: Option<Seconds>,
     /// Engine convergence criteria.
     pub convergence: Option<ConvergenceCriteria>,
     /// Stratified-sampling settings.
@@ -747,8 +770,8 @@ impl Job {
         let mut cluster = ClusterState::new(self.cluster.target_cluster_size);
 
         let add = |cluster: &mut ClusterState,
-                       spec: &NodeSpec,
-                       group: crate::sim::node::Group|
+                   spec: &NodeSpec,
+                   group: crate::sim::node::Group|
          -> Result<()> {
             let config = lookup(&spec.config)?;
             let sym = cluster.intern(&spec.node_id);
@@ -872,6 +895,23 @@ impl Job {
             run.num_simulations = 1;
         }
         let run = run.build()?;
+        if let Some(threshold) = self.run.episode_threshold_seconds {
+            if !threshold.is_finite() || threshold < 0.0 {
+                return Err(ConfigError(
+                    "run.episode_threshold_seconds must be finite and >= 0".to_string(),
+                ));
+            }
+            if run.max_time.is_none() || run.stop_on_data_loss {
+                return Err(ConfigError(
+                    "episode timing requires run.max_time and stop_on_data_loss=false".to_string(),
+                ));
+            }
+            if self.mode == JobMode::Stratified {
+                return Err(ConfigError(
+                    "episode timing is not supported for stratified jobs".to_string(),
+                ));
+            }
+        }
 
         let convergence = match (&self.convergence, self.mode) {
             (Some(spec), _) => Some(spec.build()?),
@@ -910,6 +950,7 @@ impl Job {
             strategy_default_config,
             network_config,
             run,
+            episode_threshold_seconds: self.run.episode_threshold_seconds,
             convergence,
             stratified,
         })
@@ -1253,9 +1294,18 @@ mod tests {
         }));
         sim.run_for(11.0);
         assert_eq!(sim.cluster.availability_counts().available, 0);
-        assert!(sim.cluster.network.is_region_down(sim.cluster.sym_of("us-east").unwrap()));
-        assert!(sim.cluster.network.is_region_down(sim.cluster.sym_of("us-west").unwrap()));
-        assert!(!sim.cluster.network.is_az_down(sim.cluster.sym_of("us-east-1a").unwrap()));
+        assert!(sim
+            .cluster
+            .network
+            .is_region_down(sim.cluster.sym_of("us-east").unwrap()));
+        assert!(sim
+            .cluster
+            .network
+            .is_region_down(sim.cluster.sym_of("us-west").unwrap()));
+        assert!(!sim
+            .cluster
+            .network
+            .is_az_down(sim.cluster.sym_of("us-east-1a").unwrap()));
         sim.run_for(5.0);
         assert_eq!(sim.cluster.num_available(), 3);
     }

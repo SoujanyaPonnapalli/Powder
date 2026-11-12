@@ -210,6 +210,14 @@ class PlacementSolution:
     replica_moves: int | None = None
     replica_removals: int | None = None
     horizon_h: float | None = None
+    # Populated only when all selected candidates were evaluated against one
+    # common request/fault timeline. objective_value is the selected mode's
+    # single- or full-access fraction, never a product of marginals.
+    composed_objective: str | None = None
+    single_access_availability: float | None = None
+    full_access_availability: float | None = None
+    global_access_availability: float | None = None
+    per_shard_access: Mapping[str, float] | None = None
 
     @cached_property
     def total_rsms(self) -> int:

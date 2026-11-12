@@ -43,6 +43,7 @@ from powder.faults import FaultLibrary  # noqa: E402
 from powder.faults import catalogue as C  # noqa: E402
 from powder.faults import fleets as F  # noqa: E402
 from powder.faults.centroid_table import CentroidTable, load_cache, save_cache  # noqa: E402
+from powder.faults.composed_availability import CandidateTimeline  # noqa: E402
 from powder.faults.gurobi_ilp import TransitionProblem, solve_transition_gurobi, solve_unique_cost_gurobi  # noqa: E402
 from powder.faults.convert import scenario_network_config  # noqa: E402
 from powder.faults.ilp import solve_catalogue_placement  # noqa: E402
@@ -107,15 +108,22 @@ def summarize(sol, price: dict, exact: Exact, num_rsms: int) -> dict:
     used, rf, total = set(), Counter(), 0.0
     for item in sol.selected:
         ids = item.candidate.machine_ids
-        total += exact(ids) * item.count
+        if sol.composed_objective is None:
+            total += exact(ids) * item.count
         rf[len(ids)] += item.count
         used |= set(ids)
-    mean = total / num_rsms
+    mean = (sol.single_access_availability if sol.composed_objective is not None else total / num_rsms)
     row = {"feasible": True, "cost_per_hour": sol.total_cost_per_hour if sol.shard_placements else sum(price[m] for m in used),
            "mean_availability": mean, "nines": nines(mean), "rf_counts": dict(sorted(rf.items())),
            "machines_used": len(used), "spot": sum(int(m[1:]) >= 1000 for m in used),
            "placements": ([list(ids) for _, ids in sol.shard_placements] if sol.shard_placements else
                           [list(item.candidate.machine_ids) for item in sol.selected for _ in range(item.count)])}
+    if sol.composed_objective is not None:
+        row.update(composed_objective=sol.composed_objective,
+                   full_availability=sol.full_access_availability,
+                   full_nines=nines(sol.full_access_availability),
+                   global_availability=sol.global_access_availability,
+                   per_shard_access=sol.per_shard_access)
     if sol.shard_placements:
         row.update(shard_ids=[sid for sid, _ in sol.shard_placements],
                    machine_cost_per_hour=sol.machine_cost_per_hour,
@@ -138,13 +146,21 @@ def summarize_placements(placements, price: dict, exact: Exact) -> dict:
 
 def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget, *, warm=(), rounds=10,
                 time_limit=120.0, threads=1, feat_of=None, seed=0, u_of=None, prefetch=None, max_added=400,
-                transition: TransitionProblem | None = None):
+                transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None,
+                composed_objective: str = "single", shard_weights=None,
+                min_single_access=None, min_full_access=None):
     """Gurobi ILP on estimated scores (exact where known); selected placements get exact MC; re-solve until
     the selection is all exact. With ``feat_of``, each solve also adds *consolidation columns*: valid
     placements built only from chosen machines with free slots (fleets.spare_placements), which cost nothing
     extra and let the next solve regroup RSMs onto under-used machines and drop others. At most ``max_added``
     per round (lowest summed downtime score ``u_of``); ``prefetch`` batch-computes their estimates.
     Returns (solution, rounds, ILP seconds, MC seconds, consolidation columns added)."""
+    if composed is not None:
+        if transition is None:
+            raise ValueError("composed placement scoring needs named shards in transition")
+        # The shared-trace masks are already scored. Legacy per-RSM exact MC and
+        # its lattice estimator are not valid rescores of the composed objective.
+        feat_of = None
     t_ilp = t_mc = 0.0
     pool = list(dict.fromkeys(pool))
     seen = set(pool)
@@ -153,7 +169,9 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
     last_added: set = set()
     sol = None
     for r in range(rounds):
-        cands = [PlacementCandidate(f"c{i}", ids, exact.memo.get(ids, estimate(ids)), sum(price[m] for m in ids))
+        cands = [PlacementCandidate(f"c{i}", ids,
+                                    0.0 if composed is not None else exact.memo.get(ids, estimate(ids)),
+                                    sum(price[m] for m in ids))
                  for i, ids in enumerate(pool)]
         if transition is None:
             sol = solve_unique_cost_gurobi(cands, price, capacity=capacity, num_rsms=num_rsms, budget=budget,
@@ -163,9 +181,13 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
                 raise ValueError("transition shard count must equal num_rsms")
             sol = solve_transition_gurobi(cands, price, capacity=capacity, budget=budget,
                                           transition=transition, warm_start=warm,
-                                          time_limit=time_limit, threads=threads)
+                                          time_limit=time_limit, threads=threads,
+                                          composed=composed, composed_objective=composed_objective,
+                                          shard_weights=shard_weights, min_single_access=min_single_access,
+                                          min_full_access=min_full_access)
         t_ilp += sol.solver_runtime_seconds
-        missing = [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo]
+        missing = ([] if composed is not None else
+                   [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo])
         added = []
         chosen = {it.candidate.machine_ids for it in sol.selected}
         if last_added and not (last_added & chosen):
@@ -195,7 +217,8 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
 
 def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsms, capacity, budget, *,
                   tolerance_nines: float, rounds=15, time_limit=120.0, threads=1, pessimism=1.5,
-                  transition: TransitionProblem | None = None):
+                  transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None,
+                  composed_objective: str = "single", shard_weights=None):
     """Cheapest deployment within ``tolerance_nines`` of the best one found (``final_placements``, all exact):
     minimize the price of the active machines subject to summed unavailability <= 10**tolerance x the best
     deployment's. Unscored placements enter with ``pessimism`` x their estimated unavailability (table
@@ -203,6 +226,23 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
     whose picks are all exact *and* within the cap counts; the cheapest such round is returned, or None.
     Returns (solution or None, rounds, ILP seconds, MC seconds)."""
     final = [tuple(sorted(p)) for p in final_placements]
+    if composed is not None:
+        if transition is None or len(final) != len(transition.shards):
+            raise ValueError("composed cost tie-break needs one named placement per shard")
+        dep = {shard.shard_id: p for shard, p in zip(transition.shards, final)}
+        base = composed.compose(dep, shard_weights)
+        target = base.single_access if composed_objective == "single" else base.full_access
+        floor = max(0.0, 1 - (1 - target) * 10 ** tolerance_nines)
+        menu = list(dict.fromkeys([*pool, *final]))
+        cands = [PlacementCandidate(f"c{i}", ids, 0.0, sum(price[m] for m in ids))
+                 for i, ids in enumerate(menu)]
+        sol = solve_transition_gurobi(
+            cands, price, capacity=capacity, budget=budget, transition=transition,
+            warm_start=final, time_limit=time_limit, threads=threads, minimize_cost=True,
+            composed=composed, composed_objective=composed_objective, shard_weights=shard_weights,
+            **({"min_single_access": floor} if composed_objective == "single" else
+               {"min_full_access": floor}))
+        return (sol if sol.selected else None), 1, sol.solver_runtime_seconds, 0.0
     cap = sum(1.0 - exact(p) for p in final) * 1e6 * 10 ** tolerance_nines
     pool = list(dict.fromkeys([*pool, *final]))
     warm, t_ilp, t_mc = final, 0.0, 0.0
@@ -250,11 +290,15 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
 
 
 def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacity, budget, *, threads, seed,
-                   transition: TransitionProblem | None = None):
+                   transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None):
     """Move the chosen deployment up its dominance lattices: each selected placement's lattice slice
     (fleets.lattice_slice) is estimated from its exact base and exact top (fleets.lattice_estimate), a small
     Gurobi ILP over these columns picks one deployment under capacity and budget, and every pick gets exact MC
     until the picks are all exact."""
+    if composed is not None:
+        # An unscored lattice neighbor has no shared-trajectory success mask.
+        # Leave the exact candidate-menu solution intact until those masks exist.
+        return sol, 0, 0.0, 0.0, 0
     rng = random.Random(seed)
     feat = {f.machine_id: f for f in pool_feats}
     lattices = {}
