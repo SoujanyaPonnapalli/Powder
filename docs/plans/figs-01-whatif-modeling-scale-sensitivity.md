@@ -230,3 +230,26 @@ Solver notes:
 
 **Figure 4.** The sweep over m = 0.25..4 is running (`outputs/figs/sensitivity/rows`); then
 `scripts/figs/sensitivity.py` + `render.py sensitivity`.
+
+### Why the 1x deployment misses the 5-nine SLA (2026-11-12, `scripts/figs/diagnostics/`)
+
+Believed 5.35 nines, true 4.68 (independent seeds, 1M runs per placement). The model is the same on both sides:
+- Engine: the committed and the rebuilt (uncommitted) engines are bit-identical on these placements, and both
+  reproduce the cached scores exactly.
+
+Cause: optimizer scores are noisy on a rare catastrophe, and the ILP selects the lucky ones.
+- The 10% budget buys 10 all-spot 3-replica placements. 88% of their downtime comes from runs down > 24 h
+  (140 of 3M runs, 4.7e-5 per RSM-month).
+- Every one of those runs is a potential-data-loss event: two of three replicas lost permanently (spot
+  interruption, disk) before a replacement catches up. Without quorum, safe-mode replacement cannot proceed, so
+  the RSM stays down for the rest of the 720 h horizon.
+- A 100k-run score sees about 5 such events (Poisson), so single scores vary 3-10x.
+- The median single 100k score is unbiased (4.67 nines), but the ILP picks, out of thousands of candidates, the
+  placements whose scores missed the catastrophes. Each chosen score is below 9-10 of 10 fresh estimates.
+
+Fix options:
+1. Re-score the chosen deployment on independent seeds (validation; needed for honest numbers).
+2. Score candidates conservatively (upper confidence bound on unavailability) or with a rare-event estimator
+   for quorum loss (Markov or stratified MC for P(quorum loss) x expected stuck time).
+3. Model recovery from quorum loss (operator unsafe-recover or restore within hours, not the rest of the
+   horizon). This changes the truth too.
