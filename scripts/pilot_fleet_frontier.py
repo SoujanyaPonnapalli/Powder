@@ -48,6 +48,7 @@ from powder.faults.gurobi_ilp import TransitionProblem, solve_transition_gurobi,
 from powder.faults.convert import scenario_network_config  # noqa: E402
 from powder.faults.ilp import solve_catalogue_placement  # noqa: E402
 from powder.faults.mc_scoring import node_config_batch_sampler  # noqa: E402
+from powder.faults.is_scoring import is_stats  # noqa: E402
 from powder.placement_optimizer import PlacementCandidate, PlacementSolverConfig, solve_candidate_ilp  # noqa: E402
 from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProtocol  # noqa: E402
 from scripts.experiment_sizing import baseline  # noqa: E402
@@ -71,35 +72,88 @@ def exact_runs(scale: float) -> int:
 
 class Exact:
     """Exact MC of real (scaled) machines, memoized by sorted machine ids. Each call is its own Rust process,
-    so :meth:`batch` scores many placements at once on ``threads`` threads (the GIL is released while waiting)."""
+    so :meth:`batch` scores many placements at once on ``threads`` threads (the GIL is released while waiting).
 
-    def __init__(self, by_id, protocol, strategy, horizon_s, network, runs, threads, cache_path: Path | None = None):
+    ``min_batches`` > 1: a placement counts as exactly scored only after that many independent batches of
+    ``runs`` (batch b uses seed + b x runs; batch 0 is the original single score). Each time the ILP selects an
+    under-sampled placement it gets one more batch, so a lucky first draw regresses toward its mean instead of
+    being kept (selection on noise). ``is_beta`` > 1: importance-sampled batches (powder.faults.is_scoring).
+    Defaults (1, 1.0) reproduce the original single fixed-seed score exactly."""
+
+    def __init__(self, by_id, protocol, strategy, horizon_s, network, runs, threads, cache_path: Path | None = None,
+                 min_batches: int = 1, is_beta: float = 1.0):
         self.by_id, self.protocol, self.strategy = by_id, protocol, strategy
         self.horizon_s, self.network, self.runs, self.threads = horizon_s, network, runs, threads
         self.cache_path = cache_path
+        self.min_batches, self.is_beta = int(min_batches), float(is_beta)
         self.seconds = 0.0
-        self.memo: dict[tuple[str, ...], float] = (
-            {tuple(k.split("|")): v for k, v in load_cache(cache_path).items()} if cache_path else {})
+        self.sums: dict[tuple[str, ...], float] = {}
+        self.counts: dict[tuple[str, ...], int] = {}
+        self.memo: dict[tuple[str, ...], float] = {}
+        for k, v in (load_cache(cache_path).items() if cache_path else ()):
+            ids = tuple(k.split("|"))
+            if isinstance(v, dict):
+                self.sums[ids], self.counts[ids] = float(v["sum"]), int(v["n"])
+                self.memo[ids] = self.sums[ids] / self.counts[ids]
+            else:
+                self.memo[ids], self.sums[ids], self.counts[ids] = float(v), float(v), 1
 
     def save(self) -> None:
         if self.cache_path:
-            save_cache(self.cache_path, {"|".join(k): v for k, v in self.memo.items()})
+            plain = self.min_batches == 1 and self.is_beta == 1.0
+            save_cache(self.cache_path, {"|".join(k): (v if plain else {"sum": self.sums[k], "n": self.counts[k]})
+                                         for k, v in self.memo.items()})
+
+    def needs(self, ids) -> bool:
+        """Not yet exactly scored (fewer than ``min_batches`` batches)."""
+        return self.counts.get(tuple(sorted(ids)), 0) < self.min_batches
 
     def batch(self, placements) -> None:
+        """One more batch for every listed placement that still needs one (at least one batch for new ones)."""
         t = time.time()
-        todo = list(dict.fromkeys(tuple(sorted(p)) for p in placements if tuple(sorted(p)) not in self.memo))
+        todo = list(dict.fromkeys(tuple(sorted(p)) for p in placements if self.needs(p)))
         with ThreadPoolExecutor(self.threads) as pool:
-            list(pool.map(self, todo))
+            list(pool.map(self._add_batch, todo))
         self.seconds += time.time() - t
+
+    def _add_batch(self, ids) -> None:
+        b = self.counts.get(ids, 0)
+        seed = int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big") + b * self.runs
+        configs = [self.by_id[m].node_config for m in ids]
+        if self.is_beta == 1.0:
+            s = node_config_batch_sampler(configs, self.protocol, self.strategy, horizon_s=self.horizon_s,
+                                          network=self.network)
+            mean = s(self.runs, seed).mean
+        else:
+            mean = is_stats(configs, self.protocol, self.strategy, horizon_s=self.horizon_s, runs=self.runs,
+                            seed=seed, beta=self.is_beta, network=self.network).availability
+        self.sums[ids] = self.sums.get(ids, 0.0) + mean
+        self.counts[ids] = b + 1
+        self.memo[ids] = self.sums[ids] / self.counts[ids]
 
     def __call__(self, ids) -> float:
         ids = tuple(sorted(ids))
         if ids not in self.memo:
-            seed = int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big")
-            s = node_config_batch_sampler([self.by_id[m].node_config for m in ids], self.protocol, self.strategy,
-                                          horizon_s=self.horizon_s, network=self.network)
-            self.memo[ids] = s(self.runs, seed).mean
+            self._add_batch(ids)
         return self.memo[ids]
+
+
+def validate(placements, by_id, protocol, strategy, horizon_s, network, runs: int, threads: int,
+             seed_offset: int = 10**9) -> dict:
+    """Independent re-score of a chosen deployment: plain MC on seeds disjoint from every optimizer batch."""
+    t = time.time()
+    counts = Counter(tuple(sorted(p)) for p in placements)
+
+    def one(ids):
+        seed = int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big") + seed_offset
+        s = node_config_batch_sampler([by_id[m].node_config for m in ids], protocol, strategy, horizon_s=horizon_s,
+                                      network=network)
+        return ids, s(runs, seed).mean
+
+    with ThreadPoolExecutor(threads) as pool:
+        got = dict(pool.map(one, counts))
+    mean = sum(c * got[p] for p, c in counts.items()) / sum(counts.values())
+    return {"mean_availability": mean, "nines": nines(mean), "runs_per_placement": runs, "seconds": time.time() - t}
 
 
 def summarize(sol, price: dict, exact: Exact, num_rsms: int) -> dict:
@@ -187,7 +241,7 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
                                           min_full_access=min_full_access)
         t_ilp += sol.solver_runtime_seconds
         missing = ([] if composed is not None else
-                   [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo])
+                   [it.candidate.machine_ids for it in sol.selected if exact.needs(it.candidate.machine_ids)])
         added = []
         chosen = {it.candidate.machine_ids for it in sol.selected}
         if last_added and not (last_added & chosen):
@@ -255,7 +309,7 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
 
     def verified(sol):
         picks = [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)]
-        return (all(p in exact.memo for p in picks)
+        return (all(not exact.needs(p) for p in picks)
                 and sum(1.0 - exact.memo[p] for p in picks) * 1e6 <= cap * (1 + 1e-9))
 
     r = 0
@@ -275,7 +329,7 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
         t_ilp += sol.solver_runtime_seconds
         if not sol.selected:
             break
-        missing = [it.candidate.machine_ids for it in sol.selected if it.candidate.machine_ids not in exact.memo]
+        missing = [it.candidate.machine_ids for it in sol.selected if exact.needs(it.candidate.machine_ids)]
         if missing:
             t = time.time()
             exact.batch(missing)
@@ -290,7 +344,8 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
 
 
 def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacity, budget, *, threads, seed,
-                   transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None):
+                   transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None,
+                   rounds: int = 10):
     """Move the chosen deployment up its dominance lattices: each selected placement's lattice slice
     (fleets.lattice_slice) is estimated from its exact base and exact top (fleets.lattice_estimate), a small
     Gurobi ILP over these columns picks one deployment under capacity and budget, and every pick gets exact MC
@@ -324,9 +379,9 @@ def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacit
     pool = list(dict.fromkeys(pl for elems, _ in lattices.values() for pl in elems))
     warm = ([ids for _, ids in sol.shard_placements] if transition is not None else
             [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)])
-    sol, rounds, t_ilp, t_mc, _ = solve_exact(pool, price, exact, estimate, num_rsms, capacity, budget, warm=warm,
-                                              threads=threads, transition=transition)
-    return sol, rounds, t_ilp, t_mc, len(pool)
+    sol, n_rounds, t_ilp, t_mc, _ = solve_exact(pool, price, exact, estimate, num_rsms, capacity, budget, warm=warm,
+                                                threads=threads, transition=transition, rounds=rounds)
+    return sol, n_rounds, t_ilp, t_mc, len(pool)
 
 
 def carry_forward(new_rows: dict) -> None:
@@ -362,8 +417,10 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     by_id = {m.machine_id: m for m in machines}
     price = {m.machine_id: m.node_config.cost_per_hour for m in machines}
     tag = f"x{k:g}-{price_model}"
+    mode = "" if (a.min_batches == 1 and a.is_beta == 1.0) else f"-b{a.min_batches}-is{a.is_beta:g}"
     exact = Exact(by_id, protocol, strategy, horizon_s, network, exact_runs(k), a.threads,
-                  cache_path=Path(a.cache_dir) / f"exact-x{k:g}.json")
+                  cache_path=Path(a.cache_dir) / f"exact-x{k:g}{mode}.json",
+                  min_batches=a.min_batches, is_beta=a.is_beta)
     free_cost = old["solution"].total_cost_per_hour
     fracs = list(a.budget_fractions)
     budgets = [f * free_cost for f in fracs]
@@ -447,6 +504,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
 
     new_rows, fleet_counts = {}, []
     for bi, (f, b) in enumerate(zip(fracs, budgets)):
+        t_budget = time.time()
         fleets = F.fleets_for_budget(feats, u, b, num_rsms=a.num_rsms, capacity=a.capacity,
                                      sizes=a.fleet_sizes, repeats=a.fleet_repeats, alpha=a.alpha)
         fleet_counts.append(len(fleets))
@@ -481,11 +539,12 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                     f"({gs.status})")
             sol, rounds, t_ilp, t_mc, consolidated = solve_exact(
                 pool, price, exact, table.score, a.num_rsms, a.capacity, b, warm=best_cover, threads=a.threads,
-                feat_of=feat_of if a.consolidate else None, seed=bi, u_of=u_of, prefetch=table_batch)
+                feat_of=feat_of if a.consolidate else None, seed=bi, u_of=u_of, prefetch=table_batch,
+                rounds=a.rounds)
             main = summarize(sol, price, exact, a.num_rsms)
             asc, a_rounds, a_ilp, a_mc, a_pool = lattice_ascent(
                 sol, [feat_of[m] for m in {m for ids in pool for m in ids}], u_of, exact, price, a.num_rsms,
-                a.capacity, b, threads=a.threads, seed=bi)
+                a.capacity, b, threads=a.threads, seed=bi, rounds=a.rounds)
             row_f = summarize(asc, price, exact, a.num_rsms)
             if not row_f["feasible"] or (main["feasible"] and main["mean_availability"] > row_f["mean_availability"]):
                 row_f = {**main, "source": "main ILP (lattice ascent found nothing better)"}
@@ -509,6 +568,12 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             log(f"main ILP {main['nines']:.3f} ({rounds} rounds, ILP {t_ilp:.0f}s, MC {t_mc:.0f}s, "
                 f"+{consolidated} consolidation columns) -> lattice "
                 f"{row_f.get('max_availability', row_f)['nines']:.3f} ({a_rounds} rounds on {a_pool} columns, ILP {a_ilp:.0f}s, MC {a_mc:.0f}s)")
+        times["budget_wall_s"] = time.time() - t_budget          # optimization only (excludes validation)
+        if a.validate_runs and row_f.get("feasible"):
+            row_f["validated"] = validate(row_f["placements"], by_id, protocol, strategy, horizon_s, network,
+                                          a.validate_runs, a.threads)
+            times["validate_s"] = row_f["validated"]["seconds"]
+            log(f"validated {f:.0%}: believed {row_f['nines']:.3f} -> independent {row_f['validated']['nines']:.3f} nines")
         exact.save()
         new_rows[f"{f:g}"] = {**row_f, "candidates": len(pool), "rounds": rounds, "times": times}
         log(f"new ILP {f:.0%}: " + (f"{row_f['nines']:.2f} nines ${row_f['cost_per_hour']:.2f}/h, {len(pool)} cands, "
@@ -548,6 +613,14 @@ def main() -> int:
     ap.add_argument("--resume", action="store_true", help="reuse finished configurations' rows/*.json")
     ap.add_argument("--cache-dir", default=None, help="MC caches (default: <output>/cache); shared across prices")
     ap.add_argument("--compare-highs", action="store_true", help="also time one HiGHS solve per budget")
+    ap.add_argument("--min-batches", type=int, default=1,
+                    help="independent exact-MC batches a placement needs before it counts as scored; each ILP "
+                         "selection of an under-sampled placement adds one (1 = original single fixed-seed score)")
+    ap.add_argument("--is-beta", type=float, default=1.0,
+                    help="importance-sampling tilt on permanent failures for exact MC (1 = plain MC)")
+    ap.add_argument("--validate-runs", type=int, default=0,
+                    help="re-score each budget's final deployment on independent seeds with this many runs")
+    ap.add_argument("--rounds", type=int, default=10, help="ILP <-> exact-MC rounds per solve")
     ap.add_argument("--tiebreak-nines", type=float, default=0.01,
                     help="report the cheapest deployment within this many nines of the best (0 = off)")
     ap.add_argument("--no-consolidate", dest="consolidate", action="store_false",
