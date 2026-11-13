@@ -557,20 +557,20 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                     num_rsms=a.num_rsms, objective="sum_availability", budget_per_hour=b, unique_machine_cost=True,
                     time_limit_seconds=300))
                 gs = solve_unique_cost_gurobi(cands, price, capacity=a.capacity, num_rsms=a.num_rsms, budget=b,
-                                              warm_start=best_cover, threads=a.threads)
+                                              warm_start=best_cover, threads=a.gurobi_threads)
                 times["highs_first_solve_s"] = time.time() - t - gs.solver_runtime_seconds
                 times["gurobi_first_solve_s"] = gs.solver_runtime_seconds
                 log(f"first solve on {len(pool)} candidates: HiGHS {times['highs_first_solve_s']:.1f}s "
                     f"({'incumbent' if hs.selected else 'no incumbent'}), Gurobi {gs.solver_runtime_seconds:.1f}s "
                     f"({gs.status})")
             sol, rounds, t_ilp, t_mc, consolidated = solve_exact(
-                pool, price, exact, table.score, a.num_rsms, a.capacity, b, warm=best_cover, threads=a.threads,
+                pool, price, exact, table.score, a.num_rsms, a.capacity, b, warm=best_cover, threads=a.gurobi_threads,
                 feat_of=feat_of if a.consolidate else None, seed=bi, u_of=u_of, prefetch=table_batch,
                 rounds=a.rounds)
             main = summarize(sol, price, exact, a.num_rsms)
             asc, a_rounds, a_ilp, a_mc, a_pool = lattice_ascent(
                 sol, [feat_of[m] for m in {m for ids in pool for m in ids}], u_of, exact, price, a.num_rsms,
-                a.capacity, b, threads=a.threads, seed=bi, rounds=a.rounds)
+                a.capacity, b, threads=a.gurobi_threads, seed=bi, rounds=a.rounds)
             row_f = summarize(asc, price, exact, a.num_rsms)
             if not row_f["feasible"] or (main["feasible"] and main["mean_availability"] > row_f["mean_availability"]):
                 row_f = {**main, "source": "main ILP (lattice ascent found nothing better)"}
@@ -578,7 +578,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             if a.tiebreak_nines > 0 and row_f["feasible"]:
                 tb, tb_rounds, tb_ilp, tb_mc = cost_tiebreak(
                     pool, row_f["placements"], price, exact, table.score, a.num_rsms, a.capacity, b,
-                    tolerance_nines=a.tiebreak_nines, threads=a.threads)
+                    tolerance_nines=a.tiebreak_nines, threads=a.gurobi_threads)
                 tbs = summarize(tb, price, exact, a.num_rsms) if tb is not None else {"feasible": False}
                 if (tbs["feasible"] and tbs["cost_per_hour"] < row_f["cost_per_hour"] - 1e-9
                         and tbs["nines"] >= row_f["nines"] - a.tiebreak_nines - 1e-9):
@@ -634,7 +634,11 @@ def main() -> int:
     ap.add_argument("--passes", type=int, default=4, help="randomized packing passes per fleet (split by RF mix)")
     ap.add_argument("--workers", type=int, default=os.cpu_count() or 1, help="configurations in parallel")
     ap.add_argument("--threads", type=int, default=None,
-                    help="MC threads per configuration (default: cores / configurations, at least 2)")
+                    help="legacy per-configuration thread share (default: cores / configurations, at least 2); "
+                         "MC uses --mc-threads and Gurobi --gurobi-threads")
+    ap.add_argument("--gurobi-threads", type=int, default=os.cpu_count() or 1,
+                    help="Gurobi threads per solve (default: all cores; a configuration solving alone should not "
+                         "be capped at its share)")
     ap.add_argument("--output", default="outputs/pilot-ilp-rate-scale")
     ap.add_argument("--resume", action="store_true", help="reuse finished configurations' rows/*.json")
     ap.add_argument("--cache-dir", default=None, help="MC caches (default: <output>/cache); shared across prices")

@@ -1,0 +1,48 @@
+[x1 rho1     10s] clusters + table seeds done; budgets [3.08, 6.15, 9.23, 15.38]
+[x30 rho1     11s] clusters + table seeds done; budgets [3.08, 6.15, 9.23, 15.38]
+[x1 rho1     36s] baselines scored
+[x1 rho1     41s] old ILP rescored
+[x1 rho1     88s] budget $3.08: 8 fleets, 1274 placements, table 1448
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2879381
+Academic license 2879381 - for non-commercial use only - registered to re___@berkeley.edu
+[x30 rho1    111s] baselines scored
+[x30 rho1    117s] old ILP rescored
+[x1 rho1    118s] cost tie-break: $3.07 -> $3.07/h at 4.823 nines (15 rounds)
+[x1 rho1    118s] main ILP 4.816 (10 rounds, ILP 7s, MC 7s, +0 consolidation columns) -> lattice 4.823 (4 rounds on 33 columns, ILP 0s, MC 1s)
+[x1 rho1    118s] new ILP 10%: 4.82 nines $3.07/h, 1556 cands, 10 rounds
+[x1 rho1    153s] budget $6.15: 10 fleets, 2079 placements, table 2806
+[x30 rho1    220s] budget $3.08: 8 fleets, 1280 placements, table 1178
+[x1 rho1    223s] cost tie-break: $6.02 -> $5.35/h at 5.850 nines (6 rounds)
+[x1 rho1    223s] main ILP 5.803 (10 rounds, ILP 41s, MC 12s, +0 consolidation columns) -> lattice 5.858 (3 rounds on 169 columns, ILP 0s, MC 2s)
+[x1 rho1    223s] new ILP 20%: 5.85 nines $5.35/h, 2361 cands, 10 rounds (cost tie-break within 0.01 nines of the best)
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2879381
+Academic license 2879381 - for non-commercial use only - registered to re___@berkeley.edu
+[x1 rho1    255s] budget $9.23: 12 fleets, 2641 placements, table 4155
+[x30 rho1    257s] cost tie-break: $3.07 -> $3.03/h at 1.985 nines (1 rounds)
+[x30 rho1    257s] main ILP 1.982 (10 rounds, ILP 8s, MC 20s, +0 consolidation columns) -> lattice 1.982 (1 rounds on 25 columns, ILP 0s, MC 0s)
+[x30 rho1    257s] new ILP 10%: 1.98 nines $3.03/h, 1561 cands, 10 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1    314s] cost tie-break: $9.10 -> $8.08/h at 5.959 nines (1 rounds)
+[x1 rho1    314s] main ILP 5.940 (10 rounds, ILP 27s, MC 10s, +0 consolidation columns) -> lattice 5.968 (9 rounds on 222 columns, ILP 9s, MC 10s)
+[x1 rho1    314s] new ILP 30%: 5.96 nines $8.08/h, 2923 cands, 10 rounds (cost tie-break within 0.01 nines of the best)
+[x30 rho1    333s] budget $6.15: 10 fleets, 2184 placements, table 2364
+[x1 rho1    350s] budget $15.38: 11 fleets, 2450 placements, table 5382
+[x1 rho1    408s] cost tie-break: $15.22 -> $12.49/h at 6.009 nines (1 rounds)
+[x1 rho1    408s] main ILP 6.009 (10 rounds, ILP 42s, MC 7s, +0 consolidation columns) -> lattice 6.015 (7 rounds on 245 columns, ILP 0s, MC 5s)
+[x1 rho1    408s] new ILP 50%: 6.01 nines $12.49/h, 2732 cands, 10 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1    408s] done
+[x30 rho1    666s] cost tie-break: $6.06 -> $6.06/h at 4.036 nines (15 rounds)
+[x30 rho1    666s] main ILP 3.898 (10 rounds, ILP 142s, MC 25s, +0 consolidation columns) -> lattice 4.036 (3 rounds on 149 columns, ILP 0s, MC 3s)
+[x30 rho1    666s] new ILP 20%: 4.04 nines $6.06/h, 2466 cands, 10 rounds
+[x30 rho1    730s] budget $9.23: 12 fleets, 2556 placements, table 3535
+[x30 rho1   1040s] cost tie-break: $9.14 -> $7.90/h at 4.444 nines (2 rounds)
+[x30 rho1   1040s] main ILP 4.375 (10 rounds, ILP 275s, MC 23s, +0 consolidation columns) -> lattice 4.453 (3 rounds on 151 columns, ILP 0s, MC 3s)
+[x30 rho1   1040s] new ILP 30%: 4.44 nines $7.90/h, 2838 cands, 10 rounds (cost tie-break within 0.01 nines of the best)
+[x30 rho1   1090s] budget $15.38: 11 fleets, 2397 placements, table 4493
+[x30 rho1   1293s] cost tie-break: $15.18 -> $12.98/h at 4.515 nines (1 rounds)
+[x30 rho1   1293s] main ILP 4.522 (10 rounds, ILP 170s, MC 23s, +0 consolidation columns) -> lattice 4.524 (6 rounds on 124 columns, ILP 0s, MC 5s)
+[x30 rho1   1293s] new ILP 50%: 4.51 nines $12.98/h, 2679 cands, 10 rounds (cost tie-break within 0.01 nines of the best)
+[x30 rho1   1293s] done
