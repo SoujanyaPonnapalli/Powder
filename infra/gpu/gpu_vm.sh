@@ -40,8 +40,8 @@ up() {
   az=${POWDER_GPU_AZ:-$(ec2 describe-instance-type-offerings --location-type availability-zone \
         --filters Name=instance-type,Values="$TYPE" --query 'InstanceTypeOfferings[0].Location' --output text)}
   my_ip=$(curl -s https://checkip.amazonaws.com)
-  ami=$(ec2 describe-images --owners amazon --filters "Name=name,Values=$AMI_NAME" \
-        --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text)
+  ami=${POWDER_GPU_AMI:-$(ec2 describe-images --owners amazon --filters "Name=name,Values=$AMI_NAME" \
+        --query 'sort_by(Images,&CreationDate)[-1].ImageId' --output text)}
   echo "region $REGION az $az type $TYPE ami $ami ssh-from $my_ip"
 
   VPC=$(ec2 create-vpc --cidr-block 10.42.0.0/16 --tag-specifications "$(tags vpc)" --query Vpc.VpcId --output text)
@@ -82,7 +82,30 @@ up() {
   ec2 wait instance-running --instance-ids "$INSTANCE"
   echo "instance $INSTANCE at $(ip); self-terminates after $MAX_MIN min"
   for _ in $(seq 60); do sshv true 2>/dev/null && break; sleep 5; done
-  sshv nvidia-smi -L
+  sshv 'nvidia-smi -L 2>/dev/null || nproc'
+}
+
+setup_cpu() {
+  # CPU benchmark VM (e.g. POWDER_GPU_TYPE=c7i.8xlarge with an Ubuntu 24.04 AMI): the committed tree via
+  # git archive (uncommitted local edits never reach the VM), Rust engine build, Python deps, Gurobi WLS license.
+  load
+  local host; host=$(ip)
+  (cd "$ROOT" && git archive --format=tar HEAD) | sshv 'rm -rf powder-repo && mkdir -p powder-repo && tar -x -C powder-repo'
+  sshv "cd powder-repo && echo $(cd "$ROOT" && git rev-parse --short HEAD) > COMMIT"
+  scp -i "$KEY" -o StrictHostKeyChecking=accept-new "$HOME/gurobi.lic" "ubuntu@$host:gurobi.lic"
+  sshv 'set -e; sudo apt-get -qq update; sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install -y build-essential python3-venv pkg-config >/dev/null
+        command -v cargo >/dev/null || (curl -sSf https://sh.rustup.rs | sh -s -- -y -q --profile minimal)
+        . ~/.cargo/env; cd powder-repo; cargo build --release -q --manifest-path rust/Cargo.toml
+        python3 -m venv .venv; . .venv/bin/activate; pip -q install -U pip
+        pip -q install numpy scipy pandas pyyaml plotly gurobipy==13.0.3
+        python -c "import gurobipy as g; m=g.Model(); print(\"gurobi ok\", g.gurobi.version())"
+        ls -la rust/target/release/powder-mc; nproc'
+}
+
+fetch_bench() {
+  load
+  mkdir -p "$ROOT/outputs/bench"
+  rsync -az -e "ssh -i $KEY" --exclude cache "ubuntu@$(ip):powder-repo/outputs/bench/" "$ROOT/outputs/bench/"
 }
 
 setup() {
@@ -137,6 +160,8 @@ status() {
 cmd=${1:-status}; shift || true
 case $cmd in
   up|setup|fetch|down|status) "$cmd" ;;
+  setup-cpu) setup_cpu ;;
+  fetch-bench) fetch_bench ;;
   run) run "$@" ;;
   ssh) sshv "$@" ;;
   *) echo "usage: $0 up|setup|run CMD|ssh|fetch|down|status" >&2; exit 2 ;;
