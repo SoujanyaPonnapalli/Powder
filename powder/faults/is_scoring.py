@@ -18,6 +18,12 @@ permanent failure and the replacement's spawn, ~10 min per failure, are ignored:
 unavailability; with equal beta on every node, LR depends only on K.
 
 Only exponential permanent clocks are tilted; any other distribution raises (no likelihood ratio available).
+
+STATUS: EXPERIMENTAL, do not use for results. In the 32-vCPU benchmark (outputs/bench/report.md, 2026-11-13) beta 2
+was within noise at 1x but failed badly at 30x (believed -5.5 and 0.4 nines vs truth 1.4 and 3.7): with
+(beta - 1) * Lambda * H of order 1-10, the weights exp(...) are huge, and the exposure approximation is wrong
+exactly in the runs that matter (failed replicas stop their clocks while stuck). It needs a per-run exposure
+metric from the engine before it can be trusted.
 """
 
 from __future__ import annotations

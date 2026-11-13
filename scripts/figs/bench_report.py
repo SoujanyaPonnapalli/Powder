@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import render as Rr  # noqa: E402  (palette + save; needs matplotlib)
 
 plt = Rr.plt
+CLIP = 0.3  # nines; larger errors are drawn clipped and labelled
 LABEL = {"old": "old (1 fixed-seed batch)", "new": "new (re-selection batches + validation)",
          "new_is": "new + importance sampling (beta 2)"}
 COLOR = {"old": Rr.MUTED, "new": Rr.BLUE, "new_is": Rr.ORANGE}
@@ -69,16 +70,21 @@ def main() -> int:
     for i, n in enumerate(names):
         by = {(x["rate_scale"], float(x["budget"])): x for x in deps if x["strategy"] == n}
         ys = [by[k]["error_nines"] if k in by else np.nan for k in keys]
-        ax.bar(np.arange(len(keys)) + (i - (len(names) - 1) / 2) * width, ys, width * 0.9, color=COLOR[n],
-               label=LABEL[n])
+        xs_ = np.arange(len(keys)) + (i - (len(names) - 1) / 2) * width
+        ax.bar(xs_, np.clip(ys, -CLIP, CLIP), width * 0.9, color=COLOR[n], label=LABEL[n])
+        for x_, y_ in zip(xs_, ys):
+            if abs(y_) > CLIP:
+                ax.text(x_, np.sign(y_) * CLIP, f"{y_:+.1f}", ha="center", va="top" if y_ < 0 else "bottom",
+                        fontsize=6.5, color=Rr.INK2, rotation=90)
         vs = [by[k]["validated_error_nines"] if k in by and by[k]["validated_error_nines"] is not None else np.nan
               for k in keys]
         if not all(np.isnan(vs)):
             ax.scatter(np.arange(len(keys)) + (i - (len(names) - 1) / 2) * width, vs, marker="_", s=120,
-                       color=Rr.INK, zorder=3, label=None if i else "validated estimate")
+                       color=Rr.INK, zorder=3, label="validated estimate" if n == "new" else None)
     ax.axhline(0, color=Rr.INK, linewidth=0.8)
+    ax.set_ylim(-CLIP * 1.25, CLIP * 1.25)
     ax.set_xticks(range(len(keys)), [f"{s:g}x\n{b:.0%}" for s, b in keys], fontsize=7.5)
-    ax.set_ylabel("Believed - truth (nines)")
+    ax.set_ylabel(f"Believed - truth (nines; clipped at +/-{CLIP:g})")
     ax.set_title("Estimate error vs independent truth", fontsize=9, loc="left", color=Rr.INK)
     ax.legend(fontsize=7)
     ax2.bar(range(len(names)), [summary[n]["optimize_s"] for n in names], color=[COLOR[n] for n in names],

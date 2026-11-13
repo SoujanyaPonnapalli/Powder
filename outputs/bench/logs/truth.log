@@ -1,0 +1,30 @@
+24 deployments, 208 unique placements x 2000000 runs
+  50/208
+  100/208
+  150/208
+  200/208
+old     x1       0.1: believed 4.82 truth 4.83 (err -0.01) $3.07/h, opt 77s
+old     x1       0.2: believed 5.85 truth 5.69 (err +0.16) $5.35/h, opt 104s
+old     x1       0.3: believed 5.96 truth 5.92 (err +0.04) $8.08/h, opt 91s
+old     x1       0.5: believed 6.01 truth 5.98 (err +0.03) $12.49/h, opt 94s
+old     x30       0.1: believed 1.98 truth 1.97 (err +0.01) $3.03/h, opt 140s
+old     x30       0.2: believed 4.04 truth 3.91 (err +0.12) $6.06/h, opt 409s
+old     x30       0.3: believed 4.44 truth 4.38 (err +0.06) $7.90/h, opt 375s
+old     x30       0.5: believed 4.51 truth 4.51 (err +0.01) $12.98/h, opt 252s
+new     x1       0.1: believed 4.80 truth 4.70 (err +0.11) validated 4.68 $3.07/h, opt 87s
+new     x1       0.2: believed 5.83 truth 5.77 (err +0.06) validated 5.72 $5.30/h, opt 121s
+new     x1       0.3: believed 5.94 truth 5.94 (err +0.00) validated 5.93 $7.59/h, opt 139s
+new     x1       0.5: believed 6.01 truth 5.99 (err +0.02) validated 5.99 $12.71/h, opt 151s
+new     x30       0.1: believed 2.02 truth 2.01 (err +0.00) validated 2.01 $3.06/h, opt 156s
+new     x30       0.2: believed 3.88 truth 3.85 (err +0.04) validated 3.86 $6.07/h, opt 436s
+new     x30       0.3: believed 4.39 truth 4.38 (err +0.00) validated 4.38 $9.17/h, opt 524s
+new     x30       0.5: believed 4.50 truth 4.50 (err +0.00) validated 4.50 $11.96/h, opt 325s
+new_is  x1       0.1: believed 4.76 truth 4.73 (err +0.02) validated 4.68 $3.07/h, opt 304s
+new_is  x1       0.2: believed 5.81 truth 5.73 (err +0.08) validated 5.73 $5.24/h, opt 307s
+new_is  x1       0.3: believed 5.93 truth 5.93 (err +0.00) validated 5.93 $7.60/h, opt 242s
+new_is  x1       0.5: believed 6.00 truth 5.99 (err +0.01) validated 5.99 $12.34/h, opt 253s
+new_is  x30       0.1: believed -5.54 truth 1.37 (err -6.91) validated 1.37 $2.68/h, opt 171s
+new_is  x30       0.2: believed 0.38 truth 3.72 (err -3.34) validated 3.72 $6.14/h, opt 431s
+new_is  x30       0.3: believed 4.38 truth 4.44 (err -0.06) validated 4.44 $9.12/h, opt 614s
+new_is  x30       0.5: believed 4.51 truth 4.50 (err +0.01) validated 4.50 $12.53/h, opt 228s
+wrote outputs/bench/truth.json
