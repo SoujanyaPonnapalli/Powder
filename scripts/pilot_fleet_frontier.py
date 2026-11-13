@@ -109,27 +109,47 @@ class Exact:
         return self.counts.get(tuple(sorted(ids)), 0) < self.min_batches
 
     def batch(self, placements) -> None:
-        """One more batch for every listed placement that still needs one (at least one batch for new ones)."""
+        """One more batch for every listed placement that still needs one (at least one batch for new ones).
+
+        Each batch is split into run chunks so there are at least ``threads`` Rust jobs even when only a few
+        placements need scoring (the engine seeds run i with base_seed + i, so chunking is bit-identical)."""
         t = time.time()
         todo = list(dict.fromkeys(tuple(sorted(p)) for p in placements if self.needs(p)))
-        with ThreadPoolExecutor(self.threads) as pool:
-            list(pool.map(self._add_batch, todo))
+        if todo:
+            chunks = max(1, min(32, -(-self.threads // len(todo)), self.runs // 5_000))
+            jobs = [(ids, j, chunks) for ids in todo for j in range(chunks)]
+            with ThreadPoolExecutor(self.threads) as pool:
+                parts = list(pool.map(lambda job: (job[0], self._chunk(*job)), jobs))
+            for ids in todo:
+                got = [x for i, x in parts if i == ids]
+                self._record(ids, sum(n * m for n, m in got) / sum(n for n, _ in got))
         self.seconds += time.time() - t
 
-    def _add_batch(self, ids) -> None:
-        b = self.counts.get(ids, 0)
-        seed = int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big") + b * self.runs
+    def _seed(self, ids, batch: int) -> int:
+        return int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big") + batch * self.runs
+
+    def _chunk(self, ids, j: int, chunks: int) -> tuple[int, float]:
+        """(runs, mean availability) of chunk j of the placement's next batch."""
+        size = -(-self.runs // chunks)
+        lo, hi = j * size, min(self.runs, (j + 1) * size)
+        if hi <= lo:
+            return 0, 0.0
+        seed = self._seed(ids, self.counts.get(ids, 0)) + lo
         configs = [self.by_id[m].node_config for m in ids]
         if self.is_beta == 1.0:
             s = node_config_batch_sampler(configs, self.protocol, self.strategy, horizon_s=self.horizon_s,
                                           network=self.network)
-            mean = s(self.runs, seed).mean
-        else:
-            mean = is_stats(configs, self.protocol, self.strategy, horizon_s=self.horizon_s, runs=self.runs,
-                            seed=seed, beta=self.is_beta, network=self.network).availability
+            return hi - lo, s(hi - lo, seed).mean
+        return hi - lo, is_stats(configs, self.protocol, self.strategy, horizon_s=self.horizon_s, runs=hi - lo,
+                                 seed=seed, beta=self.is_beta, network=self.network).availability
+
+    def _record(self, ids, mean: float) -> None:
         self.sums[ids] = self.sums.get(ids, 0.0) + mean
-        self.counts[ids] = b + 1
+        self.counts[ids] = self.counts.get(ids, 0) + 1
         self.memo[ids] = self.sums[ids] / self.counts[ids]
+
+    def _add_batch(self, ids) -> None:
+        self._record(ids, self._chunk(ids, 0, 1)[1])
 
     def __call__(self, ids) -> float:
         ids = tuple(sorted(ids))
@@ -143,15 +163,21 @@ def validate(placements, by_id, protocol, strategy, horizon_s, network, runs: in
     """Independent re-score of a chosen deployment: plain MC on seeds disjoint from every optimizer batch."""
     t = time.time()
     counts = Counter(tuple(sorted(p)) for p in placements)
+    chunks = max(1, min(64, -(-threads // len(counts)), runs // 10_000))
+    size = -(-runs // chunks)
 
-    def one(ids):
-        seed = int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big") + seed_offset
+    def one(job):
+        ids, j = job
+        lo, hi = j * size, min(runs, (j + 1) * size)
+        seed = int.from_bytes(hashlib.blake2b("|".join(ids).encode(), digest_size=6).digest(), "big") + seed_offset + lo
         s = node_config_batch_sampler([by_id[m].node_config for m in ids], protocol, strategy, horizon_s=horizon_s,
                                       network=network)
-        return ids, s(runs, seed).mean
+        return ids, hi - lo, s(hi - lo, seed).mean
 
     with ThreadPoolExecutor(threads) as pool:
-        got = dict(pool.map(one, counts))
+        parts = list(pool.map(one, [(ids, j) for ids in counts for j in range(chunks)]))
+    got = {ids: sum(n * m for i, n, m in parts if i == ids) / sum(n for i, n, _ in parts if i == ids)
+           for ids in counts}
     mean = sum(c * got[p] for p, c in counts.items()) / sum(counts.values())
     return {"mean_availability": mean, "nines": nines(mean), "runs_per_placement": runs, "seconds": time.time() - t}
 
@@ -418,7 +444,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     price = {m.machine_id: m.node_config.cost_per_hour for m in machines}
     tag = f"x{k:g}-{price_model}"
     mode = "" if (a.min_batches == 1 and a.is_beta == 1.0) else f"-b{a.min_batches}-is{a.is_beta:g}"
-    exact = Exact(by_id, protocol, strategy, horizon_s, network, exact_runs(k), a.threads,
+    exact = Exact(by_id, protocol, strategy, horizon_s, network, exact_runs(k), a.mc_threads,
                   cache_path=Path(a.cache_dir) / f"exact-x{k:g}{mode}.json",
                   min_batches=a.min_batches, is_beta=a.is_beta)
     free_cost = old["solution"].total_cost_per_hour
@@ -433,7 +459,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                           REGIONS, {f.machine_id: f.region for f in feats}, protocol, strategy,
                           horizon_s=horizon_s, network=network, runs=max(2_000, exact_runs(k) // 5),
                           cache_path=Path(a.cache_dir) / f"table-x{k:g}.json")
-    with ThreadPoolExecutor(a.threads) as tp:
+    with ThreadPoolExecutor(a.mc_threads) as tp:
         u_c = [1 - x for x in tp.map(lambda j: table.availability([j, j, j], (1, 1, 1)), range(len(cent)))]
     lam = np.array([f.lam_t + f.lam_p for f in feats])
     u = np.array([u_c[l] * lam[i] / lam[med[l]] for i, l in enumerate(labels)])
@@ -499,7 +525,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             cids, pat = [table.labels[m] for m in ids], table.pattern_of(ids)
             keys.setdefault(CentroidTable.key(cids, pat), (cids, pat))
         todo = [v for k, v in keys.items() if k not in table.memo]
-        with ThreadPoolExecutor(a.threads) as tp:
+        with ThreadPoolExecutor(a.mc_threads) as tp:
             list(tp.map(lambda kv: table.availability(*kv), todo))
 
     new_rows, fleet_counts = {}, []
@@ -571,7 +597,7 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         times["budget_wall_s"] = time.time() - t_budget          # optimization only (excludes validation)
         if a.validate_runs and row_f.get("feasible"):
             row_f["validated"] = validate(row_f["placements"], by_id, protocol, strategy, horizon_s, network,
-                                          a.validate_runs, a.threads)
+                                          a.validate_runs, a.mc_threads)
             times["validate_s"] = row_f["validated"]["seconds"]
             log(f"validated {f:.0%}: believed {row_f['nines']:.3f} -> independent {row_f['validated']['nines']:.3f} nines")
         exact.save()
@@ -621,6 +647,9 @@ def main() -> int:
     ap.add_argument("--validate-runs", type=int, default=0,
                     help="re-score each budget's final deployment on independent seeds with this many runs")
     ap.add_argument("--rounds", type=int, default=10, help="ILP <-> exact-MC rounds per solve")
+    ap.add_argument("--mc-threads", type=int, default=os.cpu_count() or 1,
+                    help="Rust MC jobs in flight per configuration (default: all cores; batches are chunked so "
+                         "small batches still fill them)")
     ap.add_argument("--tiebreak-nines", type=float, default=0.01,
                     help="report the cheapest deployment within this many nines of the best (0 = off)")
     ap.add_argument("--no-consolidate", dest="consolidate", action="store_false",
