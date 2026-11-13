@@ -5,7 +5,12 @@ results, and tear it all down. Design and decisions: `docs/plans/exec-07-tidb-de
 
 > **These scripts create billable AWS resources.** Every creating command refuses without `--yes` (or
 > `POWDER_ALLOW_SPEND=1`) and prints the estimated $/h first. The unattended Claude runner must never set it.
-> **Live AWS validation (plan gates G1-G5) has not been run yet**: everything below is tested against moto, fakes,
+> **Live AWS validation: gates G1-G5 all passed on real AWS (2026-11-04/05): infra deploy + teardown, TiDB install, metric
+> self-test (after the client fixes in the plan's §12), full `run_all` smoke pipeline, abort safety**
+>
+> Client policy: every request has a 5 s SLO; past it the request is lost (never retried) and `powder-load` ends its
+> query with `KILL QUERY`, keeping the connection; per-partition connection budgets isolate dead partitions. TiDB runs
+> with its default configuration.: the rest is tested against moto, fakes,
 > and a real TiDB on one machine, but not yet against real AWS. Start with gate G1 (two nodes, ~$1).
 
 ## Prerequisites

@@ -19,6 +19,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"os/signal"
@@ -37,21 +38,48 @@ func fatal(format string, a ...any) {
 	os.Exit(2)
 }
 
-func openDB(dsn string, conns int) *sql.DB {
+func openDB(dsn string, conns int, reqTimeout time.Duration, txnMode string) (*sql.DB, *countingConnector) {
 	cfg := mysql.NewConfig()
 	cfg.User, cfg.Net, cfg.Addr, cfg.DBName = "root", "tcp", dsn, "powder"
 	cfg.Timeout = 5 * time.Second
 	cfg.InterpolateParams = true
+	// Server-side lock waits must not outlive the client deadline (default 50 s): at G3 abandoned statements kept
+	// queueing on row locks after the client gave up, and the backlog saturated TiDB long after the fault ended.
+	// max_execution_time does the same for reads (TiDB applies it to SELECT only).
+	cfg.Params = map[string]string{"innodb_lock_wait_timeout": fmt.Sprint(int(math.Ceil(reqTimeout.Seconds()))),
+		"max_execution_time": fmt.Sprint(reqTimeout.Milliseconds())}
+	if txnMode != "" {
+		// optimistic (the default): a single-statement write takes no pessimistic lock first. At G3 a KILL QUERY
+		// interrupted TiDB's own pessimistic-lock rollback ("pessimisticRollback failed: query interrupted"), the
+		// orphaned lock outlived the kill, and a prober rewriting the same row every second kept hitting it.
+		cfg.Params["tidb_txn_mode"] = "'" + txnMode + "'"
+	}
 	c, err := mysql.NewConnector(cfg)
 	if err != nil {
 		fatal("dsn: %v", err)
 	}
 	// A TCP read can block far past the request deadline when a node is paused; the context deadline cancels it.
-	db := sql.OpenDB(c)
+	cc := &countingConnector{inner: c}
+	db := sql.OpenDB(cc)
 	db.SetMaxOpenConns(conns)
 	db.SetMaxIdleConns(conns)
 	db.SetConnMaxLifetime(0)
-	return db
+	return db, cc
+}
+
+// newClient opens the request pool (sized to the partition budgets) and a small admin pool for KILL QUERY.
+func newClient(dsn string, partitions, budget int, slo, serverWait time.Duration, txnMode string) (*Client, *countingConnector) {
+	db, cc := openDB(dsn, partitions*budget, slo, txnMode)
+	admin, _ := openDB(dsn, 16, slo, "")
+	return &Client{DB: db, Admin: admin, SLO: slo, ServerWait: serverWait, Slots: NewSlots(partitions, budget),
+		Stats: &ClientStats{}}, cc
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }
 
 func main() {
@@ -166,7 +194,13 @@ func runLoad(args []string) {
 	keys := fs.Int64("keys", 1_000_000, "row id space")
 	rate := fs.Float64("rate", 500, "requests per second (mean, for diurnal)")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
-	timeout := fs.Duration("timeout", 5*time.Second, "per-request deadline (includes waiting for a connection)")
+	timeout := fs.Duration("timeout", 5*time.Second, "per-request SLO: connection + result; later = lost, never retried")
+	serverWait := fs.Duration("server-wait", time.Minute, "cap on a lost request's query if its KILL QUERY fails")
+	buckets := fs.Int("buckets", 50, "key partitions (as the prober and the analysis use them) for connection budgets")
+	txnMode := fs.String("txn-mode", envOr("POWDER_TXN_MODE", "optimistic"), "tidb_txn_mode for writes: optimistic|pessimistic")
+	perPartition := fs.Int("conns-per-partition", 0, "connection budget per partition (0 = rate/buckets x timeout + 2, capped by -max-conns)")
+	maxConns := fs.Int("max-conns", 600, "cap on all partition budgets together: with the prober's 7 per partition this keeps one "+
+		"TiDB below its 1000 tokens even if every partition is dead, so KILL QUERY can always run")
 	keyDist := fs.String("key-dist", "uniform", "uniform|zipf|hot-range|shifting-hot-range")
 	arrival := fs.String("arrival", "constant", "constant|diurnal")
 	period := fs.Duration("period", 24*time.Hour, "diurnal period")
@@ -178,7 +212,6 @@ func runLoad(args []string) {
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at (synchronises load generators)")
 	out := fs.String("out", "requests.jsonl.gz", "output records (gzip JSONL)")
 	maxInflight := fs.Int("max-inflight", 20000, "cap on concurrent requests; beyond it requests are recorded as loadgen_saturated (other)")
-	maxConns := fs.Int("max-conns", 512, "connection pool size")
 	logOkEvery := fs.Int("log-ok-every", 1, "record every Nth successful request with weight N (failures are always recorded)")
 	payloadBytes := fs.Int("payload-bytes", 256, "write value size")
 	fs.Parse(args)
@@ -195,10 +228,19 @@ func runLoad(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db := openDB(*dsn, *maxConns)
-	defer db.Close()
+	budget := *perPartition
+	if budget <= 0 {
+		budget = min(PartitionBudget(*rate/float64(*buckets), *timeout), max(2, *maxConns / *buckets))
+	}
+	fmt.Fprintf(os.Stderr, "connection budget: %d per partition x %d partitions\n", budget, *buckets)
+	cl, cc := newClient(*dsn, *buckets, budget, *timeout, *serverWait, *txnMode)
+	defer cl.DB.Close()
+	defer cl.Admin.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
+	statsCtx, stopStats := context.WithCancel(context.Background())
+	statsDone := make(chan struct{})
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", cl.DB, cc, cl.Stats); close(statsDone) }()
 
 	payload := make([]byte, *payloadBytes)
 	rng := rand.New(rand.NewSource(*seed))
@@ -230,23 +272,29 @@ func runLoad(args []string) {
 			go func(row int64, read bool, sched float64) {
 				defer wg.Done()
 				defer func() { <-sem }()
-				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
-				defer cancel()
+				cl.Stats.Inflight.Add(1)
+				defer cl.Stats.Inflight.Add(-1)
 				start := time.Now()
-				var err error
 				op := "write"
 				if read {
 					op = "read"
-					var v []byte
-					err = db.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
-					if errors.Is(err, sql.ErrNoRows) {
-						err = nil
-					}
-				} else {
-					_, err = db.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, payload, start.UnixMilli())
 				}
-				o := Classify(err, ctx.Err() == context.DeadlineExceeded)
-				rec := Record{TS: sched, Row: row, Op: op, Outcome: o, LatencyMS: float64(time.Since(start)) / 1e6, Weight: 1}
+				part := int(row * int64(*buckets) / *keys)
+				connMS, err := cl.Do(part, func(ctx context.Context, conn *sql.Conn) error {
+					if read {
+						var v []byte
+						err := conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
+						if errors.Is(err, sql.ErrNoRows) {
+							return nil
+						}
+						return err
+					}
+					_, err := conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, payload, start.UnixMilli())
+					return err
+				})
+				o := Classify(err, false)
+				rec := Record{TS: sched, Row: row, Op: op, Outcome: o, LatencyMS: float64(time.Since(start)) / 1e6,
+					ConnMS: connMS, Weight: 1}
 				if err != nil {
 					rec.Err = err.Error()
 				}
@@ -277,6 +325,8 @@ func runLoad(args []string) {
 		next = next.Add(time.Duration(float64(time.Second) / rt(next.Sub(t0))))
 	}
 	wg.Wait()
+	stopStats()
+	<-statsDone
 	n := w.Close()
 	sum, _ := json.Marshal(map[string]any{"issued": issued, "records": n, "ok": okN.Load(), "timeout": toN.Load(),
 		"conflict": cfN.Load(), "other": otN.Load(), "saturated": saturated.Load(),
@@ -295,7 +345,10 @@ func runProbe(args []string) {
 	buckets := fs.Int("buckets", 50, "partitions to probe (one row in the middle of each key bucket)")
 	interval := fs.Duration("interval", time.Second, "probe period")
 	duration := fs.Duration("duration", 10*time.Minute, "run length")
-	timeout := fs.Duration("timeout", 5*time.Second, "per-probe deadline")
+	timeout := fs.Duration("timeout", 5*time.Second, "per-probe SLO: connection + result; later = lost, never retried")
+	serverWait := fs.Duration("server-wait", time.Minute, "cap on a lost probe's queries if its KILL QUERY fails")
+	rowOffset := fs.Int64("row-offset", 0, "added to each bucket's middle row, so concurrent probers never write the same row")
+	txnMode := fs.String("txn-mode", envOr("POWDER_TXN_MODE", "optimistic"), "tidb_txn_mode for writes: optimistic|pessimistic")
 	startAt := fs.Float64("start-at", 0, "epoch seconds to start at")
 	out := fs.String("out", "probes.jsonl.gz", "output records")
 	fs.Parse(args)
@@ -304,10 +357,14 @@ func runProbe(args []string) {
 	if err != nil {
 		fatal("%v", err)
 	}
-	db := openDB(*dsn, *buckets*2)
-	defer db.Close()
+	cl, cc := newClient(*dsn, *buckets, PartitionBudget(1/interval.Seconds(), *timeout), *timeout, *serverWait, *txnMode)
+	defer cl.DB.Close()
+	defer cl.Admin.Close()
 	sigCtx, stop := signalContext()
 	defer stop()
+	statsCtx, stopStats := context.WithCancel(context.Background())
+	statsDone := make(chan struct{})
+	go func() { poolStats(statsCtx, *out+".pool.jsonl", cl.DB, cc, cl.Stats); close(statsDone) }()
 	var wg sync.WaitGroup
 	t0 := waitUntil(*startAt)
 	var probes atomic.Int64
@@ -320,38 +377,36 @@ func runProbe(args []string) {
 			time.Sleep(d)
 		}
 		for b := 0; b < *buckets; b++ {
-			row := int64((float64(b) + 0.5) * float64(*keys) / float64(*buckets))
+			row := int64((float64(b)+0.5)*float64(*keys)/float64(*buckets)) + *rowOffset
 			wg.Add(1)
 			probes.Add(1)
-			go func(row int64, sched float64) {
+			go func(b int, row int64, sched float64) {
 				defer wg.Done()
-				ctx, cancel := context.WithTimeout(context.Background(), *timeout)
-				defer cancel()
+				cl.Stats.Inflight.Add(1)
+				defer cl.Stats.Inflight.Add(-1)
 				start := time.Now()
-				worst := Outcome{Outcome: OutcomeOK}
-				var errText string
-				consider := func(err error) {
-					o := Classify(err, ctx.Err() == context.DeadlineExceeded)
-					if severity[o.Outcome] > severity[worst.Outcome] {
-						worst, errText = o, err.Error()
+				connMS, err := cl.Do(b, func(ctx context.Context, conn *sql.Conn) error {
+					if _, err := conn.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli()); err != nil {
+						return err
 					}
-				}
-				_, err := db.ExecContext(ctx, "REPLACE INTO powder.kv (id, v, ts) VALUES (?,?,?)", row, []byte("probe"), start.UnixMilli())
-				if err != nil {
-					consider(err)
-				} else {
 					var v []byte
-					err = db.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v)
-					if err != nil && !errors.Is(err, sql.ErrNoRows) {
-						consider(err)
+					if err := conn.QueryRowContext(ctx, "SELECT v FROM powder.kv WHERE id=?", row).Scan(&v); err != nil && !errors.Is(err, sql.ErrNoRows) {
+						return err
 					}
+					return nil
+				})
+				worst, errText := Classify(err, false), ""
+				if err != nil {
+					errText = err.Error()
 				}
 				w.Add(Record{TS: sched, Row: row, Op: "probe", Outcome: worst, LatencyMS: float64(time.Since(start)) / 1e6,
-					Err: errText, Weight: 1})
-			}(row, epoch(sched))
+					ConnMS: connMS, Err: errText, Weight: 1})
+			}(b, row, epoch(sched))
 		}
 	}
 	wg.Wait()
+	stopStats()
+	<-statsDone
 	n := w.Close()
 	sum, _ := json.Marshal(map[string]any{"probes": probes.Load(), "records": n, "start": epoch(t0), "end": epoch(time.Now())})
 	fmt.Println(string(sum))

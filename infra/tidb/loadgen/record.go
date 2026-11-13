@@ -7,6 +7,7 @@ package main
 //   outcome       ok|timeout|conflict|other ; cause, code, layer for every non-ok request ; latency_ms
 //   err           first 200 chars of the error text (non-ok only)
 //   w             weight (>1 when ok requests are down-sampled with --log-ok-every)
+//   conn_ms       time to get a pool connection (pool wait + new-connection setup), part of latency_ms
 
 import (
 	"bufio"
@@ -24,6 +25,7 @@ type Record struct {
 	Op        string
 	Outcome   Outcome
 	LatencyMS float64
+	ConnMS    float64
 	Err       string
 	Weight    int
 }
@@ -120,6 +122,8 @@ func (w *Writer) write(r Record) {
 	}
 	b.WriteString(`,"latency_ms":`)
 	b.WriteString(strconv.FormatFloat(r.LatencyMS, 'f', 3, 64))
+	b.WriteString(`,"conn_ms":`)
+	b.WriteString(strconv.FormatFloat(r.ConnMS, 'f', 3, 64))
 	if r.Weight > 1 {
 		b.WriteString(`,"w":`)
 		b.WriteString(strconv.Itoa(r.Weight))

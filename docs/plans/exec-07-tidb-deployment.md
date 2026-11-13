@@ -4,8 +4,9 @@ Scope: October Goals, execution order #7 ("Add TiDB to the repo and run a test d
 Goal 6.2 ("Make TiDB deployment script"), and the plumbing that #8 (failure emulator), #9 (PD queries
 the ILP) and #10 (timing benchmarks) will sit on.
 
-Status: **v3 (2026-11-03): steps 1-7 implemented and committed on `exec07-tidb-deployment`; live AWS gates G1-G5 NOT yet
-run** (the machine this was built on has no AWS credentials). Everything is tested against moto (emulated EC2), fakes, the
+Status: **v4 (2026-11-05): live AWS gates G1-G5 all passed (branch `exec07-g1-live`; fixes and evidence in §12).
+Exec #7 is done.** v3 (2026-11-03): steps 1-7 implemented and committed on `exec07-tidb-deployment`, then tested only
+offline (the machine this was built on had no AWS credentials). Everything is tested against moto (emulated EC2), fakes, the
 real TiDB output captured in `tests/fixtures/tidb/`, and a real TiDB on one machine (`infra/tidb/local_pipeline_check.py`).
 Section 14 lists what changed from the earlier drafts and what the first live runs must verify. Earlier revisions: v2.2
 repartitioning metrics, experiments name their handle, simplified teardown; v2.1 random handles, per-RSM attribution; v2
@@ -597,15 +598,149 @@ Steps 1-2 can be done anywhere; steps 3-6 need AWS credentials on the machine ru
 - [x] Step 2 (2026-11-02/03): `powder/deploy` library (spec, state, handles, netplan, pricing incl. fetched control-plane prices,
   topology), metric math (outcomes, availability, repartition), real-format Region-map loader and PD log parser written against
   captured v8.5.8 output, `python -m powder.deploy.plan` dry-run. Deviation: handle word lists are 101 x 92 (~9,300 names), not 200 x 200.
-- [x] Step 3 (code, 2026-11-03): `deploy_infra.py` / `teardown_infra.py`, moto-tested. **G1 not run (no AWS credentials).**
-- [x] Step 4 (code, 2026-11-03): `install_tidb.py` + `node_bootstrap.sh`, tested with a scripted runner. **G2 not run.**
+- [x] Step 3 (code, 2026-11-03): `deploy_infra.py` / `teardown_infra.py`, moto-tested. **G1 passed on real AWS 2026-11-04** (handle
+  `AmberPheasant`: 8 nodes us-east-1 + us-west-2, 2x i4i.2xlarge; all private IPs ping from the controller, ~61 ms
+  cross-region; SSH over private IPs via the controller; 1.7 TB instance NVMe mounted at `/data` on both TiKV; teardown +
+  `--verify` clean). Runs 1-3 found and fixed: peer-region `InvalidVpcPeeringConnectionID.NotFound` lag (code), VPC-scoped
+  creates and untagged accepter side of cross-region peerings (`iam-deploy-policy.json`, now validated for G1's calls).
+- [x] Step 4 (code, 2026-11-03): `install_tidb.py` + `node_bootstrap.sh`, tested with a scripted runner. **G2 passed on real AWS 2026-11-04**
+  (handle `HappyMongoose`, `specs/smoke.yaml`: 16 nodes, 3 regions): all 14 TiUP instances `Up`; every TiKV store has
+  `region/zone/host/machine_class`; `SELECT 1` and v8.5.8 through each of the 3 regional TiDBs; all 65 Regions have 3 peers
+  in 3 distinct AWS regions; teardown + `--verify` clean. Fixes found on the way: fetch TiUP's `root.json` trust anchor;
+  `machine_class` appended to `location-labels` (tiup rejects store labels not listed there; below `host` it cannot change
+  placement); chown `/data/tikv` to `tidb` after deploy (bootstrap made it root-owned); skip `deploy` when tiup already has
+  the cluster (re-runs continue); `start --wait-timeout 1200` (first-TiDB schema bootstrap took ~2.5 min cross-region).
 - [x] Step 5 (code, 2026-11-03): `powder-load` (Go) + probes, collection, `run_experiment.py`, `--self-test` planner/evaluator;
-  validated on a real local TiDB. **G3 (self-test on AWS) not run.**
+  validated on a real local TiDB. **G3 run on AWS 2026-11-04 (handle `FrostyDragonfly`, 4 attempts): NOT passed.**
+  The measurement itself is validated: with crash faults, partitions whose Region lost quorum read 65-73 s for a 60 s
+  hold (outage + TiKV restart + election) and partitions that only lost a leader read 0-14 s; round 2 of the last
+  attempt passes outright. Fixes made on the way (all in `exec07-g1-live`): probers wrote the same 50 rows from 3
+  regions and server-side lock waits (50 s) outlived the 5 s client deadline -> self-sustaining lock pile-up (each
+  prober now has its own row, `innodb_lock_wait_timeout`/`max_execution_time` = client deadline); outages were planned
+  on the pre-prepare Region map (system tables) -> planned after prepare on the probed Regions; per-RSM sums of
+  partition-seconds -> per-round, per-partition evaluation from raw probes, leaving out Regions that moved around the
+  kill; `systemctl stop` is a graceful shutdown that tries leader eviction for up to 20 s -> SIGKILL; simultaneous
+  actions ran ~7 s apart -> run in parallel; log collection never created its directory on PD/TiKV/TiDB nodes;
+  TiDB's default `token-limit` 1000 filled with statements retrying on dead Regions and stalled *all* queries when
+  ~half the keys were down -> topology sets 20000 (consistent with TiDB completing 0 queries/s in those rounds, not
+  proven directly). **Offline analysis of attempt 4 (2026-11-04):**
+  (a) *Why ~half the keys:* `SPLIT TABLE` does not scatter, so the 50 new Regions keep their parent's voters: the
+  probe table started on 2 voter sets of ~25 Regions each, and the self-test began ~10 s after the split while PD was
+  still rebalancing (end of attempt 4: 16/11/11/9/2/1). Balanced, 2 stores per AWS region and one replica per region
+  give 8 voter sets and a 2-store kill takes 2 of them (~25 %). Fix: scatter on split or gate on balance.
+  (b) *Why 60 s reads as 65-75 s:* the schedule clock offset was sampled *after* `start_generators` (seconds of ssh), so
+  every fault fired and was logged ~6 s late (fixed). Corrected, round 1 had TiKV down 03:40:43.6 -> ready 03:41:44.2
+  (60.6 s); the surviving peer re-campaigns only on its randomised election timeout (seen every ~18 s), so the lost
+  Regions elected leaders 10-14 s after the restart (03:41:54-58). Outage = down time + up to ~2x election timeout.
+  (c) *Healthy partitions down ~40 s in round 3:* NOT TiDB. For rows whose Region had no killed voter, clients logged
+  2,651 timeouts in the 39 s stall, but TiDB's slow log (>= 0.3 s) has only 8 statements for those rows, all < 0.4 s
+  with no backoff: the requests never ran long on the server. Most likely client side: go-sql-driver 1.8.1 closes the
+  connection on every deadline, so each request to a dead Region costs a reconnect, and requests wait for pool slots /
+  connection setup (neither appears in the slow log). Next: instrument `powder-load` (connection-acquire time per
+  request, `db.Stats()` per second, TiDB connection count) and re-run. (d) One leader-only partition read 25 s
+  (allowance 20 s), consistent with (b)'s election timing. (e) Whether baseline runs keep `token-limit` 20000.
+  **Attempt 5 (2026-11-04, `HonestFerret`, instrumented, default `token-limit` 1000, 300 s rebalance wait): NOT
+  passed; healthy partitions down up to 23-31 s in all three rounds (lost ones 65-85 s).** Root cause, measured:
+  every timed-out request on a healthy Region spent its full 5 s acquiring a connection (`conn_ms` p50 5000 ms,
+  query time 0); client pools sat at 512/512 (load) and 100/100 (probes) with ~200 waits/s for the whole outage, and
+  single new-connection setups took up to 14.9 s; on the server, `tidb_server_tokens` was pinned at exactly 1000 on
+  all three TiDBs from ~10 s after each kill to ~13 s after the restart, while completed queries fell to ~1/s. Chain:
+  ~half the keys on a dead RSM -> each request to it is abandoned by the client at 5 s, but TiDB keeps retrying the
+  statement (Region backoff budget up to ~40 s) and keeps its token -> 1000 tokens fill in ~10 s -> every statement
+  on that TiDB, healthy keys and the `SET`s of each reconnect included, queues for a token (that wait is before
+  execution, so the slow log, which (c) relied on, cannot show it). So (c)'s "client side" was half right: the
+  visible wait is in the client pool, the cause is TiDB admission control fed by abandoned statements. The 300 s
+  rebalance wait did not diversify voter sets (still 2 RSMs: PD balances Region counts per store, not voter sets).
+  **Decide:** how the harness should treat abandoned work -- (1) a high `token-limit` (attempt 4: rounds 1-2 clean);
+  (2) bounded, non-abandoning clients (requests run to completion, counted unavailable after 5 s), which caps server
+  work at the pool size but moves the starvation into the client pool; (3) per-partition connection budgets in
+  `powder-load` (bulkheads) plus (1); or (4) accept it as TiDB behaviour and measure it (it is what an app with this
+  timeout policy would see). Data: `~/powder-runs/tidb/HonestFerret/experiments/selftest-20261104T211916Z/`.
+  **Attempt 6 (2026-11-04, `YoungMeerkat`): user-chosen policy -- 5 s SLO per request, never retried, query never
+  cancelled (connection kept), `tikv-client.commit-timeout = 5s` (verified live), default `token-limit`. NOT passed:
+  healthy partitions down ~60 s, i.e. the whole outage.** The client side behaved as designed (0 reconnects during
+  outages, connections reused afterwards), but the server never gave up: abandoned queries stayed at ~1000 per load
+  generator for the entire outage, all 1224 client connections per TiDB were held, tokens pinned at 1000. Slow log:
+  reads stop at 5.07 s (`max_execution_time` works), but writes sit in **prewrite** (`Prewrite_time` up to 72.9 s,
+  `regionMiss/tikvRPC/regionScheduling` backoff, `Commit_time` 0.015 s) and many finally *succeed* 20-73 s later once
+  the Region returns. `commit-timeout` only bounds the commit phase, so it does not help; we found no TiDB v8.5 knob
+  that ends a write's prewrite at 5 s. Consequence: with TiDB defaults, every in-flight write to a dead Region holds a
+  connection and a token for the whole outage, so any shared, finite pool (client connections or TiDB tokens) fills
+  and starves healthy keys. Also: a request reported lost may still be applied later. **Proposed next:** per-partition
+  connection budgets in `powder-load` (bulkheads): a dead partition can only exhaust its own budget, which also caps
+  the dead statements per TiDB below 1000 tokens (e.g. 8 per partition x 25 dead partitions + probes ~ 250); and
+  revert `commit-timeout` to the default since it has no effect. Data: `~/powder-runs/tidb/YoungMeerkat/`.
+  **Harness policy after attempt 6 (user decision, 2026-11-05):** each request has a 5 s SLO; past it the request is
+  lost, never retried, and its query is ended with `KILL QUERY` over a separate admin pool, so the connection stays
+  open and serves again when quorum returns; TiDB runs with all defaults (`commit-timeout` reverted, default
+  `token-limit` and Raft election). Measured locally (`infra/tidb/local_kill_check/run.sh`, v8.5.8, 2 of 3 TiKV paused):
+  an unkilled write gives up after 53.3 s, a write killed at 5 s returns at 5.03 s, connection reusable;
+  `performance.max-txn-ttl = 5000` changes nothing (it bounds lock lifetime, not the writer's retries). TiDB closes
+  the connection itself when a killed write's commit result is undetermined (`conn.go: result undetermined, close this
+  connection`; ~13 % of kills locally), so those cost a reconnect. Per-partition connection budgets (bulkheads):
+  rate/partition x SLO + 2, capped so load (600) + probes (7 per partition) stay below one TiDB's 1000 tokens even if
+  every partition dies -- otherwise the KILLs themselves cannot run (local check at 3 x 100 req/s on one TiDB: 636 of
+  853 kills timed out; at 3 x 30 req/s: 554 kills, 0 failures, 0 requests lost to a full budget).
+  **G3 PASSED on real AWS 2026-11-05 (attempt 7, handle `VividHawk`, `run_all.py --self-test`, TiDB defaults).**
+  All three rounds: partitions whose Region lost quorum down 65-74 s for a 60 s hold (outage + TiKV restart + Raft
+  election); every other partition down <= 3 s (round 1) and 0 s (rounds 2-3). Healthy requests never waited for a
+  connection (`conn_ms` p99 < 14 ms). ~20.7k kills per load generator and ~5.5k per prober, 0 failed; at most 31
+  queries ever ran past their SLO; TiDB tokens peaked at 729/459/537 (< 1000); ~3 % of kills cost a reconnect
+  (undetermined commits). Budget 12 per partition x 50. Data: `~/powder-runs/tidb/VividHawk/`. **Exec #7: G1-G5 all
+  passed.**
+  **What the extra seconds are (VividHawk round 1, from TiKV/TiDB logs):** (1) TiKV restart is fast: start sent
+  t+120.4, "ready to serve" t+122.3-122.5. (2) The rest is Raft: elections start only on a timer; the surviving peer
+  retries pre-vote every randomised 10-20 s (`raft-election-timeout-ticks` 10 x 1 s, range [10, 20) s) and nothing
+  triggers an attempt when peers return, so the 26 lost Regions elected leaders 10.2-18.3 s (median 12.2) after the
+  restart; the first ok probe was issued ~4.3 s before its election (it completed within its 5 s SLO), hence 65-74 s
+  measured for a 60 s hold. (3) Round 1's dead voter set held `mysql.tidb_mdl_info` (table 281474976710651, confirmed
+  on a local v8.5.8): schema reload needs it with metadata locks on (default), and one schema lease (45 s) after the
+  kill every TiDB refused commits on all tables (`[domain:8027] Information schema is out of date`), t+114-122,
+  cluster-wide; rounds 2-3 did not hold it (round 2 lost `tidb_ddl_history`, harmless). So per-RSM availability depends
+  on where TiDB's system tables live -- decide for exec #8/#9 whether system Regions are pinned to non-faulted stores
+  or modelled. (4) After the restart, mostly the us-west-2 prober kept failing on healthy rows until t+167: `KILL QUERY`
+  interrupts TiDB's own pessimistic-lock rollback (`pessimisticRollback failed: query interrupted by signal 1`, 516x),
+  the orphaned lock stays until its TTL, and the prober rewrites the same row every second (kill -> new orphan); the
+  workload (random keys) is unaffected. Candidate fix: optimistic transactions for powder-load writes.
+  **Optimistic-writes run (2026-11-05, `RoyalSalmon`): did not fix (4).** The session really runs optimistic (checked
+  on a local v8.5.8 with powder-load's driver params: `@@session.tidb_txn_mode = optimistic`), yet TiDB still logged
+  962 `pessimisticRollback failed` (vs ~800 with the default mode); likely TiDB retries a conflicted autocommit
+  statement pessimistically regardless (unconfirmed). Rounds 1-2 passed with 0 s on healthy partitions; round 3 failed:
+  its dead voter set held `mysql.tidb_background_subtask` (table 281474976710650) and the same schema-lease stall
+  followed (`[domain:8027]`, from 23 s after the kill until ~6 s after the restart, every TiDB, every table). So (3) is
+  general: a quorum loss on a Region holding TiDB's reserved system tables stops all commits once the lease lapses
+  (2 of the 6 rounds in the last two runs; the other 4 rounds had 0-3 s on healthy partitions). Data:
+  `~/powder-runs/tidb/RoyalSalmon/`.
+  **System data pinned (user decision 2026-11-05; G3 passed 2026-11-06, `FluffyTiger`).** Deployments get dedicated
+  system TiKV stores (`control_plane.system_tikv_per_region`, default 1, role `systikv`, label `machine_class=system`,
+  control-plane instance type) that faults never target; install applies PD placement rules
+  (`powder/deploy/placement.py`): everything defaults to the system stores, an overriding rule puts the user-table
+  range `[t{first user id}, t{2^47})` on the experiment stores, and install waits until every Region is placed. Live
+  findings: curl does not expand `~` after `@`; and an isolation level on the system rule deadlocked PD (its isolation
+  filter counted the orphan peers that still occupied every AWS region, so no system store qualified: 67 Regions
+  stuck 15 min; without it all 66 moved in 10 s -- one system store per region still gives one replica per region).
+  Result: all three rounds' dead voter sets held only workload Regions; lost-quorum partitions 65-75 s for a 60 s
+  hold, **every other partition 0 s**; 0 schema-lease errors; ~20.7k kills per load generator, 0 failed; tokens peaked
+  at 479. `pessimisticRollback failed` still appears (307) but caused no healthy downtime without the stall. Writes
+  still default to optimistic (`--txn-mode`); it did not change (4). Data: `~/powder-runs/tidb/FluffyTiger/`.
+  Evidence: `~/powder-runs/tidb/FrostyDragonfly/experiments/` on the work VM (runs 1-4, incl. TiDB/TiKV/PD logs for 2-4).
 - [x] Step 6 (code, 2026-11-03): `run_all.py` with guaranteed teardown (success, failure, half-failed deploy, SIGINT/SIGTERM,
-  repeated signals, failing teardown). **G4 and G5 not run: exec #7 is NOT done until they pass.**
+  repeated signals, failing teardown). **G4 passed on real AWS 2026-11-04** (handle `BreezyRabbit`, `run_all.py
+  --spec specs/smoke.yaml --experiment experiments/smoke.yaml`: deploy -> install -> 10 min at 3 x 500 req/s ->
+  collect -> teardown in 0.43 h; 900,000/900,000 requests ok, p50 62 ms / p99 369 ms, probes 0 % unavailable, no
+  collection errors, logs from all 12 PD/TiKV/TiDB nodes; `--verify` clean; a second smoke `run_all` (`ShinyLion`,
+  0.42 h) also completed cleanly). **G5 passed 2026-11-04:** (a) SIGINT to `run_all` 60 s into the experiment
+  (`RosyWeasel`) -> "interrupted: tearing down", exit 130, `--verify` clean; deviation: run on the 8-node G1-sized spec,
+  not `smoke.yaml` (the signal path does not depend on cluster size; the first smoke attempt sent the signal too late
+  because the log was block-buffered); (b) two deployments up at once (`GladKoala`, `CrimsonLeopard`), `GladKoala`'s
+  local directory deleted: `--list` showed it with LOCAL DIR `no`, `teardown_infra.py GladKoala` removed all of it
+  (0 instances/VPCs left by tag) while `CrimsonLeopard` kept its 8 running instances; then torn down, `--verify` clean.
+  Logs: `~/powder-runs/tidb/g4-run_all.log`, `g5a-run_all.log`, `g5bc.log`. **Exec #7 is done except G3** (open
+  questions above).
 - [x] Step 7 (2026-11-03): `infra/tidb/README.md`, `iam-deploy-policy.json` (draft, unvalidated), `CLAUDE.md`, unattended-runner
   safety line, `deploy`/`dev` extras. The `--older-than` cron is documented, not installed.
-- [ ] **Owner: run gates G1 -> G5 (§10) on real AWS.** First `deploy_infra.py --dry-run`, then G1 (~$1).
+- [x] **Owner: run gates G1 -> G5 (§10) on real AWS.** Done 2026-11-04/05 from the work VM (instance role): G1, G2, G4, G5
+  passed first time after fixes; G3 passed on attempt 7 (see Step 5).
 
 ## 13. Open questions (owner)
 

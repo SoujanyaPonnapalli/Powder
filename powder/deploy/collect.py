@@ -43,6 +43,11 @@ METRICS: dict[str, str] = {
     "tikv_snapshot_transport_bytes": "sum by (instance, type) (tikv_snapshot_limit_transport_bytes)",
     "tidb_query_total": "sum by (instance) (tidb_server_query_total)",
     "tidb_query_duration_p99": "histogram_quantile(0.99, sum by (le) (rate(tidb_server_handle_query_duration_seconds_bucket[1m])))",
+    # G3 follow-up: is the healthy-Region stall connection churn? (server side of powder-load's pool stats)
+    "tidb_connections": "sum by (instance) (tidb_server_connections)",
+    "tidb_handshake_errors": "sum by (instance) (tidb_server_handshake_error_total)",
+    "tidb_tokens": "sum by (instance) (tidb_server_tokens)",
+    "tidb_kv_backoff_count": "sum by (type) (tidb_tikvclient_backoff_seconds_count)",
 }
 
 
@@ -123,8 +128,9 @@ def summarize_experiment(exp: Path, cfg: ExperimentConfig, table_id: int, replic
     have_log = log.lines > 0
 
     window = _window(exp, errors)
-    workload_files = sorted(glob.glob(str(exp / "workload" / "*" / "requests.jsonl*")))
-    probe_files = sorted(glob.glob(str(exp / "workload" / "*" / "probes.jsonl*")))
+    # not *.pool.jsonl next to them (powder-load's per-second connection-pool snapshots, a different schema)
+    workload_files = sorted(p for p in glob.glob(str(exp / "workload" / "*" / "requests.jsonl*")) if ".pool." not in p)
+    probe_files = sorted(p for p in glob.glob(str(exp / "workload" / "*" / "probes.jsonl*")) if ".pool." not in p)
     if window is None:
         ts = [r["ts"] for f in workload_files + probe_files for r in read_jsonl(f)]
         if not ts:

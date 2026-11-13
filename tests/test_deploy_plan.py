@@ -14,9 +14,9 @@ SMOKE = Path(__file__).resolve().parents[1] / "infra" / "tidb" / "specs" / "smok
 def test_smoke_preview_text(capsys):
     assert PL.main([str(SMOKE)]) == 0
     out = capsys.readouterr().out
-    assert "16 machines in 3 regions" in out and "3 peerings" in out
-    assert "AWS bill: ~$6.0" in out and "cap for 3 h: ~$18" in out
-    assert "us-east-1 32" in out and "us-east-2 28" in out          # vCPUs for the quota check
+    assert "19 machines in 3 regions" in out and "3 peerings" in out
+    assert "AWS bill: ~$6.6" in out and "cap for 3 h: ~$20" in out    # incl. 3 system TiKV (m6i.xlarge)
+    assert "us-east-1 36" in out and "us-east-2 32" in out          # vCPUs for the quota check
     assert "Modeled cost of the emulated machine classes" in out
     assert "random AdjectiveNoun" in out                              # handle is generated at deploy, not here
     assert "not included: root EBS volumes" in out
@@ -25,7 +25,7 @@ def test_smoke_preview_text(capsys):
 def test_json_output_is_machine_readable(capsys):
     assert PL.main([str(SMOKE), "--json"]) == 0
     p = json.loads(capsys.readouterr().out)
-    assert p["cost"]["hourly_usd"] == pytest.approx(6.036, abs=0.01)
+    assert p["cost"]["hourly_usd"] == pytest.approx(6.612, abs=0.01)
     assert p["network"]["peering_count"] == 3 and p["problems"] == []
     assert sum(1 for n in p["nodes"] if n["role"] == "tikv") == 6
 

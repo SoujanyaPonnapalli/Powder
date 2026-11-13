@@ -127,7 +127,7 @@ def test_signal_handlers_are_restored(aws_env):
 
 def test_keep_infra_leaves_it_up_and_says_how_to_remove_it(aws_env):
     code, out, rec, rd = go(aws_env, keep=True)
-    assert code == 0 and live()["OrangePanda"].instance_count() == 13
+    assert code == 0 and live()["OrangePanda"].instance_count() == 16
     msg = next(l for l in out if "--keep-infra" in l)
     assert "teardown_infra.py OrangePanda" in msg and "/h." in msg and msg.split("~$")[1][0].isdigit()   # states the burn
 

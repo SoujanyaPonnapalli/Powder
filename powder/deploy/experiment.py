@@ -22,6 +22,7 @@ import shlex
 import subprocess
 import tarfile
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -210,14 +211,15 @@ def start_generators(ctx: Context, start_at: float) -> dict[str, str]:
     """Start probe + load on every load generator; returns node -> work dir."""
     c, w = ctx.cfg, ctx.cfg.workload
     dirs = {}
-    for lg in _loadgens(ctx):
+    for i, lg in enumerate(_loadgens(ctx)):
         d = f"{ctx.work}/{lg.name}"
         dirs[lg.name] = d
         dsn = ctx.tidb_addr(lg.region)
         common = f"--dsn {dsn} --region {lg.region} --keys {int(w.keys)} --start-at {start_at:.3f} --duration {int(w.duration_s)}s"
         probe = (f"{ctx.loadgen_bin} probe {common} --buckets {int(w.regions_target)} --interval {c.prober_interval_s}s "
-                 f"--timeout {c.request_timeout_s}s --out {d}/probes.jsonl.gz")
+                 f"--timeout {c.request_timeout_s}s --row-offset {i} --out {d}/probes.jsonl.gz")
         load = (f"{ctx.loadgen_bin} load {common} --rate {w.rate_per_region} --timeout {c.request_timeout_s}s "
+                f"--buckets {int(w.regions_target)} "
                 f"--key-dist {w.key_dist} --arrival {w.arrival} --seed {ctx.spec.seed} --out {d}/requests.jsonl.gz")
         cmd = f"mkdir -p {d} && cd {d} && rm -f *.done"
         for name, run in (("probe", probe), ("load", load)):
@@ -235,21 +237,32 @@ def wait_generators(ctx: Context, dirs: dict[str, str], schedule: list[Scheduled
     deadline = start_at + ctx.cfg.workload.duration_s + 180
     while True:
         now = controller_now()
+        due = []
         while pending and now >= start_at + pending[0].offset_s:
-            a = pending.pop(0)
-            r = ctx.runner.run(a.node, a.command, timeout=120, check=False)
-            applied.append({"label": a.label, "node": a.node, "command": a.command, "t_planned": start_at + a.offset_s,
-                            "t_applied": now, "returncode": r.returncode, "stderr": r.stderr.strip()[:200]})
-            ctx.log(f"  [t+{now - start_at:.0f}s] {a.label or a.command[:40]} on {a.node}: rc={r.returncode}")
-        done = []
-        for node, d in dirs.items():
-            r = ctx.runner.run(node, f"cat {d}/load.done {d}/probe.done 2>/dev/null | wc -l", timeout=60, check=False)
-            done.append(r.stdout.strip() == "2")
-        if all(done) and not pending:
-            return applied
+            due.append(pending.pop(0))
+        if due:
+            # actions due together run together: at G3 two "simultaneous" stops ran ~7 s apart over sequential ssh
+            with ThreadPoolExecutor(max_workers=len(due)) as pool:
+                results = list(pool.map(lambda a: (ctx.runner.run(a.node, a.command, timeout=120, check=False),
+                                                   controller_now()), due))
+            for a, (r, t_done) in zip(due, results):
+                applied.append({"label": a.label, "node": a.node, "command": a.command, "t_planned": start_at + a.offset_s,
+                                "t_applied": now, "t_done": t_done, "returncode": r.returncode,
+                                "stderr": r.stderr.strip()[:200]})
+                ctx.log(f"  [t+{now - start_at:.0f}s] {a.label or a.command[:40]} on {a.node}: rc={r.returncode} "
+                        f"(done t+{t_done - start_at:.1f}s)")
+            continue
+        # generators cannot finish before their duration: polling them earlier only delays scheduled actions
+        if now >= start_at + ctx.cfg.workload.duration_s:
+            done = []
+            for node, d in dirs.items():
+                r = ctx.runner.run(node, f"cat {d}/load.done {d}/probe.done 2>/dev/null | wc -l", timeout=60, check=False)
+                done.append(r.stdout.strip() == "2")
+            if all(done) and not pending:
+                return applied
         if now > deadline:
             raise ExperimentError("load generators did not finish before the deadline")
-        ctx.sleep(2)
+        ctx.sleep(0.5)
 
 
 def collect_everything(ctx: Context, dirs: dict[str, str], t0: float, t1: float) -> None:
@@ -291,12 +304,14 @@ def collect_everything(ctx: Context, dirs: dict[str, str], t0: float, t1: float)
     ctx.soft("Prometheus export", prometheus)
 
     for n in plan_nodes(ctx.spec):
-        if n.role not in ("pd", "tikv", "tidb"):
+        if n.role not in ("pd", "tikv", "systikv", "tidb"):
             continue
 
         def logs(n=n):
             tgz = f"{ctx.work}/logs-{n.name}.tgz"
-            runner.run(n.name, f"sudo sh -c 'cd /tidb-deploy && tar czf {tgz} --ignore-failed-read $(ls -d */log)' && "
+            # ctx.work only exists on load generators and the controller (G3): create it on PD/TiKV/TiDB nodes too
+            runner.run(n.name, f"mkdir -p {ctx.work} && "
+                               f"sudo sh -c 'cd /tidb-deploy && tar czf {tgz} --ignore-failed-read $(ls -d */log)' && "
                                f"sudo chown $(id -u) {tgz}", timeout=300)
             dest = exp / "logs" / n.name
             dest.mkdir(parents=True, exist_ok=True)
@@ -307,10 +322,11 @@ def collect_everything(ctx: Context, dirs: dict[str, str], t0: float, t1: float)
 
 
 def run_experiment(spec: ClusterSpec, cfg: ExperimentConfig, rundir: RunDir, runner: Runner,
-                   schedule: list[ScheduledAction] | None = None, log: Callable[[str], None] = print,
+                   schedule: list[ScheduledAction] | Callable[[Context, dict], list[ScheduledAction]] | None = None,
+                   log: Callable[[str], None] = print,
                    sleep=time.sleep, clock=time.time, loadgen_bin: str = LOADGEN_BIN, pdctl: str | None = None,
                    exp_id: str | None = None, pd_url_override: str | None = None, settle_timeout_s: float = 600.0,
-                   settle_interval_s: float = 10.0) -> Path:
+                   settle_interval_s: float = 10.0, rebalance_wait_s: float = 0.0) -> Path:
     if cfg.injector.startswith("trace:"):
         raise ExperimentError("injector 'trace:<file>' is reserved for exec #8 (the failure emulator) and not implemented yet")
     state = rundir.load_state()
@@ -332,17 +348,27 @@ def run_experiment(spec: ClusterSpec, cfg: ExperimentConfig, rundir: RunDir, run
     try:
         log("  preparing table")
         prep = prepare_table(ctx)
+        if rebalance_wait_s > 0:
+            # SPLIT TABLE leaves the new Regions on their parent's voters; PD spreads them over minutes, in bursts the
+            # settle gate below can miss (G3 started ~10 s after the split, on 2 voter sets)
+            log(f"  waiting {rebalance_wait_s:.0f}s for PD to rebalance the new Regions")
+            sleep(rebalance_wait_s)
         if settle_timeout_s > 0:
             waited = wait_settled(ctx, settle_timeout_s, interval=settle_interval_s)
             log(f"  cluster settled (waited {waited:.0f}s)")
+        if callable(schedule):          # planned against the prepared, settled table (the self-test needs its Regions)
+            schedule = schedule(ctx, prep)
         log("  starting PD snapshotter")
         start_snapshotter(ctx)
         snap_started = True
+        sent = clock()
         now = float(ctx.ctl("date +%s.%N", timeout=30).stdout.strip())
+        # controller clock minus ours, sampled around the same call: measured after start_generators (as before G3) it
+        # absorbed their several seconds of ssh, so every scheduled fault fired (and was logged) ~6 s late
+        offset = {"v": now - (sent + clock()) / 2}
         start_at = now + START_LEAD_S
         log(f"  starting {len(_loadgens(ctx))} load generator(s); {cfg.workload.duration_s:.0f}s at {cfg.workload.rate_per_region:g} req/s each")
         dirs = start_generators(ctx, start_at)
-        offset = {"v": now - clock()}                              # controller clock minus ours
         applied = wait_generators(ctx, dirs, list(schedule or []), start_at, lambda: clock() + offset["v"])
         (exp / "faults" / "applied.jsonl").write_text("".join(json.dumps(a) + "\n" for a in applied))
         (exp / "faults" / "planned.jsonl").write_text("".join(json.dumps(a.__dict__) + "\n" for a in (schedule or [])))

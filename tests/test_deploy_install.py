@@ -66,6 +66,21 @@ def good_docs(spec, st):
     return hosts, members, stores, sql
 
 
+FIRST_USER = 114
+
+
+def placed_regions(stores):
+    """A Region map that already satisfies the placement rules: TiDB's data on the system stores, the user range on
+    three experiment stores."""
+    from powder.deploy.placement import user_range
+    sys_ids = [s["store"]["id"] for s in stores["stores"] if {"key": "machine_class", "value": "system"} in s["store"]["labels"]]
+    exp_ids = [s["store"]["id"] for s in stores["stores"] if s["store"]["id"] not in sys_ids][:3]
+    lo, hi = user_range(FIRST_USER)
+    region = lambda rid, a, b, ids: {"id": rid, "start_key": a.hex().upper(), "end_key": b.hex().upper(),
+                                     "peers": [{"id": rid * 10 + k, "store_id": s, "role_name": "Voter"} for k, s in enumerate(ids)]}
+    return {"count": 3, "regions": [region(1, b"", lo, sys_ids), region(2, lo, hi, exp_ids), region(3, hi, b"", sys_ids)]}
+
+
 # ---------------------------------------------------------------- pure parsing / gate
 def test_parse_display_rows_and_unhealthy_detection():
     rows = I.parse_display(DISPLAY)
@@ -108,10 +123,13 @@ def test_health_gate_problems(tmp_path, mutate, needle):
 def test_expected_labels_use_the_nodes_az_and_machine_class(tmp_path):
     spec, rd, st, _ = make_state(tmp_path)
     want = I.expected_store_labels(spec, I.hosts_from_state(st))
-    assert len(want) == 6
+    assert len(want) == 9                                       # 6 experiment stores + 3 system stores
     ip = st.by_slot("tikv-2").private_ip
     assert want[ip] == {"region": "us-east-1", "zone": "us-east-1a", "host": "tikv-2",
                         "machine_class": "ford10-google-storage-ge15min"}
+    sys_ip = st.instances["systikv-us-west-2-1"].private_ip
+    assert want[sys_ip] == {"region": "us-west-2", "zone": "us-west-2a", "host": "systikv-us-west-2-1",
+                            "machine_class": "system"}
 
 
 def test_pinned_versions_come_from_the_versions_file():
@@ -123,9 +141,10 @@ def test_pinned_versions_come_from_the_versions_file():
 class Scripted:
     """Runner whose answers are chosen by regex over the command; records everything."""
 
-    def __init__(self, spec, st, docs, fail=None, unhealthy_first=0):
+    def __init__(self, spec, st, docs, fail=None, unhealthy_first=0, tiup_knows_cluster=False):
         self.spec, self.st, self.docs, self.fail = spec, st, docs, fail or {}
         self.calls, self.puts, self.health_calls, self.unhealthy_first = [], [], 0, unhealthy_first
+        self.tiup_knows_cluster = tiup_knows_cluster
 
     def run(self, node, command, timeout=600, check=True):
         self.calls.append((node, command))
@@ -136,6 +155,12 @@ class Scripted:
                     raise RemoteError(f"{command}: {res.stderr}")
                 return res
         hosts, members, stores, sql = self.docs
+        if "information_schema.tables" in command:          # max system table id
+            return Result(0, f"{FIRST_USER - 1}\n")
+        if "/pd/api/v1/regions" in command:
+            return Result(0, json.dumps(placed_regions(stores)))
+        if "~/.tiup/storage/cluster/clusters/" in command:
+            return Result(0 if self.tiup_knows_cluster else 1, "")
         if "/pd/api/v1/members" in command:
             self.health_calls += 1
             if self.health_calls <= self.unhealthy_first:
@@ -178,12 +203,24 @@ def test_install_sequence_and_artifacts(tmp_path):
         r"fetch_tidb\.sh tiup cluster tidb tikv pd ctl", r"tar xzf .*tiup-v1\.", r"tiup install cluster:v1\.",
         r" check ", r" deploy OrangePanda v8\.5\.8 ", r" start OrangePanda", r"/pd/api/v1/members", r" display OrangePanda")]
     assert order == sorted(order)                                              # verify -> tiup -> check -> deploy -> start -> health -> display
-    # everything runs on the controller, except the final check that each load generator got the same binary
-    assert all(n == "controller" for n, c in runner.calls if "powder-load version" not in c)
-    lg_checks = [n for n, c in runner.calls if n != "controller"]
+    # everything runs on the controller, except handing the TiKV data dir to tidb (after deploy, before start) and
+    # the final check that each load generator got the same binary
+    assert all(n == "controller" for n, c in runner.calls if "powder-load version" not in c and "chown" not in c)
+    lg_checks = [n for n, c in runner.calls if n != "controller" and "chown" not in c]
     assert sorted(lg_checks) == ["loadgen-us-east-1-1", "loadgen-us-east-2-1", "loadgen-us-west-2-1"]
+    chowns = [i for i, (n, c) in enumerate(runner.calls) if "chown -R tidb:tidb /data/tikv" in c]
+    assert sorted(runner.calls[i][0] for i in chowns) == sorted(
+        [f"tikv-{k}" for k in range(1, 7)] + [f"systikv-{r}-1" for r in ("us-east-1", "us-east-2", "us-west-2")])
+    # TiDB's own data is pinned to the system stores after the health gate, before the install completes
+    rules = json.loads((rd.install_dir / "placement-rules.json").read_text())
+    assert [g["group_id"] for g in rules] == ["pd", "powder"]
+    post = next(c for _, c in runner.calls if "config/placement-rule" in c and "-X POST" in c)
+    assert "@~" not in post                                    # curl does not expand ~ after @
+    assert json.loads(rd.manifest_path.read_text())["first_user_table_id"] == FIRST_USER
+    assert order[4] < min(chowns) and max(chowns) < order[5]
     assert any("go build" in c for _, c in runner.calls) and any("sha256sum -c" in c for _, c in runner.calls)
-    assert {p[1] for p in runner.puts} >= {"main.go", "classify.go", "gen.go", "record.go", "go.mod", "go.sum", "error_classes.json"}
+    assert {p[1] for p in runner.puts} >= {"main.go", "classify.go", "gen.go", "record.go", "pool.go", "go.mod", "go.sum",
+                                           "error_classes.json"}
     assert ("controller", "fetch_tidb.sh", "~/powder/infra/tidb/fetch_tidb.sh") in runner.puts
     assert any(p[1] == "VERSIONS" for p in runner.puts) and any(p[2] == I.CONTROLLER_KEY for p in runner.puts)
     topo = (rd.install_dir / "topology.yaml").read_text()
@@ -217,6 +254,12 @@ def test_artifact_hash_failure_stops_before_anything_is_deployed(tmp_path):
         I.install(spec, rd, runner, log=lambda m: None, sleep=lambda s: None)
     assert not any(" deploy " in c for _, c in runner.calls) and not any(" start " in c for _, c in runner.calls)
     assert rd.load_state().stages["install"] == "partial"
+
+
+def test_rerun_after_failed_start_skips_deploy(tmp_path):
+    _, _, runner, state = run_install(tmp_path, tiup_knows_cluster=True)
+    assert not any(" deploy " in c for _, c in runner.calls) and any(" start OrangePanda" in c for _, c in runner.calls)
+    assert state.stages["install"] == "done"
 
 
 def test_deploy_failure_is_fatal(tmp_path):

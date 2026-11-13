@@ -66,10 +66,10 @@ def format_plan(p: dict) -> str:
     roles = Counter(n["role"] for n in p["nodes"])
     L.append(f"{len(p['nodes'])} machines in {len(p['regions'])} regions: " + ", ".join(f"{v} {k}" for k, v in roles.items()))
     L.append("")
-    L.append(f"{'region':<10} " + " ".join(f"{r:>10}" for r in ("controller", "pd", "tikv", "tidb", "loadgen")))
+    L.append(f"{'region':<10} " + " ".join(f"{r:>10}" for r in ("controller", "pd", "tikv", "systikv", "tidb", "loadgen")))
     for reg in p["regions"]:
         c = Counter(n["role"] for n in p["nodes"] if n["region"] == reg)
-        L.append(f"{reg:<10} " + " ".join(f"{c.get(r, 0):>10}" for r in ("controller", "pd", "tikv", "tidb", "loadgen")))
+        L.append(f"{reg:<10} " + " ".join(f"{c.get(r, 0):>10}" for r in ("controller", "pd", "tikv", "systikv", "tidb", "loadgen")))
     net = p["network"]
     L.append("")
     L.append("Network: " + ", ".join(f"{r} {c}" for r, c in net["vpcs"].items()) + f"; {net['peering_count']} peerings")

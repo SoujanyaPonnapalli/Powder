@@ -27,13 +27,18 @@ from .remote import RemoteError, Runner, wait_for
 from .rundir import RunDir
 from .spec import ClusterSpec, plan_nodes
 from .state import RunState, utcnow
-from .topology import Host, label_value, machine_class_label, render_topology
+from .placement import MAX_SYSTEM_ID_SQL, placement_problems, rule_bundles
+from .regionmap import from_pd_json
+from .topology import (LOCATION_LABELS, TIKV_DATA_DIR, Host, label_value, machine_class_label, render_topology,
+                       store_labels)
 
 ROOT = Path(__file__).resolve().parents[2]
 VERSIONS_FILE = ROOT / "third_party" / "tidb" / "VERSIONS"
 FETCH_SCRIPT = ROOT / "infra" / "tidb" / "fetch_tidb.sh"
 CONTROLLER_KEY = "~/.ssh/powder_run"
 CONTROLLER_HOME = "~/powder"
+TIUP_MIRROR = "https://tiup-mirrors.pingcap.com"       # same default as fetch_tidb.sh
+START_WAIT_S = 1200                                    # tiup cluster start --wait-timeout (default 120)
 PD_PORT, TIDB_PORT, TIDB_STATUS_PORT, GRAFANA_PORT, PROM_PORT = 2379, 4000, 10080, 3000, 9090
 
 
@@ -81,10 +86,9 @@ def expected_store_labels(spec: ClusterSpec, hosts: dict[str, Host]) -> dict[str
     """private IP of each TiKV node -> the labels its store must carry."""
     out = {}
     for n in plan_nodes(spec):
-        if n.role == "tikv":
+        if n.role in ("tikv", "systikv"):
             h = hosts[n.name]
-            out[h.private_ip] = {"region": label_value(h.region), "zone": label_value(h.az or h.region),
-                                 "host": label_value(n.name), "machine_class": machine_class_label(n.machine or "")}
+            out[h.private_ip] = store_labels(n, h)
     return out
 
 
@@ -153,9 +157,43 @@ def gather_health(runner: Runner, spec: ClusterSpec, hosts: dict[str, Host]) -> 
     return members, stores, sql, g.stdout
 
 
+def pin_system_data(spec: ClusterSpec, hosts: dict[str, Host], rundir: RunDir, runner: Runner,
+                    log: Callable[[str], None], sleep, clock, timeout: float) -> int:
+    """Put TiDB's own data on the system stores and user tables on the experiment stores (powder.deploy.placement);
+    wait until PD has moved every Region. Returns the first user table id."""
+    tidb = next(hosts[n.name].private_ip for n in plan_nodes(spec) if n.role == "tidb")
+    r = runner.run("controller", f'mysql -h {tidb} -P {TIDB_PORT} -u root -N -e "{MAX_SYSTEM_ID_SQL}"', timeout=60)
+    first_user = int(r.stdout.strip().splitlines()[-1]) + 1
+    rules = rule_bundles(first_user, spec.replication_factor, LOCATION_LABELS + ["machine_class"])
+    path = rundir.install_dir / "placement-rules.json"
+    path.write_text(json.dumps(rules, indent=1))
+    runner.put("controller", path, f"{CONTROLLER_HOME}/placement-rules.json")
+    pd = pd_url(spec, hosts)
+    log(f"[{spec.handle}] pinning TiDB's data (ids < {first_user}, meta, reserved) to the system stores")
+    # cd first: curl does not expand the ~ in --data @~/... (first live run)
+    runner.run("controller", f"cd {CONTROLLER_HOME} && curl -sf -X POST -H 'Content-Type: application/json' "
+                             f"--data @placement-rules.json {pd}/pd/api/v1/config/placement-rule", timeout=60)
+    last: list[str] = []
+
+    def placed() -> bool:
+        nonlocal last
+        regions = json.loads(runner.run("controller", f"curl -sf --max-time 60 {pd}/pd/api/v1/regions", timeout=90).stdout)
+        stores = json.loads(runner.run("controller", f"curl -sf --max-time 20 {pd}/pd/api/v1/stores", timeout=30).stdout)
+        last = placement_problems(from_pd_json(regions, 0.0, stores), first_user, spec.replication_factor)
+        if last:
+            log(f"  placement: {len(last)} Regions still moving (e.g. {last[0]})")
+        return not last
+    try:
+        wait_for(placed, timeout=timeout, interval=15, what="system-data placement", sleep=sleep, clock=clock)
+    except RemoteError as e:
+        raise InstallError(f"placement did not converge: {last[:5] or e}") from e
+    rundir.update_manifest(first_user_table_id=first_user, system_data_pinned=True)
+    return first_user
+
+
 def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[str], None] = print,
             sleep=time.sleep, health_timeout: float = 300.0, deploy_timeout: float = 1800.0,
-            clock=time.monotonic) -> RunState:
+            clock=time.monotonic, placement_timeout: float = 900.0) -> RunState:
     state = rundir.load_state()
     if state.stages.get("infra") != "done":
         raise InstallError(f"deployment {state.handle} has no finished infrastructure (infra: {state.stages.get('infra')})")
@@ -182,6 +220,8 @@ def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[st
     cache = f"~/.cache/powder/tidb/{tidb_v}"
     runner.run("controller", f"mkdir -p ~/.tiup/bin && tar xzf {cache}/tiup-{tiup_v}-linux-amd64.tar.gz -C ~/.tiup/bin "
                              f"&& chmod +x ~/.tiup/bin/tiup && ~/.tiup/bin/tiup --version", timeout=120)
+    # tiup needs the mirror's root.json (its trust anchor) next to the binary, as the official installer puts it (G2)
+    runner.run("controller", f"curl -fsSL --retry 3 -o ~/.tiup/bin/root.json {TIUP_MIRROR}/root.json", timeout=120)
     runner.run("controller", f"~/.tiup/bin/tiup install cluster:{cluster_v} ctl:{tidb_v}", timeout=600)
     runner.run("controller", "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-client-core-8.0 >/dev/null",
                timeout=600)
@@ -203,11 +243,24 @@ def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[st
     fails = sum(1 for l in chk.stdout.splitlines() if re.search(r"\bFail\b", l))
     log(f"  check finished (exit {chk.returncode}, {fails} advisory failures, see install/check.txt)")
 
-    log(f"[{state.handle}] tiup cluster deploy {state.handle} {tidb_v}")
-    runner.run("controller", _tiup(cluster_v, f"deploy {state.handle} {tidb_v} {CONTROLLER_HOME}/topology.yaml {ssh} -y"),
-               timeout=deploy_timeout)
+    # a re-run after a failed start continues: tiup refuses to deploy a cluster name it already has
+    known = runner.run("controller", f"test -d ~/.tiup/storage/cluster/clusters/{state.handle}", timeout=30, check=False)
+    if known.returncode == 0:
+        log(f"[{state.handle}] tiup already has cluster {state.handle}; skipping deploy")
+    else:
+        log(f"[{state.handle}] tiup cluster deploy {state.handle} {tidb_v}")
+        runner.run("controller", _tiup(cluster_v, f"deploy {state.handle} {tidb_v} {CONTROLLER_HOME}/topology.yaml {ssh} -y"),
+                   timeout=deploy_timeout)
+    # node_bootstrap.sh creates the NVMe data dir as root before tiup creates the tidb user, and tiup does not chown
+    # an existing data dir: without this TiKV cannot open RocksDB (G2)
+    for n in plan_nodes(spec):
+        if n.role in ("tikv", "systikv"):
+            runner.run(n.name, f"sudo chown -R tidb:tidb {TIKV_DATA_DIR}", timeout=60)
     log(f"[{state.handle}] tiup cluster start")
-    runner.run("controller", _tiup(cluster_v, f"start {state.handle}"), timeout=deploy_timeout)
+    # the first TiDB bootstraps the system schema with one cross-region DDL round per step (~2-3 s each, G2): far
+    # beyond tiup's default 120 s port wait
+    runner.run("controller", _tiup(cluster_v, f"start {state.handle} --wait-timeout {START_WAIT_S}"),
+               timeout=deploy_timeout)
 
     log(f"[{state.handle}] health gate")
     last: list[str] = []
@@ -221,6 +274,9 @@ def install(spec: ClusterSpec, rundir: RunDir, runner: Runner, log: Callable[[st
         wait_for(healthy, timeout=health_timeout, interval=10, what="cluster health", sleep=sleep, clock=clock)
     except RemoteError as e:
         raise InstallError(f"health gate failed: {last or e}") from e
+
+    if any(n.role == "systikv" for n in plan_nodes(spec)):
+        pin_system_data(spec, hosts, rundir, runner, log, sleep, clock, placement_timeout)
 
     disp = runner.run("controller", _tiup(cluster_v, f"display {state.handle}"), timeout=120).stdout
     (rundir.install_dir / "display.txt").write_text(disp)

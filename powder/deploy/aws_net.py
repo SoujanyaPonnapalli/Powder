@@ -10,6 +10,8 @@ from __future__ import annotations
 import time
 from typing import Callable
 
+from botocore.exceptions import ClientError
+
 from . import aws
 from .netplan import NetworkPlan, SgRule
 from .state import RunState
@@ -131,7 +133,13 @@ def ensure_peering(ctx: Ctx, a: str, b: str, plan: NetworkPlan, timeout: float =
     attempts = max(1, int(timeout / 2))
     code = "missing"
     for _ in range(attempts):
-        got = eb.describe_vpc_peering_connections(VpcPeeringConnectionIds=[pcx_id])["VpcPeeringConnections"]
+        try:
+            got = eb.describe_vpc_peering_connections(VpcPeeringConnectionIds=[pcx_id])["VpcPeeringConnections"]
+        except ClientError as e:
+            # real AWS raises NotFound (instead of an empty list) until the request reaches the peer region
+            if e.response["Error"]["Code"] != "InvalidVpcPeeringConnectionID.NotFound":
+                raise
+            got = []
         code = got[0]["Status"]["Code"] if got else "missing"
         if code == "active":
             break

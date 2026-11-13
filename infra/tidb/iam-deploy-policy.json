@@ -33,6 +33,39 @@
       }
     },
     {
+      "Sid": "CreateInsideOwnVpcs",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateSubnet",
+        "ec2:CreateRouteTable",
+        "ec2:CreateSecurityGroup",
+        "ec2:CreateVpcPeeringConnection"
+      ],
+      "Resource": "arn:aws:ec2:*:*:vpc/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Project": "powder"
+        }
+      }
+    },
+    {
+      "Sid": "AcceptPeeringIntoOwnVpcs",
+      "Effect": "Allow",
+      "Action": "ec2:AcceptVpcPeeringConnection",
+      "Resource": "arn:aws:ec2:*:*:vpc/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:ResourceTag/Project": "powder"
+        }
+      }
+    },
+    {
+      "Sid": "AcceptPeeringConnectionsUntaggedOnAccepterSide",
+      "Effect": "Allow",
+      "Action": "ec2:AcceptVpcPeeringConnection",
+      "Resource": "arn:aws:ec2:*:*:vpc-peering-connection/*"
+    },
+    {
       "Sid": "RunInstancesTaggedAtLaunch",
       "Effect": "Allow",
       "Action": "ec2:RunInstances",
@@ -100,8 +133,7 @@
         "ec2:CreateRoute",
         "ec2:AuthorizeSecurityGroupIngress",
         "ec2:ModifyVpcAttribute",
-        "ec2:ModifySubnetAttribute",
-        "ec2:AcceptVpcPeeringConnection"
+        "ec2:ModifySubnetAttribute"
       ],
       "Resource": "*",
       "Condition": {

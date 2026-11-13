@@ -19,6 +19,8 @@ from powder.deploy.rundir import RunDir  # noqa: E402
 from powder.deploy.state import RunState  # noqa: E402
 
 REGIONS = ["us-east-1", "us-east-2", "us-west-2"]
+# controller + 3 PD + 3 TiKV + 3 system TiKV + 3 TiDB + 3 load generators
+N_NODES = 16
 _AMIS: dict = {}
 
 
@@ -152,7 +154,7 @@ def test_bootstrap_script_is_valid_bash():
 # ---------------------------------------------------------------- deploy against moto
 def test_deploy_creates_the_whole_tagged_mesh(aws_env):
     spec, rd, clients, state, runner = do_deploy(aws_env)
-    assert state.stages["infra"] == "done" and len(state.instances) == 13
+    assert state.stages["infra"] == "done" and len(state.instances) == N_NODES
     assert state.est_hourly_usd > 0 and rd.state_path.exists() and rd.manifest_path.exists()
     for r in REGIONS:
         ec2 = clients.ec2(r)
@@ -165,7 +167,7 @@ def test_deploy_creates_the_whole_tagged_mesh(aws_env):
     for rec in state.instances.values():
         assert rec.state == "running" and rec.private_ip and rec.instance_id
     insts = [i for r in REGIONS for i in count(clients.ec2(r), "i")]
-    assert len(insts) == 13
+    assert len(insts) == N_NODES
     for i in insts:
         t = aws.tags_to_dict(i["Tags"])
         assert t["Project"] == "powder" and t["Run"] == "OrangePanda" and t["Node"] and t["Role"]
@@ -189,6 +191,30 @@ def test_peering_mesh_is_active_with_routes_on_both_sides(aws_env):
         assert len(peer_routes) == 2                                   # one per other region
         assert any(x.get("GatewayId", "").startswith("igw-") for x in routes)
     assert len(ids) == 3                                               # C(3,2)
+
+
+def test_peering_waits_while_peer_region_says_not_found(aws_env, monkeypatch):
+    # real AWS (gate G1): the accepter region raises NotFound for a few seconds after a cross-region request
+    real_ec2 = aws.Clients.ec2
+    misses = {"n": 0}
+
+    class Lagging:
+        def __init__(self, inner):
+            self._inner = inner
+
+        def __getattr__(self, name):
+            return getattr(self._inner, name)
+
+        def describe_vpc_peering_connections(self, **kw):
+            if "VpcPeeringConnectionIds" in kw and misses["n"] < 6:
+                misses["n"] += 1
+                raise ClientError({"Error": {"Code": "InvalidVpcPeeringConnectionID.NotFound", "Message": "lag"}},
+                                  "DescribeVpcPeeringConnections")
+            return self._inner.describe_vpc_peering_connections(**kw)
+
+    monkeypatch.setattr(aws.Clients, "ec2", lambda self, region: Lagging(real_ec2(self, region)))
+    _, _, clients, state, _ = do_deploy(aws_env)
+    assert misses["n"] == 6 and state.stages["infra"] == "done"
 
 
 def test_security_group_is_never_world_open_for_ingress(aws_env):
@@ -223,18 +249,18 @@ def test_resume_after_partial_failure_launches_only_what_is_missing(aws_env, mon
         do_deploy(aws_env, spec=spec)
     rd = RunDir(aws_env / "out", "OrangePanda")
     partial = rd.load_state()
-    assert partial.stages["infra"] == "partial" and 0 < len(partial.instances) < 13
+    assert partial.stages["infra"] == "partial" and 0 < len(partial.instances) < N_NODES
     monkeypatch.setattr(aws_nodes, "launch_node", real)
     _, _, clients, state, _ = do_deploy(aws_env, spec=spec)
-    assert len(state.instances) == 13
-    assert sum(len(count(clients.ec2(r), "i")) for r in REGIONS) == 13        # nothing double-launched
+    assert len(state.instances) == N_NODES
+    assert sum(len(count(clients.ec2(r), "i")) for r in REGIONS) == N_NODES        # nothing double-launched
 
 
 def test_state_survives_a_lost_state_file_via_tags(aws_env):
     spec, rd, clients, state, _ = do_deploy(aws_env)
     rd.state_path.unlink()
     runs = td.discover(clients)
-    assert set(runs) == {"OrangePanda"} and runs["OrangePanda"].instance_count() == 13
+    assert set(runs) == {"OrangePanda"} and runs["OrangePanda"].instance_count() == N_NODES
 
 
 def test_changed_spec_with_same_handle_is_refused(aws_env):
@@ -298,7 +324,7 @@ def test_capacity_error_falls_back_to_another_az(aws_env):
     clients._cache[("ec2", "us-east-1")] = proxy
     s = dp.deploy(spec, rd, clients, lambda st: FakeRunner(), "203.0.113.7/32", yes=True, log=lambda m: None,
                   sleep=lambda x: None, status_checks=False)
-    assert proxy.failures >= 1 and len(s.instances) == 13
+    assert proxy.failures >= 1 and len(s.instances) == N_NODES
     assert all(r.az != azs[0] for r in s.instances.values() if r.region == "us-east-1")
 
 
@@ -320,7 +346,7 @@ def test_teardown_removes_everything_and_verify_is_clean(aws_env):
     spec, rd, clients, state, _ = do_deploy(aws_env)
     runs = td.discover(clients)
     res = td.teardown_run(clients, runs["OrangePanda"], sleep=lambda s: None, log=lambda m: None)
-    assert res["errors"] == [] and res["deleted"]["instances"] == 13 and res["deleted"]["vpcs"] == 3
+    assert res["errors"] == [] and res["deleted"]["instances"] == N_NODES and res["deleted"]["vpcs"] == 3
     assert td.verify(clients) == []
     for r in REGIONS:
         assert count(clients.ec2(r), "i") == [] and count(clients.ec2(r), "v", Filters=aws.run_filter()) == []
@@ -351,7 +377,7 @@ def test_teardown_cli_by_handle_leaves_other_deployment_untouched(aws_env):
                            out=out.append, sleep=lambda s: None)
     assert rc == 0, out
     runs = td.discover(clients)
-    assert set(runs) == {"QuietFalcon"} and runs["QuietFalcon"].instance_count() == 13
+    assert set(runs) == {"QuietFalcon"} and runs["QuietFalcon"].instance_count() == N_NODES
     assert json.loads(rd_a.teardown_path.read_text())["errors"] == []
     assert rd_a.load_state().instances["controller"].state == "terminated"
     assert not rd_b.teardown_path.exists()
@@ -366,12 +392,12 @@ def test_teardown_cli_unknown_handle_confirmation_and_list(aws_env):
                              input_fn=lambda p: "no") == cli.REFUSED
     assert len(td.discover(clients)["OrangePanda"].regions) == 3                       # nothing deleted
     assert cli.teardown_main(["OrangePanda", "--dry-run", "--out-root", root], clients=clients, out=out.append) == 0
-    assert td.discover(clients)["OrangePanda"].instance_count() == 13
+    assert td.discover(clients)["OrangePanda"].instance_count() == N_NODES
     out.clear()
     assert cli.teardown_main(["--list", "--out-root", root], clients=clients, out=out.append) == 0
     table = out[0].splitlines()
     assert table[0].split()[:2] == ["HANDLE", "AGE"] and table[1].startswith("OrangePanda")
-    assert "=13" in table[1] and table[1].rstrip().endswith("yes")
+    assert f"={N_NODES}" in table[1] and table[1].rstrip().endswith("yes")
     assert cli.teardown_main(["--verify", "--out-root", root], clients=clients, out=out.append) == 1     # still deployed
     assert cli.teardown_main(["OrangePanda", "--yes", "--out-root", root], clients=clients, out=out.append,
                              sleep=lambda s: None) == 0
@@ -406,7 +432,7 @@ def test_deploy_cli_end_to_end_and_resume(aws_env, monkeypatch):
                            out=out.append, sleep=lambda s: None) == cli.BAD_INPUT         # resume needs --handle
     assert cli.deploy_main(args + ["--yes", "--resume", "--handle", handle], clients=aws.Clients(),
                            runner_factory=lambda st: FakeRunner(), out=out.append, sleep=lambda s: None) == 0
-    assert td.discover(aws.Clients())[handle].instance_count() == 13
+    assert td.discover(aws.Clients())[handle].instance_count() == N_NODES
 
 
 def test_deploy_cli_rejects_a_taken_explicit_handle(aws_env, monkeypatch):

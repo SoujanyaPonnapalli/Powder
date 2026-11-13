@@ -29,7 +29,7 @@ from . import names
 ROOT = Path(__file__).resolve().parents[2]
 VERSIONS_FILE = ROOT / "third_party" / "tidb" / "VERSIONS"
 
-ROLES = ("controller", "pd", "tikv", "tidb", "loadgen")
+ROLES = ("controller", "pd", "tikv", "systikv", "tidb", "loadgen")
 KEY_DISTS = ("uniform", "zipf", "hot-range", "shifting-hot-range")
 ARRIVALS = ("constant", "diurnal")
 WORKLOAD_TYPES = ("smoke",)
@@ -115,6 +115,9 @@ class ControlPlane:
     pd: int = 3
     tidb_per_region: int = 1
     loadgen_per_region: int = 1
+    # dedicated TiKV stores for TiDB's own data (schema metadata, mysql.* tables), never faulted (powder.deploy.placement);
+    # 0 = none (TiDB's data then shares the experiment stores and a fault on them can stop writes cluster-wide)
+    system_tikv_per_region: int = 1
 
 
 @dataclass
@@ -246,6 +249,8 @@ def validate_spec(spec: ClusterSpec, lib: FaultLibrary | None = None, check_libr
         v = getattr(cp, k)
         if not isinstance(v, int) or v < 1:
             p.append(f"control_plane.{k} must be an integer >= 1, got {v!r}")
+    if not isinstance(cp.system_tikv_per_region, int) or cp.system_tikv_per_region < 0:
+        p.append(f"control_plane.system_tikv_per_region must be an integer >= 0, got {cp.system_tikv_per_region!r}")
     if isinstance(cp.pd, int) and cp.pd % 2 == 0:
         p.append(f"control_plane.pd must be odd (Raft quorum), got {cp.pd}")
     for k in ("max_hourly_usd", "max_hours"):
@@ -343,6 +348,14 @@ def plan_nodes(spec: ClusterSpec) -> list[NodePlan]:
         nodes.append(NodePlan(f"pd-{i + 1}", "pd", order[i % len(order)], cp.instance_type))
     for s in spec.slots:
         nodes.append(NodePlan(s.name, "tikv", s.region, spec.tikv_instance_type, s.name, s.machine, s.az))
+    if cp.system_tikv_per_region > 0:
+        # per region, then extra ones in the control-plane region until every Raft group can have all its replicas
+        sys_regions = [r for r in slot_regions for _ in range(cp.system_tikv_per_region)]
+        sys_regions += [cp.region] * max(0, spec.replication_factor - len(sys_regions))
+        seen: dict[str, int] = {}
+        for r in sys_regions:
+            seen[r] = seen.get(r, 0) + 1
+            nodes.append(NodePlan(f"systikv-{r}-{seen[r]}", "systikv", r, cp.instance_type))
     for role, count in (("tidb", cp.tidb_per_region), ("loadgen", cp.loadgen_per_region)):
         for r in slot_regions:
             for j in range(count):

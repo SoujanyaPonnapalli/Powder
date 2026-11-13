@@ -41,8 +41,9 @@ def test_smoke_bill_matches_hand_computation(lib):
     e = P.estimate(sp, lib)
     tikv = 2 * (raw_i4i("us-east-1") + raw_i4i("us-east-2") + raw_i4i("us-west-2"))
     ctl_per_region = {r: raw_cp("m6i.xlarge", r) for r in ("us-east-1", "us-east-2", "us-west-2")}
-    # control plane: controller (use1) + 3 PD (one per region) + 3 TiDB + 3 loadgen (one per region)
-    cp = ctl_per_region["us-east-1"] + sum(ctl_per_region.values()) * 3
+    # control plane: controller (use1) + 3 PD + 3 system TiKV + 3 TiDB + 3 loadgen (one of each per region)
+    cp = ctl_per_region["us-east-1"] + sum(ctl_per_region.values()) * 4
+    assert e.hourly_by_role["systikv"] == pytest.approx(sum(ctl_per_region.values()))
     assert e.hourly_by_role["tikv"] == pytest.approx(tikv)
     assert e.hourly_total == pytest.approx(tikv + cp)
     assert sum(e.hourly_by_region.values()) == pytest.approx(e.hourly_total)
@@ -51,11 +52,11 @@ def test_smoke_bill_matches_hand_computation(lib):
 
 def test_vcpu_by_region_for_quota_check(lib):
     e = P.estimate(S.parse_spec(SMOKE), lib)
-    # use1: 2 TiKV (8 each) + controller + PD + TiDB + loadgen (4 each) = 32; use2/usw2: 2x8 + 3x4 = 28
-    assert e.vcpu_by_region == {"us-east-1": 32, "us-east-2": 28, "us-west-2": 28}
-    assert P.check_quotas(e, {"us-east-1": 32, "us-east-2": 28, "us-west-2": 28}) == []
-    problems = P.check_quotas(e, {"us-east-1": 32, "us-east-2": 20})
-    assert any("us-east-2" in p and "needs 28" in p for p in problems)
+    # use1: 2 TiKV (8 each) + controller + PD + system TiKV + TiDB + loadgen (4 each) = 36; use2/usw2: 2x8 + 4x4 = 32
+    assert e.vcpu_by_region == {"us-east-1": 36, "us-east-2": 32, "us-west-2": 32}
+    assert P.check_quotas(e, {"us-east-1": 36, "us-east-2": 32, "us-west-2": 32}) == []
+    problems = P.check_quotas(e, {"us-east-1": 36, "us-east-2": 20})
+    assert any("us-east-2" in p and "needs 32" in p for p in problems)
     assert any("us-west-2" in p and "unknown" in p for p in problems)
 
 
@@ -115,18 +116,22 @@ def test_golden_topology():
 def test_topology_structure():
     sp = S.parse_spec(SMOKE)
     topo = yaml.safe_load(T.render_topology(sp, fake_hosts(sp)))
-    assert len(topo["pd_servers"]) == 3 and len(topo["tikv_servers"]) == 6 and len(topo["tidb_servers"]) == 3
+    assert len(topo["pd_servers"]) == 3 and len(topo["tikv_servers"]) == 9 and len(topo["tidb_servers"]) == 3
+    classes = [kv["config"]["server.labels"]["machine_class"] for kv in topo["tikv_servers"]]
+    assert classes.count("system") == 3                              # dedicated stores for TiDB's own data
     pd = topo["server_configs"]["pd"]
-    assert pd["replication.location-labels"] == ["region", "zone", "host"]
+    assert pd["replication.location-labels"] == ["region", "zone", "host", "machine_class"]
     assert pd["replication.max-replicas"] == 3
+    tidb = topo["server_configs"]["tidb"]
+    assert tidb == {}                                     # TiDB defaults: powder-load kills requests past their SLO
     for kv in topo["tikv_servers"]:
         labels = kv["config"]["server.labels"]
         assert set(labels) == {"region", "zone", "host", "machine_class"}
-        assert set(pd["replication.location-labels"]) <= set(labels)       # every isolation label is set on every store
+        assert set(labels) == set(pd["replication.location-labels"])       # tiup deploy rejects any label not listed
         assert kv["data_dir"] == "/data/tikv"
         assert all(T._LABEL_RE.match(v) for v in labels.values())
     assert {kv["config"]["server.labels"]["machine_class"] for kv in topo["tikv_servers"]} == {
-        "ford10-google-storage", "ford10-google-storage-ge15min"}
+        "ford10-google-storage", "ford10-google-storage-ge15min", "system"}
     regions = [kv["config"]["server.labels"]["region"] for kv in topo["tikv_servers"]]
     assert sorted(set(regions)) == ["us-east-1", "us-east-2", "us-west-2"]
     # PD spread over regions: the three PD hosts sit in three different VPCs (second octet = region index)
