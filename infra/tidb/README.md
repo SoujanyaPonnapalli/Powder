@@ -90,6 +90,49 @@ where traffic goes; conflicts excluded from numerator and denominator). `summary
 (`low_coverage`, `late_records`, `other_rate_above_threshold`, `low_sample_rsms`) that say when a number should not be
 trusted.
 
+## Powder PD repair oracle (off-cloud prototype)
+
+The opt-in PD patch and loopback-only Python oracle implement **missing/down/offline peer destination
+ranking**. PD still filters eligible TiKV stores, builds and throttles the operators, and falls back to
+its stock ranking on a timeout, invalid response, model mismatch, or missing score. Raft leader election,
+physical node provisioning, post-split moves, and merge decisions are **not** changed by this patch.
+The score file is *per deployment*: PD store IDs are not interchangeable with sampled catalogue
+machine IDs. `POWDER_ORACLE_URL` and `POWDER_ORACLE_MODEL_ID` must both be set on the **PD process** to enable
+advice; without them, the patched binary acts like stock PD. The URL must be an HTTP loopback endpoint
+ending in `/v1/recommend`; the client has a 200 ms deadline.
+
+To prepare a score file, supply a JSON `{ "candidates": [{ "candidate_id": "c1", "machine_ids":
+["m1", "m2", "m3"], "availability": 0.999, "cost_per_hour": 1.2 }, ...] }` of **already
+scored** `PlacementCandidate`s, a JSON `{ "m1": 123, ... }` mapping the exact optimizer physical
+machine IDs to this deployment's PD store IDs, and a captured PD `/pd/api/v1/stores` JSON document.
+`--model-id` must identify the immutable model/scoring input for that run. Missing candidates are
+not scored online: PD falls back to native placement. Reject a store map that pairs a sampled
+machine with an unrelated TiKV store; the label consistency check only detects changes to the PD
+stores *after* the score file is built. The example numeric values above describe the input shape,
+**not** measured results.
+
+```bash
+python3 scripts/export_pd_oracle_scores.py --candidates scored.json --machine-map machine-to-store.json \
+  --stores pd-stores.json --model-id <immutable-model-id> --output scores.json
+python3 infra/tidb/oracle_server.py --scores scores.json  # binds only 127.0.0.1:8650
+bash infra/tidb/apply_pd_oracle_patch.sh --check  # pinned clean v8.5.8 submodule
+bash infra/tidb/apply_pd_oracle_patch.sh          # opt-in source patch; no deployment
+(cd third_party/pd && go test ./pkg/schedule/checker)
+# Local build without Dashboard UI assets (for build validation only):
+(cd third_party/pd && go build -tags without_dashboard -o /tmp/pd-powder-check ./cmd/pd-server)
+```
+
+A plain `go build ./cmd/pd-server` fails on this checkout until the upstream Dashboard UI
+assets are generated (`make dashboard-ui`); `without_dashboard` is only the local build
+check, not a claim of parity with the pinned production binary.
+
+The patch is stored in the **parent repository** so the upstream submodule commit remains pinned
+and reproducible; the apply script refuses a dirty or wrong-revision checkout. Building/patching a
+running PD or installing this service is deliberately not automatic. First validate a local TiUP
+cluster with at least four eligible TiKV stores for RF=3, then wire a systemd oracle service and
+PD environment into the install path before any authorized live experiment. See
+`docs/plans/tidb-pd-ilp-integration.md` for the remaining split/merge and benchmarking gates.
+
 ## Testing without AWS
 
 ```bash

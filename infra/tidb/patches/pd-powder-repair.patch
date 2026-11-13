@@ -1,0 +1,405 @@
+diff --git a/pkg/schedule/checker/powder_oracle.go b/pkg/schedule/checker/powder_oracle.go
+new file mode 100644
+index 0000000..7182bfa
+--- /dev/null
++++ b/pkg/schedule/checker/powder_oracle.go
+@@ -0,0 +1,179 @@
++// Copyright 2026 Powder contributors.
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++package checker
++
++import (
++	"bytes"
++	"encoding/json"
++	"io"
++	"net/http"
++	"net/url"
++	"os"
++	"sort"
++	"time"
++
++	"github.com/pingcap/kvproto/pkg/metapb"
++	"github.com/pingcap/log"
++	"github.com/tikv/pd/pkg/core"
++	"github.com/tikv/pd/pkg/schedule/filter"
++	"go.uber.org/zap"
++)
++
++const powderOracleTimeout = 200 * time.Millisecond
++
++var powderHTTPClient = &http.Client{
++	Timeout:       powderOracleTimeout,
++	CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
++}
++
++type powderEpoch struct {
++	Version uint64 `json:"version"`
++	ConfVer uint64 `json:"conf_ver"`
++}
++
++type powderStore struct {
++	StoreID uint64            `json:"store_id"`
++	Labels  map[string]string `json:"labels"`
++}
++
++type powderPeer struct {
++	powderStore
++	Role    string `json:"role"`
++	Witness bool   `json:"witness"`
++	Down    bool   `json:"down"`
++	Pending bool   `json:"pending"`
++}
++
++type powderCandidate struct {
++	powderStore
++	RegionScore int `json:"region_score"`
++}
++
++type powderRequest struct {
++	Version    int               `json:"version"`
++	ModelID    string            `json:"model_id"`
++	Event      string            `json:"event"`
++	RegionID   uint64            `json:"region_id"`
++	Epoch      powderEpoch       `json:"epoch"`
++	OldStoreID *uint64           `json:"old_store_id"`
++	Peers      []powderPeer      `json:"peers"`
++	Candidates []powderCandidate `json:"candidates"`
++}
++
++type powderResponse struct {
++	Version  int         `json:"version"`
++	ModelID  string      `json:"model_id"`
++	RegionID uint64      `json:"region_id"`
++	Epoch    powderEpoch `json:"epoch"`
++	StoreID  uint64      `json:"store_id"`
++}
++
++func powderStoreInfo(store *core.StoreInfo) powderStore {
++	labels := make(map[string]string, 4)
++	for _, key := range []string{"machine_class", "region", "zone", "host"} {
++		labels[key] = store.GetLabelValue(key)
++	}
++	return powderStore{StoreID: store.GetID(), Labels: labels}
++}
++
++// powderSelectStore only advises the normal PD checker: candidates have already
++// passed its isolation, rule, storage and strict temporary-state filters.
++// Unavailable/invalid advice falls back to PD; a changed Region waits for the next patrol.
++func (s *ReplicaStrategy) powderSelectStore(event string, old uint64, candidates []*core.StoreInfo) (selected *core.StoreInfo, stale bool) {
++	endpoint := os.Getenv("POWDER_ORACLE_URL")
++	modelID := os.Getenv("POWDER_ORACLE_MODEL_ID")
++	if endpoint == "" || modelID == "" {
++		return nil, false
++	}
++	u, err := url.Parse(endpoint)
++	if err != nil || u.Scheme != "http" || (u.Hostname() != "127.0.0.1" && u.Hostname() != "::1") || u.Port() == "" || u.Path != "/v1/recommend" {
++		return nil, false
++	}
++	epoch := s.region.GetRegionEpoch()
++	defer func() {
++		current := s.cluster.GetRegion(s.region.GetID())
++		if current == nil || current.GetRegionEpoch().GetVersion() != epoch.GetVersion() || current.GetRegionEpoch().GetConfVer() != epoch.GetConfVer() {
++			selected, stale = nil, true
++		}
++	}()
++	request := powderRequest{
++		Version: 1, ModelID: modelID, Event: event, RegionID: s.region.GetID(),
++		Epoch:      powderEpoch{Version: epoch.GetVersion(), ConfVer: epoch.GetConfVer()},
++		Peers:      make([]powderPeer, 0, len(s.region.GetPeers())),
++		Candidates: make([]powderCandidate, 0, len(candidates)),
++	}
++	if event == "replace" {
++		request.OldStoreID = &old
++	}
++	for _, peer := range s.region.GetPeers() {
++		store := s.cluster.GetStore(peer.GetStoreId())
++		if store == nil {
++			return nil, false
++		}
++		role := "voter"
++		if peer.GetRole() != metapb.PeerRole_Voter {
++			role = "learner"
++		}
++		request.Peers = append(request.Peers, powderPeer{
++			powderStore: powderStoreInfo(store), Role: role, Witness: peer.GetIsWitness(),
++			Down: s.region.GetDownPeer(peer.GetId()) != nil, Pending: s.region.GetPendingPeer(peer.GetId()) != nil,
++		})
++	}
++	// Sort a copy so the candidate iteration order in PD stays unchanged on fallback.
++	sorted := append([]*core.StoreInfo(nil), candidates...)
++	cmp := filter.RegionScoreComparer(s.cluster.GetCheckerConfig())
++	sort.Slice(sorted, func(i, j int) bool {
++		if score := cmp(sorted[i], sorted[j]); score != 0 {
++			return score < 0
++		}
++		return sorted[i].GetID() < sorted[j].GetID()
++	})
++	for rank, store := range sorted {
++		request.Candidates = append(request.Candidates, powderCandidate{powderStore: powderStoreInfo(store), RegionScore: rank})
++	}
++	body, err := json.Marshal(request)
++	if err != nil {
++		return nil, false
++	}
++	resp, err := powderHTTPClient.Post(u.String(), "application/json", bytes.NewReader(body))
++	if err != nil {
++		log.Debug("Powder oracle unavailable", zap.Error(err))
++		return nil, false
++	}
++	defer resp.Body.Close()
++	if resp.StatusCode != http.StatusOK {
++		return nil, false
++	}
++	data, err := io.ReadAll(io.LimitReader(resp.Body, 4097))
++	if err != nil || len(data) > 4096 {
++		return nil, false
++	}
++	var choice powderResponse
++	if err := json.Unmarshal(data, &choice); err != nil {
++		return nil, false
++	}
++	if choice.StoreID == 0 {
++		return nil, false
++	}
++	if choice.Version != 1 || choice.ModelID != modelID || choice.RegionID != request.RegionID || choice.Epoch != request.Epoch {
++		return nil, false
++	}
++	for _, store := range candidates {
++		if store.GetID() == choice.StoreID {
++			return store, false
++		}
++	}
++	return nil, false
++}
+diff --git a/pkg/schedule/checker/powder_oracle_test.go b/pkg/schedule/checker/powder_oracle_test.go
+new file mode 100644
+index 0000000..6bb9a78
+--- /dev/null
++++ b/pkg/schedule/checker/powder_oracle_test.go
+@@ -0,0 +1,159 @@
++// Copyright 2026 Powder contributors.
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//     http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
++package checker
++
++import (
++	"context"
++	"encoding/json"
++	"math/rand"
++	"net/http"
++	"net/http/httptest"
++	"testing"
++	"time"
++
++	"github.com/stretchr/testify/require"
++	"github.com/tikv/pd/pkg/core"
++	"github.com/tikv/pd/pkg/mock/mockcluster"
++	"github.com/tikv/pd/pkg/mock/mockconfig"
++	"github.com/tikv/pd/pkg/schedule/operator"
++)
++
++func TestPowderReplacementAdvice(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	cluster := mockcluster.NewCluster(ctx, mockconfig.NewTestOptions())
++	for i := uint64(1); i <= 5; i++ {
++		count := 1
++		if i == 5 {
++			count = 100
++		}
++		cluster.AddLabelsStore(i, count, map[string]string{
++			"machine_class": "class", "region": "r1", "zone": "z1", "host": "host" + string(rune('0'+i)),
++		})
++	}
++	cluster.AddLeaderRegionWithRange(42, "", "", 1, 2, 3)
++	strategy := &ReplicaStrategy{
++		r: rand.New(rand.NewSource(1)), checkerName: "rule-checker", cluster: cluster,
++		region: cluster.GetRegion(42),
++	}
++	stores := cluster.GetRegionStores(strategy.region)
++	old := uint64(3)
++	native, _ := strategy.SelectStoreToFix(append(stores[:0:0], stores...), old)
++	require.Equal(t, uint64(4), native)
++
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		require.Equal(t, "/v1/recommend", r.URL.Path)
++		var request powderRequest
++		require.NoError(t, json.NewDecoder(r.Body).Decode(&request))
++		require.Equal(t, "replace", request.Event)
++		require.Equal(t, &old, request.OldStoreID)
++		require.Len(t, request.Candidates, 2)
++		require.Equal(t, uint64(4), request.Candidates[0].StoreID)
++		require.Equal(t, uint64(5), request.Candidates[1].StoreID)
++		w.Header().Set("Content-Type", "application/json")
++		require.NoError(t, json.NewEncoder(w).Encode(powderResponse{
++			Version: 1, ModelID: "toy-v1", RegionID: 42, Epoch: request.Epoch, StoreID: 5,
++		}))
++	}))
++	defer server.Close()
++	t.Setenv("POWDER_ORACLE_URL", server.URL+"/v1/recommend")
++	t.Setenv("POWDER_ORACLE_MODEL_ID", "toy-v1")
++	target, filtered := strategy.SelectStoreToFix(append(stores[:0:0], stores...), old)
++	require.False(t, filtered)
++	require.Equal(t, uint64(5), target)
++
++	t.Setenv("POWDER_ORACLE_MODEL_ID", "wrong-model")
++	target, _ = strategy.SelectStoreToFix(append(stores[:0:0], stores...), old)
++	require.Equal(t, native, target)
++	t.Setenv("POWDER_ORACLE_URL", "http://example.com:8650/v1/recommend")
++	target, _ = strategy.SelectStoreToFix(append(stores[:0:0], stores...), old)
++	require.Equal(t, native, target)
++}
++
++func (suite *ruleCheckerTestSuite) TestPowderOfflinePeerRepair() {
++	for i := uint64(1); i <= 5; i++ {
++		suite.cluster.AddLeaderStore(i, 1)
++	}
++	suite.cluster.AddLeaderRegionWithRange(42, "", "", 1, 2, 3)
++	suite.cluster.SetStoreOffline(3)
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		var request powderRequest
++		suite.Require().NoError(json.NewDecoder(r.Body).Decode(&request))
++		suite.Require().Equal("replace", request.Event)
++		suite.Require().Equal(uint64(3), *request.OldStoreID)
++		suite.Require().NoError(json.NewEncoder(w).Encode(powderResponse{
++			Version: 1, ModelID: "toy-v1", RegionID: 42, Epoch: request.Epoch, StoreID: 5,
++		}))
++	}))
++	defer server.Close()
++	suite.T().Setenv("POWDER_ORACLE_URL", server.URL+"/v1/recommend")
++	suite.T().Setenv("POWDER_ORACLE_MODEL_ID", "toy-v1")
++	op := suite.rc.Check(suite.cluster.GetRegion(42))
++	suite.Require().NotNil(op)
++	suite.Require().Equal("replace-rule-offline-peer", op.Desc())
++	suite.Require().Equal(uint64(5), op.Step(0).(operator.AddLearner).ToStore)
++}
++
++func TestPowderStaleRegionDoesNotCreateOperator(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	cluster := mockcluster.NewCluster(ctx, mockconfig.NewTestOptions())
++	for i := uint64(1); i <= 4; i++ {
++		cluster.AddLeaderStore(i, 1)
++	}
++	cluster.AddLeaderRegionWithRange(42, "", "", 1, 2, 3)
++	strategy := &ReplicaStrategy{
++		r: rand.New(rand.NewSource(1)), checkerName: "rule-checker", cluster: cluster,
++		region: cluster.GetRegion(42),
++	}
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		var request powderRequest
++		require.NoError(t, json.NewDecoder(r.Body).Decode(&request))
++		cluster.PutRegion(cluster.GetRegion(42).Clone(core.WithIncVersion()))
++		require.NoError(t, json.NewEncoder(w).Encode(powderResponse{
++			Version: 1, ModelID: "toy-v1", RegionID: 42, Epoch: request.Epoch, StoreID: 4,
++		}))
++	}))
++	defer server.Close()
++	t.Setenv("POWDER_ORACLE_URL", server.URL+"/v1/recommend")
++	t.Setenv("POWDER_ORACLE_MODEL_ID", "toy-v1")
++	target, filtered := strategy.SelectStoreToFix(cluster.GetRegionStores(strategy.region), 3)
++	require.Zero(t, target)
++	require.False(t, filtered)
++}
++
++func TestPowderOracleTimeoutFallsBack(t *testing.T) {
++	ctx, cancel := context.WithCancel(context.Background())
++	defer cancel()
++	cluster := mockcluster.NewCluster(ctx, mockconfig.NewTestOptions())
++	for i := uint64(1); i <= 4; i++ {
++		cluster.AddLeaderStore(i, 1)
++	}
++	cluster.AddLeaderRegionWithRange(42, "", "", 1, 2, 3)
++	strategy := &ReplicaStrategy{
++		r: rand.New(rand.NewSource(1)), checkerName: "rule-checker", cluster: cluster,
++		region: cluster.GetRegion(42),
++	}
++	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		time.Sleep(powderOracleTimeout + 20*time.Millisecond)
++	}))
++	defer server.Close()
++	t.Setenv("POWDER_ORACLE_URL", server.URL+"/v1/recommend")
++	t.Setenv("POWDER_ORACLE_MODEL_ID", "toy-v1")
++	stores := cluster.GetRegionStores(strategy.region)
++	target, filtered := strategy.SelectStoreToFix(stores, 3)
++	require.False(t, filtered)
++	require.Equal(t, uint64(4), target)
++}
+diff --git a/pkg/schedule/checker/replica_strategy.go b/pkg/schedule/checker/replica_strategy.go
+index 73f1f8b..bfd4959 100644
+--- a/pkg/schedule/checker/replica_strategy.go
++++ b/pkg/schedule/checker/replica_strategy.go
+@@ -51,6 +51,10 @@ type ReplicaStrategy struct {
+ // Meanwhile, we need to provide more constraints to ensure that the isolation
+ // level cannot be reduced after replacement.
+ func (s *ReplicaStrategy) SelectStoreToAdd(coLocationStores []*core.StoreInfo, extraFilters ...filter.Filter) (uint64, bool) {
++	return s.selectStoreToAdd(coLocationStores, "missing", 0, extraFilters...)
++}
++
++func (s *ReplicaStrategy) selectStoreToAdd(coLocationStores []*core.StoreInfo, event string, old uint64, extraFilters ...filter.Filter) (uint64, bool) {
+ 	// The selection process uses a two-stage fashion. The first stage
+ 	// ignores the temporary state of the stores and selects the stores
+ 	// with the highest score according to the location label. The second
+@@ -87,11 +91,18 @@ func (s *ReplicaStrategy) SelectStoreToAdd(coLocationStores []*core.StoreInfo, e
+ 	if targetCandidate.Len() == 0 {
+ 		return 0, false
+ 	}
+-	target := targetCandidate.FilterTarget(s.cluster.GetCheckerConfig(), nil, nil, strictStateFilter).
+-		PickTheTopStore(filter.RegionScoreComparer(s.cluster.GetCheckerConfig()), true) // less region score is better
+-	if target == nil {
++	targetCandidate.FilterTarget(s.cluster.GetCheckerConfig(), nil, nil, strictStateFilter)
++	if targetCandidate.Len() == 0 {
+ 		return 0, true // filter by temporary states
+ 	}
++	if event != "" {
++		if target, stale := s.powderSelectStore(event, old, targetCandidate.Stores); stale {
++			return 0, false // a new patrol will check the current Region
++		} else if target != nil {
++			return target.GetID(), false
++		}
++	}
++	target := targetCandidate.PickTheTopStore(filter.RegionScoreComparer(s.cluster.GetCheckerConfig()), true) // less region score is better
+ 	return target.GetID(), false
+ }
+ 
+@@ -108,7 +119,7 @@ func (s *ReplicaStrategy) SelectStoreToFix(coLocationStores []*core.StoreInfo, o
+ 	if len(coLocationStores) > 1 {
+ 		coLocationStores = coLocationStores[1:]
+ 	}
+-	return s.SelectStoreToAdd(coLocationStores)
++	return s.selectStoreToAdd(coLocationStores, "replace", old)
+ }
+ 
+ // SelectStoreToImprove returns a store to replace oldStore. The location
+@@ -129,7 +140,7 @@ func (s *ReplicaStrategy) SelectStoreToImprove(coLocationStores []*core.StoreInf
+ 	if len(s.locationLabels) > 0 && s.isolationLevel != "" {
+ 		filters = append(filters, filter.NewIsolationFilter(s.checkerName, s.isolationLevel, s.locationLabels, coLocationStores[1:]))
+ 	}
+-	return s.SelectStoreToAdd(coLocationStores[1:], filters...)
++	return s.selectStoreToAdd(coLocationStores[1:], "", 0, filters...)
+ }
+ 
+ func swapStoreToFirst(stores []*core.StoreInfo, id uint64) {
