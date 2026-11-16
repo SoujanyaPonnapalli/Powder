@@ -28,19 +28,28 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import common as K  # noqa: E402
 
-SEED_OFFSET = 10**9  # disjoint from pilot_fleet_frontier's per-placement seeds
+SEED_OFFSET = 7 * 10**9  # disjoint from the optimizer's batches (seed + b x runs) and its --validate-runs (seed + 1e9)
 
 
-def choose(row: dict, sla_nines: float) -> tuple[str, dict, bool]:
-    """(budget key, row, meets SLA as believed): cheapest believed-feasible deployment, else the most available."""
+def score(r: dict, select_by: str) -> float:
+    """Nines the operator decides on: the optimizer's own score, or its independent validation (new scoring)."""
+    if select_by == "validated":
+        if "validated" not in r:
+            raise ValueError("--select-by validated needs rows from --validate-runs")
+        return r["validated"]["nines"]
+    return r["nines"]
+
+
+def choose(row: dict, sla_nines: float, select_by: str = "believed") -> tuple[str, dict, bool]:
+    """(budget key, row, meets SLA as scored): cheapest deployment scoring >= the SLA, else the most available."""
     ok = [(r["cost_per_hour"], f, r) for f, r in row["new_ilp"].items() if r.get("feasible") and "placements" in r]
     if not ok:
         raise ValueError(f"x{row['rate_scale']}: no saved deployments")
-    meets = [x for x in ok if x[2]["nines"] >= sla_nines]
+    meets = [x for x in ok if score(x[2], select_by) >= sla_nines]
     if meets:
-        _, f, r = min(meets, key=lambda x: (x[0], -x[2]["nines"]))
+        _, f, r = min(meets, key=lambda x: (x[0], -score(x[2], select_by)))
         return f, r, True
-    _, f, r = max(ok, key=lambda x: x[2]["nines"])
+    _, f, r = max(ok, key=lambda x: score(x[2], select_by))
     return f, r, False
 
 
@@ -52,6 +61,7 @@ def main() -> int:
     ap.add_argument("--runs", type=int, default=1_000_000)
     ap.add_argument("--horizon-h", type=float, default=720.0, help="as the optimizer scores")
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--select-by", choices=["believed", "validated"], default="believed")
     ap.add_argument("--output", default=str(K.ROOT / "outputs/figs/sensitivity/sensitivity.json"))
     a = ap.parse_args()
 
@@ -60,7 +70,7 @@ def main() -> int:
     for path in sorted(Path(a.rows).glob(f"x*-{a.price}.json"), key=lambda p: float(p.stem[1:].split("-")[0])):
         row = K.load_row(path)
         m = float(row["rate_scale"])
-        f, r, meets = choose(row, a.sla_nines)
+        f, r, meets = choose(row, a.sla_nines, a.select_by)
         counts = Counter(tuple(sorted(p)) for p in r["placements"])
 
         def run(p):
@@ -75,6 +85,7 @@ def main() -> int:
         lo, hi = mean - 1.96 * se, min(mean + 1.96 * se, 1 - 1e-15)
         out.append({"assumed_multiplier": m, "budget": f, "cost_per_hour": r["cost_per_hour"],
                     "believed_nines": r["nines"], "believed_meets_sla": meets, "rf_counts": r.get("rf_counts"),
+                    "validated_nines": r.get("validated", {}).get("nines"), "select_by": a.select_by,
                     "true_availability": mean, "true_se": se, "true_nines": K.nines(mean),
                     "true_nines_ci95": [K.nines(lo), K.nines(hi)], "true_meets_sla": K.nines(mean) >= a.sla_nines})
         print(f"m={m:g}: budget {f} ${r['cost_per_hour']:.2f}/h believed {r['nines']:.2f} -> true "

@@ -168,9 +168,23 @@ def sensitivity() -> None:
     for a in (ax, ax2):
         a.axvline(1.0, color=INK, linestyle=":", linewidth=0.8)
     ax.set_ylabel("Availability (nines)")
-    ax.legend(fontsize=8, loc="lower right")
     ax.set_title("Sensitivity to reliability input error (truth = 1x, rho1 prices)", fontsize=9, loc="left", color=INK)
     ax2.plot(ms, [p["cost_per_hour"] for p in pts], color=ORANGE, marker="o", markersize=5, linewidth=2)
+    # optional overlay: 1x re-run with the new scoring (re-selection batches + independent validation)
+    for fname, marker, label in (("sensitivity-x1-new-believed.json", "D", "1x, new scoring, chosen by believed"),
+                                 ("sensitivity-x1-new-validated.json", "*", "1x, new scoring, chosen by validated")):
+        q = path.parent / fname
+        if not q.exists():
+            continue
+        for p in json.loads(q.read_text())["points"]:
+            off = 1.06 if marker == "*" else 0.94     # nudge so the two overlays and the original do not overlap
+            ax.errorbar([p["assumed_multiplier"] * off], [p["true_nines"]],
+                        yerr=[[p["true_nines"] - p["true_nines_ci95"][0]], [p["true_nines_ci95"][1] - p["true_nines"]]],
+                        color=GREEN, marker=marker, markersize=8 if marker == "*" else 5, linestyle="none",
+                        capsize=2, label=label)
+            ax2.plot([p["assumed_multiplier"] * off], [p["cost_per_hour"]], color=GREEN, marker=marker,
+                     markersize=8 if marker == "*" else 5, linestyle="none")
+    ax.legend(fontsize=7, loc="lower right")
     ax2.set_ylabel("Cluster cost ($/h)")
     ax2.set_xscale("log")
     ax2.set_xticks(ms, [f"{m:g}x" for m in ms])

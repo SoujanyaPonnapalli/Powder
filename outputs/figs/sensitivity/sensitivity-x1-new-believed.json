@@ -1,0 +1,29 @@
+{
+ "sla_nines": 5.0,
+ "price": "rho1",
+ "horizon_h": 720.0,
+ "runs": 1000000,
+ "points": [
+  {
+   "assumed_multiplier": 1.0,
+   "budget": "0.125",
+   "cost_per_hour": 3.8361415379709936,
+   "believed_nines": 5.414593171660729,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 45,
+    "5": 5
+   },
+   "validated_nines": 5.364873714961508,
+   "select_by": "believed",
+   "true_availability": 0.9999959391266847,
+   "true_se": 3.559504430150192e-07,
+   "true_nines": 5.3913805587326715,
+   "true_nines_ci95": [
+    5.322526623998817,
+    5.47324595661546
+   ],
+   "true_meets_sla": true
+  }
+ ]
+}
