@@ -105,7 +105,7 @@ setup_cpu() {
 fetch_bench() {
   load
   mkdir -p "$ROOT/outputs/bench"
-  rsync -az -e "ssh -i $KEY" --exclude cache "ubuntu@$(ip):powder-repo/outputs/bench/" "$ROOT/outputs/bench/"
+  rsync -az -e "ssh -i $KEY" --exclude cache "ubuntu@$(ip):powder-repo/${POWDER_FETCH_DIR:-outputs/bench}/" "$ROOT/${POWDER_FETCH_DIR:-outputs/bench}/"
 }
 
 setup() {
