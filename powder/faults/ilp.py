@@ -2,7 +2,7 @@
 
     from powder.faults import FaultLibrary
     from powder.faults.ilp import scenario_machine_types
-    types = scenario_machine_types(FaultLibrary.load(), "scenario/canonical-central-rho1", copies=10)
+    types = scenario_machine_types(FaultLibrary.load(), "scenario/canonical-central-rho1@v2", copies=10)
 
 Each (machine class, region) pair of a scenario becomes one
 ``placement_optimizer.MachineType`` with ``type_id = "<machine>@<region>"``.

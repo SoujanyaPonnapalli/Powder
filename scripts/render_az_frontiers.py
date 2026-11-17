@@ -148,7 +148,8 @@ def draw_panel(arm, name, rf, *, offset, xmin, xmax, ymin, ymax, xstep, ystep, t
 
 def render(result, name, oneshot=None):
     target = float(result["target_nines"])
-    if result["scenario"] != "scenario/canonical-central-az-aware@v2":
+    # @v2 (weekly planned cadence, removed 2026-11-17) only in saved results; new runs use @v3.
+    if result["scenario"] not in ("scenario/canonical-central-az-aware@v2", "scenario/canonical-central-az-aware@v3"):
         raise ValueError("expected AZ-aware sensitivity scenario")
     arms = {price: {**arm, "baselines": {int(rf): data for rf, data in arm["baselines"].items()}}
             for price, arm in result["arms"].items()}

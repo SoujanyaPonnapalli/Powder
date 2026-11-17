@@ -222,7 +222,7 @@ def test_ford_axis_calibration_is_tight():
 
 
 def test_ford_planned_duration_matches_digitized_median():
-    pd = LIB.get("planned_downtime/weekly-ford10", "planned_downtime")
+    pd = LIB.get("planned_downtime/ford10-rate", "planned_downtime")
     d = from_spec(pd["duration"]["central"])
     med = next(m for m in LIB.get("ford10")["measurements"] if m["id"] == "digitized-planned_reboot")
     assert abs(d.ppf(0.5) / med["value"]["median_s"] - 1) < 0.02
@@ -242,12 +242,27 @@ from powder.faults.planned_downtime import as_transient, long_run_fraction, sche
 
 
 def _planned():
-    return LIB.get("planned_downtime/weekly-ford10", "planned_downtime")
+    return LIB.get("planned_downtime/ford10-rate", "planned_downtime")
+
+
+def _gap(p) -> float:
+    """Mean gap between planned starts (s): ~71.7 d for ford10-rate."""
+    return float(p["period"]["mean"])
+
+
+def test_ford_cadence_is_the_only_planned_downtime():
+    planned = LIB.query(kind="planned_downtime")
+    assert {e["id"] for e in planned} == {"planned_downtime/ford10-rate", "planned_downtime/ford10-rate-rolling"}
+    assert [e["id"] for e in planned if "default" in e.get("tags", [])] == ["planned_downtime/ford10-rate"]
+    assert all(_gap(e) == _gap(_planned()) for e in planned)
+    for s in LIB.query(kind="scenario"):
+        assert s.get("planned_downtime") in (None, "planned_downtime/ford10-rate"), s["id"]
 
 
 def test_planned_schedule_no_overlap_and_gap_distribution():
     p = _planned()
-    ev = schedule([f"n{i}" for i in range(300)], days(7 * 30), p, np.random.default_rng(3))
+    mu = _gap(p)
+    ev = schedule([f"n{i}" for i in range(300)], 30 * mu, p, np.random.default_rng(3))
     by_node = {}
     for e in ev:
         by_node.setdefault(e.node, []).append(e)
@@ -257,7 +272,7 @@ def test_planned_schedule_no_overlap_and_gap_distribution():
             assert b.start >= a.end  # no overlapping downtime on one node
             gaps.append(b.start - a.start)
     g = np.sort(np.array(gaps))
-    model = np.array([normal_cdf((v - days(7)) / (12 * 3600.0)) for v in g])
+    model = np.array([normal_cdf((v - mu) / (12 * 3600.0)) for v in g])
     ks = np.max(np.abs(model - np.arange(1, len(g) + 1) / len(g)))
     assert ks < 1.63 / math.sqrt(len(g))  # KS at alpha = 0.01
 
@@ -265,29 +280,30 @@ def test_planned_schedule_no_overlap_and_gap_distribution():
 def test_planned_equilibrium_phase():
     p = _planned()
     rng = np.random.default_rng(11)
-    firsts = [schedule(["x"], days(30), p, rng)[0].start for _ in range(4000)]
-    mu, sd = days(7), 12 * 3600.0
+    mu, sd = _gap(p), 12 * 3600.0
+    firsts = [schedule(["x"], mu + 8 * sd, p, rng)[0].start for _ in range(4000)]
     expected = (mu**2 + sd**2) / (2 * mu)  # mean residual life of the renewal process
     assert abs(np.mean(firsts) / expected - 1) < 0.03
-    assert max(firsts) < days(7) + 8 * sd
+    assert max(firsts) < mu + 8 * sd
 
 
 def test_planned_long_run_fraction():
     p = _planned()
-    horizon = days(7 * 52)
-    ev = schedule([f"n{i}" for i in range(400)], horizon, p, np.random.default_rng(5))
+    horizon = 52 * _gap(p)
+    n = 4000  # heavy-tailed durations: ~2% relative s.d. per seed at this size, so 0.06 is ~3 sigma
+    ev = schedule([f"n{i}" for i in range(n)], horizon, p, np.random.default_rng(5))
     down = sum(min(e.end, horizon) - e.start for e in ev)
-    frac = down / (400 * horizon)
+    frac = down / (n * horizon)
     assert abs(frac / long_run_fraction(p) - 1) < 0.06
     rate, mean_d = as_transient(p)
-    assert math.isclose(rate, 1 / days(7)) and 600 < mean_d < 3600
+    assert math.isclose(rate, 1 / _gap(p)) and 600 < mean_d < 3600
 
 
-def test_planned_events_per_day_matches_n_over_7():
+def test_planned_events_per_day_matches_n_over_gap():
     p = _planned()
     rng = np.random.default_rng(9)
-    counts = [len(schedule([f"n{i}" for i in range(9)], days(1), p, rng)) for _ in range(3000)]
-    assert abs(np.mean(counts) - 9 / 7) < 0.06
+    counts = [len(schedule([f"n{i}" for i in range(90)], days(1), p, rng)) for _ in range(3000)]
+    assert abs(np.mean(counts) / (90 * days(1) / _gap(p)) - 1) < 0.05
 
 
 # -- region outages (subtask 1.2) ----------------------------------------------
@@ -328,7 +344,7 @@ def test_az_aware_region_profile_preserves_original_and_cites_verified_events():
     assert profile["az_outages"]["n_incidents"] == 2
     for ref in profile["derived_from"]:
         assert LIB.measurement(ref)["status"] in ("V", "S")
-    network = scenario_network_config(LIB, "scenario/canonical-central-az-aware@v2").as_network_config(engine=True)
+    network = scenario_network_config(LIB, "scenario/canonical-central-az-aware@v3").as_network_config(engine=True)
     assert len(network.azs) == 12 and len(network.per_az) == 12
     assert network.global_outage_dist is None
     assert network.per_az["us-east-1:az1"][0].mean > 0
@@ -470,13 +486,13 @@ def test_build_prices_pipeline_on_fixtures(tmp_path=None):
     bm.LIB = lib_dir
     assert bm.main() == 0
     lib = FaultLibrary.load(lib_dir)
-    cfgs = scenario_node_configs(lib, "scenario/canonical-central-rho1", engine=True)
+    cfgs = scenario_node_configs(lib, "scenario/canonical-central-rho1@v2", engine=True)
     assert all(c.cost_per_hour > 0 for c in cfgs.values())
     assert ("machine/spot-i4i.2xlarge-us-west-1", "us-west-1") in cfgs
     assert ("machine/spot-i4i.2xlarge-us-west-1", "us-east-1") not in cfgs  # regional spot pool
     rho0 = [e for e in lib.query(kind="price") if e.get("price_kind") == "price_assignment" and e["rho"] == 0.0]
     assert len(rho0) == 20
-    alt = scenario_node_configs(lib, "scenario/canonical-central-rho1", price_assignment=rho0[3]["id"])
+    alt = scenario_node_configs(lib, "scenario/canonical-central-rho1@v2", price_assignment=rho0[3]["id"])
     assert any(alt[k].cost_per_hour != cfgs[k].cost_per_hour for k in alt)
 
 
@@ -514,7 +530,7 @@ def test_trace_rates_round_trip():
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
     lib.entries["__s__"] = {"id": "__s__", "kind": "scenario", "machines": ["machine/ford10-ge15min-x10"],
                             "region_outage": "region_outage/aws-us-from-azure",
-                            "planned_downtime": "planned_downtime/weekly-ford10", "level": "central",
+                            "planned_downtime": "planned_downtime/ford10-rate", "level": "central",
                             "price_assignment": None, "price_policy": "none",
                             "deployment": {"regions": ["us-east-1", "us-west-2"]}}
     slots = {f"s{i}": ("machine/ford10-ge15min-x10", "us-east-1" if i % 2 else "us-west-2") for i in range(40)}
@@ -529,7 +545,7 @@ def test_trace_rates_round_trip():
         mu = lam * T * len(slots)
         assert abs(n - mu) < 4 * math.sqrt(mu) + 2, (cause, n, mu)  # downtime fraction is negligible here
     n_planned = sum(1 for e in ev if e.kind == "planned")
-    assert abs(n_planned / (len(slots) * T / days(7)) - 1) < 0.02
+    assert abs(n_planned / (len(slots) * T / _gap(_planned())) - 1) < 0.03
     ro = LIB.get("region_outage/aws-us-from-azure")
     lam_r = ro["regions"]["us-east-1"]["rate_per_hour"]["central"] / 3600
     n_r = sum(1 for e in ev if e.kind == "region" and e.region == "us-east-1")
@@ -543,8 +559,8 @@ def node_profile_rates_ps(profile):
 
 def test_trace_is_reproducible():
     slots = {"a": ("machine/ford10-google-storage-ge15min", "us-east-1"), "b": ("machine/ford10-google-storage", "us-west-1")}
-    e1 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
-    e2 = generate(LIB, "scenario/canonical-central", slots, days(30), seed=7)
+    e1 = generate(LIB, "scenario/canonical-central@v2", slots, days(30), seed=7)
+    e2 = generate(LIB, "scenario/canonical-central@v2", slots, days(30), seed=7)
     assert e1 == e2 and len(e1) > 0
 
 
@@ -554,7 +570,7 @@ def test_scenario_machine_types_for_ilp():
     except Exception:
         return
     from powder.faults.ilp import scenario_machine_types
-    types = scenario_machine_types(LIB, "scenario/canonical-central", copies=4)
+    types = scenario_machine_types(LIB, "scenario/canonical-central@v2", copies=4)
     assert types and all(t.copies == 4 and "@" in t.type_id for t in types)
 
 
@@ -597,7 +613,7 @@ def test_trace_weibull_uses_single_transient_clock():
 
 def test_trace_slot_streams_are_independent():
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
-    sid = _scenario(lib, "__ind__", planned_downtime="planned_downtime/weekly-ford10")
+    sid = _scenario(lib, "__ind__", planned_downtime="planned_downtime/ford10-rate")
     a = {"x": ("machine/ford10-ge15min-x10", "us-east-1"), "y": ("machine/ford10-ge15min-x10", "us-west-2")}
     b = {**a, "z": ("machine/ford10-ge15min-x10", "us-west-2")}
     b2 = {"a0": ("machine/ford10-ge15min-x10", "us-east-1"), **b}  # sorts before x as well
@@ -629,17 +645,17 @@ def test_frailty_is_opt_in_and_matches_draws():
 
 def test_planned_downtime_folded_into_node_configs():
     lib = FaultLibrary(dict(LIB.entries), dict(LIB.paths), LIB.root)
-    sid = _scenario(lib, "__pl__", machines=["machine/ford10-google-storage-ge15min"], planned_downtime="planned_downtime/weekly-ford10")
+    sid = _scenario(lib, "__pl__", machines=["machine/ford10-google-storage-ge15min"], planned_downtime="planned_downtime/ford10-rate")
     with_p = scenario_node_configs(lib, sid)[("machine/ford10-google-storage-ge15min", "us-east-1")]
     without = scenario_node_configs(lib, sid, include_planned=False)[("machine/ford10-google-storage-ge15min", "us-east-1")]
-    assert math.isclose(1 / with_p.failure_dist.mean - 1 / without.failure_dist.mean, 1 / days(7), rel_tol=1e-9)
+    assert math.isclose(1 / with_p.failure_dist.mean - 1 / without.failure_dist.mean, 1 / _gap(_planned()), rel_tol=1e-9)
 
 
 def test_rolling_planned_groups_go_down_together():
-    pd = LIB.get("planned_downtime/weekly-ford10-rolling", "planned_downtime")
+    pd = LIB.get("planned_downtime/ford10-rate-rolling", "planned_downtime")
     nodes = ["a1", "a2", "b1", "b2"]
     groups = {"a1": "az-a", "a2": "az-a", "b1": "az-b", "b2": "az-b"}
-    ev = schedule(nodes, days(70), pd, np.random.default_rng(0), groups=groups)
+    ev = schedule(nodes, 10 * _gap(pd), pd, np.random.default_rng(0), groups=groups)
     starts = {}
     for e in ev:
         starts.setdefault(e.node, []).append(round(e.start, 6))
@@ -652,7 +668,7 @@ def test_global_outage_process():
     assert ro["global"]["n_incidents"] >= 1 and "2023-01-25-wan" in ro["global"]["incidents"]
     for r in ro["regions"].values():  # the global event is not counted per region
         assert "2023-01-25-wan" not in r["incidents"]
-    m = scenario_network_config(LIB, "scenario/canonical-central")
+    m = scenario_network_config(LIB, "scenario/canonical-central@v2")
     nc = m.as_network_config("max")
     assert math.isclose(nc.outage_dist.rate, max(m.rate_per_second.values()) + m.global_rate_per_second)
     exact = m.as_network_config()
@@ -713,7 +729,7 @@ def test_engine_runs_library_scenario_natively():
         subprocess.run([str(binary), "--help"], capture_output=True, check=True, timeout=30)
     except (EngineNotFound, OSError, subprocess.SubprocessError):
         return  # no runnable engine here (e.g. a Mac binary on Linux)
-    cfgs = scenario_node_configs(LIB, "scenario/canonical-central", engine=True)
+    cfgs = scenario_node_configs(LIB, "scenario/canonical-central@v2", engine=True)
     cfg = cfgs[("machine/ford10-google-storage", "us-east-1")]
     kinds = {distribution_spec(cfg.recovery_dist)["type"]}
     assert kinds & {"mixture", "empirical", "lognormal"}  # not approximated
@@ -803,9 +819,9 @@ def test_exec10_simple_system_timings():
     from powder.faults.system import REBUILD_S, SNAPSHOT_S
     assert abs(SNAPSHOT_S - 8.589934592) < 1e-9  # 256 MiB over 1 Gbps
     assert abs(REBUILD_S - (120 + SNAPSHOT_S)) < 1e-9
-    s = LIB.get("scenario/canonical-central", "scenario")
+    s = LIB.get("scenario/canonical-central@v2", "scenario")
     assert s["system"]["source"] == "exec10-simple-estimate"
-    cfg = scenario_node_configs(LIB, "scenario/canonical-central")[("machine/ford10-google-storage-ge15min", "us-east-1")]
+    cfg = scenario_node_configs(LIB, "scenario/canonical-central@v2")[("machine/ford10-google-storage-ge15min", "us-east-1")]
     assert abs(cfg.snapshot_download_time_dist.value - SNAPSHOT_S) < 1e-12
     assert (cfg.spawn_dist.low, cfg.spawn_dist.high) == (60.0, 180.0)
     legacy = scenario_node_configs(LIB, "scenario/legacy")[("machine/legacy-standard", "us-east")]
@@ -820,30 +836,24 @@ def test_spot_rates_from_band_history():
     assert band_rates_from_history({"3": 1.0}) == band_rates(3)
 
 
-def test_reference_ford10_planned_variants():
-    from powder.faults import FaultLibrary
-    lib = FaultLibrary.load()
-    base = lib.get("scenario/reference-ford10", "scenario")
-    weekly = lib.get("scenario/reference-ford10-weekly", "scenario")
+def test_reference_ford10_uses_ford_cadence():
+    base = LIB.get("scenario/reference-ford10", "scenario")
     assert base["planned_downtime"] == "planned_downtime/ford10-rate"
-    assert weekly["planned_downtime"] == "planned_downtime/weekly-ford10"
-    strip = lambda s: {k: v for k, v in s.items() if k not in ("id", "planned_downtime", "notes")}  # noqa: E731
-    assert strip(base) == strip(weekly)
+    assert base["machines"] and all("ford10" in m for m in base["machines"])
 
 
 def test_v2_scenarios_use_ford_planned_cadence():
     from powder.faults import FaultLibrary
     from powder.faults.convert import planned_as_cause
     lib = FaultLibrary.load()
-    strip = lambda s: {k: v for k, v in s.items() if k not in ("id", "version", "planned_downtime", "notes")}  # noqa: E731
-    v1 = [s for s in lib.query(kind="scenario") if s["id"].startswith("scenario/canonical-") and "@" not in s["id"]]
-    assert len(v1) == 12
-    for s in v1:
-        v2 = lib.get(s["id"] + "@v2", "scenario")
-        assert v2["planned_downtime"] == "planned_downtime/ford10-rate" and strip(v2) == strip(s)
-    az2 = lib.get("scenario/canonical-central-az-aware@v2", "scenario")
+    strip = lambda s: {k: v for k, v in s.items() if k not in ("id", "version", "region_outage", "notes")}  # noqa: E731
+    canonical = [s for s in lib.query(kind="scenario") if s["id"].startswith("scenario/canonical-")]
+    assert all("@" in s["id"] for s in canonical)  # the weekly v1 scenarios were removed (2026-11-17)
+    v2 = [s for s in canonical if s["id"].endswith("@v2")]
+    assert len(v2) == 12 and all(s["planned_downtime"] == "planned_downtime/ford10-rate" for s in v2)
     az3 = lib.get("scenario/canonical-central-az-aware@v3", "scenario")
-    assert az3["planned_downtime"] == "planned_downtime/ford10-rate" and strip(az3) == strip(az2)
+    assert strip(az3) == strip(lib.get("scenario/canonical-central@v2", "scenario"))
+    assert az3["region_outage"] == "region_outage/aws-us-az-aware@v2"
     # Ford's cadence: ~5.1 planned reboots per node-year instead of ~52
     rate = planned_as_cause(lib, az3, "central")[0].rate_per_second * 8766 * 3600
     assert 4.5 < rate < 5.5
@@ -996,8 +1006,8 @@ def test_catalogue_trace_follows_machine_hazards():
     n = sum(e.cause == "spot_interrupt" for e in ev)
     mu = 200 * C.piecewise_rate(C.machine_rates(m)["spot_interrupt"]).cumulative(0, H)
     assert abs(n - mu) < 4 * math.sqrt(mu) + 0.03 * mu, (n, mu)  # clocks pause during spawns: slightly fewer
-    ev2 = C.trace(LIB, cat, {"a": m["id"]}, 30 * 86400.0, seed=2, scenario_id="scenario/canonical-central")
-    assert any(e.kind == "planned" for e in ev2)  # weekly cadence: certain within 30 days
+    ev2 = C.trace(LIB, cat, {"a": m["id"]}, H, seed=2, scenario_id="scenario/canonical-central@v2")
+    assert any(e.kind == "planned" for e in ev2)  # Ford's cadence (~72 d gap): near certain within a year
     cfg = C.node_config(m, time_varying=True)
     assert hasattr(cfg.data_loss_dist, "sample_at")
 

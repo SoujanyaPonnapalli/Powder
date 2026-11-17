@@ -86,7 +86,7 @@ def test_catalogue_sampler_preserves_time_varying_clocks_and_network(monkeypatch
 
     monkeypatch.setattr(mc_backend, "run_monte_carlo", run)
     sampler = catalogue_batch_sampler(lib, cat, [m["id"] for m in cat["machines"][:3]],
-                                      "scenario/canonical-central", "rho0",
+                                      "scenario/canonical-central@v2", "rho0",
                                       RaftLikeProtocol(election_time_dist=Exponential(.2)),
                                       NodeReplacementStrategy(failure_timeout=600, default_node_config=None),
                                       include_region_outages=True)

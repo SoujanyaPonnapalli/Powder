@@ -67,19 +67,17 @@ def main():
     out = LIB / "profiles/region_outage/aws-us-az-aware@v2.json"
     out.write_text(json.dumps(az, indent=2) + "\n")
 
-    central = json.loads((LIB / "scenarios/canonical.json").read_text())
-    scenario = deepcopy(next(s for s in central if s["id"] == "scenario/canonical-central"))
-    scenario["id"] = "scenario/canonical-central-az-aware@v2"
-    scenario["version"] = 2
-    scenario["region_outage"] = az["id"]
-    scenario["notes"] = "AZ-aware primary sensitivity; partial WAN retained as separate stress metadata"
-    (LIB / "scenarios/az-aware@v2.json").write_text(json.dumps(scenario, indent=2) + "\n")
-    # @v3 (decision 2026-11-04): planned downtime at Ford's planned-reboot cadence, not weekly.
-    v3 = {**scenario, "id": "scenario/canonical-central-az-aware@v3", "version": 3,
-          "planned_downtime": "planned_downtime/ford10-rate",
-          "notes": scenario["notes"] + "; planned downtime at Ford's cadence (ford10-rate), not weekly"}
+    # canonical-central-az-aware@v3: canonical-central@v2 (Ford's planned cadence) with AZ-aware outages.
+    # @v2 (weekly planned cadence) was removed with the weekly profiles (decision 2026-11-17); the version
+    # number stays 3 so earlier results keep pointing at the same entry.
+    central = json.loads((LIB / "scenarios/canonical@v2.json").read_text())
+    v3 = deepcopy(next(s for s in central if s["id"] == "scenario/canonical-central@v2"))
+    v3.update({"id": "scenario/canonical-central-az-aware@v3", "region_outage": az["id"],
+               "notes": ("AZ-aware primary sensitivity; partial WAN retained as separate stress metadata; "
+                         "planned downtime at Ford's cadence (ford10-rate), not weekly"),
+               "version": 3})
     (LIB / "scenarios/az-aware@v3.json").write_text(json.dumps(v3, indent=2) + "\n")
-    print(json.dumps({"profile": az["id"], "scenario": scenario["id"],
+    print(json.dumps({"profile": az["id"], "scenario": v3["id"],
                       "az_rate_per_year": rates["central"] * H_PER_YEAR,
                       "az_mean_duration_minutes": durations["central"]["value"] / 60}, indent=2))
 

@@ -1,7 +1,7 @@
 # Smoke deployment (exec #7 gate G4): 6 TiKV over 3 regions + control plane. ~$6/h while up.
 handle: auto                     # auto = random AdjectiveNoun (e.g. OrangePanda); or an explicit name
 label: smoke
-scenario: scenario/canonical-central-rho0
+scenario: scenario/canonical-central-rho0@v2
 seed: 1
 control_plane: {region: us-east-1, instance_type: m6i.xlarge, pd: 3, tidb_per_region: 1, loadgen_per_region: 1}
 slots:                           # same NAME=MACHINE@REGION grammar as scripts/fault_library/make_trace.py --slot

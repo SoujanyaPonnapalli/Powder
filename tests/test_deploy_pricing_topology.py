@@ -65,7 +65,7 @@ def test_modeled_cost_priced_vs_unpriced_scenario(lib):
     priced = P.estimate(sp, lib)
     assert priced.modeled_hourly and priced.modeled_hourly != pytest.approx(priced.hourly_by_role["tikv"])
     d = S.load_yaml(SMOKE)
-    d["scenario"] = "scenario/canonical-central"          # price_policy none
+    d["scenario"] = "scenario/canonical-central@v2"          # price_policy none
     unpriced = P.estimate(S.parse_spec(d), lib)
     assert unpriced.modeled_hourly is None and "no prices" in unpriced.modeled_note
 

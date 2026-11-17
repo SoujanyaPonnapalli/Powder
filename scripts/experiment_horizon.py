@@ -1,7 +1,8 @@
 """Independent Rust MC check of selected RSMs at prospective live horizons.
 
 These are *individual RSM* predictions, not joint-cluster availability or TiDB validation.
-The engine uses catalogue NHPP hazards and an exponential approximation of weekly maintenance.
+The engine uses catalogue NHPP hazards and an exponential approximation of planned maintenance
+(Ford's cadence; saved results before 2026-11-17 used the removed weekly cadence).
 """
 from __future__ import annotations
 
@@ -52,10 +53,10 @@ def run(args):
     if any(r["master_digest"] != catalogue.digest(master) for r in rows):
         raise ValueError("sweep and horizon catalogue draws or price assignments differ")
     machines = {m["id"]: m for m in master["machines"]}
-    scenario = lib.get("scenario/canonical-central", "scenario")
+    scenario = lib.get("scenario/canonical-central@v2", "scenario")
     planned = planned_as_cause(lib, scenario, "central")
     network = (None if args.no_network else
-               scenario_network_config(lib, "scenario/canonical-central").as_network_config(engine=True))
+               scenario_network_config(lib, "scenario/canonical-central@v2").as_network_config(engine=True))
     protocol = RaftLikeProtocol(election_time_dist=Exponential(.2))
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)

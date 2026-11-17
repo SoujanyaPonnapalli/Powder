@@ -30,7 +30,9 @@ from powder.placement_optimizer import (CandidateGenerationConfig, PlacementCand
                                         no_region_majority, no_shared_az, solve_candidate_ilp)
 from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProtocol  # noqa: E402
 
-SCENARIO = "scenario/canonical-central-az-aware@v2"
+# Saved outputs (outputs/exec-02/az-*) used @v2, the weekly planned cadence removed on 2026-11-17
+# (last commit with it: 1b52ccf); reruns use @v3, Ford's cadence.
+SCENARIO = "scenario/canonical-central-az-aware@v3"
 RF_COUNTS = (3, 5, 7)
 NUM_RSMS = 10_000
 CAPACITY = 500

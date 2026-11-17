@@ -24,6 +24,9 @@ Each chat will detail a specific action item to take. We will make a plan that w
 
 - Every number in the library cites a source record measurement with status V (primary) or S (reliable secondary);
   U (unconfirmed) can never be cited. Entries used in results are immutable: change them by adding `@v2`.
+  Exception (user decision 2026-11-17): the weekly planned-downtime cadence was deleted. Ford's cadence
+  (`planned_downtime/ford10-rate`) is the only one; use the `@v2` canonical scenarios and `az-aware@v3`.
+  Weekly-era results (`outputs/exec-02/`) reproduce only at commit `1b52ccf`.
 - Experiments target AWS: all US regions, one identical 8 vCPU x86 instance type (`i4i.2xlarge`) with local NVMe;
   heterogeneity is emulated by injecting each machine class's faults (`powder.faults.trace`).
 - Commit as `Reginald Frank <reginaldfrank77@berkeley.edu>`; never push to `main`.
