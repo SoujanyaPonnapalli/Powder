@@ -55,6 +55,11 @@ def price_per_hour(lib: FaultLibrary, scenario: dict[str, Any], machine_id: str,
     raise LibraryError(f"machine {machine_id} has no price but scenario {scenario['id']} needs one")
 
 
+def traffic_pricer(lib: FaultLibrary, transfer_id: str):
+    """``(src, dst, same_az) -> $/GB`` resolver for ``transition_costs`` (inter-AZ billed, same AZ free)."""
+    return lambda src, dst, same_az: transfer_per_gb(lib, transfer_id, src, dst, same_az=same_az)
+
+
 def transfer_per_gb(lib: FaultLibrary, transfer_id: str, src: str, dst: str,
                     same_az: bool = False) -> float:
     """$/GB to move data from region ``src`` to region ``dst``."""

@@ -112,6 +112,27 @@ def replication_per_hour(
     return _nonnegative("replication $/h", 3600.0 * rate * max(len(machines) - 1, 0) * q)
 
 
+def deployment_replication_per_hour(
+    placements: Sequence[Sequence[str]],
+    write_gb_per_s: float,
+    location: Mapping[str, tuple[str, str]],
+    traffic_price: Callable[[str, str, bool], float],
+) -> float:
+    """Replication $/h of a whole deployment: one entry per RSM, each writing ``write_gb_per_s`` per follower.
+
+    Post-hoc accounting for any saved deployment (ILP or baseline); repeated placements are priced once.
+    """
+    rate = _nonnegative("write_gb_per_s", write_gb_per_s)
+    per_gb: dict[tuple[str, ...], float] = {}
+    total = 0.0
+    for placement in placements:
+        key = tuple(sorted(_machines(placement)))
+        if key not in per_gb:
+            per_gb[key] = replication_per_hour(key, 1.0, location, traffic_price)
+        total += per_gb[key]
+    return _nonnegative("deployment replication $/h", rate * total)
+
+
 def migration_cost(
     old: Sequence[str],
     new: Sequence[str],

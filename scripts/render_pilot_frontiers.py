@@ -8,6 +8,12 @@ Reuses the pilot's stored values; nothing is re-solved. The ILP line joins its f
 For ``results-fleet.json`` (scripts/pilot_fleet_frontier.py) the blue line is the budget-targeted fleet ILP
 and the grey line the old random-menu ILP, all exact MC. For the older Markov ``results.json`` the dashed
 grey step is the Pareto envelope over every plotted point.
+
+With ``--write-gb-per-s R`` every point's cost also includes Raft replication traffic, priced post hoc from its
+saved placements for ILP and baselines alike (``transition_costs.deployment_replication_per_hour``: R decimal GB/s
+from the leader to each follower, uniform leader, AWS transfer prices; same AZ free, inter-AZ and inter-region
+billed). The ILP budgets bounded machine $/h only, so its choices do not account for this traffic.
+Points without saved placements are dropped.
 """
 
 from __future__ import annotations
@@ -15,6 +21,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import sys
 from html import escape
 from pathlib import Path
 
@@ -22,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
 INK, INK2, MUTED, GRID, AXIS, SURFACE = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7", "#fcfcfb"
 FONT = "DejaVu Sans,Arial,sans-serif"
+TRANSFER = "price-transfer/aws-us@2026-10-21"
 PRICES = {"rho0": "Independent prices", "rho1": "Reliability-ranked prices"}
 PW, PH = 250, 210                       # plot area per panel
 ML, MT, GX, GY = 92, 118, 62, 74         # left/top margins, gaps between panels
@@ -53,22 +61,36 @@ def nice_ticks(lo, hi, n=5):
     return [round(start + i * step, 6) for i in range(int((hi - start) / step + 1e-9) + 1)]
 
 
-def points(row):
+def replication_cost(catalogue_path: str, write_gb_per_s: float):
+    """placements -> replication $/h at ``write_gb_per_s`` per follower (catalogue locations, AWS prices)."""
+    sys.path.insert(0, str(ROOT))
+    from powder.faults import FaultLibrary
+    from powder.faults import catalogue as C
+    from powder.faults.prices import traffic_pricer
+    from powder.faults.transition_costs import deployment_replication_per_hour
+    cat = C.load(ROOT / catalogue_path)
+    loc = {m["id"]: (m["region"], m.get("az") or m["region"]) for m in cat["machines"]}
+    price = traffic_pricer(FaultLibrary.load(), TRANSFER)
+    return lambda placements: deployment_replication_per_hour(placements, write_gb_per_s, loc, price)
+
+
+def points(row, traffic=None):
+    """(kind, label, $/h, nines) per plotted point; with ``traffic`` the $/h adds its replication cost."""
     if "new_ilp" in row:  # fleet pilot: exact MC for every point
         pts = [(kind, "no budget" if f == "1" else f"{float(f):.0%} budget", v)
                for kind, key in (("ILP", "new_ilp"), ("old", "old_ilp"), ("prev", "prev_ilp"))
                for f, v in row.get(key, {}).items() if v["feasible"]]
-        for name, b in row["baselines"].items():
-            rf, policy = name.split("-")
-            pts.append((policy, rf.upper().replace("RF", "RF "), b))
-        return [(kind, label, p["cost_per_hour"], p["nines"]) for kind, label, p in pts]
-    pts = [("ILP", f"{float(key[7:]):.0%} budget", v) for key, v in row.items()
-           if key.startswith("budget_") and key != "budget_fractions" and v.get("feasible", True)]
-    pts.append(("ILP", "no budget", row["unrestricted"]))
+    else:
+        pts = [("ILP", f"{float(key[7:]):.0%} budget", v) for key, v in row.items()
+               if key.startswith("budget_") and key != "budget_fractions" and v.get("feasible", True)]
+        pts.append(("ILP", "no budget", row["unrestricted"]))
     for name, b in row["baselines"].items():
         rf, policy = name.split("-")
         pts.append((policy, rf.upper().replace("RF", "RF "), b))
-    return [(kind, label, p["cost_per_hour"], p["nines"]) for kind, label, p in pts]
+    if traffic is None:
+        return [(kind, label, p["cost_per_hour"], p["nines"]) for kind, label, p in pts]
+    return [(kind, label, p["cost_per_hour"] + traffic(p["placements"]), p["nines"])
+            for kind, label, p in pts if p.get("placements")]
 
 
 def pareto(pts):
@@ -80,7 +102,7 @@ def pareto(pts):
     return out
 
 
-def render(data, compare=None, show_main=False) -> str:
+def render(data, compare=None, show_main=False, write_gb_per_s=None) -> str:
     rows = data["rows"]
     fleet = "new_ilp" in rows[0]
     prev_label = "Fleet ILP, previous sweep"
@@ -93,13 +115,22 @@ def render(data, compare=None, show_main=False) -> str:
                 for r in rows]
         prev_label = "Fleet ILP"
     compare = compare or show_main
+    traffic = None
+    if write_gb_per_s is not None:
+        price = replication_cost(data["catalogue"], write_gb_per_s)
+        memo: dict = {}
+        traffic = lambda ps: memo.setdefault(id(ps), price(ps))  # noqa: E731  (rows outlive render)
+        dropped = sum(len(points(r)) - len(points(r, traffic)) for r in rows)
+        if dropped:
+            print(f"warning: {dropped} point(s) without saved placements dropped", file=sys.stderr)
+    points_of = lambda r: points(r, traffic)  # noqa: E731
     scales = sorted({r["rate_scale"] for r in rows})
     prices = [p for p in PRICES if any(r["price"] == p for r in rows)]
     by = {(r["rate_scale"], r["price"]): r for r in rows}
     W = ML + len(scales) * PW + (len(scales) - 1) * GX + 24
     W = max(W, ML + 1000)  # room for the title, subtitle, legend and footnote when there are few columns
     H = MT + len(prices) * PH + (len(prices) - 1) * GY + 78
-    xmax = max(c for r in rows for _, _, c, _ in points(r)) * 1.08
+    xmax = max(c for r in rows for _, _, c, _ in points_of(r)) * 1.08
     xt = nice_ticks(0, xmax, 4)
     if xt[-1] < xmax:
         xt.append(round(2 * xt[-1] - xt[-2], 6))
@@ -107,12 +138,16 @@ def render(data, compare=None, show_main=False) -> str:
            f'<rect width="{W}" height="{H}" fill="{SURFACE}"/>',
            text(ML, 28, "Cost vs. availability under scaled fault rates (50 RSMs, 2000-VM catalogue)", 16, INK,
                 weight=600),
-           text(ML, 48, ("Exact Monte Carlo per-RSM availability (region/AZ outages on); budget-targeted fleet ILP "
+           text(ML, 48, (("Exact Monte Carlo per-RSM availability (region/AZ outages on); budget-targeted fleet ILP "
                  "vs. random-menu ILP and fixed-RF baselines") if fleet else
                 ("Expected per-RSM availability from the Markov model (no region/AZ outages); "
-                 "ILP at several budgets vs. fixed-RF baselines"), 11, INK2)]
+                 "ILP at several budgets vs. fixed-RF baselines")), 11, INK2)]
+    if traffic:
+        out.append(text(ML, 64, f"Cost adds replication at {write_gb_per_s * 1e3:g} MB/s per RSM follower "
+                        "(AWS transfer prices, priced from saved placements); ILP budgets bound machine $/h only",
+                        11, INK2))
     # legend
-    lx = ML
+    lx, ly = ML, 86 if traffic else 68
     tiebreak = fleet and any("max_availability" in v for r in rows for v in r["new_ilp"].values())
     items = ((("circle", BLUE, ("Fleet ILP + lattice + cost tie-break" if tiebreak else "Fleet ILP + lattice ascent")
                 if compare else "Fleet ILP across budgets"),)
@@ -120,15 +155,15 @@ def render(data, compare=None, show_main=False) -> str:
              + (("hollow", MUTED, "Random-menu ILP"),) if fleet else (("circle", BLUE, "ILP across budgets"),))
     for shape, color, label in items + (("square", ORANGE, "Price-blind baseline"),
                                         ("triangle", AQUA, "Cheapest-first baseline")):
-        out.append(marker(lx + 6, 68, shape, color, label))
-        out.append(text(lx + 18, 72, label, 11, INK2))
+        out.append(marker(lx + 6, ly, shape, color, label))
+        out.append(text(lx + 18, ly + 4, label, 11, INK2))
         lx += 34 + 6.9 * len(label)
     if not fleet:
-        out.append(f'<line x1="{lx}" y1="68" x2="{lx + 22}" y2="68" stroke="{MUTED}" stroke-width="1.5" '
+        out.append(f'<line x1="{lx}" y1="{ly}" x2="{lx + 22}" y2="{ly}" stroke="{MUTED}" stroke-width="1.5" '
                    f'stroke-dasharray="4 3"/>')
-        out.append(text(lx + 28, 72, "Pareto envelope of shown points", 11, INK2))
+        out.append(text(lx + 28, ly + 4, "Pareto envelope of shown points", 11, INK2))
     for j, k in enumerate(scales):
-        col = [p for pr in prices for p in points(by[(k, pr)])]
+        col = [p for pr in prices for p in points_of(by[(k, pr)])]
         lo, hi = min(a for *_, a in col), max(a for *_, a in col)
         pad = (hi - lo) * 0.12
         yt = nice_ticks(lo - pad, hi + pad, 5)
@@ -148,10 +183,11 @@ def render(data, compare=None, show_main=False) -> str:
                 out.append(f'<line x1="{sx(v):.1f}" y1="{y0}" x2="{sx(v):.1f}" y2="{y0 + PH}" stroke="{GRID}"/>')
                 out.append(text(sx(v), y0 + PH + 15, f"${v:g}", 10, MUTED, "middle"))
             out.append(f'<line x1="{x0}" y1="{y0 + PH}" x2="{x0 + PW}" y2="{y0 + PH}" stroke="{AXIS}"/>')
-            out.append(text(x0 + PW / 2, y0 + PH + 32, "Cluster cost ($/h)", 10, INK2, "middle"))
+            out.append(text(x0 + PW / 2, y0 + PH + 32, "Machines + replication ($/h)" if traffic else
+                            "Cluster cost ($/h)", 10, INK2, "middle"))
             if j == 0:
                 out.append(text(x0 - 34, y0 + PH / 2, "Availability (nines)", 10, INK2, "middle", rotate=-90))
-            pts = points(by[(k, pr)])
+            pts = points_of(by[(k, pr)])
             if fleet:
                 old = sorted((c, a) for kind, _, c, a in pts if kind == "old")
                 out.append(f'<polyline points="{" ".join(f"{sx(c):.1f},{sy(a):.1f}" for c, a in old)}" fill="none" '
@@ -175,7 +211,7 @@ def render(data, compare=None, show_main=False) -> str:
                 name = {"ILP": ("Lattice" if compare else "Fleet ILP") if fleet else "ILP", "old": "Random-menu ILP",
                         "prev": prev_label,
                         "blind": "Price-blind", "cheap": "Cheapest-first"}[kind]
-                out.append(marker(sx(c), sy(a), shape, color, f"{name} {label}: {a:.2f} nines, ${c:.2f}/h"))
+                out.append(marker(sx(c), sy(a), shape, color, f"{name} {label}: {a:.2f} nines, ${c:.2f}/h" + (" incl. replication" if traffic else "")))
                 if kind in ("blind", "cheap"):
                     dy = 16 if kind == "blind" else -7  # blind markers sit just under the ILP line
                     out.append(text(sx(c) + 7, sy(a) + dy, label.replace("RF ", ""), 10, INK2))
@@ -195,10 +231,12 @@ def main() -> int:
     ap.add_argument("--compare", default=None, help="earlier results-fleet.json to overlay (dotted blue)")
     ap.add_argument("--show-main", action="store_true",
                     help="overlay this run's main ILP before lattice ascent (dotted blue)")
+    ap.add_argument("--write-gb-per-s", type=float, default=None,
+                    help="add replication traffic at this decimal GB/s per RSM follower to every point's cost")
     a = ap.parse_args()
     data = json.loads((ROOT / a.input).read_text())
     compare = json.loads((ROOT / a.compare).read_text()) if a.compare else None
-    (ROOT / a.output).write_text(render(data, compare, a.show_main) + "\n")
+    (ROOT / a.output).write_text(render(data, compare, a.show_main, a.write_gb_per_s) + "\n")
     print(a.output)
     return 0
 
