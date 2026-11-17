@@ -18,6 +18,13 @@ Per (fault scale, price model), each in its own process:
 
 Exact MC uses the scaled horizon-average (constant-rate) machine configs and region/AZ outages of the
 scenario; region/AZ outage rates are not scaled.
+
+Total cost (``--write-gb-per-s R`` > 0): every RSM's leader sends R decimal GB/s to each follower; each
+placement's replication $/h (transition_costs.replication_per_hour: uniform leader, AWS transfer prices, same AZ
+free, inter-AZ and inter-region billed) is added to the bill everywhere a cost appears -- the budget grid
+(fractions of the random-menu ILP's unrestricted *total* cost), the fleet knapsacks (machine budgets net of the
+least traffic each RF can incur), every ILP's budget (fleet, lattice, random-menu), the cost tie-break's
+objective, and the baselines' reported cost. R = 0 (default) is the machine-only pipeline, unchanged.
 """
 
 from __future__ import annotations
@@ -31,6 +38,7 @@ import random
 import sys
 import time
 from collections import Counter
+from itertools import permutations
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from pathlib import Path
 
@@ -48,6 +56,8 @@ from powder.faults.gurobi_ilp import TransitionProblem, solve_transition_gurobi,
 from powder.faults.convert import scenario_network_config  # noqa: E402
 from powder.faults.ilp import solve_catalogue_placement  # noqa: E402
 from powder.faults.mc_scoring import node_config_batch_sampler  # noqa: E402
+from powder.faults.prices import traffic_pricer  # noqa: E402
+from powder.faults.transition_costs import edge_average_per_gb, replication_per_hour  # noqa: E402
 from powder.faults.is_scoring import is_stats  # noqa: E402
 from powder.placement_optimizer import PlacementCandidate, PlacementSolverConfig, solve_candidate_ilp  # noqa: E402
 from powder.simulation import Exponential, NodeReplacementStrategy, RaftLikeProtocol  # noqa: E402
@@ -59,6 +69,7 @@ from scripts.experiment_sizing import baseline  # noqa: E402
 CATALOGUE = "data/fault_library/catalogue/machines-od1000-spot1000-seed0-az.json.gz"
 SCENARIO = "scenario/canonical-central-az-aware@v3"
 REGIONS = ("us-east-1", "us-east-2", "us-west-1", "us-west-2")
+TRANSFER = "price-transfer/aws-us@2026-10-21"
 
 
 def nines(a: float) -> float:
@@ -68,6 +79,46 @@ def nines(a: float) -> float:
 def exact_runs(scale: float) -> int:
     """~3% relative s.e. per placement: more fault events per run need fewer runs."""
     return max(20_000, int(100_000 / math.sqrt(scale)))
+
+
+def replication_cost(lib, cat, write_gb_per_s: float):
+    """``ids -> replication $/h`` of one RSM at ``write_gb_per_s`` per follower (memoized), or None for 0."""
+    if write_gb_per_s < 0 or not math.isfinite(write_gb_per_s):
+        raise ValueError("--write-gb-per-s must be finite and nonnegative")
+    if write_gb_per_s == 0:
+        return None
+    loc = {m["id"]: (m["region"], m.get("az") or m["region"]) for m in cat["machines"]}
+    pricer, memo = traffic_pricer(lib, TRANSFER), {}
+
+    def cost(ids) -> float:
+        ids = tuple(sorted(ids))
+        if ids not in memo:
+            memo[ids] = replication_per_hour(ids, write_gb_per_s, loc, pricer)
+        return memo[ids]
+    cost.write_gb_per_s, cost.pricer = write_gb_per_s, pricer
+    return cost
+
+
+def min_replication_per_rsm(rsm_cost, rf: int, regions=REGIONS) -> float:
+    """Least replication $/h any valid RF-``rf`` placement can incur: over every no-majority region pattern
+    and region assignment, members in distinct AZs (same-region pairs pay the inter-AZ price)."""
+    best = math.inf
+    for pat in F.region_patterns(rf, len(regions)):
+        for regs in permutations(regions, len(pat)):
+            loc = {f"{g}/{i}": (g, f"{g}-az{i}") for g, n in zip(regs, pat) for i in range(n)}
+            q = edge_average_per_gb(tuple(loc), loc, rsm_cost.pricer)
+            best = min(best, 3600.0 * rsm_cost.write_gb_per_s * (rf - 1) * q)
+    return best
+
+
+def placements_cost(placements, price: dict, rsm_cost=None) -> tuple[float, float]:
+    """(machine $/h of the unique machines, summed replication $/h) of one placement per RSM."""
+    machine = sum(price[m] for m in {m for p in placements for m in p})
+    return machine, (sum(rsm_cost(p) for p in placements) if rsm_cost is not None else 0.0)
+
+
+def _rsm_costs(rsm_cost, pool):
+    return None if rsm_cost is None else [rsm_cost(ids) for ids in pool]
 
 
 class Exact:
@@ -182,7 +233,8 @@ def validate(placements, by_id, protocol, strategy, horizon_s, network, runs: in
     return {"mean_availability": mean, "nines": nines(mean), "runs_per_placement": runs, "seconds": time.time() - t}
 
 
-def summarize(sol, price: dict, exact: Exact, num_rsms: int) -> dict:
+def summarize(sol, price: dict, exact: Exact, num_rsms: int, rsm_cost=None) -> dict:
+    """Row of a solution; ``cost_per_hour`` is the total (machines + replication with ``rsm_cost``)."""
     if not sol.selected:
         return {"feasible": False, "status": str(sol.status)}
     used, rf, total = set(), Counter(), 0.0
@@ -198,6 +250,9 @@ def summarize(sol, price: dict, exact: Exact, num_rsms: int) -> dict:
            "machines_used": len(used), "spot": sum(int(m[1:]) >= 1000 for m in used),
            "placements": ([list(ids) for _, ids in sol.shard_placements] if sol.shard_placements else
                           [list(item.candidate.machine_ids) for item in sol.selected for _ in range(item.count)])}
+    if rsm_cost is not None and not sol.shard_placements:
+        machine, traffic = placements_cost(row["placements"], price, rsm_cost)
+        row.update(cost_per_hour=machine + traffic, machine_cost_per_hour=machine, replication_cost_per_hour=traffic)
     if sol.composed_objective is not None:
         row.update(composed_objective=sol.composed_objective,
                    full_availability=sol.full_access_availability,
@@ -214,11 +269,13 @@ def summarize(sol, price: dict, exact: Exact, num_rsms: int) -> dict:
     return row
 
 
-def summarize_placements(placements, price: dict, exact: Exact) -> dict:
+def summarize_placements(placements, price: dict, exact: Exact, rsm_cost=None) -> dict:
     """A deployment given as one placement per RSM (e.g. a fleet covering)."""
     used = {m for p in placements for m in p}
     mean = sum(exact(p) for p in placements) / len(placements)
-    return {"feasible": True, "cost_per_hour": sum(price[m] for m in used), "mean_availability": mean,
+    machine, traffic = placements_cost(placements, price, rsm_cost)
+    extra = {"machine_cost_per_hour": machine, "replication_cost_per_hour": traffic} if rsm_cost is not None else {}
+    return {"feasible": True, "cost_per_hour": machine + traffic, **extra, "mean_availability": mean,
             "nines": nines(mean), "rf_counts": dict(sorted(Counter(len(p) for p in placements).items())),
             "machines_used": len(used), "spot": sum(int(m[1:]) >= 1000 for m in used),
             "placements": [sorted(p) for p in placements]}
@@ -228,13 +285,16 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
                 time_limit=120.0, threads=1, feat_of=None, seed=0, u_of=None, prefetch=None, max_added=400,
                 transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None,
                 composed_objective: str = "single", shard_weights=None,
-                min_single_access=None, min_full_access=None):
+                min_single_access=None, min_full_access=None, rsm_cost=None):
     """Gurobi ILP on estimated scores (exact where known); selected placements get exact MC; re-solve until
     the selection is all exact. With ``feat_of``, each solve also adds *consolidation columns*: valid
     placements built only from chosen machines with free slots (fleets.spare_placements), which cost nothing
     extra and let the next solve regroup RSMs onto under-used machines and drop others. At most ``max_added``
     per round (lowest summed downtime score ``u_of``); ``prefetch`` batch-computes their estimates.
+    ``rsm_cost`` (ids -> $/h per RSM) puts each placement's running cost in the budget (total $/h).
     Returns (solution, rounds, ILP seconds, MC seconds, consolidation columns added)."""
+    if rsm_cost is not None and transition is not None:
+        raise ValueError("rsm_cost is the homogeneous-RSM running cost; transition solves price their own traffic")
     if composed is not None:
         if transition is None:
             raise ValueError("composed placement scoring needs named shards in transition")
@@ -255,7 +315,8 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
                  for i, ids in enumerate(pool)]
         if transition is None:
             sol = solve_unique_cost_gurobi(cands, price, capacity=capacity, num_rsms=num_rsms, budget=budget,
-                                           warm_start=warm, time_limit=time_limit, threads=threads)
+                                           warm_start=warm, time_limit=time_limit, threads=threads,
+                                           rsm_cost=_rsm_costs(rsm_cost, pool))
         else:
             if len(transition.shards) != num_rsms:
                 raise ValueError("transition shard count must equal num_rsms")
@@ -298,10 +359,10 @@ def solve_exact(pool, price, exact: Exact, estimate, num_rsms, capacity, budget,
 def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsms, capacity, budget, *,
                   tolerance_nines: float, rounds=15, time_limit=120.0, threads=1, pessimism=1.5,
                   transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None,
-                  composed_objective: str = "single", shard_weights=None):
+                  composed_objective: str = "single", shard_weights=None, rsm_cost=None):
     """Cheapest deployment within ``tolerance_nines`` of the best one found (``final_placements``, all exact):
     minimize the price of the active machines subject to summed unavailability <= 10**tolerance x the best
-    deployment's. Unscored placements enter with ``pessimism`` x their estimated unavailability (table
+    deployment's (with ``rsm_cost``, the total of machines + running cost). Unscored placements enter with ``pessimism`` x their estimated unavailability (table
     estimates of cheap placements run optimistic); picks get exact MC and the model re-solves. Only a round
     whose picks are all exact *and* within the cap counts; the cheapest such round is returned, or None.
     Returns (solution or None, rounds, ILP seconds, MC seconds)."""
@@ -345,7 +406,8 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
         if transition is None:
             sol = solve_unique_cost_gurobi(cands, price, capacity=capacity, num_rsms=num_rsms, budget=budget,
                                            warm_start=warm, time_limit=time_limit, threads=threads,
-                                           minimize_cost=True, max_unavailability_ppm=cap)
+                                           minimize_cost=True, max_unavailability_ppm=cap,
+                                           rsm_cost=_rsm_costs(rsm_cost, pool))
         else:
             if len(transition.shards) != num_rsms:
                 raise ValueError("transition shard count must equal num_rsms")
@@ -371,7 +433,7 @@ def cost_tiebreak(pool, final_placements, price, exact: Exact, estimate, num_rsm
 
 def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacity, budget, *, threads, seed,
                    transition: TransitionProblem | None = None, composed: CandidateTimeline | None = None,
-                   rounds: int = 10):
+                   rounds: int = 10, rsm_cost=None):
     """Move the chosen deployment up its dominance lattices: each selected placement's lattice slice
     (fleets.lattice_slice) is estimated from its exact base and exact top (fleets.lattice_estimate), a small
     Gurobi ILP over these columns picks one deployment under capacity and budget, and every pick gets exact MC
@@ -406,7 +468,8 @@ def lattice_ascent(sol, pool_feats, u_of, exact: Exact, price, num_rsms, capacit
     warm = ([ids for _, ids in sol.shard_placements] if transition is not None else
             [it.candidate.machine_ids for it in sol.selected for _ in range(it.count)])
     sol, n_rounds, t_ilp, t_mc, _ = solve_exact(pool, price, exact, estimate, num_rsms, capacity, budget, warm=warm,
-                                                threads=threads, transition=transition, rounds=rounds)
+                                                threads=threads, transition=transition, rounds=rounds,
+                                                rsm_cost=rsm_cost)
     return sol, n_rounds, t_ilp, t_mc, len(pool)
 
 
@@ -436,6 +499,9 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     log = lambda msg: print(f"[x{k:g} {price_model} {time.time() - t0:6.0f}s] {msg}", flush=True)  # noqa: E731
 
     # old random-menu ILP: candidates, unrestricted cost (sets the budget grid)
+    rsm_cost = replication_cost(lib, cat, a.write_gb_per_s)
+    if rsm_cost is not None and a.compare_highs:
+        raise ValueError("--compare-highs times the machine-only model; drop it with --write-gb-per-s")
     old = solve_catalogue_placement(lib, cat, protocol, strategy, num_rsms=a.num_rsms, replica_counts=(3, 5),
                                     capacity=a.capacity, price=price_model, random_samples_per_size=400,
                                     scenario_id=SCENARIO, scoring="markov", rescore_exact=False, rate_scale=k)
@@ -448,6 +514,8 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                   cache_path=Path(a.cache_dir) / f"exact-x{k:g}{mode}.json",
                   min_batches=a.min_batches, is_beta=a.is_beta)
     free_cost = old["solution"].total_cost_per_hour
+    if rsm_cost is not None:  # unrestricted: the bill does not change the choice, only the budget grid
+        free_cost += sum(rsm_cost(it.candidate.machine_ids) * it.count for it in old["solution"].selected)
     fracs = list(a.budget_fractions)
     budgets = [f * free_cost for f in fracs]
 
@@ -479,6 +547,10 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         mean = sum(exact(p) for p in pls) / a.num_rsms
         baselines[name] = {"cost_per_hour": cost, "mean_availability": mean, "nines": nines(mean),
                            "placements": [list(p) for p in pls]}
+        if rsm_cost is not None:
+            traffic = sum(rsm_cost(p) for p in pls)
+            baselines[name].update(cost_per_hour=cost + traffic, machine_cost_per_hour=cost,
+                                   replication_cost_per_hour=traffic)
     exact.save()
     matched = {}
     if a.cheapest_budgets:  # extra budgets at the cheapest-first baselines' costs
@@ -490,11 +562,17 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
     log("baselines scored")
 
     # old ILP at each budget, exact-rescored
-    old_sols = {f"{f:g}": solve_candidate_ilp(old["candidates"], machines, PlacementSolverConfig(
-        num_rsms=a.num_rsms, objective="sum_availability", budget_per_hour=None if f >= 1 else b,
-        unique_machine_cost=True)) for f, b in zip(fracs, budgets)}
+    if rsm_cost is None:
+        old_sols = {f"{f:g}": solve_candidate_ilp(old["candidates"], machines, PlacementSolverConfig(
+            num_rsms=a.num_rsms, objective="sum_availability", budget_per_hour=None if f >= 1 else b,
+            unique_machine_cost=True)) for f, b in zip(fracs, budgets)}
+    else:  # the same model (unique machine billing) on Gurobi, with replication in the budget
+        old_sols = {f"{f:g}": solve_unique_cost_gurobi(
+            old["candidates"], price, capacity=a.capacity, num_rsms=a.num_rsms, budget=None if f >= 1 else b,
+            threads=a.gurobi_threads, rsm_cost=_rsm_costs(rsm_cost, [c.machine_ids for c in old["candidates"]]))
+            for f, b in zip(fracs, budgets)}
     exact.batch(it.candidate.machine_ids for sol in old_sols.values() for it in sol.selected)
-    old_rows = {f: summarize(sol, price, exact, a.num_rsms) for f, sol in old_sols.items()}
+    old_rows = {f: summarize(sol, price, exact, a.num_rsms, rsm_cost) for f, sol in old_sols.items()}
     exact.save()
     log("old ILP rescored")
 
@@ -508,6 +586,8 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         ff = [feat_of[m] for m in sorted(fl)]
         cover, rand, full = set(), set(), []
         rfs = [r for r in (3, 5, 7) if F.pack_pass(ff, r, 1, a.capacity, u_of, rng)]
+        if not rfs:  # e.g. a small knapsack spanning < 3 regions: no valid placement at all
+            return ff, set(), set(), []
         mix = F.balanced_mix(a.num_rsms, a.capacity * len(ff), rfs)
         for r, n_pass in F.split_passes(mix, a.passes).items():
             c = F.pack_pass(ff, r, a.num_rsms, a.capacity, u_of, rng)
@@ -528,11 +608,19 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
         with ThreadPoolExecutor(a.mc_threads) as tp:
             list(tp.map(lambda kv: table.availability(*kv), todo))
 
+    # Fleets are machine-only knapsacks. With replication, each RF's fleets get the budget net of the least
+    # traffic N RSMs of that RF can incur (an upper bound on what machines can cost); the ILP enforces the total.
+    traffic_floor = ({r: a.num_rsms * min_replication_per_rsm(rsm_cost, r) for r in (3, 5, 7)}
+                     if rsm_cost is not None else {})
+    if traffic_floor:
+        log("least replication $/h per RF: " + ", ".join(f"RF{r} ${t:.2f}" for r, t in traffic_floor.items()))
     new_rows, fleet_counts = {}, []
     for bi, (f, b) in enumerate(zip(fracs, budgets)):
         t_budget = time.time()
-        fleets = F.fleets_for_budget(feats, u, b, num_rsms=a.num_rsms, capacity=a.capacity,
-                                     sizes=a.fleet_sizes, repeats=a.fleet_repeats, alpha=a.alpha)
+        machine_budgets = sorted({b - t for t in traffic_floor.values() if b > t} if traffic_floor else {b})
+        fleets = list(dict.fromkeys(fl for mb in machine_budgets for fl in F.fleets_for_budget(
+            feats, u, mb, num_rsms=a.num_rsms, capacity=a.capacity, sizes=a.fleet_sizes,
+            repeats=a.fleet_repeats, alpha=a.alpha)))
         fleet_counts.append(len(fleets))
         raw = [fleet_raw((1000 * bi + i, fl)) for i, fl in enumerate(fleets)]
         # improvement swaps step by step over all placements, each step's table entries in one parallel batch
@@ -566,20 +654,20 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
             sol, rounds, t_ilp, t_mc, consolidated = solve_exact(
                 pool, price, exact, table.score, a.num_rsms, a.capacity, b, warm=best_cover, threads=a.gurobi_threads,
                 feat_of=feat_of if a.consolidate else None, seed=bi, u_of=u_of, prefetch=table_batch,
-                rounds=a.rounds)
-            main = summarize(sol, price, exact, a.num_rsms)
+                rounds=a.rounds, rsm_cost=rsm_cost)
+            main = summarize(sol, price, exact, a.num_rsms, rsm_cost)
             asc, a_rounds, a_ilp, a_mc, a_pool = lattice_ascent(
                 sol, [feat_of[m] for m in {m for ids in pool for m in ids}], u_of, exact, price, a.num_rsms,
-                a.capacity, b, threads=a.gurobi_threads, seed=bi, rounds=a.rounds)
-            row_f = summarize(asc, price, exact, a.num_rsms)
+                a.capacity, b, threads=a.gurobi_threads, seed=bi, rounds=a.rounds, rsm_cost=rsm_cost)
+            row_f = summarize(asc, price, exact, a.num_rsms, rsm_cost)
             if not row_f["feasible"] or (main["feasible"] and main["mean_availability"] > row_f["mean_availability"]):
                 row_f = {**main, "source": "main ILP (lattice ascent found nothing better)"}
             row_f["main_ilp"] = main
             if a.tiebreak_nines > 0 and row_f["feasible"]:
                 tb, tb_rounds, tb_ilp, tb_mc = cost_tiebreak(
                     pool, row_f["placements"], price, exact, table.score, a.num_rsms, a.capacity, b,
-                    tolerance_nines=a.tiebreak_nines, threads=a.gurobi_threads)
-                tbs = summarize(tb, price, exact, a.num_rsms) if tb is not None else {"feasible": False}
+                    tolerance_nines=a.tiebreak_nines, threads=a.gurobi_threads, rsm_cost=rsm_cost)
+                tbs = summarize(tb, price, exact, a.num_rsms, rsm_cost) if tb is not None else {"feasible": False}
                 if (tbs["feasible"] and tbs["cost_per_hour"] < row_f["cost_per_hour"] - 1e-9
                         and tbs["nines"] >= row_f["nines"] - a.tiebreak_nines - 1e-9):
                     best_avail = {k: v for k, v in row_f.items() if k != "main_ilp"}
@@ -606,7 +694,8 @@ def run_one(a: argparse.Namespace, k: float, price_model: str) -> dict:
                                    f"{rounds} rounds{' (' + row_f['source'] + ')' if 'source' in row_f else ''}"
                                    if row_f["feasible"] else "infeasible"))
     row = {"rate_scale": k, "price": price_model, "budgets": dict(zip([f"{f:g}" for f in fracs], budgets)),
-           "matched_budgets": matched,
+           "matched_budgets": matched, "write_gb_per_s": a.write_gb_per_s,
+           **({"transfer": TRANSFER, "cost": "machines + replication"} if rsm_cost is not None else {}),
            "free_cost_old": free_cost, "exact_runs": exact.runs, "table_runs": table.runs,
            "table_entries": len(table.memo), "exact_scored": len(exact.memo), "fleets_per_budget": fleet_counts,
            "new_ilp": new_rows, "old_ilp": old_rows, "baselines": baselines, "seconds": time.time() - t0}
@@ -656,6 +745,9 @@ def main() -> int:
                          "small batches still fill them)")
     ap.add_argument("--tiebreak-nines", type=float, default=0.01,
                     help="report the cheapest deployment within this many nines of the best (0 = off)")
+    ap.add_argument("--write-gb-per-s", type=float, default=0.0,
+                    help="replication write rate per RSM (decimal GB/s, leader to each follower); > 0 makes every "
+                         "budget and reported cost total $/h = machines + replication traffic (0 = machine-only)")
     ap.add_argument("--no-consolidate", dest="consolidate", action="store_false",
                     help="skip consolidation columns from machines with free slots")
     a = ap.parse_args()

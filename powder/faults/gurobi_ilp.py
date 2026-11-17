@@ -1,6 +1,7 @@
 """Candidate ILP with unique machine billing, solved by Gurobi (docs/plans/ilp-fleet-sampling.md).
 
-The original count-based model remains the default. ``solve_transition_gurobi``
+The original count-based model remains the default; its optional ``rsm_cost`` adds a per-RSM running
+cost (e.g. replication traffic) of each candidate to the bill. ``solve_transition_gurobi``
 adds a named-shard choice, recurring replication transfer and one-time migration
 amortized over an explicit decision horizon. Both models charge a physical machine
 once when used, regardless of whether it was part of the previous deployment.
@@ -40,10 +41,18 @@ def solve_unique_cost_gurobi(candidates: Sequence[PlacementCandidate], price: di
                              capacity: int, num_rsms: int, budget: float | None,
                              warm_start: Sequence[tuple[str, ...]] = (), time_limit: float = 120.0,
                              mip_gap: float = 1e-5, threads: int = 1, seed: int = 0, minimize_cost: bool = False,
-                             max_unavailability_ppm: float | None = None) -> PlacementSolution:
+                             max_unavailability_ppm: float | None = None,
+                             rsm_cost: Sequence[float] | None = None) -> PlacementSolution:
+    """Max summed availability (or, with ``minimize_cost``, min $/h under an unavailability cap) over candidate
+    counts; each used machine is billed once. ``rsm_cost[j]`` ($/h, optional) is billed per RSM that uses
+    candidate j, so the budget and the cost objective cover machines + running cost (total $/h)."""
     import gurobipy as gp
 
     t0 = time.time()
+    if rsm_cost is not None:
+        rsm_cost = [float(v) for v in rsm_cost]
+        if len(rsm_cost) != len(candidates) or any(not math.isfinite(v) or v < 0 for v in rsm_cost):
+            raise ValueError("rsm_cost needs one finite nonnegative $/h per candidate")
     used = sorted({m for c in candidates for m in c.machine_ids})
     model = gp.Model("fleet_ilp")
     model.Params.OutputFlag = 0
@@ -61,14 +70,17 @@ def solve_unique_cost_gurobi(candidates: Sequence[PlacementCandidate], price: di
             model.addConstr(x[j] <= capacity * y[m])
     for m, js in by_machine.items():
         model.addConstr(gp.quicksum(x[j] for j in js) <= capacity * y[m])
+    bill = gp.quicksum(price[m] * y[m] for m in used)
+    if rsm_cost is not None:
+        bill += gp.quicksum(rsm_cost[j] * x[j] for j in range(len(candidates)) if rsm_cost[j])
     if budget is not None:
-        model.addConstr(gp.quicksum(price[m] * y[m] for m in used) <= budget)
+        model.addConstr(bill <= budget)
     unavailability = gp.quicksum((1.0 - c.availability) * 1e6 * x[j] for j, c in enumerate(candidates))
     if minimize_cost:
         if max_unavailability_ppm is None:
             raise ValueError("minimize_cost needs max_unavailability_ppm")
         model.addConstr(unavailability <= max_unavailability_ppm)
-        model.setObjective(gp.quicksum(price[m] * y[m] for m in used), gp.GRB.MINIMIZE)
+        model.setObjective(bill, gp.GRB.MINIMIZE)
     else:
         model.setObjective(unavailability, gp.GRB.MINIMIZE)
     if warm_start:
@@ -88,13 +100,18 @@ def solve_unique_cost_gurobi(candidates: Sequence[PlacementCandidate], price: di
     if model.SolCount == 0:
         return PlacementSolution(status, "no incumbent", "sum_availability", float("nan"), float("nan"), budget, (),
                                  solver_runtime_seconds=time.time() - t0)
-    selected = tuple(SelectedCandidate(c, int(round(x[j].X))) for j, c in enumerate(candidates) if x[j].X > 0.5)
+    counts = {j: int(round(x[j].X)) for j in range(len(candidates)) if x[j].X > 0.5}
+    selected = tuple(SelectedCandidate(candidates[j], n) for j, n in counts.items())
     active = {m for it in selected for m in it.candidate.machine_ids}
+    machine_usd_h = sum(price[m] for m in active)
+    running_usd_h = sum(rsm_cost[j] * n for j, n in counts.items()) if rsm_cost is not None else None
     return PlacementSolution(status, "", "sum_availability",
                              sum(it.candidate.availability * it.count for it in selected),
-                             sum(price[m] for m in active), budget, selected,
+                             machine_usd_h + (running_usd_h or 0.0), budget, selected,
                              solver_runtime_seconds=time.time() - t0, mip_gap=model.MIPGap,
-                             best_bound=model.ObjBound)
+                             best_bound=model.ObjBound,
+                             machine_cost_per_hour=machine_usd_h if rsm_cost is not None else None,
+                             replication_cost_per_hour=running_usd_h)
 
 
 def solve_transition_gurobi(candidates: Sequence[PlacementCandidate], price: Mapping[str, float], *,

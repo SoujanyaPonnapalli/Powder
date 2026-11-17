@@ -13,7 +13,8 @@ With ``--write-gb-per-s R`` every point's cost also includes Raft replication tr
 saved placements for ILP and baselines alike (``transition_costs.deployment_replication_per_hour``: R decimal GB/s
 from the leader to each follower, uniform leader, AWS transfer prices; same AZ free, inter-AZ and inter-region
 billed). The ILP budgets bounded machine $/h only, so its choices do not account for this traffic.
-Points without saved placements are dropped.
+Points without saved placements are dropped. Rows from ``pilot_fleet_frontier.py --write-gb-per-s R`` already
+report total cost (and their ILP budgeted it); they are drawn as stored and the flag is refused.
 """
 
 from __future__ import annotations
@@ -116,6 +117,12 @@ def render(data, compare=None, show_main=False, write_gb_per_s=None) -> str:
         prev_label = "Fleet ILP"
     compare = compare or show_main
     traffic = None
+    stored = {r.get("write_gb_per_s") or 0.0 for r in rows}
+    if len(stored) > 1:
+        raise ValueError(f"rows mix replication rates {sorted(stored)}")
+    stored = stored.pop()
+    if stored and write_gb_per_s is not None:
+        raise ValueError(f"rows already include replication at {stored:g} GB/s; drop --write-gb-per-s")
     if write_gb_per_s is not None:
         price = replication_cost(data["catalogue"], write_gb_per_s)
         memo: dict = {}
@@ -142,12 +149,15 @@ def render(data, compare=None, show_main=False, write_gb_per_s=None) -> str:
                  "vs. random-menu ILP and fixed-RF baselines") if fleet else
                 ("Expected per-RSM availability from the Markov model (no region/AZ outages); "
                  "ILP at several budgets vs. fixed-RF baselines")), 11, INK2)]
-    if traffic:
+    if stored:
+        out.append(text(ML, 64, f"Cost = machines + replication at {stored * 1e3:g} MB/s per RSM follower "
+                        "(AWS transfer prices); every ILP budget bounds this total", 11, INK2))
+    elif traffic:
         out.append(text(ML, 64, f"Cost adds replication at {write_gb_per_s * 1e3:g} MB/s per RSM follower "
                         "(AWS transfer prices, priced from saved placements); ILP budgets bound machine $/h only",
                         11, INK2))
     # legend
-    lx, ly = ML, 86 if traffic else 68
+    lx, ly = ML, 86 if traffic or stored else 68
     tiebreak = fleet and any("max_availability" in v for r in rows for v in r["new_ilp"].values())
     items = ((("circle", BLUE, ("Fleet ILP + lattice + cost tie-break" if tiebreak else "Fleet ILP + lattice ascent")
                 if compare else "Fleet ILP across budgets"),)
@@ -183,7 +193,7 @@ def render(data, compare=None, show_main=False, write_gb_per_s=None) -> str:
                 out.append(f'<line x1="{sx(v):.1f}" y1="{y0}" x2="{sx(v):.1f}" y2="{y0 + PH}" stroke="{GRID}"/>')
                 out.append(text(sx(v), y0 + PH + 15, f"${v:g}", 10, MUTED, "middle"))
             out.append(f'<line x1="{x0}" y1="{y0 + PH}" x2="{x0 + PW}" y2="{y0 + PH}" stroke="{AXIS}"/>')
-            out.append(text(x0 + PW / 2, y0 + PH + 32, "Machines + replication ($/h)" if traffic else
+            out.append(text(x0 + PW / 2, y0 + PH + 32, "Machines + replication ($/h)" if traffic or stored else
                             "Cluster cost ($/h)", 10, INK2, "middle"))
             if j == 0:
                 out.append(text(x0 - 34, y0 + PH / 2, "Availability (nines)", 10, INK2, "middle", rotate=-90))
