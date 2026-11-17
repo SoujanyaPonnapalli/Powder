@@ -149,7 +149,53 @@ def ladder() -> None:
 # ------------------------------------------------------------------------------------------------ Fig 11
 
 def sensitivity() -> None:
-    path = K.ROOT / "outputs/figs/sensitivity/sensitivity.json"
+    """Fig 11. With outputs/figs/sensitivity-new/sensitivity-validated.json (new scoring: re-selection batches +
+    independent validation, chosen by validated availability) that curve is the main one and the old scoring is
+    drawn faded for comparison; otherwise the old-scoring figure (with any 1x overlay) is drawn."""
+    old_path = K.ROOT / "outputs/figs/sensitivity/sensitivity.json"
+    new_path = K.ROOT / "outputs/figs/sensitivity-new/sensitivity-validated.json"
+    if not new_path.exists():
+        return _sensitivity_old(old_path)
+    new = json.loads(new_path.read_text())
+    old = json.loads(old_path.read_text())
+    pts = sorted(new["points"], key=lambda p: p["assumed_multiplier"])
+    opts = sorted(old["points"], key=lambda p: p["assumed_multiplier"])
+    ms = [p["assumed_multiplier"] for p in pts]
+    fig, (ax, ax2) = plt.subplots(2, 1, figsize=(6.2, 5.2), sharex=True)
+    ax.plot([p["assumed_multiplier"] for p in opts], [p["true_nines"] for p in opts], color=MUTED, marker="o",
+            markersize=3, linewidth=1, alpha=0.7, label="True availability, old scoring")
+    ax.plot(ms, [p["validated_nines"] if p.get("validated_nines") is not None else p["believed_nines"] for p in pts],
+            color=BLUE, linestyle=":", marker="o", markersize=3, linewidth=1, alpha=0.8,
+            label="Believed: validated at the assumed rates (new scoring)")
+    err = [[p["true_nines"] - p["true_nines_ci95"][0] for p in pts], [p["true_nines_ci95"][1] - p["true_nines"] for p in pts]]
+    ax.errorbar(ms, [p["true_nines"] for p in pts], yerr=err, color=BLUE, marker="o", markersize=5, linewidth=2,
+                capsize=3, label="True availability, new scoring")
+    ax.axhline(new["sla_nines"], color=RED, linestyle="--", linewidth=1)
+    ax.text(ms[0], new["sla_nines"], f" SLA {new['sla_nines']:g} nines", color=INK2, va="bottom", fontsize=8)
+    bad = [m for m, p in zip(ms, pts) if not p["true_meets_sla"]]
+    if bad:
+        ax.axvspan(min(bad) / 1.1, max(bad) * 1.1, color=RED, alpha=0.08, linewidth=0)
+    for a in (ax, ax2):
+        a.axvline(1.0, color=INK, linestyle=":", linewidth=0.8)
+    ax.set_ylabel("Availability (nines)")
+    ax.set_title("Sensitivity to reliability input error (truth = 1x, rho1 prices)", fontsize=9, loc="left", color=INK)
+    ax.legend(fontsize=7, loc="lower right")
+    ax2.plot([p["assumed_multiplier"] for p in opts], [p["cost_per_hour"] for p in opts], color=MUTED, marker="o",
+             markersize=3, linewidth=1, alpha=0.7, label="old scoring")
+    ax2.plot(ms, [p["cost_per_hour"] for p in pts], color=ORANGE, marker="o", markersize=5, linewidth=2,
+             label="new scoring")
+    ax2.legend(fontsize=7, loc="upper left")
+    ax2.set_ylabel("Cluster cost ($/h)")
+    ax2.set_xscale("log")
+    ax2.set_xticks(ms, [f"{m:g}x" for m in ms])
+    ax2.minorticks_off()
+    ax2.set_xlabel("Assumed failure rate / true failure rate   (<- optimistic | pessimistic ->)")
+    fig.text(0.01, -0.02, "New scoring: 3 fresh 100k-run batches per re-selected placement; deployment chosen by its "
+             "1M-run independent validation. Truth: 1M runs/placement on separate seeds.", fontsize=6.5, color=MUTED)
+    save(fig, new_path.parent / "sensitivity")
+
+
+def _sensitivity_old(path) -> None:
     d = json.loads(path.read_text())
     pts = sorted(d["points"], key=lambda p: p["assumed_multiplier"])
     ms = [p["assumed_multiplier"] for p in pts]

@@ -1,0 +1,194 @@
+{
+ "sla_nines": 5.0,
+ "price": "rho1",
+ "horizon_h": 720.0,
+ "runs": 1000000,
+ "points": [
+  {
+   "assumed_multiplier": 0.25,
+   "budget": "0.1",
+   "cost_per_hour": 2.548861702176954,
+   "believed_nines": 5.424296609881728,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "validated_nines": 5.208304614185941,
+   "select_by": "believed",
+   "true_availability": 0.9999198399840691,
+   "true_se": 1.7825915879044304e-06,
+   "true_nines": 4.096042205165583,
+   "true_nines_ci95": [
+    4.077513830791392,
+    4.115396422413995
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 0.35,
+   "budget": "0.106807",
+   "cost_per_hour": 2.64730606404438,
+   "believed_nines": 5.345445874444853,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "validated_nines": 5.100953303853164,
+   "select_by": "believed",
+   "true_availability": 0.999943628011824,
+   "true_se": 1.8384953687298504e-06,
+   "true_nines": 4.248936647836675,
+   "true_nines_ci95": [
+    4.222026563744211,
+    4.277624944323132
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 0.5,
+   "budget": "0.1",
+   "cost_per_hour": 2.8364265081474276,
+   "believed_nines": 5.188270656016968,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "validated_nines": 5.019956379463848,
+   "select_by": "believed",
+   "true_availability": 0.9999635779419019,
+   "true_se": 1.449398185862477e-06,
+   "true_nines": 4.43863551720728,
+   "true_nines_ci95": [
+    4.406017863440849,
+    4.473903301757161
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 0.7,
+   "budget": "0.125",
+   "cost_per_hour": 3.293816460150396,
+   "believed_nines": 5.174974325841001,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 50
+   },
+   "validated_nines": 5.057335826059311,
+   "select_by": "believed",
+   "true_availability": 0.9999829169907918,
+   "true_se": 9.744647236426411e-07,
+   "true_nines": 4.767435625016311,
+   "true_nines_ci95": [
+    4.721407344878615,
+    4.818926872041387
+   ],
+   "true_meets_sla": false
+  },
+  {
+   "assumed_multiplier": 1.0,
+   "budget": "0.125",
+   "cost_per_hour": 3.8361415379709936,
+   "believed_nines": 5.414593171660729,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 45,
+    "5": 5
+   },
+   "validated_nines": 5.364873714961508,
+   "select_by": "believed",
+   "true_availability": 0.9999959391266847,
+   "true_se": 3.559504430150192e-07,
+   "true_nines": 5.3913805587326715,
+   "true_nines_ci95": [
+    5.322526623998817,
+    5.47324595661546
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 1.4,
+   "budget": "0.125",
+   "cost_per_hour": 3.3746077056572594,
+   "believed_nines": 5.058603161077709,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 45,
+    "5": 5
+   },
+   "validated_nines": 4.885860723423189,
+   "select_by": "believed",
+   "true_availability": 0.999993274935851,
+   "true_se": 5.238752853353075e-07,
+   "true_nines": 5.1723035686599985,
+   "true_nines_ci95": [
+    5.110594095668914,
+    5.244257084001156
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 2.0,
+   "budget": "0.15",
+   "cost_per_hour": 4.675159668458495,
+   "believed_nines": 5.274925253872075,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 40,
+    "5": 5,
+    "7": 5
+   },
+   "validated_nines": 5.301403356705882,
+   "select_by": "believed",
+   "true_availability": 0.9999978710684546,
+   "true_se": 1.9457956099090857e-07,
+   "true_nines": 5.671838302835449,
+   "true_nines_ci95": [
+    5.600273078993596,
+    5.757568996442127
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 2.8,
+   "budget": "0.275146",
+   "cost_per_hour": 6.345002839678764,
+   "believed_nines": 5.433752157298276,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "5": 45,
+    "7": 5
+   },
+   "validated_nines": 5.423522849141675,
+   "select_by": "believed",
+   "true_availability": 0.9999986748905253,
+   "true_se": 1.5855385796019566e-08,
+   "true_nines": 5.8777482407493205,
+   "true_nines_ci95": [
+    5.867680733320957,
+    5.888054675612201
+   ],
+   "true_meets_sla": true
+  },
+  {
+   "assumed_multiplier": 4.0,
+   "budget": "0.2",
+   "cost_per_hour": 6.319171489063261,
+   "believed_nines": 5.092982019656401,
+   "believed_meets_sla": true,
+   "rf_counts": {
+    "3": 5,
+    "5": 45
+   },
+   "validated_nines": 5.05146115663216,
+   "select_by": "believed",
+   "true_availability": 0.9999982078814597,
+   "true_se": 1.210968073271264e-07,
+   "true_nines": 5.746633267154415,
+   "true_nines_ci95": [
+    5.6926177315996025,
+    5.808334183646163
+   ],
+   "true_meets_sla": true
+  }
+ ]
+}
