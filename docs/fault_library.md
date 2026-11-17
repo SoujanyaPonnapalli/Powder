@@ -53,8 +53,7 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 | Profile | Mean gap | Mean duration | Long-run fraction | h per node-year |
 |---|---|---|---|---|
 | `planned_downtime/ford10-rate` | 71.7 d | 20.6 min | 0.0200% | 1.75 |
-| `planned_downtime/weekly-ford10` | 7 d | 20.6 min | 0.2047% | 17.9 |
-| `planned_downtime/weekly-ford10-rolling` | 7 d | 20.6 min | 0.2047% | 17.9 |
+| `planned_downtime/ford10-rate-rolling` | 71.7 d | 20.6 min | 0.0200% | 1.75 |
 
 ## Region outages (per AWS region)
 
@@ -110,4 +109,4 @@ Rates are per node; MTBF/MTTDL at the central level; availability counts node-le
 
 - Node profiles without a machine class: `host/vishwanath10`, `vm/birke14-vm`, `vm/birke14-pm`, `hpc/lanl05-pooled`, `hpc/lanl05-sys2`, `hpc/lanl05-sys16`, `hpc/lanl05-sys18`, `hpc/lanl05-sys19`, `hpc/lanl05-sys20`
 - Machine classes with assigned (not native) prices: 4
-- Scenarios: `scenario/canonical-central`, `scenario/canonical-central-az-aware@v2`, `scenario/canonical-central-az-aware@v3`, `scenario/canonical-central-rho0`, `scenario/canonical-central-rho0.5`, `scenario/canonical-central-rho0.5@v2`, `scenario/canonical-central-rho0@v2`, `scenario/canonical-central-rho1`, `scenario/canonical-central-rho1@v2`, `scenario/canonical-central@v2`, `scenario/canonical-optimistic`, `scenario/canonical-optimistic-rho0`, `scenario/canonical-optimistic-rho0.5`, `scenario/canonical-optimistic-rho0.5@v2`, `scenario/canonical-optimistic-rho0@v2`, `scenario/canonical-optimistic-rho1`, `scenario/canonical-optimistic-rho1@v2`, `scenario/canonical-optimistic@v2`, `scenario/canonical-pessimistic`, `scenario/canonical-pessimistic-rho0`, `scenario/canonical-pessimistic-rho0.5`, `scenario/canonical-pessimistic-rho0.5@v2`, `scenario/canonical-pessimistic-rho0@v2`, `scenario/canonical-pessimistic-rho1`, `scenario/canonical-pessimistic-rho1@v2`, `scenario/canonical-pessimistic@v2`, `scenario/legacy`, `scenario/reference-ford10`, `scenario/reference-ford10-weekly`
+- Scenarios: `scenario/canonical-central-az-aware@v3`, `scenario/canonical-central-rho0.5@v2`, `scenario/canonical-central-rho0@v2`, `scenario/canonical-central-rho1@v2`, `scenario/canonical-central@v2`, `scenario/canonical-optimistic-rho0.5@v2`, `scenario/canonical-optimistic-rho0@v2`, `scenario/canonical-optimistic-rho1@v2`, `scenario/canonical-optimistic@v2`, `scenario/canonical-pessimistic-rho0.5@v2`, `scenario/canonical-pessimistic-rho0@v2`, `scenario/canonical-pessimistic-rho1@v2`, `scenario/canonical-pessimistic@v2`, `scenario/legacy`, `scenario/reference-ford10`

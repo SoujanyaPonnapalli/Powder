@@ -13,13 +13,13 @@ Run after build_ford10.py, build_literature.py, build_region_outages.py and
 * Price assignments (only when a price distribution exists): rho = 0 for
   seeds 0..19, rho = 0.5 (seed 0), rho = 1, over the default distribution
   variant, with region factors of the deployment type.
-* Scenarios: canonical-{optimistic,central,pessimistic}. Without prices
-  they are availability-only (price_policy none); with prices there are
-  priced variants for rho = 1, rho = 0 (seed 0) and rho = 0.5. Other seeds are
-  selected at run time with ``scenario_node_configs(..., price_assignment=...)``.
-  Reference scenarios: reference-ford10 (Ford's planned cadence) and reference-ford10-weekly.
-* canonical-*@v2 (the default from 2026-11-04): the canonical scenarios with planned downtime at
-  Ford's Table 1 planned-reboot cadence (planned_downtime/ford10-rate) instead of weekly.
+* Scenarios: canonical-{optimistic,central,pessimistic}@v2, planned downtime at Ford's Table 1
+  planned-reboot cadence (planned_downtime/ford10-rate). Without prices they are availability-only
+  (price_policy none); with prices there are priced variants for rho = 1, rho = 0 (seed 0) and rho = 0.5.
+  Other seeds are selected at run time with ``scenario_node_configs(..., price_assignment=...)``.
+  Reference scenario: reference-ford10 (only the ford10 machine classes).
+* The v1 canonical scenarios and reference-ford10-weekly used an assumed weekly planned cadence; they
+  were removed on 2026-11-17 (last commit that has them: 1b52ccf).
 """
 
 from __future__ import annotations
@@ -107,8 +107,10 @@ def main() -> int:
     (LIB / "prices/assignments.json").write_text(json.dumps(assignments, indent=1) + "\n")
 
     all_machines = [m["id"] for m in machines] + spot_machines
+    # The v1 canonical scenarios (weekly planned cadence) were removed (decision 2026-11-17). They are still
+    # built in memory as the base of @v2, so @v2's content and key order are unchanged; only @v2 is written.
     common = {"kind": "scenario", "region_outage": "region_outage/aws-us-from-azure",
-              "planned_downtime": "planned_downtime/weekly-ford10", "deployment": DEPLOYMENT,
+              "planned_downtime": PLANNED_V2, "deployment": DEPLOYMENT,
               "system": SYSTEM}
     scenarios = []
     for lvl in LEVELS:
@@ -126,12 +128,8 @@ def main() -> int:
                       "price_policy": "none",
                       "notes": "contrasting environment: only ford10 machine classes, with Google's own planned-reboot "
                                "cadence (ford10-rate) so planned downtime is not stacked on Ford's restarts"})
-    scenarios.append({**common, "id": "scenario/reference-ford10-weekly", "machines": ford_mids, "level": "central",
-                      "price_assignment": None, "price_policy": "none",
-                      "notes": "reference-ford10 with our weekly planned cadence (weekly-ford10) instead of Ford's. "
-                               "Caveat: cluster/ford10-google-storage counts all node restarts (incl. sub-15-min "
-                               "rollout restarts), which partly overlap the weekly window; the -ge15min class does not"})
-    (LIB / "scenarios/canonical.json").write_text(json.dumps(scenarios, indent=1) + "\n")
+    (LIB / "scenarios/reference-ford10.json").write_text(
+        json.dumps([s for s in scenarios if s["id"] == "scenario/reference-ford10"], indent=1) + "\n")
     # @v2 (decision 2026-11-04): planned downtime at Ford's Table 1 planned-reboot cadence, not weekly.
     v2 = [{**s, "id": s["id"] + "@v2", "version": 2, "planned_downtime": PLANNED_V2,
            "notes": s["notes"] + "; planned downtime at Ford's cadence (ford10-rate), not weekly"}

@@ -2,7 +2,7 @@
 
 Each node runs an independent renewal process of planned-downtime starts:
 
-* gap between starts ``W ~ period`` (default Normal(7 d, 12 h), min 1 d)
+* gap between starts ``W ~ period`` (library default ``ford10-rate``: Normal(71.7 d, 12 h), min 1 d)
 * each event takes the node down for ``D ~ duration`` (default: Ford et al.
   planned-reboot CDF), data kept
 * phase ``equilibrium``: the first start is drawn from the stationary residual

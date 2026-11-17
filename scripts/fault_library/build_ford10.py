@@ -532,27 +532,25 @@ def write_entries(stats, rates, fig3_avg, fig3_sd, calib, checks, q):
             "rate_per_hour": disk_rate,
             "notes": "Table 2: disk MTTF 10-50 years (application-visible disk errors). Central = geometric mean."}
     pr = rates["planned_reboot"]["all_events"]
+    # Decision 2026-11-17: Ford's measured cadence is the only planned-downtime cadence; the assumed weekly
+    # cadence (weekly-ford10, weekly-ford10-rolling, decisions 2026-10-20/21) was removed from the library.
+    ford_period = {"type": "normal", "mean": float(f"{H / pr['central']:.6g}"), "std": 12 * H, "min_val": 1 * DAY}
+    ford_from = ["ford10#table1-planned_reboot", "ford10#digitized-planned_reboot"]
     planned = [
-        {"id": "planned_downtime/weekly-ford10", "kind": "planned_downtime", "version": 1,
-         "tags": ["default"], "derived_from": ["ford10#digitized-planned_reboot"],
-         "built_by": "scripts/fault_library/build_ford10.py",
-         "period": {"type": "normal", "mean": 7 * DAY, "std": 12 * H, "min_val": 1 * DAY},
-         "duration": dur_triple("planned_reboot"), "phase": "equilibrium", "graceful": False,
-         "notes": "Decision 2026-10-20: weekly gap N(7 d, 12 h); duration = Ford Fig 2 planned-reboot CDF."},
-        {"id": "planned_downtime/weekly-ford10-rolling", "kind": "planned_downtime", "version": 1,
-         "tags": ["sensitivity", "rolling"], "derived_from": ["ford10#digitized-planned_reboot"],
-         "built_by": "scripts/fault_library/build_ford10.py",
-         "period": {"type": "normal", "mean": 7 * DAY, "std": 12 * H, "min_val": 1 * DAY},
-         "duration": dur_triple("planned_reboot"), "phase": "rolling", "graceful": False,
-         "notes": ("Rolling variant (decision 2026-10-21: independent phases stay the default): all nodes in one "
-                   "AZ (or region, if slots carry no AZ) go down together; groups staggered evenly through the week.")},
         {"id": "planned_downtime/ford10-rate", "kind": "planned_downtime", "version": 1,
-         "tags": ["sensitivity"], "derived_from": ["ford10#table1-planned_reboot", "ford10#digitized-planned_reboot"],
+         "tags": ["default"], "derived_from": ford_from,
          "built_by": "scripts/fault_library/build_ford10.py",
-         "period": {"type": "normal", "mean": float(f"{H / pr['central']:.6g}"), "std": 12 * H, "min_val": 1 * DAY},
+         "period": ford_period,
          "duration": dur_triple("planned_reboot"), "phase": "equilibrium", "graceful": False,
-         "notes": ("Google-cadence variant: mean gap = 1 / lambda_all(planned reboot) from Table 1 (see the node "
-                   "profile notes for the >=15-min correction), sigma 12 h.")},
+         "notes": ("Default cadence (Google's): mean gap = 1 / lambda_all(planned reboot) from Table 1 (see the node "
+                   "profile notes for the >=15-min correction), sigma 12 h; duration = Ford Fig 2 planned-reboot CDF.")},
+        {"id": "planned_downtime/ford10-rate-rolling", "kind": "planned_downtime", "version": 1,
+         "tags": ["sensitivity", "rolling"], "derived_from": ford_from,
+         "built_by": "scripts/fault_library/build_ford10.py",
+         "period": ford_period,
+         "duration": dur_triple("planned_reboot"), "phase": "rolling", "graceful": False,
+         "notes": ("Rolling variant of ford10-rate (independent phases stay the default): all nodes in one AZ (or "
+                   "region, if slots carry no AZ) go down together; groups staggered evenly through the mean gap.")},
     ]
     (LIB / "sources/ford10.json").write_text(json.dumps(_round(src, 8), indent=2) + "\n")
     (LIB / "profiles/node/ford10.json").write_text(json.dumps(_round(nodes, 8), indent=2) + "\n")

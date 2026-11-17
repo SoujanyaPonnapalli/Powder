@@ -50,7 +50,7 @@ def test_invalid_spec_exits_2_listing_every_problem(tmp_path, capsys):
 
 def test_unpriced_scenario_reports_modeled_cost_na(tmp_path, capsys):
     d = S.load_yaml(SMOKE)
-    d["scenario"] = "scenario/canonical-central"
+    d["scenario"] = "scenario/canonical-central@v2"
     import yaml
     f = tmp_path / "unpriced.yaml"
     f.write_text(yaml.safe_dump(d))

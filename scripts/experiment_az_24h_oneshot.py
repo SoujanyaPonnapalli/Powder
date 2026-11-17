@@ -33,7 +33,9 @@ from powder.mc_backend import run_monte_carlo  # noqa: E402
 from powder.simulation import (ClusterState, Constant, Exponential, NetworkConfig,  # noqa: E402
                                NetworkState, NodeReplacementStrategy, NodeState, RaftLikeProtocol)
 
-SCENARIO = "scenario/canonical-central-az-aware@v2"
+# Saved outputs (outputs/exec-02/az-*) used @v2, the weekly planned cadence removed on 2026-11-17
+# (last commit with it: 1b52ccf); reruns use @v3, Ford's cadence.
+SCENARIO = "scenario/canonical-central-az-aware@v3"
 NUM_RSMS = 10_000
 HORIZON_S = 24 * 3600.0
 

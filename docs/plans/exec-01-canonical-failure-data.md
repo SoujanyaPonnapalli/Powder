@@ -19,6 +19,7 @@ region only; planned-downtime and recovery durations from Ford et al. OSDI'10;
 | Storage | **Local NVMe (instance store) everywhere.** Disk failure, host loss, and spot interruption all mean permanent data loss for that node. Managed/EBS-backed variants are not built (the schema still allows them). |
 | Planned downtime | Gap **W ~ Normal(7 d, σ_W = 12 h)**; random per-node phase. Duration **D = the "planned reboot" unavailability-duration distribution from Ford et al., OSDI'10**, reverse-engineered from the paper's CDF figure (§7.7, §7.14). Ford data is used wherever it fits (recovery durations, reference rates). |
 | Planned downtime (2026-11-04) | **Superseded: Ford's cadence, not weekly.** Mean gap = 1 / λ_all(planned reboot) from Ford Table 1 (`planned_downtime/ford10-rate`, ~5.1 reboots per node-year instead of ~52), same Ford Fig 2 durations. New scenario versions carry it: `scenario/canonical-*@v2` and `scenario/canonical-central-az-aware@v3`; code defaults point to them. The weekly entries and v1 scenarios stay unchanged for prior results. |
+| Planned downtime (2026-11-17) | **Weekly removed; Ford's cadence is the only one.** `planned_downtime/ford10-rate` is tagged `default`; `weekly-ford10`, `weekly-ford10-rolling`, the 12 v1 `scenario/canonical-*`, `scenario/canonical-central-az-aware@v2` and `scenario/reference-ford10-weekly` were deleted (an exception to the immutability rule, user decision). The rolling variant is now `planned_downtime/ford10-rate-rolling`. Results that cite the deleted entries (exec #2 `outputs/exec-02/az-frontiers.json`, `az-mc-scores.jsonl`, `az-24h-oneshot.json`) reproduce only at commit `1b52ccf`. Rows above that mention weekly are history. |
 | Deployment hardware | Every experiment runs on **one identical 8 vCPU x86 AWS instance type: `i4i.2xlarge`** (fallback `m6id.2xlarge`), see §3.5. Heterogeneity is *emulated*: each node is assigned a library machine class, and the emulator injects that class's faults. |
 | "8-core" | **8 vCPU** (AWS's unit, i.e. `*.2xlarge`). |
 | On-demand prices | Built from the **distribution of current on-demand $/h of all 8 vCPU x86 AWS instance types in US regions**, assigned to machine classes two ways: **independent** of reliability, and **reliability-ranked** (more reliable → more expensive). Both are kept; the real-world trade-off is assumed to lie between them (§3.4). |
@@ -906,6 +907,7 @@ Remaining:
 - [x] Ford uncertainty: bootstrap over each digitized curve with N >= 1146 events (smallest jump = one PDF quantum);
   rate low/high = Table 1 cell range x bootstrap duration uncertainty; duration low/high = curve rescaled to the
   bootstrap 5th/95th percentile mean. Table 2 check ratio 1.05 (bootstrap 0.75-2.0): weak evidence only.
+- [x] Weekly planned cadence removed (user decision 2026-11-17): `ford10-rate` is the default, rolling variant `ford10-rate-rolling`; weekly profiles, v1 canonical scenarios, `az-aware@v2` and `reference-ford10-weekly` deleted; `canonical-*@v2`, `az-aware@v3` and `reference-ford10` rebuilt byte-identical. Last commit with weekly: `1b52ccf`.
 
 Recorded deviations from §7 (and why):
 
@@ -928,5 +930,6 @@ Known caveats to state in the paper (from the independent review, 2026-10-21):
   Ford recovery mixture is about 1.7k s vs 1.2k s). Results that depend on tails should use the Python
   simulator or wait for native engine support (§8).
 - `planned_downtime/ford10-rate` treats Google's planned reboots as quasi-periodic (sigma 12 h on a ~72-day gap);
-  Ford's data may be closer to random arrivals. It is a sensitivity variant only.
+  Ford's data may be closer to random arrivals. It is the default (and only) cadence since 2026-11-17.
 - Independent planned-downtime phases ignore coordinated maintenance; the rolling variant brackets it.
+
