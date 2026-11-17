@@ -71,3 +71,16 @@ Opt in with `--write-gb-per-s RATE` (uniform shard rate), `--workload-json PATH`
 python3 scripts/reconfig_cadence.py --smoke --write-gb-per-s 0.00001 \
   --max-replica-moves 2 --threads 2 --output outputs/reconfig-cadence-transition-check
 ```
+
+## Total-cost fleet frontier (2026-11-17)
+
+`scripts/pilot_fleet_frontier.py --write-gb-per-s R` makes the frontier pipeline budget **total $/h = machines +
+replication traffic** (R decimal GB/s from the leader to each follower, uniform leader, `price-transfer/aws-us@2026-10-21`;
+same AZ free, inter-AZ and inter-region billed). RSMs are homogeneous here, so the count-based Gurobi model stays exact:
+`solve_unique_cost_gurobi(..., rsm_cost=[$/h per RSM of each candidate])` adds `sum_j rsm_cost[j] x[j]` to the budget and to
+the cost tie-break objective. Applied everywhere a cost appears: budget grid (fractions of the random-menu ILP's unrestricted
+total), fleet knapsacks (one machine budget per RF, net of the least traffic N RSMs of that RF can incur under the
+no-regional-majority rule), main ILP + consolidation, lattice ascent, cost tie-break, the random-menu ILP (same model on
+Gurobi), and the baselines' reported cost. Rows record `write_gb_per_s`, `machine_cost_per_hour` and
+`replication_cost_per_hour`; `render_pilot_frontiers.py` draws them as stored. R = 0 (default) is the machine-only pipeline.
+No migration term: frontier deployments are one-shot (migration stays in the cadence study).

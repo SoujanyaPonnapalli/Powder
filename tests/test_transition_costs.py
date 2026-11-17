@@ -5,6 +5,7 @@ import pytest
 from powder.faults.transition_costs import (
     ShardSpec,
     TransitionCost,
+    deployment_replication_per_hour,
     edge_average_per_gb,
     migration_cost,
     replication_per_hour,
@@ -137,3 +138,16 @@ def test_missing_directed_price_fails_instead_of_becoming_free():
         replication_per_hour(("a", "d"), 0, LOC, lambda src, dst, _: {}[(src, dst)])
     with pytest.raises(ValueError, match="missing migration price"):
         migration_cost(("a",), ("d",), 0, LOC, lambda src, dst: {}[(src, dst)])
+
+
+def test_deployment_replication_sums_every_rsm_and_is_linear_in_rate():
+    one = replication_per_hour(("a", "d", "f"), 0.001, LOC, traffic)
+    other = replication_per_hour(("c", "e"), 0.001, LOC, traffic)
+    deployment = [("a", "d", "f"), ("f", "a", "d"), ("c", "e")]  # repeats charge per RSM, any member order
+    total = deployment_replication_per_hour(deployment, 0.001, LOC, traffic)
+    assert total == pytest.approx(2 * one + other)
+    assert deployment_replication_per_hour(deployment, 0.002, LOC, traffic) == pytest.approx(2 * total)
+    assert deployment_replication_per_hour([("a", "b")], 1.0, LOC, traffic) == 0.0  # same AZ is free
+    assert deployment_replication_per_hour([], 1.0, LOC, traffic) == 0.0
+    with pytest.raises(ValueError):
+        deployment_replication_per_hour(deployment, -1.0, LOC, traffic)

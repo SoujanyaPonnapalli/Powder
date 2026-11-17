@@ -18,6 +18,9 @@ class Exact:
         self.memo[ids] = self.scores[ids]
         return self.memo[ids]
 
+    def needs(self, ids):
+        return tuple(sorted(ids)) not in self.memo
+
     def batch(self, placements):
         for p in placements:
             self(tuple(sorted(p)))

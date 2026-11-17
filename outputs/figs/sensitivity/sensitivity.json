@@ -13,12 +13,14 @@
    "rf_counts": {
     "3": 50
    },
-   "true_availability": 0.9999288961008861,
-   "true_se": 2.0748354766119686e-06,
-   "true_nines": 4.1481065832754975,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999266869211049,
+   "true_se": 2.10506355030056e-06,
+   "true_nines": 4.134818541248409,
    "true_nines_ci95": [
-    4.123952118183906,
-    4.173683993745166
+    4.11104024450837,
+    4.1599745315346786
    ],
    "true_meets_sla": false
   },
@@ -31,12 +33,14 @@
    "rf_counts": {
     "3": 50
    },
-   "true_availability": 0.9999330662341411,
-   "true_se": 2.0223816036278227e-06,
-   "true_nines": 4.174354739829661,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999315466720522,
+   "true_se": 2.046934188325786e-06,
+   "true_nines": 4.164605433224163,
    "true_nines_ci95": [
-    4.149368259089091,
-    4.2008670107578965
+    4.139869791901749,
+    4.190835458024886
    ],
    "true_meets_sla": false
   },
@@ -49,12 +53,14 @@
    "rf_counts": {
     "3": 50
    },
-   "true_availability": 0.9999294094952843,
-   "true_se": 2.062367467468757e-06,
-   "true_nines": 4.151253712927128,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999321491317978,
+   "true_se": 2.012510973242648e-06,
+   "true_nines": 4.168444590848847,
    "true_nines_ci95": [
-    4.127070584970267,
-    4.176863266061694
+    4.143903442776139,
+    4.194456008859157
    ],
    "true_meets_sla": false
   },
@@ -67,12 +73,14 @@
    "rf_counts": {
     "3": 50
    },
-   "true_availability": 0.999988923341214,
-   "true_se": 7.29519186585341e-07,
-   "true_nines": 4.955591222427837,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999885224316089,
+   "true_se": 7.710773579637325e-07,
+   "true_nines": 4.940150110732683,
    "true_nines_ci95": [
-    4.902863643346938,
-    5.015616672157661
+    4.886428295057911,
+    5.0014679279064636
    ],
    "true_meets_sla": false
   },
@@ -85,12 +93,14 @@
    "rf_counts": {
     "3": 50
    },
-   "true_availability": 0.9999804616847793,
-   "true_se": 1.0039172021501412e-06,
-   "true_nines": 4.70911288800151,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999802652797035,
+   "true_se": 1.0216487017943874e-06,
+   "true_nines": 4.704769024553746,
    "true_nines_ci95": [
-    4.6674405011649736,
-    4.755212480982181
+    4.662797362706858,
+    4.751235203099845
    ],
    "true_meets_sla": false
   },
@@ -104,12 +114,14 @@
     "3": 45,
     "5": 5
    },
-   "true_availability": 0.9999965977603034,
-   "true_se": 3.1345475988061203e-07,
-   "true_nines": 5.4682350924695635,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.999996603150302,
+   "true_se": 3.1611571997740353e-07,
+   "true_nines": 5.468923669140407,
    "true_nines_ci95": [
-    5.396140223891889,
-    5.554727735852867
+    5.396159093866863,
+    5.556383009384397
    ],
    "true_meets_sla": true
   },
@@ -122,12 +134,14 @@
    "rf_counts": {
     "3": 50
    },
-   "true_availability": 0.9999959390756099,
-   "true_se": 3.5975424960637494e-07,
-   "true_nines": 5.3913750965162,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999959954185428,
+   "true_se": 3.425563840027069e-07,
+   "true_nines": 5.397442867924184,
    "true_nines_ci95": [
-    5.321842069269293,
-    5.474203145922301
+    5.330126243329959,
+    5.477142412596095
    ],
    "true_meets_sla": true
   },
@@ -141,12 +155,14 @@
     "5": 45,
     "7": 5
    },
-   "true_availability": 0.9999986416173909,
-   "true_se": 1.4471191872647395e-08,
-   "true_nines": 5.866977887197724,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.9999986206017697,
+   "true_se": 1.6578683378169133e-08,
+   "true_nines": 5.860310335523377,
    "true_nines_ci95": [
-    5.85800303269464,
-    5.876142131037708
+    5.85019838420978,
+    5.870663353817367
    ],
    "true_meets_sla": true
   },
@@ -161,12 +177,14 @@
     "5": 35,
     "7": 5
    },
-   "true_availability": 0.9999981738399683,
-   "true_se": 1.2874635795655347e-07,
-   "true_nines": 5.73846116663754,
+   "validated_nines": null,
+   "select_by": "believed",
+   "true_availability": 0.999998168862738,
+   "true_se": 1.1747241536082057e-07,
+   "true_nines": 5.737279099765248,
    "true_nines_ci95": [
-    5.682249366603022,
-    5.803045720903516
+    5.685841268531499,
+    5.795638147952692
    ],
    "true_meets_sla": true
   }

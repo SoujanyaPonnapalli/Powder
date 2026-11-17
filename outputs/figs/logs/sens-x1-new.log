@@ -1,0 +1,68 @@
+[x1 rho1     15s] clusters + table seeds done; budgets [3.08, 3.84, 4.61, 5.38, 6.15, 7.69, 9.23, 12.3, 15.38]
+[x1 rho1     54s] baselines scored
+[x1 rho1     62s] old ILP rescored
+[x1 rho1    120s] budget $3.08: 8 fleets, 1288 placements, table 1443
+Set parameter WLSAccessID
+Set parameter WLSSecret
+Set parameter LicenseID to value 2879381
+Academic license 2879381 - for non-commercial use only - registered to re___@berkeley.edu
+[x1 rho1    173s] cost tie-break: $3.07 -> $3.07/h at 4.769 nines (15 rounds)
+[x1 rho1    173s] main ILP 4.718 (15 rounds, ILP 5s, MC 18s, +0 consolidation columns) -> lattice 4.769 (4 rounds on 65 columns, ILP 0s, MC 1s)
+[x1 rho1    184s] validated 10%: believed 4.769 -> independent 4.713 nines
+[x1 rho1    184s] new ILP 10%: 4.77 nines $3.07/h, 1570 cands, 15 rounds
+[x1 rho1    212s] budget $3.84: 8 fleets, 1523 placements, table 2320
+[x1 rho1    273s] cost tie-break: $3.84 -> $3.84/h at 5.415 nines (15 rounds)
+[x1 rho1    273s] main ILP 5.278 (15 rounds, ILP 17s, MC 19s, +0 consolidation columns) -> lattice 5.415 (5 rounds on 55 columns, ILP 0s, MC 2s)
+[x1 rho1    284s] validated 12%: believed 5.415 -> independent 5.365 nines
+[x1 rho1    284s] new ILP 12%: 5.41 nines $3.84/h, 1805 cands, 15 rounds
+[x1 rho1    304s] budget $4.61: 8 fleets, 1663 placements, table 2795
+[x1 rho1    354s] cost tie-break: $4.54 -> $4.54/h at 5.470 nines (15 rounds)
+[x1 rho1    354s] main ILP 5.248 (15 rounds, ILP 13s, MC 15s, +0 consolidation columns) -> lattice 5.470 (5 rounds on 59 columns, ILP 0s, MC 2s)
+[x1 rho1    364s] validated 15%: believed 5.470 -> independent 5.420 nines
+[x1 rho1    364s] new ILP 15%: 5.47 nines $4.54/h, 1944 cands, 15 rounds
+[x1 rho1    388s] budget $5.38: 10 fleets, 2065 placements, table 3337
+[x1 rho1    453s] cost tie-break: $5.36 -> $4.71/h at 5.823 nines (10 rounds)
+[x1 rho1    453s] main ILP 5.698 (15 rounds, ILP 25s, MC 20s, +0 consolidation columns) -> lattice 5.833 (7 rounds on 117 columns, ILP 0s, MC 3s)
+[x1 rho1    466s] validated 18%: believed 5.823 -> independent 5.657 nines
+[x1 rho1    466s] new ILP 18%: 5.82 nines $4.71/h, 2347 cands, 15 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1    484s] budget $6.15: 10 fleets, 2066 placements, table 3763
+[x1 rho1    539s] cost tie-break: $6.07 -> $5.38/h at 5.878 nines (5 rounds)
+[x1 rho1    539s] main ILP 5.859 (15 rounds, ILP 26s, MC 19s, +0 consolidation columns) -> lattice 5.887 (5 rounds on 200 columns, ILP 0s, MC 3s)
+[x1 rho1    559s] validated 20%: believed 5.878 -> independent 5.769 nines
+[x1 rho1    559s] new ILP 20%: 5.88 nines $5.38/h, 2348 cands, 15 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1    599s] budget $7.69: 12 fleets, 2648 placements, table 4810
+[x1 rho1    731s] cost tie-break: $7.67 -> $7.67/h at 5.919 nines (5 rounds)
+[x1 rho1    731s] main ILP 5.919 (15 rounds, ILP 79s, MC 25s, +0 consolidation columns) -> lattice 5.919 (15 rounds on 247 columns, ILP 1s, MC 11s)
+[x1 rho1    754s] validated 25%: believed 5.919 -> independent 5.882 nines
+[x1 rho1    754s] new ILP 25%: 5.92 nines $7.67/h, 2929 cands, 15 rounds (main ILP (lattice ascent found nothing better))
+[x1 rho1    782s] budget $9.23: 12 fleets, 2634 placements, table 5499
+[x1 rho1    887s] cost tie-break: $9.12 -> $8.41/h at 5.963 nines (5 rounds)
+[x1 rho1    887s] main ILP 5.960 (15 rounds, ILP 58s, MC 24s, +0 consolidation columns) -> lattice 5.971 (10 rounds on 192 columns, ILP 0s, MC 9s)
+[x1 rho1    908s] validated 30%: believed 5.963 -> independent 5.949 nines
+[x1 rho1    908s] new ILP 30%: 5.96 nines $8.41/h, 2916 cands, 15 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1    936s] budget $12.30: 11 fleets, 2401 placements, table 6297
+[x1 rho1   1038s] cost tie-break: $12.13 -> $9.77/h at 5.994 nines (5 rounds)
+[x1 rho1   1038s] main ILP 5.993 (15 rounds, ILP 65s, MC 19s, +0 consolidation columns) -> lattice 6.003 (13 rounds on 233 columns, ILP 0s, MC 9s)
+[x1 rho1   1059s] validated 40%: believed 5.994 -> independent 5.977 nines
+[x1 rho1   1059s] new ILP 40%: 5.99 nines $9.77/h, 2683 cands, 15 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1   1083s] budget $15.38: 11 fleets, 2536 placements, table 6918
+[x1 rho1   1166s] cost tie-break: $15.30 -> $13.75/h at 6.020 nines (8 rounds)
+[x1 rho1   1166s] main ILP 6.024 (15 rounds, ILP 42s, MC 16s, +0 consolidation columns) -> lattice 6.027 (12 rounds on 217 columns, ILP 0s, MC 11s)
+[x1 rho1   1185s] validated 50%: believed 6.020 -> independent 6.007 nines
+[x1 rho1   1185s] new ILP 50%: 6.02 nines $13.75/h, 2818 cands, 15 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1   1189s] budget $2.65: 3 fleets, 476 placements, table 6943
+[x1 rho1   1221s] cost tie-break: $2.65 -> $2.65/h at 4.336 nines (15 rounds)
+[x1 rho1   1221s] main ILP 4.336 (15 rounds, ILP 4s, MC 16s, +0 consolidation columns) -> lattice 4.336 (3 rounds on 25 columns, ILP 0s, MC 1s)
+[x1 rho1   1236s] validated 9%: believed 4.336 -> independent 4.255 nines
+[x1 rho1   1236s] new ILP 9%: 4.34 nines $2.65/h, 758 cands, 15 rounds (main ILP (lattice ascent found nothing better))
+[x1 rho1   1245s] budget $5.17: 10 fleets, 2080 placements, table 7094
+[x1 rho1   1311s] cost tie-break: $5.16 -> $5.16/h at 5.786 nines (15 rounds)
+[x1 rho1   1311s] main ILP 5.786 (15 rounds, ILP 24s, MC 19s, +0 consolidation columns) -> lattice 5.786 (4 rounds on 96 columns, ILP 0s, MC 2s)
+[x1 rho1   1323s] validated 17%: believed 5.786 -> independent 5.630 nines
+[x1 rho1   1323s] new ILP 17%: 5.79 nines $5.16/h, 2361 cands, 15 rounds (main ILP (lattice ascent found nothing better))
+[x1 rho1   1332s] budget $7.62: 11 fleets, 2411 placements, table 7260
+[x1 rho1   1460s] cost tie-break: $7.51 -> $6.01/h at 5.889 nines (7 rounds)
+[x1 rho1   1460s] main ILP 5.872 (15 rounds, ILP 86s, MC 22s, +0 consolidation columns) -> lattice 5.897 (15 rounds on 202 columns, ILP 0s, MC 5s)
+[x1 rho1   1485s] validated 25%: believed 5.889 -> independent 5.789 nines
+[x1 rho1   1485s] new ILP 25%: 5.89 nines $6.01/h, 2692 cands, 15 rounds (cost tie-break within 0.01 nines of the best)
+[x1 rho1   1485s] done

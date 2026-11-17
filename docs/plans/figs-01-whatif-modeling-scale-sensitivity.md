@@ -253,3 +253,14 @@ Fix options:
    for quorum loss (Markov or stratified MC for P(quorum loss) x expected stuck time).
 3. Model recovery from quorum loss (operator unsafe-recover or restore within hours, not the rest of the
    horizon). This changes the truth too.
+
+### Sensitivity with the new scoring (2026-11-17, `outputs/figs/sensitivity-new/`)
+
+All 9 assumed multipliers rerun with re-selection batches (3 x 100k) and 1M-run validation. 1x ran locally; the
+other 8 ran on a 32-vCPU VM in 75 min (torn down). Each point is the cheapest deployment whose validated
+availability (at the assumed rates) is >= 5 nines; truth is 1M runs per placement on separate seeds.
+- SLA met from 1x upward (old scoring: from 1.4x). Truth 5.39 / 5.65 / 5.45 / 5.88 / 5.75 nines at
+  1x / 1.4x / 2x / 2.8x / 4x.
+- Optimistic inputs (<= 0.7x) still miss (4.10-4.77 nines): the input rates are wrong, so better scoring
+  cannot help. Validation at the assumed rates reports 5.0-5.2 there.
+- Cost of correctness at 1x: $3.84/h vs $2.99/h with old scoring (which truly gave 4.70 nines).
